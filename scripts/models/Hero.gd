@@ -23,6 +23,7 @@ var trait_name: String = ""      # "" means no trait ("Steadfast")
 var downed_until: int = 0        # msec timestamp, 0 = not downed
 var bedded: bool = false
 var hp: int = 0
+var is_champion: bool = false
 
 
 func is_downed() -> bool:
@@ -35,7 +36,7 @@ func to_dict() -> Dictionary:
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name,
-		"downed_until": downed_until, "bedded": bedded, "hp": hp,
+		"downed_until": downed_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
 	}
 
 
@@ -60,4 +61,5 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.downed_until = d.get("downed_until", 0)
 	h.bedded = d.get("bedded", false)
 	h.hp = d.get("hp", 0)
+	h.is_champion = d.get("is_champion", false)
 	return h

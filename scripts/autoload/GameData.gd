@@ -132,8 +132,13 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 # Vertical slice: only Lesser Rift is active. Greater/Ascendant/Endless are
 # deferred — see the plan's "explicitly deferred" list.
 const DIFFICULTIES := [
-	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 38, "monster_dmg": 5, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "power": "Low", "rec_power": 70},
+	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 38, "monster_dmg": 5, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 70},
 ]
+
+# Endless Rift scales forever off these base stats (matches the HTML
+# version's ENDLESS_BASE, which is Ascendant Rift's numbers regardless of
+# whether Ascendant itself is a selectable tier in this port).
+const ENDLESS_BASE := {"monster_hp": 125, "monster_dmg": 14, "coin": [85, 140], "crystal": [20, 36], "token_base": 36, "detector_chance": 0.22, "rec_power": 280}
 
 const ABILITIES := {
 	"warrior": {"name": "Rally", "desc": "+30% team damage this fight."},
@@ -269,6 +274,50 @@ const CLASS_POOL := [
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
 const BUILD_KINDS := ["dmg_pct", "hp_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "wipe_guard", "boss_alpha_strike"]
 
+# Guild Management: 4 branches x 4-5 nodes each. Each node's display effect
+# string is computed by Combat.describe_node_effect(node_id, level) — a
+# match on node id, since the HTML version used a per-node JS closure that
+# doesn't translate directly to static GDScript data. "cap" is {} when a node
+# has no capstone.
+const BRANCHES := [
+	{"id": "ops", "name": "Operations Branch", "sub": "Hero Roster & Combat Management", "nodes": [
+		{"id": "roster", "name": "Roster Expansion", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Elite Barracks", "cost": 400, "desc": "Set a Guild Mentor — new recruits join one level higher."}},
+		{"id": "medical", "name": "Medical Bay", "max": 5, "cost_base": 25, "cost_step": 18, "cap": {"name": "Field Triage", "cost": 350, "desc": "Once per rift cycle, instantly heal the whole team."}},
+		{"id": "drill", "name": "Tactical Drilling", "max": 5, "cost_base": 35, "cost_step": 22, "cap": {"name": "Vanguard Order", "cost": 450, "desc": "A fight's first strike deals +25% bonus damage."}},
+		{"id": "trait", "name": "Trait Management Office", "max": 3, "cost_base": 40, "cost_step": 30, "cap": {}},
+	]},
+	{"id": "infra", "name": "Infrastructure Branch", "sub": "Rift Efficiency & Yield", "nodes": [
+		{"id": "crystal", "name": "Crystal Amplifiers", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Crystal Resonance", "cost": 400, "desc": "Rift Bosses drop a bonus Pure Crystal cache."}},
+		{"id": "stab", "name": "Rift Stabilization", "max": 5, "cost_base": 28, "cost_step": 18, "cap": {"name": "Anchor Artifact", "cost": 380, "desc": "Negates each floor's first hazard entirely."}},
+		{"id": "seal", "name": "Seal Maximizer", "max": 3, "cost_base": 45, "cost_step": 30, "cap": {}},
+		{"id": "energy", "name": "Energy Extraction", "max": 5, "cost_base": 26, "cost_step": 16, "cap": {}},
+	]},
+	{"id": "log", "name": "Logistics Branch", "sub": "Economy & Market", "nodes": [
+		{"id": "broker", "name": "Broker Network", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Black Market Clearance", "cost": 420, "desc": "Unlocks premium bids on ultra-rare Rift Detectors."}},
+		{"id": "scout", "name": "Targeted Scouting", "max": 3, "cost_base": 35, "cost_step": 25, "cap": {"name": "Headhunter", "cost": 400, "desc": "Guarantees a Rank C+ hero in every HR refresh."}},
+		{"id": "merchant", "name": "Merchant Contract", "max": 5, "cost_base": 24, "cost_step": 14, "cap": {}},
+		{"id": "detector", "name": "Detector Tuning", "max": 4, "cost_base": 32, "cost_step": 20, "cap": {}},
+	]},
+	{"id": "res", "name": "Research Branch", "sub": "Run Mechanics & Analytics", "nodes": [
+		{"id": "relic", "name": "Relic Storage", "max": 3, "cost_base": 30, "cost_step": 22, "cap": {"name": "Inherited Power", "cost": 380, "desc": "Start every Rift with a Rare Relic instead of Common."}},
+		{"id": "theory", "name": "Theorycrafting Lab", "max": 3, "cost_base": 28, "cost_step": 20, "cap": {"name": "Optimal Synergy", "cost": 400, "desc": "3 equipped Relics of one type grant +15% damage."}},
+		{"id": "recycle", "name": "Relic Recycling", "max": 3, "cost_base": 22, "cost_step": 14, "cap": {}},
+		{"id": "cart", "name": "Arcane Cartography", "max": 3, "cost_base": 26, "cost_step": 16, "cap": {}},
+		{"id": "vault", "name": "Relic Vault", "max": 2, "cost_base": 50, "cost_step": 40, "cap": {}},
+	]},
+]
+
+const GUILD_TIERS := [
+	{"min": 0, "name": "Founding Guild"},
+	{"min": 10, "name": "Established Guild"},
+	{"min": 25, "name": "Renowned Guild"},
+	{"min": 45, "name": "Legendary Guild"},
+]
+
+const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
+
+const BOSS_ENRAGE_ROUND := 4
+
 
 static func find_class(pool_id: String) -> Dictionary:
 	for c in CLASS_POOL:
@@ -302,6 +351,19 @@ static func find_rarity(rarity_id: String) -> Dictionary:
 	for r in RARITIES:
 		if r["id"] == rarity_id:
 			return r
+	return {}
+
+
+## key is "branch_id.node_id", e.g. "ops.medical".
+static func find_branch_node(key: String) -> Dictionary:
+	var parts := key.split(".")
+	if parts.size() != 2:
+		return {}
+	for b in BRANCHES:
+		if b["id"] == parts[0]:
+			for n in b["nodes"]:
+				if n["id"] == parts[1]:
+					return n
 	return {}
 
 

@@ -56,7 +56,7 @@ func gain_xp(h: Hero, amount: int) -> void:
 
 
 func describe_skill(kind: String, value: float) -> String:
-	var pct := round(value * 100)
+	var pct: float = round(value * 100)
 	match kind:
 		"dmg_pct": return "+%d%% damage" % pct
 		"hp_pct": return "+%d%% HP" % pct
@@ -175,6 +175,34 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	return h
 
 
+## A Champion is a one-run guest fighter at full innate strength (no
+## HERO_INNATE_MULT discount, unlike a recruited hero) and no skill tree —
+## it has no `cls_id`, so `hero_skill_total`'s CLASS_SKILLS lookup naturally
+## contributes nothing for it, matching the HTML version's clsId-less champ.
+func generate_champion() -> Hero:
+	var rank_id := weighted_rank()
+	var rank := GameData.find_rank(rank_id)
+	var rank_idx := GameData.rank_index(rank_id)
+	var pool: Array = GameData.CLASS_POOL.filter(func(c): return c["rank"] == rank_id)
+	var cls: Dictionary = pool[randi() % pool.size()]
+	var champ := Hero.new()
+	champ.id = "champ" + str(GameState.next_id)
+	GameState.next_id += 1
+	champ.name = cls["name"]
+	champ.is_champion = true
+	champ.pool_id = cls["id"]
+	champ.rank = rank_id
+	champ.type = cls["type"]
+	champ.innate_kind = cls["kind"]
+	champ.innate_value = innate_value_for(cls, rank_idx)
+	champ.flavor = cls["flavor"]
+	champ.level = 1
+	champ.base_hp = int(round(30.0 * float(cls["hp_ratio"]) * float(rank["mult"])))
+	champ.base_dmg = int(round(8.0 * float(cls["dmg_ratio"]) * float(rank["mult"])))
+	champ.hp = max_hp(champ)
+	return champ
+
+
 func gen_relic(rarity_id: String) -> Relic:
 	var type: String = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	var rarity := GameData.find_rarity(rarity_id)
@@ -224,18 +252,105 @@ func gen_loot(rarity_id: String) -> Dictionary:
 	return {"loot_type": "relic", "obj": gen_relic(rarity_id)}
 
 
+func endless_diff_for_cycle(cycle: int) -> Dictionary:
+	var mult := 1.0 + cycle * 0.35
+	var base := GameData.ENDLESS_BASE
+	return {
+		"id": "endless", "name": "Endless Rift", "floors": 6, "power": "Extreme",
+		"monster_hp": int(round(base["monster_hp"] * mult)), "monster_dmg": int(round(base["monster_dmg"] * mult)),
+		"coin": [int(round(base["coin"][0] * mult)), int(round(base["coin"][1] * mult))],
+		"crystal": [int(round(base["crystal"][0] * mult)), int(round(base["crystal"][1] * mult))],
+		"token_base": int(round(base["token_base"] * mult)), "detector_chance": base["detector_chance"],
+		"rec_power": int(round(base["rec_power"] * mult)),
+	}
+
+
+## Branching rift path: first layer forced combat, last forced boss, middle
+## layers each offer 2 different node-type options (a fork the player picks
+## between), with a guarantee at least one middle layer includes "elite".
+func build_layers(diff: Dictionary) -> Array:
+	var layers: Array = [{"options": ["combat"]}]
+	var mid_count: int = int(diff["floors"]) - 2
+	var pool := ["combat", "combat", "shop", "hazard", "elite"]
+	for i in mid_count:
+		var a: String = pool[randi() % pool.size()]
+		var b: String = pool[randi() % pool.size()]
+		var guard := 0
+		while b == a and guard < 6:
+			b = pool[randi() % pool.size()]
+			guard += 1
+		if b == a:
+			var filtered: Array = pool.filter(func(x): return x != a)
+			b = filtered[randi() % filtered.size()]
+		layers.append({"options": [a, b]})
+	if mid_count > 0:
+		var has_elite := false
+		for l in layers:
+			var opts: Array = l["options"]
+			if opts.has("elite"):
+				has_elite = true
+				break
+		if not has_elite:
+			var li := 1 + randi() % mid_count
+			var oi := randi() % 2
+			var opts: Array = layers[li]["options"]
+			opts[oi] = "elite"
+	layers.append({"options": ["boss"]})
+	return layers
+
+
 func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	var scale := 1.0 + floor_idx * 0.12
-	var hp_mult := 1.8 if kind == "boss" else 1.0
-	var dmg_mult := 1.5 if kind == "boss" else 1.0
+	var hp_mult := 1.8 if kind == "boss" else (1.45 if kind == "elite" else 1.0)
+	var dmg_mult := 1.5 if kind == "boss" else (1.3 if kind == "elite" else 1.0)
 	var hp: int = round(diff["monster_hp"] * scale * hp_mult)
 	var dmg: int = round(diff["monster_dmg"] * scale * dmg_mult)
 	var name: String
 	if kind == "boss":
 		name = "%s, %s Warden" % [GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()], diff["name"].split(" ")[0]]
+	elif kind == "elite":
+		name = GameData.ELITE_NAMES[randi() % GameData.ELITE_NAMES.size()]
 	else:
 		name = GameData.MONSTER_NAMES[randi() % GameData.MONSTER_NAMES.size()]
 	return {"name": name, "hp": hp, "dmg": dmg}
+
+
+## Guild Management node display strings — a match on node id since the HTML
+## version used a per-node JS closure that doesn't translate to static data.
+func describe_node_effect(node_id: String, level: int) -> String:
+	match node_id:
+		"roster": return "+%d hero slots" % (level * 2)
+		"medical": return "-%d%% recovery time" % (level * 10)
+		"drill": return "+%d%% HP/DMG in Rifts" % (level * 3)
+		"trait": return ("Scrub traits · -%d%% skill respec cost" % (level * 10)) if level > 0 else "Locked"
+		"crystal": return "+%d%% Crystal yield" % (level * 5)
+		"stab": return "-%d%% hazard severity" % (level * 8)
+		"seal": return "+%d%% Seal Tokens on a fast clear" % (level * 10)
+		"energy": return "%d%% elite bonus-Crystal chance" % (level * 5)
+		"broker": return "-%d%% Auction fees" % (level * 3)
+		"scout": return ("HR filters unlocked (Lvl %d)" % level) if level > 0 else "Locked"
+		"merchant": return "-%d%% shop prices" % (level * 5)
+		"detector": return "+%d%% Rift Detector drops" % (level * 5)
+		"relic":
+			if level <= 0: return "Locked"
+			return "%d starting Relic choices" % (4 if level >= 3 else (3 if level == 2 else 2))
+		"theory": return "Damage dummy & synergy highlights unlocked" if level > 0 else "Locked"
+		"recycle": return "Scrap unwanted Relics for Crystals" if level > 0 else "Locked"
+		"cart": return "Reveals the rift path on entry" if level > 0 else "Locked"
+		"vault": return "+%d equipped Relic slot" % level
+		_: return ""
+
+
+func guild_tier_info() -> Dictionary:
+	var total := 0
+	for v in GameState.upgrades.values():
+		total += int(v)
+	var idx := 0
+	for i in GameData.GUILD_TIERS.size():
+		if total >= int(GameData.GUILD_TIERS[i]["min"]):
+			idx = i
+	var next: Dictionary = GameData.GUILD_TIERS[idx + 1] if idx + 1 < GameData.GUILD_TIERS.size() else {}
+	return {"name": GameData.GUILD_TIERS[idx]["name"], "total": total, "next": next}
 
 
 func equipped_relics() -> Array[Relic]:
@@ -269,9 +384,9 @@ func hero_item_total(h: Hero, kind: String) -> float:
 	return s
 
 
-## Optimal Synergy has no Guild-Management unlock gate in this slice — it's
-## always active (that upgrade tree is explicitly deferred).
 func synergy_bonus() -> Dictionary:
+	if not GameState.synergy_unlocked():
+		return {}
 	var counts := {}
 	for r in equipped_relics():
 		counts[r.type] = counts.get(r.type, 0) + 1
@@ -293,13 +408,21 @@ func drop_rate_bonus() -> float:
 	return relic_special_total("loot_rarity_pct") + synergy_value_for("loot_rarity_pct")
 
 
-## Simplified combat resolver: one fight, pooled party HP, round-by-round
-## exchange. Drops Guild-Management-gated bonuses (tactical drilling, Vanguard
-## Order, Hardcore Mode) since that whole tree is deferred past this slice.
+## Combat resolver: one fight, pooled party HP, round-by-round exchange.
 ## `ability_used` is one of "" / warrior / ranger / mage / cleric / rogue.
-func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx: int, ability_used: String) -> Dictionary:
+## `kind` is "combat" / "elite" / "boss". Boss mechanics are rolled fresh each
+## call (not pre-rolled/previewed — a minor simplification vs. the HTML
+## version's ensureBossPreview, since this port has no pre-engage preview UI).
+func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx: int, ability_used: String, hardcore: bool) -> Dictionary:
 	var is_boss := kind == "boss"
+	var is_elite := kind == "elite"
 	var monster := gen_monster(diff, floor_idx, kind)
+	var mechanic: Dictionary = {}
+	if is_boss:
+		mechanic = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
+		if mechanic["id"] == "frenzied":
+			monster["dmg"] = int(round(monster["dmg"] * 1.25))
+
 	if ability_used == "cleric":
 		for h in party:
 			h.hp = max_hp(h)
@@ -308,11 +431,11 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 	var raw_sum := 0.0
 	for h in party:
 		raw_sum += dmg_of(h)
-	var team_dmg_base := (raw_sum + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party))
+	var team_dmg_base := (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party))
 	if ability_used == "warrior":
 		team_dmg_base *= 1.3
 
-	var first_round_bonus := party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + synergy_value_for("first_round_pct")
+	var first_round_bonus := (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + synergy_value_for("first_round_pct")
 	if ability_used == "rogue":
 		first_round_bonus += 0.9
 	var escalate := party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + synergy_value_for("escalate_pct")
@@ -321,7 +444,8 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard"))
 	var alpha_strikes := (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
-	var m_hp: float = monster["hp"]
+	var monster_max_hp: float = monster["hp"]
+	var m_hp: float = monster_max_hp
 	var total_max_at_start := 0
 	for h in party:
 		total_max_at_start += max_hp(h)
@@ -332,6 +456,8 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 
 	var log: Array[String] = []
 	log.append("A %s blocks the way (%d HP)." % [monster["name"], monster["hp"]])
+	if not mechanic.is_empty():
+		log.append("%s: %s" % [mechanic["name"], mechanic["desc"]])
 	if ability_used != "":
 		log.append("%s activated!" % GameData.ABILITIES[ability_used]["name"])
 	if alpha_strikes > 0:
@@ -354,13 +480,20 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 		if m_hp <= 0:
 			log.append("The %s falls!" % monster["name"])
 			break
+		if mechanic.get("id") == "regen":
+			var regen_heal: float = round(monster_max_hp * 0.08)
+			m_hp = min(monster_max_hp, m_hp + regen_heal)
+			log.append("%s regenerates %d HP." % [monster["name"], regen_heal])
 		if mend > 0:
-			var heal := round(hp_pool * mend)
+			var heal: float = round(hp_pool * mend)
 			if heal > 0:
 				hp_pool = min(total_max_at_start, hp_pool + heal)
 				log.append("The party mends %d HP." % heal)
 		var back: float = monster_dmg
-		if dodge > 0 and randf() < dodge:
+		var warded: bool = mechanic.get("id") == "warded" and round_num <= 2
+		if mechanic.get("id") == "enrage" and round_num > GameData.BOSS_ENRAGE_ROUND:
+			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
+		if not warded and dodge > 0 and randf() < dodge:
 			log.append("The party evades the %s's retaliation!" % monster["name"])
 			back = 0
 		if back > 0:
@@ -373,10 +506,13 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 
 	var won := m_hp <= 0
 	if not won:
-		for h in party:
-			h.hp = 0
-			h.downed_until = int(Time.get_unix_time_from_system() * 1000) + GameState.recovery_ms()
-		log.append("Your party is overwhelmed...")
+		if hardcore:
+			log.append("Your party is overwhelmed... and lost for good.")
+		else:
+			for h in party:
+				h.hp = 0
+				h.downed_until = int(Time.get_unix_time_from_system() * 1000) + GameState.recovery_ms()
+			log.append("Your party is overwhelmed...")
 	else:
 		for h in party:
 			var share := float(max_hp(h)) / float(total_max_at_start)
@@ -384,13 +520,20 @@ func resolve_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_id
 
 	var result := {
 		"won": won, "log": log, "rounds": round_num, "monster_name": monster["name"],
-		"coin": 0, "crystal": 0, "reward_options": [],
+		"coin": 0, "crystal": 0, "bonus_crystal": 0, "reward_options": [],
 	}
 	if won:
+		var reward_mult := (1.4 if is_elite else 1.0) * (1.5 if hardcore else 1.0)
 		var depth_mult := 1.0 + floor_idx * 0.05
-		result["coin"] = round(randf_range(diff["coin"][0], diff["coin"][1]) * depth_mult)
-		result["crystal"] = round(randf_range(diff["crystal"][0], diff["crystal"][1]) * depth_mult)
-		var xp_gain := 30 if is_boss else 12
+		result["coin"] = round(randf_range(diff["coin"][0], diff["coin"][1]) * reward_mult * depth_mult)
+		result["crystal"] = round(randf_range(diff["crystal"][0], diff["crystal"][1]) * GameState.crystal_yield_bonus() * reward_mult * depth_mult)
+		if is_elite:
+			var bonus_crystal := 0
+			for h in party:
+				if randf() < GameState.energy_extract_chance():
+					bonus_crystal += randi() % 4 + 2
+			result["bonus_crystal"] = bonus_crystal
+		var xp_gain := 30 if is_boss else (20 if is_elite else 12)
 		for h in party:
 			gain_xp(h, xp_gain)
 		if not is_boss:
