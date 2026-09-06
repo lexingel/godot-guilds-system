@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cup2oa3t3hluk"
-path="res://.godot/imported/stat_bar_row.png-d45f449f7cbecbac6f1c91b63ebb6ee8.ctex"
+uid="uid://c60uqn5ufvnlb"
+path="res://.godot/imported/relic_arcane.png-fe16ed56e04d53b9e1b0944ac4fc8e3c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/stat_bar_row.png"
-dest_files=["res://.godot/imported/stat_bar_row.png-d45f449f7cbecbac6f1c91b63ebb6ee8.ctex"]
+source_file="res://assets/icons/relic_arcane.png"
+dest_files=["res://.godot/imported/relic_arcane.png-fe16ed56e04d53b9e1b0944ac4fc8e3c.ctex"]
 
 [params]
 

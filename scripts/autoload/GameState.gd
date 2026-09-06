@@ -369,24 +369,45 @@ func current_node_kind() -> String:
 	return chosen.get(int(run.get("pos", 0)), "")
 
 
-func engage_node(ability_used: String) -> void:
+func engage_node() -> void:
 	var diff := _diff()
 	var party: Array[Hero] = []
 	party.assign(current_party().filter(func(h): return not h.is_downed() and h.hp > 0))
 	if party.is_empty():
 		return
 	var kind := current_node_kind()
-	var hardcore: bool = run.get("hardcore", false)
-	var result := Combat.resolve_combat(party, kind, diff, int(run["pos"]), ability_used, hardcore)
-	if result["won"]:
-		coins += int(result["coin"])
-		crystals += int(result["crystal"]) + int(result["bonus_crystal"])
-		if kind == "boss":
-			run["boss_rounds"] = int(result["rounds"])
-	elif hardcore:
-		for h in party:
-			heroes.erase(h)
-	run["node_state"] = {"type": "combat", "result": result, "reward_chosen": false}
+	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
+	run["node_state"] = {"type": "combat", "combat_state": state, "reward_chosen": false}
+	save()
+	state_changed.emit()
+
+
+## Advances the in-progress fight in run["node_state"]["combat_state"] by one
+## round for the player-picked `action` ("attack"/"ability"/"defend"/"retreat").
+## Once Combat.resolve_round reports the fight done, applies the same roster-
+## level bookkeeping engage_node used to do in one shot (coin/crystal gain,
+## boss_rounds tracking, hardcore hero removal on a real loss — not a retreat).
+func combat_action(action: String) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var state: Dictionary = ns.get("combat_state", {})
+	if state.is_empty():
+		return
+	var outcome := Combat.resolve_round(state, action)
+	if outcome["done"]:
+		var result: Dictionary = outcome["result"]
+		var kind := current_node_kind()
+		var hardcore: bool = run.get("hardcore", false)
+		if result["won"]:
+			coins += int(result["coin"])
+			crystals += int(result["crystal"]) + int(result["bonus_crystal"])
+			if kind == "boss":
+				run["boss_rounds"] = int(result["rounds"])
+		elif hardcore and not bool(result.get("retreated", false)):
+			var party: Array[Hero] = state["party"]
+			for h in party:
+				heroes.erase(h)
+		ns["result"] = result
+	run["node_state"] = ns
 	save()
 	state_changed.emit()
 

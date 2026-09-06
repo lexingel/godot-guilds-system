@@ -141,11 +141,11 @@ const DIFFICULTIES := [
 const ENDLESS_BASE := {"monster_hp": 125, "monster_dmg": 14, "coin": [85, 140], "crystal": [20, 36], "token_base": 36, "detector_chance": 0.22, "rec_power": 280}
 
 const ABILITIES := {
-	"warrior": {"name": "Rally", "desc": "+30% team damage this fight."},
-	"ranger": {"name": "Piercing Volley", "desc": "-40% the monster's damage this fight."},
-	"mage": {"name": "Overcharge", "desc": "An immediate burst of damage before the fight begins."},
-	"cleric": {"name": "Blessing", "desc": "Fully heals the party before the fight begins."},
-	"rogue": {"name": "Ambush", "desc": "Guarantees a critical first strike (+90% first-round damage)."},
+	"warrior": {"name": "Rally", "desc": "+30% team damage for the rest of this fight."},
+	"ranger": {"name": "Piercing Volley", "desc": "-40% the monster's damage for the rest of this fight."},
+	"mage": {"name": "Overcharge", "desc": "An immediate burst of damage against the monster."},
+	"cleric": {"name": "Blessing", "desc": "Fully heals the party immediately."},
+	"rogue": {"name": "Ambush", "desc": "This round's attack deals +90% damage."},
 }
 
 # Every class tree shares the same shape: 2 generic Tier-1 nodes, 3
@@ -318,12 +318,77 @@ const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
 
 const BOSS_ENRAGE_ROUND := 4
 
+# Icon paths — relic-type gems and item-category icons were extracted
+# pixel-identical from guild-system.html's embedded base64 (RELIC_TYPE_ICON/
+# ITEM_CATEGORY_ICON) into assets/icons/; monster sprites and the chest icon
+# were already individually-named files from the earlier asset-slicing pass.
+const RELIC_TYPE_ICON_PATH := {
+	"Ember": "res://assets/icons/relic_ember.png",
+	"Frost": "res://assets/icons/relic_frost.png",
+	"Verdant": "res://assets/icons/relic_verdant.png",
+	"Umbral": "res://assets/icons/relic_umbral.png",
+	"Arcane": "res://assets/icons/relic_arcane.png",
+}
+const ITEM_CATEGORY_ICON_PATH := {
+	"weapon": "res://assets/icons/item_weapon.png",
+	"armor": "res://assets/icons/item_armor.png",
+	"focus": "res://assets/icons/item_focus.png",
+}
+const CHEST_ICON_PATH := "res://assets/dungeon/chest_icon.png"
+const HERO_PORTRAIT_PATH := {
+	"warrior": "res://assets/heroes/warrior.png",
+	"ranger": "res://assets/heroes/ranger.png",
+	"mage": "res://assets/heroes/mage.png",
+	"cleric": "res://assets/heroes/cleric.png",
+	"rogue": "res://assets/heroes/rogue.png",
+}
+const MONSTER_SPRITE_PATH := {
+	"goblin": "res://assets/monsters/goblin.png",
+	"orc": "res://assets/monsters/orc.png",
+	"skelly": "res://assets/monsters/skelly.png",
+	"mummy": "res://assets/monsters/mummy.png",
+	"zombie": "res://assets/monsters/zombie.png",
+	"slime": "res://assets/monsters/slime.png",
+	"wraith": "res://assets/monsters/wraith.png",
+	"fire_skull": "res://assets/monsters/fire_skull.png",
+}
+const MONSTER_NAME_SPRITE := {
+	"Gloom Stalker": "wraith", "Rift Wisp": "fire_skull", "Husk Brute": "zombie",
+	"Sable Fang": "orc", "Ember Whelp": "goblin", "Marrow Crawler": "skelly",
+	"Hollow Reaver": "mummy", "Cinder Moth": "slime",
+}
+
+
+## Any monster name gets a sprite: direct name match first, else a stable
+## hash-based fallback across all 8 sprites — matches the HTML's
+## spriteForMonster, so even Boss names (never in MONSTER_NAME_SPRITE) get a
+## deterministic sprite instead of no icon at all.
+static func sprite_for_monster(monster_name: String) -> String:
+	if MONSTER_NAME_SPRITE.has(monster_name):
+		var key: String = MONSTER_NAME_SPRITE[monster_name]
+		return MONSTER_SPRITE_PATH[key]
+	var keys: Array = MONSTER_SPRITE_PATH.keys()
+	var hash_sum := 0
+	for c in monster_name:
+		hash_sum += c.unicode_at(0)
+	var key: String = keys[hash_sum % keys.size()]
+	return MONSTER_SPRITE_PATH[key]
+
 
 static func find_class(pool_id: String) -> Dictionary:
 	for c in CLASS_POOL:
 		if c["id"] == pool_id:
 			return c
 	return {}
+
+
+## Champions have no cls_id (no skill tree), so their role has to come from
+## their pool_id's CLASS_POOL entry instead — this covers both.
+static func portrait_for_hero(cls_id: String, pool_id: String) -> String:
+	var role := cls_id
+	if role == "":
+		role = find_class(pool_id).get("role", "")
+	return HERO_PORTRAIT_PATH.get(role, "")
 
 
 static func find_role(role_id: String) -> Dictionary:

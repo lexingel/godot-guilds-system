@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dk4dxr6f78gw5"
-path="res://.godot/imported/section_header.png-9fee4e4d526e06ba1c56c9fa8e374b2c.ctex"
+uid="uid://c7lfp6gkfiyke"
+path="res://.godot/imported/relic_frost.png-9919a7d55876d07136ea547b4b6dcd55.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/section_header.png"
-dest_files=["res://.godot/imported/section_header.png-9fee4e4d526e06ba1c56c9fa8e374b2c.ctex"]
+source_file="res://assets/icons/relic_frost.png"
+dest_files=["res://.godot/imported/relic_frost.png-9919a7d55876d07136ea547b4b6dcd55.ctex"]
 
 [params]
 

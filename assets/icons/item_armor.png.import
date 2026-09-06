@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dulk0kak3fwh4"
-path="res://.godot/imported/tab_row.png-4a5e91c5a492b2491f324bf5094e28e0.ctex"
+uid="uid://bg6gnpaasqx0e"
+path="res://.godot/imported/item_armor.png-748d7daf7e4ceec3119c113b60c00d9e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/tab_row.png"
-dest_files=["res://.godot/imported/tab_row.png-4a5e91c5a492b2491f324bf5094e28e0.ctex"]
+source_file="res://assets/icons/item_armor.png"
+dest_files=["res://.godot/imported/item_armor.png-748d7daf7e4ceec3119c113b60c00d9e.ctex"]
 
 [params]
 

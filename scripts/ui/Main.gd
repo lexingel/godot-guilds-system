@@ -12,7 +12,6 @@ var pending_party: Array[String] = []
 var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
-var selected_ability: String = ""
 var expanded_skill_hero: String = ""
 var confirm_reset: bool = false
 
@@ -42,11 +41,24 @@ func _vbox(gap: int = 10) -> VBoxContainer:
 ## and wraps every word onto its own line. Long text (combat log lines, item
 ## descriptions) instead sits in a VBoxContainer stretched to the fixed-width
 ## content column, so it wraps at a sane width via wrap_text() below instead.
-func _label(text: String, size: int = 14) -> Label:
+func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
+	if muted:
+		l.add_theme_color_override("font_color", Palette.MUTED)
 	return l
+
+
+## Pixel-art icon at a fixed size, nearest-neighbor filtered to stay crisp
+## (matches the HTML's image-rendering:pixelated).
+func _icon(path: String, size: int = 24) -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = load(path)
+	t.custom_minimum_size = Vector2(size, size)
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	return t
 
 
 ## Opt-in wrapping variant for long standalone text (combat log lines,
@@ -163,7 +175,12 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	_topbar(v)
 	v.add_child(_label("Assemble Party (pick up to 4)", 20))
 	var champ := GameState.ensure_champion()
-	v.add_child(_label("Champion: %s — Rank %s (always joins) · %d/%d HP" % [champ.name, champ.rank, champ.hp, Combat.max_hp(champ)], 13))
+	var champ_row := HBoxContainer.new()
+	var champ_portrait := GameData.portrait_for_hero(champ.cls_id, champ.pool_id)
+	if champ_portrait != "":
+		champ_row.add_child(_icon(champ_portrait, 48))
+	champ_row.add_child(_label("Champion: %s — Rank %s (always joins) · %d/%d HP" % [champ.name, champ.rank, champ.hp, Combat.max_hp(champ)], 13))
+	v.add_child(champ_row)
 	for h in GameState.heroes:
 		var row := HBoxContainer.new()
 		var picked := pending_party.has(h.id)
@@ -178,6 +195,9 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			render()
 		)
 		row.add_child(cb)
+		var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		if portrait_path != "":
+			row.add_child(_icon(portrait_path, 40))
 		var status := " (downed)" if h.is_downed() else ""
 		row.add_child(_label("%s — Lv%d %s · %d/%d HP%s" % [h.name, h.level, h.cls_id.capitalize(), h.hp, Combat.max_hp(h), status]))
 		v.add_child(row)
@@ -253,11 +273,14 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	var sealed = GameState.run.get("sealed")
 	if sealed != null:
 		var sealed_dict: Dictionary = sealed
-		v.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s" % [
+		var sealed_row := HBoxContainer.new()
+		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 28))
+		sealed_row.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s" % [
 			int(sealed_dict["tokens"]),
 			" (fast clear)" if sealed_dict.get("fast_clear", false) else "",
 			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
 		]))
+		v.add_child(sealed_row)
 		if sealed_dict.get("continuing", false):
 			v.add_child(_label("Endless cycle %d begins..." % int(sealed_dict["cycle"])))
 			v.add_child(_button("Continue Endless Run", func():
@@ -304,31 +327,58 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var ns: Dictionary = GameState.run.get("node_state", {})
 	var kind := GameState.current_node_kind()
 	var is_boss := kind == "boss"
-	if not ns.has("result"):
+
+	if not ns.has("combat_state") and not ns.has("result"):
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
-		var abil_row := HBoxContainer.new()
-		for role in GameData.ABILITIES:
-			var ab: Dictionary = GameData.ABILITIES[role]
-			var available := GameState.current_party().any(func(h): return h.cls_id == role and h.level >= 3)
-			if available:
-				var btn := CheckButton.new()
-				btn.text = ab["name"]
-				btn.button_pressed = selected_ability == role
-				btn.toggled.connect(func(on: bool):
-					selected_ability = role if on else ""
-					render()
-				)
-				abil_row.add_child(btn)
-		v.add_child(abil_row)
 		v.add_child(_button("Engage", func():
-			GameState.engage_node(selected_ability)
-			selected_ability = ""
+			GameState.engage_node()
 			render()
 		))
 		return
 
+	if ns.has("combat_state") and not ns.has("result"):
+		var state: Dictionary = ns["combat_state"]
+		var monster_row := HBoxContainer.new()
+		monster_row.add_child(_icon(GameData.sprite_for_monster(str(state["monster_name"])), 28))
+		monster_row.add_child(_label("%s — %d/%d HP" % [str(state["monster_name"]), max(0, int(state["monster_hp"])), int(state["monster_max_hp"])], 14))
+		v.add_child(monster_row)
+		v.add_child(_label("Party — %d/%d HP" % [int(state["hp_pool"]), int(state["total_max_at_start"])], 14, true))
+		var log_box := _vbox(2)
+		for line in state["log"]:
+			log_box.add_child(_wrap_label(str(line), 12))
+		v.add_child(log_box)
+
+		var action_row := HBoxContainer.new()
+		action_row.add_child(_button("Attack", func():
+			GameState.combat_action("attack")
+			render()
+		))
+		var ability_id: String = state["ability_id"]
+		if ability_id != "":
+			var ab: Dictionary = GameData.ABILITIES[ability_id]
+			var ab_btn := _button(str(ab["name"]), func():
+				GameState.combat_action("ability")
+				render()
+			)
+			ab_btn.disabled = not bool(state["ability_available"])
+			action_row.add_child(ab_btn)
+		action_row.add_child(_button("Defend", func():
+			GameState.combat_action("defend")
+			render()
+		))
+		action_row.add_child(_button("Retreat", func():
+			GameState.combat_action("retreat")
+			render()
+		))
+		v.add_child(action_row)
+		return
+
 	var result: Dictionary = ns["result"]
+	var monster_row := HBoxContainer.new()
+	monster_row.add_child(_icon(GameData.sprite_for_monster(str(result["monster_name"])), 28))
+	monster_row.add_child(_label(str(result["monster_name"]), 14))
+	v.add_child(monster_row)
 	var log_box := _vbox(2)
 	for line in result["log"]:
 		log_box.add_child(_wrap_label(str(line), 12))
@@ -346,11 +396,15 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			for i in options.size():
 				var opt: Dictionary = options[i]
 				var obj = opt["obj"]
-				var desc: String = obj.desc() if opt["loot_type"] == "relic" else Combat.describe_skill(obj.kind, obj.value)
-				v.add_child(_button("%s — %s" % [obj.name, desc], func(idx=i):
+				var is_relic: bool = opt["loot_type"] == "relic"
+				var desc: String = obj.desc() if is_relic else Combat.describe_skill(obj.kind, obj.value)
+				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
+				var btn := _button("%s — %s" % [obj.name, desc], func(idx=i):
 					GameState.pick_combat_reward(idx)
 					render()
-				))
+				)
+				btn.icon = load(icon_path)
+				v.add_child(btn)
 		else:
 			v.add_child(_button("Continue", func():
 				if is_boss:
@@ -360,7 +414,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				render()
 			))
 	else:
-		v.add_child(_label("Defeat — the party is downed and recovering."))
+		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
+		v.add_child(_label(defeat_text))
 		v.add_child(_button("Return to Terminal", func():
 			GameState.finish_run()
 			screen = "terminal"
@@ -378,7 +433,10 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		var obj = off["obj"]
 		var desc: String = obj.desc() if off["loot_type"] == "relic" else Combat.describe_skill(obj.kind, obj.value)
 		var bought: bool = off.get("bought", false)
+		var is_relic: bool = off["loot_type"] == "relic"
+		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
 		var row := HBoxContainer.new()
+		row.add_child(_icon(icon_path, 20))
 		row.add_child(_label("%s — %s (%dc)%s" % [obj.name, desc, off["price"], " [bought]" if bought else ""]))
 		if not bought:
 			row.add_child(_button("Buy", func(idx=i):
@@ -418,7 +476,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 	var tier_line := "%s — %d levels purchased" % [tier["name"], tier["total"]]
 	if not tier["next"].is_empty():
 		tier_line += " (%d to %s)" % [int(tier["next"]["min"]) - int(tier["total"]), tier["next"]["name"]]
-	v.add_child(_label(tier_line, 12))
+	v.add_child(_label(tier_line, 12, true))
 	var tabs := HBoxContainer.new()
 	tabs.add_child(_button("Roster", func(): term_tab = "roster"; render()))
 	tabs.add_child(_button("Hero Recruits", func(): term_tab = "recruits"; render()))
@@ -538,8 +596,8 @@ func _render_roster(v: VBoxContainer) -> void:
 		var card := PanelContainer.new()
 		var cv := _vbox(4)
 		cv.add_child(_label("%s — Lv%d %s (%s) · %d/%d HP" % [h.name, h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
-		cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12))
-		cv.add_child(_label("Power %d" % Combat.power_of(h), 12))
+		cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+		cv.add_child(_label("Power %d" % Combat.power_of(h), 12, true))
 
 		var actions := HBoxContainer.new()
 		actions.add_child(_button("Reroll Trait (60c)", func(id=h.id):
@@ -615,7 +673,12 @@ func _render_roster(v: VBoxContainer) -> void:
 				))
 			cv.add_child(erow)
 
-		card.add_child(cv)
+		var hero_row := HBoxContainer.new()
+		var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		if portrait_path != "":
+			hero_row.add_child(_icon(portrait_path, 64))
+		hero_row.add_child(cv)
+		card.add_child(hero_row)
 		v.add_child(card)
 
 	v.add_child(_hsep())
@@ -642,6 +705,7 @@ func _render_inventory(v: VBoxContainer) -> void:
 		v.add_child(_label("No unequipped items.", 12))
 	for it in unequipped_items:
 		var row := HBoxContainer.new()
+		row.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20))
 		row.add_child(_label("%s (%s) — %s" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category], Combat.describe_skill(it.kind, it.value)], 12))
 		for h2 in GameState.heroes:
 			var slot := it.slot_type()
@@ -661,6 +725,7 @@ func _render_inventory(v: VBoxContainer) -> void:
 	v.add_child(_label("Relics — %d/%d slots equipped" % [Combat.equipped_relics().size(), GameState.relic_slot_cap()], 16))
 	for r in GameState.relics:
 		var rrow := HBoxContainer.new()
+		rrow.add_child(_icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20))
 		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [r.name, r.type, r.level, r.desc()], 12))
 		rrow.add_child(_button("Unequip" if r.equipped else "Equip", func(id=r.id):
 			GameState.toggle_equip_relic(id)
