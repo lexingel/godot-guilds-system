@@ -315,6 +315,70 @@ func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	return {"name": name, "hp": hp, "dmg": dmg}
 
 
+func _first_living_monster_idx(monsters: Array) -> int:
+	for i in monsters.size():
+		if float(monsters[i]["hp"]) > 0:
+			return i
+	return -1
+
+
+func _lowest_hp_living_monster_idx(monsters: Array) -> int:
+	var best := -1
+	var best_hp := INF
+	for i in monsters.size():
+		var hp: float = float(monsters[i]["hp"])
+		if hp > 0 and hp < best_hp:
+			best_hp = hp
+			best = i
+	return best
+
+
+## Rolls the monster(s) for one encounter. "combat" nodes get 1-3 interchangeable
+## monsters with stats divided by the roll count, so total party-facing threat
+## (total HP to clear, total incoming damage per round) stays comparable to a
+## single monster regardless of count. "elite"/"boss" always get one full-
+## strength main unit (boss still rolls its GameData.BOSS_MECHANICS entry —
+## that's what makes the fight a boss fight) with a chance of 1-2 weaker
+## "combat"-tier adds alongside it, not a dilution of the main unit itself.
+func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dictionary]:
+	var monsters: Array[Dictionary] = []
+	if kind == "combat":
+		var count := 1 + randi() % 3
+		for i in count:
+			var m := gen_monster(diff, floor_idx, "combat")
+			m["hp"] = max(1, int(round(float(m["hp"]) / float(count))))
+			m["dmg"] = max(1, int(round(float(m["dmg"]) / float(count))))
+			m["max_hp"] = m["hp"]
+			m["mechanic"] = {}
+			m["is_main"] = i == 0
+			monsters.append(m)
+		return monsters
+
+	var main := gen_monster(diff, floor_idx, kind)
+	main["is_main"] = true
+	if kind == "boss":
+		var mechanic: Dictionary = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
+		if mechanic["id"] == "frenzied":
+			main["dmg"] = int(round(main["dmg"] * 1.25))
+		main["mechanic"] = mechanic
+	else:
+		main["mechanic"] = {}
+	main["max_hp"] = main["hp"]
+	monsters.append(main)
+
+	if randf() < 0.35:
+		var add_count := 1 + randi() % 2
+		for i in add_count:
+			var add := gen_monster(diff, floor_idx, "combat")
+			add["hp"] = max(1, int(round(add["hp"] * 0.6)))
+			add["dmg"] = max(1, int(round(add["dmg"] * 0.6)))
+			add["max_hp"] = add["hp"]
+			add["mechanic"] = {}
+			add["is_main"] = false
+			monsters.append(add)
+	return monsters
+
+
 ## Guild Management node display strings — a match on node id since the HTML
 ## version used a per-node JS closure that doesn't translate to static data.
 func describe_node_effect(node_id: String, level: int) -> String:
@@ -408,35 +472,30 @@ func drop_rate_bonus() -> float:
 	return relic_special_total("loot_rarity_pct") + synergy_value_for("loot_rarity_pct")
 
 
-## Turn-based combat, per-hero: a fight starts with start_combat() (one-time
-## setup: monster roll, boss mechanic, all party-wide bonus totals) and then
-## advances one round per resolve_round() call. Each living hero has their own
-## pending action (state["pending_actions"], hero_id -> "attack"/"ability"/
-## "defend", mutated between renders by GameState.set_hero_action without
-## resolving anything) and, if their role qualifies, their own Ability
-## cooldown (state["ability_cooldowns"], hero_id -> int) — no more single
-## shared party-wide action or Ability use. HP lives directly on each Hero
-## throughout (no pooling), so win/retreat/loss need no redistribution step:
-## whatever a hero's live `hp` is when the fight ends is correct as-is. The
-## monster's retaliation each round targets one random living hero; a hero
-## knocked out (hp reaches 0) sits out the rest of the fight but the party
-## keeps fighting — a loss only happens once every hero is down. State is
-## persisted by the caller (GameState.engage_node/resolve_round_now) across
-## renders in run["node_state"]["combat_state"], the same per-node-cache
-## pattern already used for shop/hazard nodes. `kind` is "combat"/"elite"/
-## "boss". Boss mechanics are rolled fresh each call (not pre-rolled/
-## previewed — a minor simplification vs. the HTML version's
-## ensureBossPreview, since this port has no pre-engage preview UI).
+## Turn-based combat, per-hero and per-monster: a fight starts with
+## start_combat() (one-time setup: monster roll via gen_monsters(), all
+## party-wide bonus totals) and then advances one round per resolve_round()
+## call. Each living hero has their own pending action (state["pending_actions"],
+## hero_id -> {"action": "attack"/"ability"/"defend", "target": monster index,
+## meaningful only for "attack"}, mutated between renders by
+## GameState.set_hero_action without resolving anything) and, if their role
+## qualifies, their own Ability cooldown (state["ability_cooldowns"], hero_id
+## -> int). HP lives directly on each Hero throughout (no pooling), so win/
+## retreat/loss need no redistribution step. Monsters live in state["monsters"]
+## (Array of {name, hp, max_hp, dmg, mechanic, is_main} — mechanic is only ever
+## non-empty on the "is_main" unit, and only for a "boss" encounter). Every
+## living monster retaliates independently each round against a random living
+## hero; a hero knocked out (hp reaches 0) sits out the rest of the fight but
+## the party keeps fighting — a loss only happens once every hero is down, a
+## win only once every monster is down. State is persisted by the caller
+## (GameState.engage_node/resolve_round_now) across renders in
+## run["node_state"]["combat_state"], the same per-node-cache pattern already
+## used for shop/hazard nodes. `kind` is "combat"/"elite"/"boss".
 func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx: int) -> Dictionary:
 	var is_boss := kind == "boss"
 	var is_elite := kind == "elite"
 	var hardcore: bool = GameState.run.get("hardcore", false)
-	var monster := gen_monster(diff, floor_idx, kind)
-	var mechanic: Dictionary = {}
-	if is_boss:
-		mechanic = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
-		if mechanic["id"] == "frenzied":
-			monster["dmg"] = int(round(monster["dmg"] * 1.25))
+	var monsters := gen_monsters(diff, floor_idx, kind)
 
 	var raw_sum := 0.0
 	for h in party:
@@ -450,16 +509,20 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard"))
 	var alpha_strikes: float = (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
-	var monster_max_hp: float = monster["hp"]
-	var m_hp: float = monster_max_hp
-
 	var log: Array[String] = []
-	log.append("A %s blocks the way (%d HP)." % [monster["name"], monster["hp"]])
-	if not mechanic.is_empty():
-		log.append("%s: %s" % [mechanic["name"], mechanic["desc"]])
+	if monsters.size() == 1:
+		log.append("A %s blocks the way (%d HP)." % [monsters[0]["name"], monsters[0]["hp"]])
+	else:
+		var names: Array[String] = []
+		for m in monsters:
+			names.append(str(m["name"]))
+		log.append("%d foes block the way: %s." % [monsters.size(), ", ".join(names)])
+	for m in monsters:
+		if not m["mechanic"].is_empty():
+			log.append("%s: %s" % [m["mechanic"]["name"], m["mechanic"]["desc"]])
 	if alpha_strikes > 0:
 		var alpha: float = team_dmg_base * alpha_strikes
-		m_hp -= alpha
+		monsters[0]["hp"] = float(monsters[0]["hp"]) - alpha
 		log.append("An opening volley lands for %d!" % round(alpha))
 
 	var ability_cooldowns: Dictionary = {}
@@ -467,14 +530,14 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	for h in party:
 		if GameData.ABILITIES.has(h.cls_id) and h.level >= 3:
 			ability_cooldowns[h.id] = 0
-		pending_actions[h.id] = "attack"
+		pending_actions[h.id] = {"action": "attack", "target": 0}
 
 	return {
 		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx, "hardcore": hardcore,
 		"is_boss": is_boss, "is_elite": is_elite,
-		"monster_name": monster["name"], "monster_hp": m_hp, "monster_max_hp": monster_max_hp,
-		"monster_dmg": float(monster["dmg"]), "mechanic": mechanic, "team_dmg_base": team_dmg_base,
-		"raw_sum": raw_sum, "first_round_bonus": first_round_bonus, "escalate": escalate,
+		"monsters": monsters, "background_idx": randi() % GameData.BATTLE_BACKGROUNDS.size(),
+		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
+		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false,
 		"round_num": 0, "log": log, "ability_cooldowns": ability_cooldowns,
 		"pending_actions": pending_actions,
@@ -486,14 +549,19 @@ const ABILITY_COOLDOWN_ROUNDS := 3
 
 ## One-line hint about the round about to happen, meant to sit above the
 ## action rows as a warning rather than only showing up in the log after the
-## fact. Boss-mechanic messages take priority; every fight (not just bosses)
-## falls back to a general heavy-hit/stacking-damage heuristic so the signal
-## isn't boss-only.
+## fact. Boss-mechanic messages (read from the main monster unit) take
+## priority; every fight (not just bosses) falls back to a general heavy-hit/
+## stacking-damage heuristic so the signal isn't boss-only.
 func describe_incoming(state: Dictionary) -> String:
-	var mechanic: Dictionary = state.get("mechanic", {})
+	var monsters: Array = state["monsters"]
+	var main_mechanic: Dictionary = {}
+	for m in monsters:
+		if bool(m.get("is_main", false)):
+			main_mechanic = m["mechanic"]
+			break
 	var next_round: int = int(state.get("round_num", 0)) + 1
-	if not mechanic.is_empty():
-		match mechanic.get("id"):
+	if not main_mechanic.is_empty():
+		match main_mechanic.get("id"):
 			"warded":
 				if next_round <= 2:
 					return "Warded — dodge won't help this round."
@@ -510,14 +578,19 @@ func describe_incoming(state: Dictionary) -> String:
 	living.assign(party.filter(func(h): return h.hp > 0))
 	if living.is_empty():
 		return ""
-	var back: float = float(state["monster_dmg"])
-	if mechanic.get("id") == "enrage" and next_round > GameData.BOSS_ENRAGE_ROUND:
-		back = back * (1.0 + 0.15 * (next_round - GameData.BOSS_ENRAGE_ROUND))
+	var worst_back := 0.0
+	for m in monsters:
+		if float(m["hp"]) <= 0:
+			continue
+		var back: float = float(m["dmg"])
+		if bool(m.get("is_main", false)) and main_mechanic.get("id") == "enrage" and next_round > GameData.BOSS_ENRAGE_ROUND:
+			back = back * (1.0 + 0.15 * (next_round - GameData.BOSS_ENRAGE_ROUND))
+		worst_back = max(worst_back, back)
 	var avg_max := 0.0
 	for h in living:
 		avg_max += max_hp(h)
 	avg_max /= living.size()
-	if avg_max > 0.0 and back / avg_max > 0.35:
+	if avg_max > 0.0 and worst_back / avg_max > 0.35:
 		return "A heavy blow is coming — consider Defending."
 	if float(state["escalate"]) > 0.0 and next_round >= 3:
 		return "Damage is stacking — every attack counts more now."
@@ -525,16 +598,16 @@ func describe_incoming(state: Dictionary) -> String:
 
 
 ## One round of an in-progress fight: applies every living hero's pending
-## action from state["pending_actions"] simultaneously, then rolls one random
-## living hero as the monster's retaliation target. Mutates `state` in place
-## and returns {"done": bool, "result": Dictionary} — result is only populated
-## once the fight ends (win/loss/retreat).
+## action from state["pending_actions"], then rolls each living monster's
+## retaliation independently against a random living hero. Mutates `state` in
+## place and returns {"done": bool, "result": Dictionary} — result is only
+## populated once the fight ends (win/loss/retreat).
 func resolve_round(state: Dictionary) -> Dictionary:
 	var log: Array[String] = state["log"]
-	var monster_name: String = state["monster_name"]
 	var party: Array[Hero] = state["party"]
 	var pending: Dictionary = state["pending_actions"]
 	var cooldowns: Dictionary = state["ability_cooldowns"]
+	var monsters: Array = state["monsters"]
 
 	var living: Array[Hero] = []
 	living.assign(party.filter(func(h): return h.hp > 0))
@@ -543,7 +616,6 @@ func resolve_round(state: Dictionary) -> Dictionary:
 	var round_num: int = state["round_num"]
 	var team_dmg_base: float = state["team_dmg_base"]
 	var raw_sum: float = state["raw_sum"]
-	var m_hp: float = state["monster_hp"]
 	var attack_mult: float = (1.0 + float(state["first_round_bonus"]) if round_num == 1 else 1.0) * (1.0 + float(state["escalate"]) * (round_num - 1))
 	var escalate_mult: float = 1.0 + float(state["escalate"]) * (round_num - 1)
 
@@ -551,12 +623,19 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		if int(cooldowns[hid]) > 0:
 			cooldowns[hid] = int(cooldowns[hid]) - 1
 
-	var attack_dmg := 0.0
-	var defending := {}   # hero_id -> true, checked against the retaliation target below
+	var defending := {}   # hero_id -> true, checked against each retaliation below
 	for h in living:
-		var action: String = pending.get(h.id, "attack")
+		var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
+		var action: String = str(act.get("action", "attack"))
 		if action == "attack":
-			attack_dmg += dmg_of(h) / raw_sum * team_dmg_base * attack_mult
+			var target_idx: int = int(act.get("target", 0))
+			if target_idx < 0 or target_idx >= monsters.size() or float(monsters[target_idx]["hp"]) <= 0:
+				target_idx = _first_living_monster_idx(monsters)
+			if target_idx < 0:
+				continue
+			var dealt: float = dmg_of(h) / raw_sum * team_dmg_base * attack_mult
+			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - dealt
+			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
 		elif action == "defend":
 			defending[h.id] = true
 		elif action == "ability" and int(cooldowns.get(h.id, 999)) == 0:
@@ -569,32 +648,38 @@ func resolve_round(state: Dictionary) -> Dictionary:
 						h2.hp = max_hp(h2)
 					log.append("The party is fully mended.")
 				"ranger":
-					state["monster_dmg"] = float(state["monster_dmg"]) * 0.6
-					log.append("The monster's strength is sapped.")
+					for m in monsters:
+						m["dmg"] = float(m["dmg"]) * 0.6
+					log.append("The enemies' strength is sapped.")
 				"warrior":
 					state["team_dmg_base"] = team_dmg_base * 1.3
 				"mage":
-					var burst: float = team_dmg_base
-					m_hp -= burst
-					log.append("Overcharge unleashes a burst for %d!" % round(burst))
+					var mage_idx := _lowest_hp_living_monster_idx(monsters)
+					if mage_idx >= 0:
+						var burst: float = team_dmg_base
+						monsters[mage_idx]["hp"] = float(monsters[mage_idx]["hp"]) - burst
+						log.append("Overcharge unleashes a burst on %s for %d!" % [monsters[mage_idx]["name"], round(burst)])
 				"rogue":
-					var dealt: float = team_dmg_base * escalate_mult * 1.9
-					m_hp -= dealt
-					log.append("Ambush lands for %d!" % round(dealt))
+					var rogue_idx := _lowest_hp_living_monster_idx(monsters)
+					if rogue_idx >= 0:
+						var dealt2: float = team_dmg_base * escalate_mult * 1.9
+						monsters[rogue_idx]["hp"] = float(monsters[rogue_idx]["hp"]) - dealt2
+						log.append("Ambush lands on %s for %d!" % [monsters[rogue_idx]["name"], round(dealt2)])
 
-	if attack_dmg > 0.0:
-		m_hp -= attack_dmg
-		log.append("Round %d — the Guild strikes for %d." % [round_num, round(attack_dmg)])
-	state["monster_hp"] = m_hp
-
-	if m_hp <= 0:
-		log.append("The %s falls!" % monster_name)
+	var any_alive := false
+	for m in monsters:
+		if float(m["hp"]) > 0:
+			any_alive = true
+			break
+	if not any_alive:
+		log.append(("The %s falls!" % monsters[0]["name"]) if monsters.size() == 1 else "All foes defeated!")
 		return _finish_combat(state, true, false)
 
-	if state["mechanic"].get("id") == "regen":
-		var regen_heal: float = round(float(state["monster_max_hp"]) * 0.08)
-		state["monster_hp"] = min(float(state["monster_max_hp"]), m_hp + regen_heal)
-		log.append("%s regenerates %d HP." % [monster_name, regen_heal])
+	for m in monsters:
+		if float(m["hp"]) > 0 and m.get("mechanic", {}).get("id") == "regen":
+			var regen_heal: float = round(float(m["max_hp"]) * 0.08)
+			m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + regen_heal)
+			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
 
 	if float(state["mend"]) > 0.0:
 		var mended := false
@@ -606,32 +691,39 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		if mended:
 			log.append("The party mends its wounds.")
 
-	var still_living: Array[Hero] = []
-	still_living.assign(party.filter(func(h): return h.hp > 0))
-	if still_living.is_empty():
+	if living.filter(func(h): return h.hp > 0).is_empty():
 		return _finish_combat(state, false, false)
-	var target: Hero = still_living[randi() % still_living.size()]
 
-	var back: float = float(state["monster_dmg"])
-	var warded: bool = state["mechanic"].get("id") == "warded" and round_num <= 2
-	if state["mechanic"].get("id") == "enrage" and round_num > GameData.BOSS_ENRAGE_ROUND:
-		back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
-	if defending.has(target.id):
-		back *= 0.5
-	if not warded and float(state["dodge"]) > 0.0 and randf() < float(state["dodge"]):
-		log.append("%s evades the %s's retaliation!" % [target.name, monster_name])
-		back = 0.0
-	if back > 0.0:
-		var dealt_back: int = int(round(back))
-		if dealt_back >= target.hp and still_living.size() == 1 and not state["wipe_guard_used"] and float(state["wipe_guard"]) > 0.0:
-			state["wipe_guard_used"] = true
-			target.hp = max(1, int(round(float(max_hp(target)) * float(state["wipe_guard"]))))
-			log.append("Last Stand! %s clings to life with %d HP." % [target.name, target.hp])
-		else:
-			target.hp = max(0, target.hp - dealt_back)
-			log.append("The %s hits %s for %d." % [monster_name, target.name, dealt_back])
-			if target.hp <= 0:
-				log.append("%s is knocked out!" % target.name)
+	for m in monsters:
+		if float(m["hp"]) <= 0:
+			continue
+		var alive_now: Array[Hero] = []
+		alive_now.assign(party.filter(func(h): return h.hp > 0))
+		if alive_now.is_empty():
+			break
+		var target: Hero = alive_now[randi() % alive_now.size()]
+		var mech: Dictionary = m.get("mechanic", {})
+		var back: float = float(m["dmg"])
+		var warded: bool = mech.get("id") == "warded" and round_num <= 2
+		if mech.get("id") == "enrage" and round_num > GameData.BOSS_ENRAGE_ROUND:
+			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
+		if defending.has(target.id):
+			back *= 0.5
+		if not warded and float(state["dodge"]) > 0.0 and randf() < float(state["dodge"]):
+			log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
+			back = 0.0
+		if back > 0.0:
+			var dealt_back: int = int(round(back))
+			var is_last_hero := alive_now.size() == 1
+			if dealt_back >= target.hp and is_last_hero and not state["wipe_guard_used"] and float(state["wipe_guard"]) > 0.0:
+				state["wipe_guard_used"] = true
+				target.hp = max(1, int(round(float(max_hp(target)) * float(state["wipe_guard"]))))
+				log.append("Last Stand! %s clings to life with %d HP." % [target.name, target.hp])
+			else:
+				target.hp = max(0, target.hp - dealt_back)
+				log.append("The %s hits %s for %d." % [m["name"], target.name, dealt_back])
+				if target.hp <= 0:
+					log.append("%s is knocked out!" % target.name)
 
 	var final_living: Array[Hero] = []
 	final_living.assign(party.filter(func(h): return h.hp > 0))
@@ -641,7 +733,11 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		return _finish_combat(state, false, false)
 
 	for h in final_living:
-		pending[h.id] = "attack"
+		var prev: Dictionary = pending.get(h.id, {})
+		var target_idx: int = int(prev.get("target", 0))
+		if target_idx < 0 or target_idx >= monsters.size() or float(monsters[target_idx]["hp"]) <= 0:
+			target_idx = max(0, _first_living_monster_idx(monsters))
+		pending[h.id] = {"action": "attack", "target": target_idx}
 
 	return {"done": false, "result": {}}
 
@@ -667,7 +763,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 			log.append("Your party is overwhelmed...")
 
 	var result := {
-		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monster_name"],
+		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monsters"][0]["name"],
 		"coin": 0, "crystal": 0, "bonus_crystal": 0, "reward_options": [],
 	}
 	if won:

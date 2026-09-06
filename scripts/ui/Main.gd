@@ -14,6 +14,7 @@ var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
 var expanded_skill_hero: String = ""
 var confirm_reset: bool = false
+var _combat_animating: bool = false
 
 
 func _ready() -> void:
@@ -50,15 +51,126 @@ func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 	return l
 
 
+## Green above half HP, gold at low-but-not-critical, red once it's dire —
+## a quick-scan cue on top of the exact numbers shown alongside every bar.
+func _hp_color(ratio: float) -> Color:
+	if ratio > 0.5:
+		return Palette.RIFT
+	elif ratio > 0.25:
+		return Palette.GOLD
+	return Palette.HAZARD
+
+
+func _hp_bar(current: int, max_val: int, width: float) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = max(1, max_val)
+	bar.value = clampi(current, 0, max_val)
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(width, 10)
+	bar.size = Vector2(width, 10)
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Palette.INK
+	bg_style.corner_radius_top_left = 4
+	bg_style.corner_radius_top_right = 4
+	bg_style.corner_radius_bottom_left = 4
+	bg_style.corner_radius_bottom_right = 4
+	bar.add_theme_stylebox_override("background", bg_style)
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = _hp_color(float(max(0, current)) / float(max(1, max_val)))
+	fill_style.corner_radius_top_left = 4
+	fill_style.corner_radius_top_right = 4
+	fill_style.corner_radius_bottom_left = 4
+	fill_style.corner_radius_bottom_right = 4
+	bar.add_theme_stylebox_override("fill", fill_style)
+	return bar
+
+
 ## Pixel-art icon at a fixed size, nearest-neighbor filtered to stay crisp
 ## (matches the HTML's image-rendering:pixelated).
 func _icon(path: String, size: int = 24) -> TextureRect:
 	var t := TextureRect.new()
 	t.texture = load(path)
 	t.custom_minimum_size = Vector2(size, size)
+	# Containers apply custom_minimum_size as actual size automatically, but a
+	# plain Control parent (the combat arena's freely-positioned sprites) does
+	# not — without this the TextureRect renders at its native texture
+	# resolution instead of the intended icon size.
+	t.size = Vector2(size, size)
+	# Godot 4's default expand_mode (KEEP_SIZE) treats the texture's native
+	# resolution as a floor on the control's effective minimum size — harmless
+	# for small square sprites (monsters, 48x48) but silently re-inflates any
+	# source image taller/wider than the requested box (hero portraits are
+	# 92x200 natively) back toward its native size, ignoring the size set
+	# above. IGNORE_SIZE lets our explicit size win regardless of source res.
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return t
+
+
+## Wraps hero/monster names in the combat log in BBCode color so the wall of
+## text reads as "who did what to whom" at a glance instead of one uniform
+## color — heroes in the accent teal, monsters in the hazard red. [lb] escapes
+## any literal '[' first so a stray bracket in a name can't be misread as a
+## tag.
+func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> String:
+	var out := line.replace("[", "[lb]")
+	for h in party:
+		if h.name != "":
+			out = out.replace(h.name, "[color=#%s]%s[/color]" % [Palette.RIFT.to_html(false), h.name])
+	for m in monsters:
+		var mname: String = str(m.get("name", ""))
+		if mname != "":
+			out = out.replace(mname, "[color=#%s]%s[/color]" % [Palette.HAZARD.to_html(false), mname])
+	return out
+
+
+func _log_richtext(lines: Array, party: Array[Hero], monsters: Array) -> RichTextLabel:
+	var rt := RichTextLabel.new()
+	rt.bbcode_enabled = true
+	rt.fit_content = true
+	rt.scroll_active = false
+	rt.add_theme_font_size_override("normal_font_size", 12)
+	var body := ""
+	for line in lines:
+		body += _colorize_log_line(str(line), party, monsters) + "\n"
+	rt.text = body
+	return rt
+
+
+## Wraps an _icon() TextureRect in a plain Control sized to match it — plain
+## Controls don't auto-layout their children the way Container nodes do, so a
+## combat animation can freely tween the wrapper's position/modulate (a lunge,
+## a hit-shake) and freely position a damage-number Label inside it, without
+## fighting whatever Container the wrapper itself sits in.
+func _wrap_icon(rect: TextureRect) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = rect.custom_minimum_size
+	c.size = rect.custom_minimum_size
+	c.add_child(rect)
+	return c
+
+
+## A soft dark ellipse under a hero/monster's feet so they read as standing on
+## the ground rather than floating over the battle background — add this to
+## `parent` (the arena) *before* the wrapper it belongs to, so it paints
+## underneath (Godot draws siblings in child order).
+func _add_ground_shadow(parent: Control, wrapper_pos: Vector2, wrapper_size: float) -> void:
+	var shadow := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.35)
+	style.corner_radius_top_left = 999
+	style.corner_radius_top_right = 999
+	style.corner_radius_bottom_left = 999
+	style.corner_radius_bottom_right = 999
+	shadow.add_theme_stylebox_override("panel", style)
+	var shadow_w: float = wrapper_size * 0.8
+	var shadow_h: float = shadow_w * 0.32
+	shadow.custom_minimum_size = Vector2(shadow_w, shadow_h)
+	shadow.size = Vector2(shadow_w, shadow_h)
+	shadow.position = Vector2(wrapper_pos.x + (wrapper_size - shadow_w) * 0.5, wrapper_pos.y + wrapper_size - shadow_h * 0.5)
+	parent.add_child(shadow)
 
 
 ## Opt-in wrapping variant for long standalone text (combat log lines,
@@ -127,7 +239,10 @@ func render() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	root.add_child(scroll)
 	var v := _vbox(14)
-	v.custom_minimum_size = Vector2(760, 0)
+	# Rift Run gets extra width for the combat arena (background + positioned
+	# sprites) sitting alongside the log/action column — every other screen
+	# stays at the original column width.
+	v.custom_minimum_size = Vector2(940 if screen == "rift_run" else 760, 0)
 	scroll.add_child(v)
 
 	match screen:
@@ -302,6 +417,69 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	))
 
 
+const MAP_NODE_COLOR := {
+	"combat": Palette.HAZARD, "elite": Palette.ELITE, "shop": Palette.GOLD,
+	"hazard": Palette.CRYSTAL, "boss": Palette.TOKEN,
+}
+const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B"}
+
+
+func _map_node_marker(kind: String, is_current: bool) -> PanelContainer:
+	var p := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = MAP_NODE_COLOR.get(kind, Palette.LINE)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_left = 6.0
+	style.content_margin_right = 6.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	if is_current:
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Palette.TEXT
+	p.add_theme_stylebox_override("panel", style)
+	var l := _label(MAP_NODE_LABEL.get(kind, "?"), 13)
+	l.add_theme_color_override("font_color", Color(0, 0, 0, 1))
+	p.add_child(l)
+	return p
+
+
+## Horizontal overview of the whole rift path — a reskin of run["layers"]/
+## ["chosen"], not new state. Resolved floors show one marker; an unresolved
+## fork shows both its options side by side. Purely informational: the actual
+## fork-choice buttons for the current position render separately, below.
+func _render_rift_map(v: VBoxContainer) -> void:
+	var layers: Array = GameState.run["layers"]
+	var chosen: Dictionary = GameState.run.get("chosen", {})
+	var pos: int = int(GameState.run["pos"])
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	for i in layers.size():
+		var opts: Array = layers[i]["options"]
+		var resolved: String = str(chosen[i]) if chosen.has(i) else (str(opts[0]) if opts.size() == 1 else "")
+		var cell := HBoxContainer.new()
+		cell.add_theme_constant_override("separation", 2)
+		if resolved != "":
+			cell.add_child(_map_node_marker(resolved, i == pos))
+		else:
+			for opt in opts:
+				cell.add_child(_map_node_marker(str(opt), i == pos))
+		row.add_child(cell)
+		if i < layers.size() - 1:
+			row.add_child(_label("-", 12, true))
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 46)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(row)
+	v.add_child(scroll)
+
+
 # ---------------- Rift Run ----------------
 func _render_rift_run(v: VBoxContainer) -> void:
 	if GameState.run.is_empty():
@@ -316,6 +494,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	v.add_child(_label("%s%s — Node %d/%d" % [diff["name"], cycle_label, pos + 1, total_layers], 18))
 	if GameState.run.get("hardcore", false):
 		v.add_child(_label("Hardcore Mode active", 12))
+	_render_rift_map(v)
 
 	var sealed = GameState.run.get("sealed")
 	if sealed != null:
@@ -370,6 +549,144 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	))
 
 
+## Frame-swaps `rect.texture` through `frames` once, a short delay between each.
+## No explicit reset to the resting pose needed — the render() call right after
+## _play_round always rebuilds portraits from the static portrait path anyway.
+func _play_frames(rect: TextureRect, frames: Array[String], frame_time: float = 0.08) -> void:
+	for path in frames:
+		rect.texture = load(path)
+		await get_tree().create_timer(frame_time).timeout
+
+
+## Fallback for the two combos with no usable AI-generated motion (Warrior's
+## hurt, Ranger's attack): a quick lunge tween on the existing static portrait.
+## Animates position:x specifically (not the whole position) so it doesn't
+## fight the idle sway's position:y loop running on the same wrapper.
+func _tween_lunge(wrapper: Control) -> void:
+	var start_x: float = wrapper.position.x
+	var tween := create_tween()
+	tween.tween_property(wrapper, "position:x", start_x + 12.0, 0.12)
+	tween.tween_property(wrapper, "position:x", start_x, 0.12)
+	await tween.finished
+
+
+func _tween_hurt(wrapper: Control) -> void:
+	var start_x: float = wrapper.position.x
+	var tween := create_tween()
+	tween.tween_property(wrapper, "modulate", Color(1, 0.4, 0.4), 0.08)
+	tween.parallel().tween_property(wrapper, "position:x", start_x - 6.0, 0.08)
+	tween.chain().tween_property(wrapper, "position:x", start_x + 6.0, 0.08)
+	tween.chain().tween_property(wrapper, "position:x", start_x, 0.08)
+	tween.parallel().tween_property(wrapper, "modulate", Color(1, 1, 1), 0.24)
+	await tween.finished
+
+
+func _flash_white(wrapper: Control) -> void:
+	var tween := create_tween()
+	tween.tween_property(wrapper, "modulate", Color(2, 2, 2), 0.06)
+	tween.tween_property(wrapper, "modulate", Color(1, 1, 1), 0.18)
+	await tween.finished
+
+
+## A gentle, endless breathing/sway loop for a hero or monster wrapper so the
+## arena doesn't look frozen between rounds — a small vertical bob rather than
+## a scale pulse (scaling pixel art by fractional amounts shimmers/aliases
+## even with nearest-neighbor filtering, which read as distracting). Uses
+## `position` offsets relative to the wrapper's own resting position, and only
+## the Y axis, so it doesn't fight the lunge/hurt tweens' X-axis moves (those
+## are momentary and both resolve back to the same resting spot). Self-cleans
+## up: bind_node() means Godot kills the tween automatically once render()
+## frees this wrapper on the next state change, no manual bookkeeping needed.
+func _start_idle_sway(wrapper: Control) -> void:
+	var rest := wrapper.position
+	var tween := create_tween()
+	tween.bind_node(wrapper)
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.tween_property(wrapper, "position:y", rest.y - 3.0, 1.4)
+	tween.tween_property(wrapper, "position:y", rest.y, 1.4)
+
+
+func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_color_override("font_color", color)
+	l.position = Vector2(wrapper.custom_minimum_size.x * 0.5 - 10, -6)
+	wrapper.add_child(l)
+	var tween := create_tween()
+	tween.tween_property(l, "position:y", l.position.y - 24, 0.6)
+	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
+	await tween.finished
+	l.queue_free()
+
+
+## Plays out one round's visible consequences on the *live* nodes from the
+## current render() pass (portraits/wrappers built moments ago in
+## _render_combat_node) before the caller calls render() again, which would
+## otherwise tear all of this down mid-animation. Diffs hp before/after
+## GameState.resolve_round_now() to figure out who acted and who got hit,
+## since Combat.resolve_round doesn't return that directly.
+func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary) -> void:
+	var party: Array[Hero] = state["party"]
+	var pending: Dictionary = state["pending_actions"].duplicate(true)
+	var hp_before: Dictionary = {}
+	for h in party:
+		hp_before[h.id] = h.hp
+	var monsters: Array = state["monsters"]
+	var monster_hp_before: Array = []
+	for m in monsters:
+		monster_hp_before.append(float(m["hp"]))
+
+	GameState.resolve_round_now()
+
+	for h in party:
+		if h.hp <= 0 or not hero_wrappers.has(h.id):
+			continue
+		var act: Dictionary = pending.get(h.id, {})
+		var action: String = str(act.get("action", "attack"))
+		if action == "attack" or action == "ability":
+			var frames := GameData.hero_anim_frames(h.cls_id, "attack")
+			if not frames.is_empty() and hero_rects.has(h.id):
+				await _play_frames(hero_rects[h.id], frames)
+			else:
+				await _tween_lunge(hero_wrappers[h.id])
+
+	for i in monsters.size():
+		if not monster_wrappers.has(i):
+			continue
+		var dmg: float = float(monster_hp_before[i]) - float(monsters[i]["hp"])
+		if dmg > 0:
+			if monster_rects.has(i):
+				await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "hurt"))
+			await _flash_white(monster_wrappers[i])
+			await _spawn_damage_number(monster_wrappers[i], "-%d" % int(round(dmg)), Palette.HAZARD)
+
+	await get_tree().create_timer(0.15).timeout
+
+	# Every monster still alive after the heroes' attack phase takes its
+	# retaliation swing now. Whether a given swing actually landed or was
+	# dodged is a per-hero log detail, not tracked per-attacking-monster here
+	# — a deliberate simplification, since Combat.resolve_round doesn't return
+	# which monster hit which hero. Every surviving monster just animates its
+	# attack, and separately whichever hero(es) actually lost HP show their
+	# own hurt reaction right after.
+	for i in monsters.size():
+		if float(monsters[i]["hp"]) > 0 and monster_rects.has(i):
+			await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "attack"))
+
+	for h in party:
+		var before: int = int(hp_before.get(h.id, h.hp))
+		var dmg2: int = before - h.hp
+		if dmg2 > 0 and hero_wrappers.has(h.id):
+			var frames := GameData.hero_anim_frames(h.cls_id, "hurt")
+			if not frames.is_empty() and hero_rects.has(h.id):
+				await _play_frames(hero_rects[h.id], frames)
+			else:
+				await _tween_hurt(hero_wrappers[h.id])
+			await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
+
+
 func _render_combat_node(v: VBoxContainer) -> void:
 	var ns: Dictionary = GameState.run.get("node_state", {})
 	var kind := GameState.current_node_kind()
@@ -386,37 +703,211 @@ func _render_combat_node(v: VBoxContainer) -> void:
 
 	if ns.has("combat_state") and not ns.has("result"):
 		var state: Dictionary = ns["combat_state"]
-		var monster_row := HBoxContainer.new()
-		monster_row.add_child(_icon(GameData.sprite_for_monster(str(state["monster_name"])), 28))
-		monster_row.add_child(_label("%s — %d/%d HP" % [str(state["monster_name"]), max(0, int(state["monster_hp"])), int(state["monster_max_hp"])], 14))
-		v.add_child(monster_row)
+		var monsters: Array = state["monsters"]
+		var party: Array[Hero] = state["party"]
+
+		const ARENA_SIZE := Vector2(420, 460)
+		var arena := Control.new()
+		arena.custom_minimum_size = ARENA_SIZE
+
+		# Two stacked zones (monsters up top, heroes below) rather than one
+		# continuous scene — each gets its own copy of the same background
+		# image, scaled independently to its own band, with a visible divider
+		# between them. Tried a single unified background first; monsters
+		# there kept reading as floating regardless of position/shadows, so
+		# this gives each side its own clearly-grounded little stage instead.
+		var bg_path: String = GameData.BATTLE_BACKGROUNDS[int(state["background_idx"]) % GameData.BATTLE_BACKGROUNDS.size()]
+		var divider_h := 9.0
+		var monster_zone_h := (ARENA_SIZE.y - divider_h) / 2.0
+		var hero_zone_h := monster_zone_h
+		var hero_zone_y := monster_zone_h + divider_h
+
+		var monster_bg := TextureRect.new()
+		monster_bg.texture = load(bg_path)
+		monster_bg.custom_minimum_size = Vector2(ARENA_SIZE.x, monster_zone_h)
+		monster_bg.size = Vector2(ARENA_SIZE.x, monster_zone_h)
+		monster_bg.stretch_mode = TextureRect.STRETCH_SCALE
+		monster_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		arena.add_child(monster_bg)
+
+		var divider := ColorRect.new()
+		divider.color = Color(Palette.RIFT.r, Palette.RIFT.g, Palette.RIFT.b, 0.45)
+		divider.position = Vector2(0, monster_zone_h)
+		divider.size = Vector2(ARENA_SIZE.x, divider_h)
+		arena.add_child(divider)
+
+		var hero_bg := TextureRect.new()
+		hero_bg.texture = load(bg_path)
+		hero_bg.custom_minimum_size = Vector2(ARENA_SIZE.x, hero_zone_h)
+		hero_bg.size = Vector2(ARENA_SIZE.x, hero_zone_h)
+		hero_bg.position = Vector2(0, hero_zone_y)
+		hero_bg.stretch_mode = TextureRect.STRETCH_SCALE
+		hero_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		arena.add_child(hero_bg)
+
+		# Monster sprites in a row across the top zone, mirroring the hero row
+		# in the bottom zone — one per living or fallen monster (fallen ones
+		# stay visible, dimmed). Every monster sprite has real attack/hurt
+		# animation frames (GameData.monster_anim_frames), played by
+		# _play_round the same way hero frames are. Every wrapper still gets
+		# the idle sway so the arena isn't static between rounds. Horizontal
+		# spacing is computed from the actual monster count (1-3 here) rather
+		# than a fixed step, so it doesn't crowd/overlap regardless of how many
+		# showed up this fight. Size scales with the monster's own max HP
+		# (clamped) so a boss/elite main unit reads as a bigger threat than a
+		# weak add or a divided-stats regular mob, rather than every monster
+		# being a uniform size.
+		var monster_wrappers: Dictionary = {}
+		var monster_rects: Dictionary = {}
+		var monster_left := 24.0
+		var monster_band := ARENA_SIZE.x - 48.0
+		var monster_step: float = monster_band / max(1, monsters.size())
+		var monster_top := monster_zone_h * 0.35
+		for i in monsters.size():
+			var m: Dictionary = monsters[i]
+			var m_x: float = monster_left + i * monster_step
+			var m_size: int = clampi(56 + int(float(m["max_hp"]) / 2.5), 60, 100)
+			var m_rect := _icon(GameData.sprite_for_monster(str(m["name"])), m_size)
+			var m_wrapper := _wrap_icon(m_rect)
+			m_wrapper.position = Vector2(m_x, monster_top)
+			_add_ground_shadow(arena, m_wrapper.position, float(m_size))
+			if float(m["hp"]) <= 0:
+				m_wrapper.modulate = Color(0.35, 0.35, 0.35, 0.7)
+			else:
+				_start_idle_sway(m_wrapper)
+			arena.add_child(m_wrapper)
+			monster_wrappers[i] = m_wrapper
+			monster_rects[i] = m_rect
+			var m_name_label := _label(str(m["name"]), 11, true)
+			m_name_label.position = Vector2(m_x - 10, monster_top + m_size + 4)
+			arena.add_child(m_name_label)
+			var m_bar := _hp_bar(max(0, int(m["hp"])), int(m["max_hp"]), 70.0)
+			m_bar.position = Vector2(m_x - 5, monster_top + m_size + 20)
+			arena.add_child(m_bar)
+
+		# Hero portraits in a row along the bottom, living heroes only, spaced
+		# from the actual living count for the same reason as the monsters above.
+		var hero_wrappers: Dictionary = {}
+		var hero_rects: Dictionary = {}
+		var living_heroes: Array[Hero] = []
+		living_heroes.assign(party.filter(func(h): return h.hp > 0))
+		var hero_left := 24.0
+		var hero_band := ARENA_SIZE.x - 48.0
+		var hero_step: float = hero_band / max(1, living_heroes.size())
+		var hero_size := 84.0
+		# Name + HP bar sit above the head as a nameplate rather than below
+		# the feet -- a below-sprite placement overlapped the body, since the
+		# portrait's visible content doesn't end at a predictable fixed offset
+		# the way the normalized monster sprites do.
+		var hero_top: float = hero_zone_y + hero_zone_h * 0.2
+		var row_i := 0
+		for h in party:
+			if h.hp <= 0:
+				continue
+			var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+			if portrait_path == "":
+				continue
+			var h_x: float = hero_left + row_i * hero_step
+			var h_rect := _icon(portrait_path, int(hero_size))
+			var h_wrapper := _wrap_icon(h_rect)
+			h_wrapper.position = Vector2(h_x, hero_top)
+			_add_ground_shadow(arena, h_wrapper.position, hero_size)
+			arena.add_child(h_wrapper)
+			_start_idle_sway(h_wrapper)
+			hero_wrappers[h.id] = h_wrapper
+			hero_rects[h.id] = h_rect
+			var h_name_label := _label(h.name, 11, true)
+			h_name_label.position = Vector2(h_x - 10, hero_top - 32)
+			arena.add_child(h_name_label)
+			var h_bar := _hp_bar(h.hp, Combat.max_hp(h), 70.0)
+			h_bar.position = Vector2(h_x - 5, hero_top - 16)
+			arena.add_child(h_bar)
+			row_i += 1
+
+		# A border frame overlay, drawn last so it sits on top of everything
+		# else — gives the arena a clear "this is the screen" edge instead of
+		# the background art just stopping with nothing marking the boundary.
+		var frame := PanelContainer.new()
+		var frame_style := StyleBoxFlat.new()
+		frame_style.bg_color = Color(0, 0, 0, 0)
+		frame_style.border_width_left = 3
+		frame_style.border_width_top = 3
+		frame_style.border_width_right = 3
+		frame_style.border_width_bottom = 3
+		frame_style.border_color = Palette.LINE
+		frame.add_theme_stylebox_override("panel", frame_style)
+		frame.custom_minimum_size = ARENA_SIZE
+		frame.size = ARENA_SIZE
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		arena.add_child(frame)
+
+		var left := _vbox(8)
+		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
 		var incoming := Combat.describe_incoming(state)
 		if incoming != "":
-			v.add_child(_label(incoming, 12, true))
-		var log_box := _vbox(2)
-		for line in state["log"]:
-			log_box.add_child(_wrap_label(str(line), 12))
-		v.add_child(log_box)
+			left.add_child(_label(incoming, 12, true))
+		left.add_child(_log_richtext(state["log"], party, monsters))
 
-		var party: Array[Hero] = state["party"]
+		# The action controls live in their own bordered panel (reusing the
+		# Theme's existing PanelContainer style, same as every card elsewhere
+		# in the game) so it reads as a compact battle menu rather than more
+		# loose page content, with smaller text/buttons than the rest of the
+		# UI to fit 1-4 heroes' worth of controls without sprawling.
+		var menu_panel := PanelContainer.new()
+		# Explicit flat style rather than the shared Theme's texture-based
+		# panel — that StyleBoxTexture is tuned for the fixed-size cards it's
+		# used on elsewhere and rendered as a wrong, over-bright color at this
+		# panel's size (variable height depending on party size).
+		var menu_style := StyleBoxFlat.new()
+		menu_style.bg_color = Palette.SURFACE2
+		menu_style.border_width_left = 1
+		menu_style.border_width_top = 1
+		menu_style.border_width_right = 1
+		menu_style.border_width_bottom = 1
+		menu_style.border_color = Palette.LINE
+		menu_style.corner_radius_top_left = 8
+		menu_style.corner_radius_top_right = 8
+		menu_style.corner_radius_bottom_right = 8
+		menu_style.corner_radius_bottom_left = 8
+		menu_style.content_margin_left = 10.0
+		menu_style.content_margin_top = 10.0
+		menu_style.content_margin_right = 10.0
+		menu_style.content_margin_bottom = 10.0
+		menu_panel.add_theme_stylebox_override("panel", menu_style)
+		var menu := _vbox(6)
+		menu_panel.add_child(menu)
+
 		var pending: Dictionary = state["pending_actions"]
 		var cooldowns: Dictionary = state["ability_cooldowns"]
 		for h in party:
-			var hero_row := HBoxContainer.new()
+			var hero_block := _vbox(2)
 			if h.hp <= 0:
-				hero_row.add_child(_label("%s — down for the count" % h.name, 12, true))
-				v.add_child(hero_row)
+				hero_block.add_child(_label("%s — down for the count" % h.name, 11, true))
+				menu.add_child(hero_block)
 				continue
-			hero_row.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
-			var current: String = pending.get(h.id, "attack")
+			var hero_top_row := HBoxContainer.new()
+			hero_top_row.add_child(_label(h.name, 12))
+			hero_top_row.add_child(_hp_bar(h.hp, Combat.max_hp(h), 80.0))
+			hero_top_row.add_child(_label("%d/%d" % [h.hp, Combat.max_hp(h)], 10, true))
+			hero_block.add_child(hero_top_row)
+			var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
+			var current_action: String = str(act.get("action", "attack"))
+			var current_target: int = int(act.get("target", 0))
 
-			var attack_btn := _button("Attack", func(hid=h.id):
-				GameState.set_hero_action(hid, "attack")
-				render()
-			)
-			attack_btn.toggle_mode = true
-			attack_btn.button_pressed = current == "attack"
-			hero_row.add_child(attack_btn)
+			var action_row := HBoxContainer.new()
+			action_row.add_theme_constant_override("separation", 4)
+			for i in monsters.size():
+				if float(monsters[i]["hp"]) <= 0:
+					continue
+				var atk_btn := _button(str(monsters[i]["name"]), func(hid=h.id, ti=i):
+					GameState.set_hero_action(hid, "attack", ti)
+					render()
+				)
+				atk_btn.add_theme_font_size_override("font_size", 11)
+				atk_btn.toggle_mode = true
+				atk_btn.button_pressed = current_action == "attack" and current_target == i
+				action_row.add_child(atk_btn)
 
 			if cooldowns.has(h.id):
 				var cd: int = int(cooldowns[h.id])
@@ -426,31 +917,59 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					GameState.set_hero_action(hid, "ability")
 					render()
 				)
+				ab_btn.add_theme_font_size_override("font_size", 11)
 				ab_btn.toggle_mode = true
-				ab_btn.button_pressed = current == "ability"
+				ab_btn.button_pressed = current_action == "ability"
 				ab_btn.disabled = cd > 0
-				hero_row.add_child(ab_btn)
+				action_row.add_child(ab_btn)
 
 			var defend_btn := _button("Defend", func(hid=h.id):
 				GameState.set_hero_action(hid, "defend")
 				render()
 			)
+			defend_btn.add_theme_font_size_override("font_size", 11)
 			defend_btn.toggle_mode = true
-			defend_btn.button_pressed = current == "defend"
-			hero_row.add_child(defend_btn)
+			defend_btn.button_pressed = current_action == "defend"
+			action_row.add_child(defend_btn)
 
-			v.add_child(hero_row)
+			hero_block.add_child(action_row)
+			menu.add_child(hero_block)
+			if h != party[party.size() - 1]:
+				menu.add_child(_hsep())
 
 		var bottom_row := HBoxContainer.new()
 		bottom_row.add_child(_primary_button("Resolve Round", func():
-			GameState.resolve_round_now()
+			# Guard against a second click firing while the first is still
+			# mid-animation — that would start a second _play_round on the same
+			# state, and whichever finishes first would render() (destroying
+			# the portrait nodes) out from under the other's suspended awaits.
+			if _combat_animating:
+				return
+			_combat_animating = true
+			# resolve_round_now() emits state_changed partway through, which is
+			# normally connected straight to render() — that would tear down
+			# the very portrait nodes _play_round is mid-animation on. Disconnect
+			# for the duration and render once explicitly when it's done.
+			if GameState.state_changed.is_connected(render):
+				GameState.state_changed.disconnect(render)
+			await _play_round(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects)
+			if not GameState.state_changed.is_connected(render):
+				GameState.state_changed.connect(render)
+			_combat_animating = false
 			render()
 		))
 		bottom_row.add_child(_button("Retreat", func():
 			GameState.combat_retreat()
 			render()
 		))
-		v.add_child(bottom_row)
+		menu.add_child(bottom_row)
+		left.add_child(menu_panel)
+
+		var split := HBoxContainer.new()
+		split.add_theme_constant_override("separation", 12)
+		split.add_child(left)
+		split.add_child(arena)
+		v.add_child(split)
 		return
 
 	var result: Dictionary = ns["result"]
@@ -458,10 +977,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	monster_row.add_child(_icon(GameData.sprite_for_monster(str(result["monster_name"])), 28))
 	monster_row.add_child(_label(str(result["monster_name"]), 14))
 	v.add_child(monster_row)
-	var log_box := _vbox(2)
-	for line in result["log"]:
-		log_box.add_child(_wrap_label(str(line), 12))
-	v.add_child(log_box)
+	var log_party: Array[Hero] = GameState.current_party()
+	v.add_child(_log_richtext(result["log"], log_party, [{"name": result["monster_name"]}]))
 
 	if result["won"]:
 		var bonus_crystal: int = result.get("bonus_crystal", 0)

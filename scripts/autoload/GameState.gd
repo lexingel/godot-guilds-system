@@ -429,13 +429,15 @@ func engage_node() -> void:
 ## Sets one hero's pending action for the round about to resolve — a pure
 ## "what will they do" toggle, no combat math, mirrors how e.g.
 ## choose_node_type() just records a choice.
-func set_hero_action(hero_id: String, action: String) -> void:
+## `target` is a monster index into state["monsters"], meaningful only for
+## "attack" — ignored (but still stored, harmlessly) for "ability"/"defend".
+func set_hero_action(hero_id: String, action: String, target: int = 0) -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
 	if state.is_empty():
 		return
 	var pending: Dictionary = state["pending_actions"]
-	pending[hero_id] = action
+	pending[hero_id] = {"action": action, "target": target}
 	save()
 	state_changed.emit()
 

@@ -335,6 +335,17 @@ const ITEM_CATEGORY_ICON_PATH := {
 	"focus": "res://assets/icons/item_focus.png",
 }
 const CHEST_ICON_PATH := "res://assets/dungeon/chest_icon.png"
+## AI-generated battle backdrops — one picked at random per encounter (stored
+## on the combat state at start_combat so it doesn't change across renders of
+## the same fight), not tied to monster type, matching "different rifts are
+## different worlds" — the backdrop varies independent of what you're fighting.
+const BATTLE_BACKGROUNDS: Array[String] = [
+	"res://assets/battle/bg_dungeon.png",
+	"res://assets/battle/bg_forest.png",
+	"res://assets/battle/bg_cavern.png",
+	"res://assets/battle/bg_ruins.png",
+	"res://assets/battle/bg_volcanic.png",
+]
 const CURRENCY_ICON_PATH := {
 	"coins": "res://assets/ui/icon_coins.png",
 	"crystals": "res://assets/ui/icon_crystals.png",
@@ -347,6 +358,27 @@ const HERO_PORTRAIT_PATH := {
 	"cleric": "res://assets/heroes/cleric.png",
 	"rogue": "res://assets/heroes/rogue.png",
 }
+## AI-generated combat animation frames (5 each: frame 0 is the static portrait,
+## 1-4 are the motion). Only combos that actually produced usable motion exist —
+## Warrior/hurt and Ranger/attack never did after 3 rounds of prompt iteration,
+## so those two intentionally have no frames; callers fall back to tweening the
+## static portrait instead of frame-swapping when this returns [].
+const HERO_ANIM_COMBOS := {
+	"warrior": ["attack"],
+	"ranger": ["hurt"],
+	"mage": ["attack", "hurt"],
+	"cleric": ["attack", "hurt"],
+	"rogue": ["attack", "hurt"],
+}
+
+
+static func hero_anim_frames(role: String, action: String) -> Array[String]:
+	var frames: Array[String] = []
+	if not HERO_ANIM_COMBOS.get(role, []).has(action):
+		return frames
+	for i in 5:
+		frames.append("res://assets/heroes/anim/%s_%s_%d.png" % [role, action, i])
+	return frames
 const MONSTER_SPRITE_PATH := {
 	"goblin": "res://assets/monsters/goblin.png",
 	"orc": "res://assets/monsters/orc.png",
@@ -364,20 +396,34 @@ const MONSTER_NAME_SPRITE := {
 }
 
 
-## Any monster name gets a sprite: direct name match first, else a stable
-## hash-based fallback across all 8 sprites — matches the HTML's
+## Any monster name resolves to a sprite key: direct name match first, else a
+## stable hash-based fallback across all 8 sprites — matches the HTML's
 ## spriteForMonster, so even Boss names (never in MONSTER_NAME_SPRITE) get a
 ## deterministic sprite instead of no icon at all.
-static func sprite_for_monster(monster_name: String) -> String:
+static func monster_sprite_key(monster_name: String) -> String:
 	if MONSTER_NAME_SPRITE.has(monster_name):
-		var key: String = MONSTER_NAME_SPRITE[monster_name]
-		return MONSTER_SPRITE_PATH[key]
+		return MONSTER_NAME_SPRITE[monster_name]
 	var keys: Array = MONSTER_SPRITE_PATH.keys()
 	var hash_sum := 0
 	for c in monster_name:
 		hash_sum += c.unicode_at(0)
-	var key: String = keys[hash_sum % keys.size()]
-	return MONSTER_SPRITE_PATH[key]
+	return keys[hash_sum % keys.size()]
+
+
+static func sprite_for_monster(monster_name: String) -> String:
+	return MONSTER_SPRITE_PATH[monster_sprite_key(monster_name)]
+
+
+## Combat animation frames for a monster (5 each, same shape as
+## hero_anim_frames) — all 8 monster sprites got usable attack/hurt motion on
+## the first PixelLab pass (unlike heroes, no gaps here), so this always
+## returns a populated array for any of the 8 known sprite keys.
+static func monster_anim_frames(monster_name: String, action: String) -> Array[String]:
+	var key := monster_sprite_key(monster_name)
+	var frames: Array[String] = []
+	for i in 5:
+		frames.append("res://assets/monsters/anim/%s_%s_%d.png" % [key, action, i])
+	return frames
 
 
 static func find_class(pool_id: String) -> Dictionary:
