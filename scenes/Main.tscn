@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cvxg8n7q2f4wj"]
 
 [ext_resource type="Script" path="res://scripts/ui/Main.gd" id="1"]
-[ext_resource type="Theme" path="res://theme/guild_theme.tres" id="2"]
+[ext_resource type="Theme" uid="uid://6cplcuy1r006" path="res://theme/guild_theme.tres" id="2"]
 
 [node name="Main" type="Control"]
 layout_mode = 3

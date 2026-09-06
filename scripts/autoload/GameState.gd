@@ -192,6 +192,27 @@ func reset() -> void:
 	run = {}
 
 
+## Only run's primitive/ID-based fields survive a save — node_state can hold
+## live Hero/Item/Relic references mid-node (an in-progress fight, rolled shop
+## offers), which JSON can't round-trip. Rather than building a full recursive
+## serializer for that, node_state is always saved empty: on load, the run
+## resumes at the right floor/party, but whatever single node was mid-progress
+## just re-rolls fresh, the same as arriving at it for the first time (every
+## node renderer already has that "nothing started yet" branch).
+func _run_for_save() -> Dictionary:
+	if run.is_empty():
+		return {}
+	return {
+		"diff_id": run.get("diff_id", ""), "endless": run.get("endless", false),
+		"cycle": run.get("cycle", 0), "hardcore": run.get("hardcore", false),
+		"layers": run.get("layers", []), "pos": run.get("pos", 0),
+		"chosen": run.get("chosen", {}), "hero_ids": run.get("hero_ids", []),
+		"shield": run.get("shield", 0), "boss_rounds": run.get("boss_rounds", 0),
+		"node_kind": run.get("node_kind", ""), "node_state": {},
+		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
+	}
+
+
 func save() -> void:
 	var data := {
 		"guild_name": guild_name, "next_id": next_id, "coins": coins,
@@ -204,6 +225,8 @@ func save() -> void:
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"best_endless_cycle": best_endless_cycle,
 		"triage_used_this_cycle": triage_used_this_cycle,
+		"pending_shop_boost": pending_shop_boost,
+		"run": _run_for_save(),
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -233,6 +256,27 @@ func load_save() -> bool:
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
+	pending_shop_boost = data.get("pending_shop_boost", false)
+
+	var run_data: Dictionary = data.get("run", {})
+	if run_data.is_empty():
+		run = {}
+	else:
+		# JSON round-trips Dictionary keys as strings, but `chosen` is keyed
+		# by int rift position everywhere it's read (current_node_kind() etc).
+		var chosen_raw: Dictionary = run_data.get("chosen", {})
+		var chosen_fixed: Dictionary = {}
+		for k in chosen_raw:
+			chosen_fixed[int(k)] = chosen_raw[k]
+		run = {
+			"diff_id": run_data.get("diff_id", ""), "endless": run_data.get("endless", false),
+			"cycle": run_data.get("cycle", 0), "hardcore": run_data.get("hardcore", false),
+			"layers": run_data.get("layers", []), "pos": run_data.get("pos", 0),
+			"chosen": chosen_fixed, "hero_ids": run_data.get("hero_ids", []),
+			"shield": run_data.get("shield", 0), "boss_rounds": run_data.get("boss_rounds", 0),
+			"node_kind": run_data.get("node_kind", ""), "node_state": {},
+			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
+		}
 	return true
 
 
@@ -382,17 +426,23 @@ func engage_node() -> void:
 	state_changed.emit()
 
 
-## Advances the in-progress fight in run["node_state"]["combat_state"] by one
-## round for the player-picked `action` ("attack"/"ability"/"defend"/"retreat").
-## Once Combat.resolve_round reports the fight done, applies the same roster-
-## level bookkeeping engage_node used to do in one shot (coin/crystal gain,
-## boss_rounds tracking, hardcore hero removal on a real loss — not a retreat).
-func combat_action(action: String) -> void:
+## Sets one hero's pending action for the round about to resolve — a pure
+## "what will they do" toggle, no combat math, mirrors how e.g.
+## choose_node_type() just records a choice.
+func set_hero_action(hero_id: String, action: String) -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
 	if state.is_empty():
 		return
-	var outcome := Combat.resolve_round(state, action)
+	var pending: Dictionary = state["pending_actions"]
+	pending[hero_id] = action
+	save()
+	state_changed.emit()
+
+
+func _apply_combat_outcome(outcome: Dictionary) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var state: Dictionary = ns.get("combat_state", {})
 	if outcome["done"]:
 		var result: Dictionary = outcome["result"]
 		var kind := current_node_kind()
@@ -410,6 +460,29 @@ func combat_action(action: String) -> void:
 	run["node_state"] = ns
 	save()
 	state_changed.emit()
+
+
+## Resolves every living hero's pending action for one round (see
+## Combat.resolve_round). Once it reports the fight done, applies the same
+## roster-level bookkeeping engage_node used to do in one shot (coin/crystal
+## gain, boss_rounds tracking, hardcore hero removal on a real loss — not a
+## retreat).
+func resolve_round_now() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var state: Dictionary = ns.get("combat_state", {})
+	if state.is_empty():
+		return
+	_apply_combat_outcome(Combat.resolve_round(state))
+
+
+## Ends the current fight by player choice, forfeiting rewards — heroes keep
+## whatever HP they currently have, no one is downed or removed.
+func combat_retreat() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var state: Dictionary = ns.get("combat_state", {})
+	if state.is_empty():
+		return
+	_apply_combat_outcome(Combat.retreat_combat(state))
 
 
 func pick_combat_reward(idx: int) -> void:

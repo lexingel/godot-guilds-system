@@ -1,10 +1,8 @@
-# Guilds System — Godot vertical slice
+# Guilds System — Godot port
 
 A from-scratch GDScript port of `guild-system.html`'s core loop, per the plan
-recorded in `dreamy-munching-whistle.md`. First-run untested by me (I have no
-way to launch or screenshot the Godot editor) — open `project.godot` in
-Godot 4.x and press F5. Expect to hit a few GDScript syntax/type errors on
-first run; report the exact error text back and they can be fixed quickly.
+recorded in `dreamy-munching-whistle.md`. Open `project.godot` in Godot 4.x
+and press F5.
 
 ## Scope
 
@@ -13,30 +11,40 @@ first run; report the exact error text back and they can be fixed quickly.
 skill trees, relic types/specials/domains/synergy, item categories/slots
 (including dual-wield + rank-scaled gear slots), hero stat math
 (`Combat.gd`), hero/relic/item generation, skill learning + respec, trait
-reroll/scrub, relic upgrades + equip, item equip, basic recruitment.
+reroll/scrub, relic upgrades + equip, item equip, recruitment, Guild
+Management's 20-node upgrade tree, Medical Bay, the Champion system, Endless
+Rift, Rift Detectors, Hardcore Mode, hero Evolution, boss mechanics (Enraged/
+Warded/Regenerating/Frenzied), Elite encounters, and branching rift paths
+(forked node choices per floor).
 
-**Screens:** Onboard → Rift Hall (Lesser Rift only) → Party Assembly (pick
-heroes + starting relic) → Rift Run (combat/shop/hazard/boss nodes, reward
-choice) → Guild Terminal (Roster + Hero Recruits tabs, with an Inventory
-section for unequipped items/relics).
+**Combat** is turn-based: a fight resolves one round at a time, the player
+picking Attack / Ability / Defend / Retreat each round (`Combat.gd`'s
+`start_combat`/`resolve_round`) instead of the whole fight auto-resolving —
+class abilities are a single use per fight on a cooldown, not a one-time
+pre-fight choice.
 
-**Deferred** (per the plan): Guild Management's 20-node upgrade tree and
-everything gated behind it (all such values are fixed at their
-zero-upgrade default — see the comments atop `GameState.gd`/`Combat.gd`),
-Medical Bay, Champion system, Endless Rift, Rift Detectors, Hardcore Mode,
-hero Evolution, the Guild Tier banner.
+**Screens:** Onboard → Rift Hall (Lesser + Endless Rift) → Party Assembly
+(pick heroes, starting relic, Hardcore toggle) → Rift Run (combat/shop/
+hazard/elite/boss nodes, forked paths, reward choice) → Guild Terminal
+(Roster, Hero Recruits, Guild Management, Medical Bay tabs, with an
+Inventory section for unequipped items/relics/detectors).
 
-**Additional simplifications made during the port** (beyond what the
-approved plan called out), for the user's awareness:
-- Rift paths are a straight floor sequence (60% combat / 20% shop / 20%
-  hazard, last floor always Boss) instead of the HTML version's branching
-  "layers" with forks — the branching path is a presentation-layer detail,
-  not part of the data/combat architecture this slice is meant to prove.
-- Boss `mechanics` (Enraged/Warded/Regenerating/Frenzied) are ported as data
-  in `GameData.BOSS_MECHANICS` but not yet wired into `Combat.resolve_combat`
-  — every Boss fight currently behaves like a scaled-up regular fight.
-- Elite encounters are not included (only regular/Boss combat nodes).
-- No custom Theme/fonts yet — default Godot theme, functional over pretty.
+**Visuals:** a hand-authored `Theme` (`theme/guild_theme.tres`) applies a
+recolored version of a free CraftPix UI kit (`assets/ui/`) — panels/buttons
+as `StyleBoxTexture`s hue-shifted to the palette in `scripts/ui/Palette.gd`,
+which mirrors the original HTML prototype's CSS custom properties. Hero
+portraits (`assets/heroes/`) come from a separate free character pack,
+background-keyed and cropped. Monster sprites/dungeon art are their own
+mismatched sources by design — different rifts represent different worlds,
+so that variety is intentional, not a gap.
+
+**Known gaps:**
+- An in-progress run only persists its stable fields (floor, party, chosen
+  path) across an app restart — whatever single node was mid-progress (a
+  fight, a shop browse) re-rolls fresh rather than resuming mid-round. See
+  the comment atop `GameState._run_for_save()`.
+- `export_presets.cfg` has a Web preset scaffolded but untested — needs
+  Godot's Web export templates installed and a manual export/serve check.
 
 ## Project layout
 See the "Project structure" section of the Godot-scaffolding plan in

@@ -78,8 +78,46 @@ func _button(text: String, cb: Callable) -> Button:
 	return b
 
 
+## The single highest-intent action on a screen (Engage, Continue, Recruit,
+## Start Run, Confirm Reset) — reuses the theme's own hover/pressed textures
+## (already the rift-teal accent) in the button's resting state instead of
+## drawing new art, so it reads as "the one to click" without a second Theme.
+func _primary_button(text: String, cb: Callable) -> Button:
+	var b := _button(text, cb)
+	var hover_style := get_theme_stylebox("hover", "Button")
+	var pressed_style := get_theme_stylebox("pressed", "Button")
+	b.add_theme_stylebox_override("normal", hover_style)
+	b.add_theme_stylebox_override("hover", hover_style)
+	b.add_theme_stylebox_override("focus", hover_style)
+	b.add_theme_stylebox_override("pressed", pressed_style)
+	b.add_theme_color_override("font_color", get_theme_color("font_pressed_color", "Button"))
+	b.add_theme_color_override("font_hover_color", get_theme_color("font_pressed_color", "Button"))
+	return b
+
+
 func _hsep() -> HSeparator:
 	return HSeparator.new()
+
+
+## A small colored heading strip for a card that needs a title set apart from
+## its body text (e.g. a Roster hero card) — a plain StyleBoxFlat rather than
+## extracting the UI pack's header-bar art, since that art comes fused to a
+## specific panel body with baked-in text and isn't reusable standalone.
+func _title_strip(text: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE3
+	style.content_margin_left = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	p.add_theme_stylebox_override("panel", style)
+	var l := _label(text, 14)
+	l.add_theme_color_override("font_color", Palette.RIFT)
+	p.add_child(l)
+	return p
 
 
 func render() -> void:
@@ -103,7 +141,16 @@ func render() -> void:
 func _topbar(v: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
-	row.add_child(_label("%s — %d Coins · %d Crystals · %d Tokens" % [GameState.guild_name, GameState.coins, GameState.crystals, GameState.tokens], 16))
+	row.add_child(_label("%s —" % GameState.guild_name, 16))
+	for entry in [
+		[GameData.CURRENCY_ICON_PATH["coins"], GameState.coins],
+		[GameData.CURRENCY_ICON_PATH["crystals"], GameState.crystals],
+		[GameData.CURRENCY_ICON_PATH["tokens"], GameState.tokens],
+	]:
+		var stat_row := HBoxContainer.new()
+		stat_row.add_child(_icon(entry[0], 18))
+		stat_row.add_child(_label(str(entry[1]), 16))
+		row.add_child(stat_row)
 	v.add_child(row)
 	v.add_child(_hsep())
 
@@ -135,7 +182,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		var cv := _vbox(4)
 		var did: String = d["id"]
 		cv.add_child(_label("%s — Floors %d · Rec. Power %d" % [d["name"], d["floors"], d["rec_power"]], 16))
-		cv.add_child(_button("Assemble Party", func(diff_id=did):
+		cv.add_child(_primary_button("Assemble Party", func(diff_id=did):
 			pending_party.clear()
 			screen = "party_assembly"
 			_pending_diff_id = diff_id
@@ -148,7 +195,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var endless_card := PanelContainer.new()
 	var ecv := _vbox(4)
 	ecv.add_child(_label("Endless Rift — scales forever. Best cycle: %d" % GameState.best_endless_cycle, 16))
-	ecv.add_child(_button("Assemble Party", func():
+	ecv.add_child(_primary_button("Assemble Party", func():
 		pending_party.clear()
 		screen = "party_assembly"
 		_pending_diff_id = "endless"
@@ -236,7 +283,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	v.add_child(hc_toggle)
 
 	v.add_child(_hsep())
-	v.add_child(_button("Enter the Rift", func():
+	v.add_child(_primary_button("Enter the Rift", func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -331,7 +378,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	if not ns.has("combat_state") and not ns.has("result"):
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
-		v.add_child(_button("Engage", func():
+		v.add_child(_primary_button("Engage", func():
 			GameState.engage_node()
 			render()
 		))
@@ -343,35 +390,67 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		monster_row.add_child(_icon(GameData.sprite_for_monster(str(state["monster_name"])), 28))
 		monster_row.add_child(_label("%s — %d/%d HP" % [str(state["monster_name"]), max(0, int(state["monster_hp"])), int(state["monster_max_hp"])], 14))
 		v.add_child(monster_row)
-		v.add_child(_label("Party — %d/%d HP" % [int(state["hp_pool"]), int(state["total_max_at_start"])], 14, true))
+		var incoming := Combat.describe_incoming(state)
+		if incoming != "":
+			v.add_child(_label(incoming, 12, true))
 		var log_box := _vbox(2)
 		for line in state["log"]:
 			log_box.add_child(_wrap_label(str(line), 12))
 		v.add_child(log_box)
 
-		var action_row := HBoxContainer.new()
-		action_row.add_child(_button("Attack", func():
-			GameState.combat_action("attack")
-			render()
-		))
-		var ability_id: String = state["ability_id"]
-		if ability_id != "":
-			var ab: Dictionary = GameData.ABILITIES[ability_id]
-			var ab_btn := _button(str(ab["name"]), func():
-				GameState.combat_action("ability")
+		var party: Array[Hero] = state["party"]
+		var pending: Dictionary = state["pending_actions"]
+		var cooldowns: Dictionary = state["ability_cooldowns"]
+		for h in party:
+			var hero_row := HBoxContainer.new()
+			if h.hp <= 0:
+				hero_row.add_child(_label("%s — down for the count" % h.name, 12, true))
+				v.add_child(hero_row)
+				continue
+			hero_row.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
+			var current: String = pending.get(h.id, "attack")
+
+			var attack_btn := _button("Attack", func(hid=h.id):
+				GameState.set_hero_action(hid, "attack")
 				render()
 			)
-			ab_btn.disabled = not bool(state["ability_available"])
-			action_row.add_child(ab_btn)
-		action_row.add_child(_button("Defend", func():
-			GameState.combat_action("defend")
+			attack_btn.toggle_mode = true
+			attack_btn.button_pressed = current == "attack"
+			hero_row.add_child(attack_btn)
+
+			if cooldowns.has(h.id):
+				var cd: int = int(cooldowns[h.id])
+				var ab: Dictionary = GameData.ABILITIES[h.cls_id]
+				var ab_label := "%s (%d)" % [str(ab["name"]), cd] if cd > 0 else str(ab["name"])
+				var ab_btn := _button(ab_label, func(hid=h.id):
+					GameState.set_hero_action(hid, "ability")
+					render()
+				)
+				ab_btn.toggle_mode = true
+				ab_btn.button_pressed = current == "ability"
+				ab_btn.disabled = cd > 0
+				hero_row.add_child(ab_btn)
+
+			var defend_btn := _button("Defend", func(hid=h.id):
+				GameState.set_hero_action(hid, "defend")
+				render()
+			)
+			defend_btn.toggle_mode = true
+			defend_btn.button_pressed = current == "defend"
+			hero_row.add_child(defend_btn)
+
+			v.add_child(hero_row)
+
+		var bottom_row := HBoxContainer.new()
+		bottom_row.add_child(_primary_button("Resolve Round", func():
+			GameState.resolve_round_now()
 			render()
 		))
-		action_row.add_child(_button("Retreat", func():
-			GameState.combat_action("retreat")
+		bottom_row.add_child(_button("Retreat", func():
+			GameState.combat_retreat()
 			render()
 		))
-		v.add_child(action_row)
+		v.add_child(bottom_row)
 		return
 
 	var result: Dictionary = ns["result"]
@@ -406,7 +485,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				btn.icon = load(icon_path)
 				v.add_child(btn)
 		else:
-			v.add_child(_button("Continue", func():
+			v.add_child(_primary_button("Continue", func():
 				if is_boss:
 					GameState.seal_rift()
 				else:
@@ -479,6 +558,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 	v.add_child(_label(tier_line, 12, true))
 	var tabs := HBoxContainer.new()
 	tabs.add_child(_button("Roster", func(): term_tab = "roster"; render()))
+	tabs.add_child(_button("Inventory", func(): term_tab = "inventory"; render()))
 	tabs.add_child(_button("Hero Recruits", func(): term_tab = "recruits"; render()))
 	tabs.add_child(_button("Medical Bay", func(): term_tab = "medical"; render()))
 	tabs.add_child(_button("Guild Management", func(): term_tab = "management"; render()))
@@ -487,6 +567,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 	v.add_child(_hsep())
 
 	match term_tab:
+		"inventory": _render_inventory(v)
 		"recruits": _render_recruits(v)
 		"medical": _render_medical_bay(v)
 		"management": _render_management(v)
@@ -499,7 +580,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		var rank := GameData.find_rank(h.rank)
 		var row := HBoxContainer.new()
 		row.add_child(_label("%s — Rank %s %s (%dc)" % [h.name, h.rank, h.cls_id.capitalize(), int(rank["cost"])]))
-		row.add_child(_button("Recruit", func(id=h.id):
+		row.add_child(_primary_button("Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
@@ -595,7 +676,8 @@ func _render_roster(v: VBoxContainer) -> void:
 	for h in GameState.heroes:
 		var card := PanelContainer.new()
 		var cv := _vbox(4)
-		cv.add_child(_label("%s — Lv%d %s (%s) · %d/%d HP" % [h.name, h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
+		cv.add_child(_title_strip(h.name))
+		cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
 		cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 		cv.add_child(_label("Power %d" % Combat.power_of(h), 12, true))
 
@@ -680,9 +762,6 @@ func _render_roster(v: VBoxContainer) -> void:
 		hero_row.add_child(cv)
 		card.add_child(hero_row)
 		v.add_child(card)
-
-	v.add_child(_hsep())
-	_render_inventory(v)
 
 
 func _first_free_slot(h: Hero, slot_type: String) -> int:

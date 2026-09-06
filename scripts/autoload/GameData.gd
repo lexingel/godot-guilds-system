@@ -335,6 +335,11 @@ const ITEM_CATEGORY_ICON_PATH := {
 	"focus": "res://assets/icons/item_focus.png",
 }
 const CHEST_ICON_PATH := "res://assets/dungeon/chest_icon.png"
+const CURRENCY_ICON_PATH := {
+	"coins": "res://assets/ui/icon_coins.png",
+	"crystals": "res://assets/ui/icon_crystals.png",
+	"tokens": "res://assets/ui/icon_tokens.png",
+}
 const HERO_PORTRAIT_PATH := {
 	"warrior": "res://assets/heroes/warrior.png",
 	"ranger": "res://assets/heroes/ranger.png",
