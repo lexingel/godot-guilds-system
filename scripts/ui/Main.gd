@@ -1131,10 +1131,10 @@ func _render_camp(v: VBoxContainer) -> void:
 	# banners (Inventory), the campfire (Hero Recruits), and the lighter tan
 	# tent on the right (Guild Management). Rift Hall has no matching prop in
 	# the scene, so it keeps its own generated portal icon.
-	# hit_rect is the generous, easy-to-click area; crop_rect is the prop's
-	# own tight bounds *in the source 320x200 camp_bg.png* — used to cut out
-	# just that object so it can visually pop on hover instead of the whole
-	# padded hitbox flashing.
+	# hit_rect is the generous, easy-to-click area; native_rect is the prop's
+	# own tight bounds *in the source 320x200 camp_bg.png* — used only to
+	# place the hover glow over the object's actual silhouette rather than
+	# the whole padded hitbox.
 	var area_entries := [
 		["Medical Bay", Rect2(14, 132, 171, 98), Rect2(18, 80, 72, 46), func(): term_tab = "medical"; render()],
 		["Roster", Rect2(182, 99, 132, 60), Rect2(83, 58, 61, 36), func(): term_tab = "roster"; render()],
@@ -1142,12 +1142,17 @@ func _render_camp(v: VBoxContainer) -> void:
 		["Hero Recruits", Rect2(314, 193, 94, 79), Rect2(143, 113, 45, 48), func(): term_tab = "recruits"; render()],
 		["Guild Management", Rect2(459, 105, 117, 76), Rect2(210, 62, 54, 45), func(): term_tab = "management"; render()],
 	]
+	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
 	for entry in area_entries:
 		var label_text: String = entry[0]
 		var rect: Rect2 = entry[1]
-		var crop_rect: Rect2 = entry[2]
+		var native_rect: Rect2 = entry[2]
 		var cb: Callable = entry[3]
-		var hotspot := _camp_area_hotspot(rect, crop_rect, label_text, cb)
+		var glow_rect := Rect2(
+			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
+			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
+		)
+		var hotspot := _camp_area_hotspot(rect, glow_rect, label_text, cb)
 		hotspot.position = rect.position
 		camp.add_child(hotspot)
 
@@ -1159,16 +1164,30 @@ func _render_camp(v: VBoxContainer) -> void:
 
 
 ## An invisible clickable region over a prop already drawn in the background
-## art. Rather than flashing a highlight box over the (generously padded,
-## easy-to-click) hit area, this cuts the prop's own pixels out of the same
-## background texture via an AtlasTexture and overlays that exact patch in
-## place — invisible at rest (it's pixel-identical to the art beneath it),
-## popping into a slight zoom on hover so the object itself looks clickable
-## instead of a rectangle appearing over it.
-func _camp_area_hotspot(hit_rect: Rect2, crop_rect: Rect2, label_text: String, cb: Callable) -> Control:
+## art — the prop itself stays untouched (no duplicated/cropped copy of it,
+## which read as an awkward seam when scaled). Hovering instead fades in a
+## soft blurred glow (StyleBoxFlat's built-in shadow, not a hard-edged box)
+## around the prop's own silhouette bounds, like it's catching firelight.
+func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, cb: Callable) -> Control:
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(hit_rect.size.x, hit_rect.size.y + 16)
 	wrap.size = Vector2(hit_rect.size.x, hit_rect.size.y + 16)
+
+	var glow_style := StyleBoxFlat.new()
+	glow_style.bg_color = Color(0, 0, 0, 0)
+	glow_style.shadow_color = Color(1.0, 0.85, 0.55, 0.0)
+	glow_style.shadow_size = 16
+	glow_style.corner_radius_top_left = 10
+	glow_style.corner_radius_top_right = 10
+	glow_style.corner_radius_bottom_left = 10
+	glow_style.corner_radius_bottom_right = 10
+
+	var glow := Panel.new()
+	glow.add_theme_stylebox_override("panel", glow_style)
+	glow.position = glow_rect.position - hit_rect.position
+	glow.size = glow_rect.size
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wrap.add_child(glow)
 
 	var btn := Button.new()
 	btn.flat = true
@@ -1180,37 +1199,15 @@ func _camp_area_hotspot(hit_rect: Rect2, crop_rect: Rect2, label_text: String, c
 		btn.add_theme_stylebox_override(style_name, clear_style)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn.pressed.connect(cb)
-	wrap.add_child(btn)
-
-	# The crop, positioned/sized to line up exactly with the same spot in the
-	# full background (same 320x200 -> 700x340 scale the main bg is stretched
-	# by), offset into this wrapper's local space.
-	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
-	var patch_pos: Vector2 = Vector2(crop_rect.position.x * camp_scale.x, crop_rect.position.y * camp_scale.y) - hit_rect.position
-	var patch_size: Vector2 = Vector2(crop_rect.size.x * camp_scale.x, crop_rect.size.y * camp_scale.y)
-
-	var atlas := AtlasTexture.new()
-	atlas.atlas = load(GameData.CAMP_BG)
-	atlas.region = crop_rect
-
-	var patch := TextureRect.new()
-	patch.texture = atlas
-	patch.position = patch_pos
-	patch.size = patch_size
-	patch.pivot_offset = patch_size / 2.0
-	patch.stretch_mode = TextureRect.STRETCH_SCALE
-	patch.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	patch.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	wrap.add_child(patch)
-
 	btn.mouse_entered.connect(func():
 		var tw := create_tween()
-		tw.tween_property(patch, "scale", Vector2(1.1, 1.1), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.0, 0.6, 0.15)
 	)
 	btn.mouse_exited.connect(func():
 		var tw := create_tween()
-		tw.tween_property(patch, "scale", Vector2(1, 1), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.6, 0.0, 0.15)
 	)
+	wrap.add_child(btn)
 
 	var caption := _label(label_text, 11, true)
 	caption.position = Vector2(0, hit_rect.size.y + 1)
