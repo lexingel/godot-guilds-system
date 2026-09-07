@@ -16,6 +16,8 @@ var selected_hero_id: String = ""
 var expanded_skill_hero: String = ""
 var confirm_reset: bool = false
 var _combat_animating: bool = false
+var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
+var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 
 
 func _ready() -> void:
@@ -110,6 +112,25 @@ func _icon(path: String, size: int = 24) -> TextureRect:
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return t
+
+
+## A wide atmospheric header image (stretched to fill, corners rounded to
+## match the game's card language) sitting above a screen's actual content —
+## purely decorative, no clickable elements on it.
+func _banner(path: String, width: float, height: float) -> Control:
+	var clip := Control.new()
+	clip.custom_minimum_size = Vector2(width, height)
+	clip.size = Vector2(width, height)
+	clip.clip_contents = true
+	var t := TextureRect.new()
+	t.texture = load(path)
+	t.custom_minimum_size = Vector2(width, height)
+	t.size = Vector2(width, height)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	clip.add_child(t)
+	return clip
 
 
 ## Wraps hero/monster names in the combat log in BBCode color so the wall of
@@ -1094,7 +1115,12 @@ func _render_terminal(v: VBoxContainer) -> void:
 		_render_camp(v)
 		return
 
-	v.add_child(_button("< Back to Camp", func(): term_tab = "camp"; render()))
+	v.add_child(_button("< Back to Camp", func():
+		term_tab = "camp"
+		medical_picker_bed = -1
+		mgmt_branch = ""
+		render()
+	))
 	v.add_child(_hsep())
 	match term_tab:
 		"inventory": _render_inventory(v)
@@ -1281,57 +1307,153 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
-	var wounded: Array[Hero] = []
-	wounded.assign(GameState.heroes.filter(func(h): return h.hp < Combat.max_hp(h)))
-	if wounded.is_empty():
-		v.add_child(_label("No wounded heroes.", 12))
-	for h in wounded:
-		var row := HBoxContainer.new()
-		var status := "Bedded, healing fast" if (h.bedded and h.is_downed()) else ("Downed — recovering" if h.is_downed() else "Wounded")
-		row.add_child(_label("%s — %d/%d HP (%s)" % [h.name, h.hp, Combat.max_hp(h), status]))
-		if h.is_downed() and not h.bedded:
-			row.add_child(_button("Assign to Bed", func(id=h.id):
-				GameState.assign_to_bed(id)
+
+	var scene_size := Vector2(700, 200)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
+
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.MEDICAL_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+
+	var bedded: Array[Hero] = []
+	bedded.assign(GameState.heroes.filter(func(h): return h.is_downed() and h.bedded))
+	var waiting: Array[Hero] = []
+	waiting.assign(GameState.heroes.filter(func(h): return h.is_downed() and not h.bedded))
+
+	var cap := GameState.medical_bed_cap()
+	var bed_w := 64.0
+	var bed_h := 40.0
+	var gap: float = (scene_size.x - cap * bed_w) / (cap + 1)
+	var now_ms := int(Time.get_unix_time_from_system() * 1000)
+	for i in cap:
+		var bx: float = gap + i * (bed_w + gap)
+		var by := scene_size.y - bed_h - 24.0
+		var bed_rect := _icon(GameData.BED_ICON, int(bed_w))
+		var bed_wrap := _wrap_icon(bed_rect)
+		bed_wrap.position = Vector2(bx, by)
+
+		if i < bedded.size():
+			var h: Hero = bedded[i]
+			bed_rect.modulate = Color(0.8, 0.85, 1.0)
+			scene.add_child(bed_wrap)
+			var secs := max(0, int((h.downed_until - now_ms) / 1000.0))
+			var name_label := _label(h.name, 10, true)
+			name_label.position = Vector2(bx - 10, by + bed_h + 2)
+			scene.add_child(name_label)
+			var time_label := _label("%ds" % secs, 10, true)
+			time_label.position = Vector2(bx - 10, by + bed_h + 16)
+			scene.add_child(time_label)
+		else:
+			scene.add_child(bed_wrap)
+			var bed_btn := _button("", func(idx=i):
+				medical_picker_bed = -1 if medical_picker_bed == idx else idx
 				render()
-			))
-		v.add_child(row)
+			)
+			bed_btn.flat = true
+			bed_btn.custom_minimum_size = Vector2(bed_w, bed_h)
+			bed_btn.size = Vector2(bed_w, bed_h)
+			bed_btn.position = Vector2(bx, by)
+			var clear_style := StyleBoxEmpty.new()
+			for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+				bed_btn.add_theme_stylebox_override(style_name, clear_style)
+			bed_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			scene.add_child(bed_btn)
+			var empty_label := _label("Empty", 10, true)
+			empty_label.position = Vector2(bx + 6, by + bed_h + 2)
+			scene.add_child(empty_label)
+
+	v.add_child(scene)
+
+	if medical_picker_bed >= 0 and medical_picker_bed < cap:
+		var picker := _vbox(4)
+		if waiting.is_empty():
+			picker.add_child(_label("No downed heroes waiting for a bed.", 12, true))
+		else:
+			picker.add_child(_label("Assign to bed %d:" % (medical_picker_bed + 1), 12, true))
+			for h in waiting:
+				var row := HBoxContainer.new()
+				row.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)]))
+				row.add_child(_primary_button("Assign", func(id=h.id):
+					GameState.assign_to_bed(id)
+					medical_picker_bed = -1
+					render()
+				))
+				picker.add_child(row)
+		v.add_child(picker)
+
+	var resting: Array[Hero] = []
+	resting.assign(GameState.heroes.filter(func(h): return h.hp < Combat.max_hp(h) and not h.is_downed()))
+	if not resting.is_empty():
+		v.add_child(_label("Recovering (no bed needed):", 12, true))
+		for h in resting:
+			v.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
 
 
 func _render_management(v: VBoxContainer) -> void:
+	if mgmt_branch == "":
+		_render_management_hub(v)
+		return
+
+	var branch: Dictionary = {}
 	for b in GameData.BRANCHES:
-		v.add_child(_label("%s — %s" % [b["name"], b["sub"]], 16))
-		for n in b["nodes"]:
-			var key := "%s.%s" % [b["id"], n["id"]]
-			var cur := GameState.lvl(key)
-			var maxed := cur >= int(n["max"])
-			var row := _vbox(2)
-			var cur_desc := Combat.describe_node_effect(n["id"], cur)
-			var line := "%s (Lvl %d/%d) — %s" % [n["name"], cur, n["max"], cur_desc]
-			if not maxed:
-				line += " → %s" % Combat.describe_node_effect(n["id"], cur + 1)
-			row.add_child(_label(line, 12))
-			var brow := HBoxContainer.new()
-			if not maxed:
-				var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
-				brow.add_child(_button("Upgrade (%dcr)" % cost, func(k=key):
-					var err := GameState.upgrade_node(k)
-					if err != "":
-						push_warning(err)
-					render()
-				))
-			var cap: Dictionary = n.get("cap", {})
-			if not cap.is_empty() and maxed and not GameState.has_cap(key):
-				brow.add_child(_button("%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
-					var err := GameState.buy_cap(k)
-					if err != "":
-						push_warning(err)
-					render()
-				))
-			elif not cap.is_empty() and GameState.has_cap(key):
-				brow.add_child(_label("%s unlocked" % cap["name"], 12))
-			row.add_child(brow)
-			v.add_child(row)
-		v.add_child(_hsep())
+		if b["id"] == mgmt_branch:
+			branch = b
+	v.add_child(_button("< Back to Branches", func(): mgmt_branch = ""; render()))
+	v.add_child(_label("%s — %s" % [branch["name"], branch["sub"]], 16))
+	for n in branch["nodes"]:
+		_render_management_node(v, branch, n)
+
+
+## The 4 Guild Management branches as clickable stations on a war-room scene
+## (a soldier's kit for Operations, gears/blueprints for Infrastructure, a
+## coin pouch/ledger for Logistics, a spellbook/crystal for Research) — same
+## background-prop-as-button + hover-glow pattern as the camp screen.
+func _render_management_hub(v: VBoxContainer) -> void:
+	var scene_size := Vector2(700, 340)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
+
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.MANAGEMENT_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+
+	# hit_rect (a generous quadrant of the round table, easy to click) +
+	# native_rect (the station's own tight prop bounds in the source 320x200
+	# art — helmet+sword north, gears+blueprint east, coin pouch+ledger
+	# south, crystal+book west — used only to place the hover glow).
+	var branch_entries := [
+		["ops", "Operations", Rect2(180, 0, 280, 115), Rect2(97, 7, 96, 45)],
+		["infra", "Infrastructure", Rect2(460, 60, 240, 170), Rect2(223, 52, 62, 71)],
+		["log", "Logistics", Rect2(180, 210, 280, 130), Rect2(102, 133, 121, 34)],
+		["res", "Research", Rect2(0, 60, 220, 170), Rect2(30, 50, 57, 67)],
+	]
+	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	for entry in branch_entries:
+		var bid: String = entry[0]
+		var label_text: String = entry[1]
+		var hit_rect: Rect2 = entry[2]
+		var native_rect: Rect2 = entry[3]
+		var glow_rect := Rect2(
+			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
+			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
+		)
+		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, func(id=bid):
+			mgmt_branch = id
+			render()
+		)
+		hotspot.position = hit_rect.position
+		scene.add_child(hotspot)
+
+	v.add_child(scene)
 
 	var reset_btn := _button("Click again to confirm reset" if confirm_reset else "Reset Guild", func():
 		if not confirm_reset:
@@ -1339,7 +1461,7 @@ func _render_management(v: VBoxContainer) -> void:
 			render()
 			get_tree().create_timer(3.0).timeout.connect(func():
 				confirm_reset = false
-				if screen == "terminal" and term_tab == "management":
+				if screen == "terminal" and term_tab == "management" and mgmt_branch == "":
 					render()
 			)
 			return
@@ -1352,7 +1474,42 @@ func _render_management(v: VBoxContainer) -> void:
 	v.add_child(reset_btn)
 
 
+## One upgrade node's display line + Upgrade/capstone buttons.
+func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary) -> void:
+	var key := "%s.%s" % [branch["id"], n["id"]]
+	var cur := GameState.lvl(key)
+	var maxed := cur >= int(n["max"])
+	var row := _vbox(2)
+	var cur_desc := Combat.describe_node_effect(n["id"], cur)
+	var line := "%s (Lvl %d/%d) — %s" % [n["name"], cur, n["max"], cur_desc]
+	if not maxed:
+		line += " → %s" % Combat.describe_node_effect(n["id"], cur + 1)
+	row.add_child(_label(line, 12))
+	var brow := HBoxContainer.new()
+	if not maxed:
+		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
+		brow.add_child(_button("Upgrade (%dcr)" % cost, func(k=key):
+			var err := GameState.upgrade_node(k)
+			if err != "":
+				push_warning(err)
+			render()
+		))
+	var cap: Dictionary = n.get("cap", {})
+	if not cap.is_empty() and maxed and not GameState.has_cap(key):
+		brow.add_child(_button("%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
+			var err := GameState.buy_cap(k)
+			if err != "":
+				push_warning(err)
+			render()
+		))
+	elif not cap.is_empty() and GameState.has_cap(key):
+		brow.add_child(_label("%s unlocked" % cap["name"], 12))
+	row.add_child(brow)
+	v.add_child(row)
+
+
 func _render_roster(v: VBoxContainer) -> void:
+	v.add_child(_banner(GameData.ROSTER_BG, 760, 190))
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes recruited yet."))
 		return

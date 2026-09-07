@@ -358,6 +358,10 @@ const CREST_PATH: Array[String] = [
 	"res://assets/camp/crest_7.png", "res://assets/camp/crest_8.png",
 ]
 const CAMP_BG := "res://assets/camp/camp_bg.png"
+const MEDICAL_BG := "res://assets/screens/medical_bg.png"
+const ROSTER_BG := "res://assets/screens/roster_bg.png"
+const MANAGEMENT_BG := "res://assets/screens/management_bg.png"
+const BED_ICON := "res://assets/screens/bed_icon.png"
 const CAMP_HUB_ICON_PATH := {
 	"roster": "res://assets/camp/icon_roster.png",
 	"inventory": "res://assets/camp/icon_inventory.png",
