@@ -66,6 +66,8 @@ const RELIC_SPECIALS := [
 	{"kind": "boss_alpha_strike", "value": 0.3, "domain": "damage", "label": "+30% opening volley vs Bosses"},
 	{"kind": "loot_rarity_pct", "value": 0.06, "domain": "droprate", "label": "+6% odds toward Rare/Epic loot"},
 	{"kind": "counter_pct", "value": 0.15, "domain": "chance", "label": "+15% chance to counter-attack when evading or taking a heavy hit"},
+	{"kind": "cooldown_shave_pct", "value": 0.25, "domain": "chance", "label": "+25% chance to shave 1 round off every ability cooldown when evading or taking a heavy hit"},
+	{"kind": "kill_shield_pct", "value": 0.2, "domain": "defense", "label": "On a kill, shields the lowest-HP ally for 20% of their max HP"},
 ]
 
 const TYPE_DOMAIN := {
@@ -116,6 +118,22 @@ static func find_incense(incense_id: String) -> Dictionary:
 	for i in INCENSE_TYPES:
 		if i["id"] == incense_id:
 			return i
+	return {}
+
+## Runestones: bought with Coins like Incense, but socketed permanently into
+## one equipped Item instead of consumed at Party Assembly — the bonus stacks
+## on top of that item's own stat for as long as it stays equipped. "category"
+## matches Item.slot_type() ("weapon"/"gear") so a runestone only fits the
+## matching socket.
+const RUNESTONE_TYPES := [
+	{"id": "impact", "name": "Runestone of Impact", "category": "weapon", "kind": "dmg_pct", "value": 0.08, "cost": 60, "desc": "Weapon socket: +8% damage"},
+	{"id": "aegis", "name": "Runestone of Aegis", "category": "gear", "kind": "hazard_guard_pct", "value": 0.08, "cost": 60, "desc": "Gear socket: -8% hazard severity"},
+]
+
+static func find_runestone(runestone_id: String) -> Dictionary:
+	for r in RUNESTONE_TYPES:
+		if r["id"] == runestone_id:
+			return r
 	return {}
 
 # Classes agile/skilled enough to dual-wield get 2 weapon slots instead of 1 —

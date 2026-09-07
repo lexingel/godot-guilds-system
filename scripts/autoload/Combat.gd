@@ -445,8 +445,11 @@ func relic_special_total(kind: String) -> float:
 func hero_item_total(h: Hero, kind: String) -> float:
 	var s := 0.0
 	for it in GameState.items:
-		if it.equipped_to == h.id and it.kind == kind:
-			s += it.value
+		if it.equipped_to == h.id:
+			if it.kind == kind:
+				s += it.value
+			if it.socketed_kind == kind:
+				s += it.socketed_value
 	return s
 
 
@@ -510,6 +513,8 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + synergy_value_for("dodge_pct"))
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard"))
 	var counter: float = min(0.6, relic_special_total("counter_pct"))
+	var cooldown_shave: float = min(0.75, relic_special_total("cooldown_shave_pct"))
+	var kill_shield: float = min(0.6, relic_special_total("kill_shield_pct"))
 	var alpha_strikes: float = (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
 	var log: Array[String] = []
@@ -542,6 +547,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
+		"cooldown_shave": cooldown_shave, "kill_shield": kill_shield, "hero_shields": {},
 		"round_num": 0, "log": log, "ability_cooldowns": ability_cooldowns,
 		"pending_actions": pending_actions,
 	}
@@ -614,6 +620,9 @@ func resolve_round(state: Dictionary) -> Dictionary:
 
 	var living: Array[Hero] = []
 	living.assign(party.filter(func(h): return h.hp > 0))
+	var monsters_hp_before: Array[float] = []
+	for m in monsters:
+		monsters_hp_before.append(float(m["hp"]))
 
 	state["round_num"] = int(state["round_num"]) + 1
 	var round_num: int = state["round_num"]
@@ -669,6 +678,23 @@ func resolve_round(state: Dictionary) -> Dictionary:
 						monsters[rogue_idx]["hp"] = float(monsters[rogue_idx]["hp"]) - dealt2
 						log.append("Ambush lands on %s for %d!" % [monsters[rogue_idx]["name"], round(dealt2)])
 
+	if float(state["kill_shield"]) > 0.0:
+		var got_kill := false
+		for i in monsters.size():
+			if monsters_hp_before[i] > 0.0 and float(monsters[i]["hp"]) <= 0.0:
+				got_kill = true
+		if got_kill:
+			var alive_for_shield: Array[Hero] = living.filter(func(h): return h.hp > 0)
+			if not alive_for_shield.is_empty():
+				var lowest: Hero = alive_for_shield[0]
+				for h2 in alive_for_shield:
+					if h2.hp < lowest.hp:
+						lowest = h2
+				var shields: Dictionary = state["hero_shields"]
+				var amt: float = max_hp(lowest) * float(state["kill_shield"])
+				shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
+				log.append("The Lantern grants %s a %d-point shield." % [lowest.name, int(round(amt))])
+
 	var any_alive := false
 	for m in monsters:
 		if float(m["hp"]) > 0:
@@ -723,6 +749,18 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
 			m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
 			log.append("%s counters, striking %s for %d!" % [target.name, m["name"], counter_dmg])
+		if (evaded or heavy_hit) and float(state["cooldown_shave"]) > 0.0 and randf() < float(state["cooldown_shave"]):
+			for hid in cooldowns.keys():
+				if int(cooldowns[hid]) > 0:
+					cooldowns[hid] = int(cooldowns[hid]) - 1
+			log.append("The Chronometer hums — abilities cool faster!")
+		var shields: Dictionary = state["hero_shields"]
+		if back > 0.0 and float(shields.get(target.id, 0.0)) > 0.0:
+			var have: float = float(shields[target.id])
+			var absorbed: float = min(have, back)
+			shields[target.id] = have - absorbed
+			back -= absorbed
+			log.append("%s's shield absorbs %d damage." % [target.name, int(round(absorbed))])
 		if back > 0.0:
 			var dealt_back: int = int(round(back))
 			var is_last_hero := alive_now.size() == 1

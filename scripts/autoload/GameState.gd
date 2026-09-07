@@ -22,6 +22,7 @@ var items: Array[Item] = []
 var detectors: Array[Dictionary] = []   # [{"id":..., "tier": "lesser"|"greater"|"ascendant"}]
 var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
 var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
+var runestones: Array[Dictionary] = []    # owned, unsocketed: [{"id":..., "runestone_id": "impact"|"aegis"}]
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
@@ -188,6 +189,7 @@ func reset() -> void:
 	detectors = []
 	consumables = []
 	active_incense = {}
+	runestones = []
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
@@ -227,7 +229,7 @@ func save() -> void:
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
 		"detectors": detectors,
-		"consumables": consumables, "active_incense": active_incense,
+		"consumables": consumables, "active_incense": active_incense, "runestones": runestones,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"best_endless_cycle": best_endless_cycle,
@@ -260,6 +262,7 @@ func load_save() -> bool:
 	detectors.assign(data.get("detectors", []))
 	consumables.assign(data.get("consumables", []))
 	active_incense = data.get("active_incense", {})
+	runestones.assign(data.get("runestones", []))
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
 	var champ_data = data.get("current_champion")
@@ -871,6 +874,56 @@ func use_incense(consumable_id: String) -> void:
 			save()
 			state_changed.emit()
 			return
+
+
+func buy_runestone(runestone_id: String) -> String:
+	var def := GameData.find_runestone(runestone_id)
+	if def.is_empty():
+		return ""
+	var cost := int(def["cost"])
+	if coins < cost:
+		return "Not enough Coins"
+	coins -= cost
+	runestones.append({"id": "rs" + str(next_id), "runestone_id": runestone_id})
+	next_id += 1
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Sockets a runestone permanently into one equipped item — its bonus stacks
+## on top of the item's own stat for as long as it stays equipped. One socket
+## per item (no replacing an already-socketed one), and only into the
+## matching slot_type (weapon runestones into weapon items, gear runestones
+## into armor/focus items).
+func socket_runestone(runestone_consumable_id: String, item_id: String) -> String:
+	var owned: Dictionary = {}
+	for r in runestones:
+		if r["id"] == runestone_consumable_id:
+			owned = r
+			break
+	if owned.is_empty():
+		return ""
+	var def := GameData.find_runestone(str(owned["runestone_id"]))
+	if def.is_empty():
+		return ""
+	var target: Item = null
+	for it in items:
+		if it.id == item_id:
+			target = it
+			break
+	if not target:
+		return ""
+	if target.slot_type() != str(def["category"]):
+		return "Wrong socket type"
+	if target.socketed_kind != "":
+		return "Already socketed"
+	target.socketed_kind = def["kind"]
+	target.socketed_value = def["value"]
+	runestones.erase(owned)
+	save()
+	state_changed.emit()
+	return ""
 
 
 func learn_skill(hero_id: String, skill_id: String) -> String:

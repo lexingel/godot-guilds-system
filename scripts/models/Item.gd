@@ -10,6 +10,8 @@ var kind: String          # dmg_pct/hp_pct/... (BUILD_KINDS)
 var value: float
 var equipped_to: String = ""    # hero id, "" = unequipped
 var equipped_idx: int = -1      # index within that hero's weapon/gear slots
+var socketed_kind: String = ""     # "" = no runestone socketed
+var socketed_value: float = 0.0
 
 
 func slot_type() -> String:
@@ -20,6 +22,7 @@ func to_dict() -> Dictionary:
 	return {
 		"id": id, "name": name, "category": category, "rarity": rarity, "kind": kind,
 		"value": value, "equipped_to": equipped_to, "equipped_idx": equipped_idx,
+		"socketed_kind": socketed_kind, "socketed_value": socketed_value,
 	}
 
 
@@ -33,4 +36,6 @@ static func from_dict(d: Dictionary) -> Item:
 	it.value = d.get("value", 0.0)
 	it.equipped_to = d.get("equipped_to", "")
 	it.equipped_idx = d.get("equipped_idx", -1)
+	it.socketed_kind = d.get("socketed_kind", "")
+	it.socketed_value = d.get("socketed_value", 0.0)
 	return it

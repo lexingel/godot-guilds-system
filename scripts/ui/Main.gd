@@ -1659,20 +1659,34 @@ func _render_roster(v: VBoxContainer) -> void:
 
 	var equipped_items: Array[Item] = []
 	equipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == h.id))
-	if not equipped_items.is_empty():
-		var erow := HBoxContainer.new()
-		for it in equipped_items:
-			erow.add_child(_button("%s (%s) — unequip" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category]], func(id=it.id):
-				var target: Item = null
-				for x in GameState.items:
-					if x.id == id:
-						target = x
-						break
-				if target:
-					GameState.equip_item(h.id, target.slot_type(), target.equipped_idx, "")
-				render()
-			))
-		cv.add_child(erow)
+	for it in equipped_items:
+		var irow := HBoxContainer.new()
+		var label_text := "%s (%s)" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category]]
+		if it.socketed_kind != "":
+			label_text += " [socketed: %s]" % Combat.describe_skill(it.socketed_kind, it.socketed_value)
+		irow.add_child(_label(label_text, 12))
+		irow.add_child(_button("Unequip", func(id=it.id):
+			var target: Item = null
+			for x in GameState.items:
+				if x.id == id:
+					target = x
+					break
+			if target:
+				GameState.equip_item(h.id, target.slot_type(), target.equipped_idx, "")
+			render()
+		))
+		if it.socketed_kind == "":
+			for r in GameState.runestones:
+				var rdef := GameData.find_runestone(str(r["runestone_id"]))
+				if rdef.get("category", "") != it.slot_type():
+					continue
+				irow.add_child(_button("Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=it.id):
+					var err := GameState.socket_runestone(rid, iid)
+					if err != "":
+						push_warning(err)
+					render()
+				))
+		cv.add_child(irow)
 
 	card.add_child(cv)
 	v.add_child(card)
@@ -1840,6 +1854,24 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			render()
 		))
 		v.add_child(irow)
+
+	v.add_child(_hsep())
+	v.add_child(_label("Runestones — socket into an equipped item from its Roster card", 16))
+	if not GameState.runestones.is_empty():
+		v.add_child(_label("Owned:", 12, true))
+		for r in GameState.runestones:
+			var rdef := GameData.find_runestone(str(r["runestone_id"]))
+			v.add_child(_label("%s — %s" % [rdef["name"], rdef["desc"]], 12))
+	for rdef in GameData.RUNESTONE_TYPES:
+		var rrow := HBoxContainer.new()
+		rrow.add_child(_label("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12))
+		rrow.add_child(_button("Buy", func(rid=rdef["id"]):
+			var err := GameState.buy_runestone(rid)
+			if err != "":
+				push_warning(err)
+			render()
+		))
+		v.add_child(rrow)
 
 
 func _render_inventory_relics(v: VBoxContainer) -> void:
