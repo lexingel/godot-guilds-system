@@ -1156,8 +1156,10 @@ func _render_camp(v: VBoxContainer) -> void:
 		hotspot.position = rect.position
 		camp.add_child(hotspot)
 
+	# Bottom-left, in the open ground below the small griffin banner-post and
+	# its nearby crates/barrels.
 	var rift_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], 56.0, "Rift Hall", func(): screen = "rift_hall"; render())
-	rift_icon.position = Vector2(565, 220) - Vector2(28, 28)
+	rift_icon.position = Vector2(150, 270) - Vector2(28, 28)
 	camp.add_child(rift_icon)
 
 	v.add_child(camp)
@@ -1176,7 +1178,7 @@ func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, c
 	var glow_style := StyleBoxFlat.new()
 	glow_style.bg_color = Color(0, 0, 0, 0)
 	glow_style.shadow_color = Color(1.0, 0.85, 0.55, 0.0)
-	glow_style.shadow_size = 16
+	glow_style.shadow_size = 14
 	glow_style.corner_radius_top_left = 10
 	glow_style.corner_radius_top_right = 10
 	glow_style.corner_radius_bottom_left = 10
@@ -1201,11 +1203,11 @@ func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, c
 	btn.pressed.connect(cb)
 	btn.mouse_entered.connect(func():
 		var tw := create_tween()
-		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.0, 0.6, 0.15)
+		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.0, 0.3, 0.15)
 	)
 	btn.mouse_exited.connect(func():
 		var tw := create_tween()
-		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.6, 0.0, 0.15)
+		tw.tween_method(func(a): glow_style.shadow_color = Color(1.0, 0.85, 0.55, a), 0.3, 0.0, 0.15)
 	)
 	wrap.add_child(btn)
 
