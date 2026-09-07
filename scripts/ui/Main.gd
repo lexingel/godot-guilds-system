@@ -1132,21 +1132,27 @@ func _render_camp(v: VBoxContainer) -> void:
 		["management", "Guild Management", func(): term_tab = "management"; render()],
 		["rift", "Rift Hall", func(): screen = "rift_hall"; render()],
 	]
-	var cols := 3
-	var col_w: float = camp_size.x / cols
-	var row_h: float = camp_size.y / 2.0
+	# Hand-placed to sit on top of the matching prop already drawn in the
+	# camp background art (banner-post, chest-on-altar, parchment-post,
+	# medic figure, campfire, rift portal) rather than a generic grid —
+	# per the user's marked-up screenshot of where each belongs.
+	var hub_spots := {
+		"roster": Vector2(163, 90),
+		"inventory": Vector2(350, 65),
+		"recruits": Vector2(565, 90),
+		"medical": Vector2(130, 195),
+		"management": Vector2(350, 215),
+		"rift": Vector2(565, 220),
+	}
 	var icon_size := 56.0
-	for i in hub_entries.size():
-		var key: String = hub_entries[i][0]
-		var label_text: String = hub_entries[i][1]
-		var cb: Callable = hub_entries[i][2]
-		var col := i % cols
-		var row := i / cols
-		var spot_x: float = col * col_w + col_w / 2.0
-		var spot_y: float = row * row_h + row_h - 60.0
+	for entry in hub_entries:
+		var key: String = entry[0]
+		var label_text: String = entry[1]
+		var cb: Callable = entry[2]
+		var spot: Vector2 = hub_spots[key]
 
 		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH[key], icon_size, label_text, cb)
-		hotspot.position = Vector2(spot_x - icon_size / 2.0, spot_y - icon_size)
+		hotspot.position = spot - Vector2(icon_size / 2.0, icon_size / 2.0)
 		camp.add_child(hotspot)
 
 	v.add_child(camp)
