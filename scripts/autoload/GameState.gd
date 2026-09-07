@@ -839,9 +839,20 @@ func evolve_hero(hero_id: String) -> String:
 	return ""
 
 
+## A hero topped up to a buffed max_hp (e.g. by Vigor Incense's +hp_pct)
+## while active_incense was active would otherwise be left with hp above
+## their real max once the buff drops off back at camp.
+func _clamp_hp_to_max() -> void:
+	for h in heroes:
+		h.hp = min(h.hp, Combat.max_hp(h))
+	if current_champion:
+		current_champion.hp = min(current_champion.hp, Combat.max_hp(current_champion))
+
+
 func retreat_now() -> void:
 	run = {}
 	active_incense = {}
+	_clamp_hp_to_max()
 	save()
 	state_changed.emit()
 
@@ -849,6 +860,7 @@ func retreat_now() -> void:
 func finish_run() -> void:
 	run = {}
 	active_incense = {}
+	_clamp_hp_to_max()
 	save()
 	state_changed.emit()
 
