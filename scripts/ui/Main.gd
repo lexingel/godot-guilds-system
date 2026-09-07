@@ -383,6 +383,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 var _pending_diff_id: String = "lesser"
 var _pending_endless: bool = false
 var _pending_hardcore: bool = false
+var pending_incense_id: String = ""
 
 
 # ---------------- Party Assembly ----------------
@@ -440,6 +441,23 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		row2.add_child(_label("%s (%s) — %s" % [r.name, r.type, r.desc()]))
 		v.add_child(row2)
 
+	if not GameState.consumables.is_empty():
+		v.add_child(_hsep())
+		v.add_child(_label("Field Incense (pick one, optional) — lasts the whole rift"))
+		for c in GameState.consumables:
+			var cid: String = str(c["id"])
+			var def := GameData.find_incense(str(c["incense_id"]))
+			var irow := HBoxContainer.new()
+			var ib := CheckButton.new()
+			ib.button_pressed = pending_incense_id == cid
+			ib.toggled.connect(func(on: bool, id=cid):
+				pending_incense_id = id if on else ""
+				render()
+			)
+			irow.add_child(ib)
+			irow.add_child(_label("%s — %s" % [def["name"], def["desc"]]))
+			v.add_child(irow)
+
 	v.add_child(_hsep())
 	var hc_toggle := CheckButton.new()
 	hc_toggle.text = "Hardcore Mode — ×1.5 rewards, a loss removes your heroes for good"
@@ -457,6 +475,9 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
 		var ids: Array[String] = []
 		ids.assign(pending_party)
+		if pending_incense_id != "":
+			GameState.use_incense(pending_incense_id)
+			pending_incense_id = ""
 		GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
 		pending_relic_options.clear()
 		pending_relic_choice = -1
@@ -547,6 +568,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	v.add_child(_label("%s%s — Node %d/%d" % [diff["name"], cycle_label, pos + 1, total_layers], 18))
 	if GameState.run.get("hardcore", false):
 		v.add_child(_label("Hardcore Mode active", 12))
+	if not GameState.active_incense.is_empty():
+		v.add_child(_label("%s active" % str(GameState.active_incense["name"]), 12, true))
 	_render_rift_map(v)
 
 	var sealed = GameState.run.get("sealed")
@@ -1777,6 +1800,24 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			render()
 		))
 		v.add_child(row)
+
+	v.add_child(_hsep())
+	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
+	if not GameState.consumables.is_empty():
+		v.add_child(_label("Owned:", 12, true))
+		for c in GameState.consumables:
+			var def := GameData.find_incense(str(c["incense_id"]))
+			v.add_child(_label("%s — %s" % [def["name"], def["desc"]], 12))
+	for def in GameData.INCENSE_TYPES:
+		var irow := HBoxContainer.new()
+		irow.add_child(_label("%s (%dcr) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12))
+		irow.add_child(_button("Buy", func(iid=def["id"]):
+			var err := GameState.buy_incense(iid)
+			if err != "":
+				push_warning(err)
+			render()
+		))
+		v.add_child(irow)
 
 
 func _render_inventory_relics(v: VBoxContainer) -> void:

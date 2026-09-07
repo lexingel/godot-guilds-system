@@ -65,6 +65,7 @@ const RELIC_SPECIALS := [
 	{"kind": "wipe_guard", "value": 0.08, "domain": "defense", "label": "Relic ward: survive a wipe at 8% HP"},
 	{"kind": "boss_alpha_strike", "value": 0.3, "domain": "damage", "label": "+30% opening volley vs Bosses"},
 	{"kind": "loot_rarity_pct", "value": 0.06, "domain": "droprate", "label": "+6% odds toward Rare/Epic loot"},
+	{"kind": "counter_pct", "value": 0.15, "domain": "chance", "label": "+15% chance to counter-attack when evading or taking a heavy hit"},
 ]
 
 const TYPE_DOMAIN := {
@@ -100,6 +101,22 @@ const ITEM_KIND_BASE := {
 	"dmg_pct": 0.12, "hp_pct": 0.12, "first_round_pct": 0.15, "escalate_pct": 0.04,
 	"mend_pct": 0.06, "hazard_guard_pct": 0.12, "dodge_pct": 0.10,
 }
+
+## Field Incense: a one-shot consumable bought with Coins (not looted, not
+## hero-bound) and used at Party Assembly — its bonus applies party-wide for
+## every fight in the run about to start, cleared when that run ends. Reuses
+## the same BUILD_KINDS vocabulary as skills/items/relics rather than
+## inventing a new stat, so it flows through hero_skill_total for free.
+const INCENSE_TYPES := [
+	{"id": "vigor", "name": "Vigor Incense", "kind": "hp_pct", "value": 0.15, "cost": 40, "desc": "+15% party Max HP for the whole rift"},
+	{"id": "warding", "name": "Warding Incense", "kind": "hazard_guard_pct", "value": 0.10, "cost": 40, "desc": "-10% hazard severity for the whole rift"},
+]
+
+static func find_incense(incense_id: String) -> Dictionary:
+	for i in INCENSE_TYPES:
+		if i["id"] == incense_id:
+			return i
+	return {}
 
 # Classes agile/skilled enough to dual-wield get 2 weapon slots instead of 1 —
 # all 10 Rogues plus 3 hand-picked classes whose flavor fits.

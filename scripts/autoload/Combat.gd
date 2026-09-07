@@ -26,6 +26,8 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	s += hero_item_total(h, kind)
 	if GameData.TRAIT_TABLE.has(h.trait_name):
 		s += GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)
+	if GameState.active_incense.get("kind", "") == kind:
+		s += float(GameState.active_incense["value"])
 	return s
 
 
@@ -507,6 +509,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + synergy_value_for("mend_pct"))
 	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + synergy_value_for("dodge_pct"))
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard"))
+	var counter: float = min(0.6, relic_special_total("counter_pct"))
 	var alpha_strikes: float = (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
 	var log: Array[String] = []
@@ -538,7 +541,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"monsters": monsters, "background_idx": randi() % GameData.BATTLE_BACKGROUNDS.size(),
 		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
-		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false,
+		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
 		"round_num": 0, "log": log, "ability_cooldowns": ability_cooldowns,
 		"pending_actions": pending_actions,
 	}
@@ -709,9 +712,17 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
 		if defending.has(target.id):
 			back *= 0.5
+		var evaded := false
 		if not warded and float(state["dodge"]) > 0.0 and randf() < float(state["dodge"]):
 			log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
+			evaded = true
+		var heavy_hit: bool = back >= float(max_hp(target)) * 0.25
+		if evaded:
 			back = 0.0
+		if (evaded or heavy_hit) and float(state["counter"]) > 0.0 and randf() < float(state["counter"]):
+			var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
+			m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
+			log.append("%s counters, striking %s for %d!" % [target.name, m["name"], counter_dmg])
 		if back > 0.0:
 			var dealt_back: int = int(round(back))
 			var is_last_hero := alive_now.size() == 1

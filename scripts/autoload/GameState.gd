@@ -20,6 +20,8 @@ var heroes: Array[Hero] = []
 var relics: Array[Relic] = []
 var items: Array[Item] = []
 var detectors: Array[Dictionary] = []   # [{"id":..., "tier": "lesser"|"greater"|"ascendant"}]
+var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
+var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
@@ -184,6 +186,8 @@ func reset() -> void:
 	relics = []
 	items = []
 	detectors = []
+	consumables = []
+	active_incense = {}
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
@@ -223,6 +227,7 @@ func save() -> void:
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
 		"detectors": detectors,
+		"consumables": consumables, "active_incense": active_incense,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"best_endless_cycle": best_endless_cycle,
@@ -253,6 +258,8 @@ func load_save() -> bool:
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
 	detectors.assign(data.get("detectors", []))
+	consumables.assign(data.get("consumables", []))
+	active_incense = data.get("active_incense", {})
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
 	var champ_data = data.get("current_champion")
@@ -824,14 +831,46 @@ func evolve_hero(hero_id: String) -> String:
 
 func retreat_now() -> void:
 	run = {}
+	active_incense = {}
 	save()
 	state_changed.emit()
 
 
 func finish_run() -> void:
 	run = {}
+	active_incense = {}
 	save()
 	state_changed.emit()
+
+
+func buy_incense(incense_id: String) -> String:
+	var def := GameData.find_incense(incense_id)
+	if def.is_empty():
+		return ""
+	var cost := int(def["cost"])
+	if coins < cost:
+		return "Not enough Coins"
+	coins -= cost
+	consumables.append({"id": "cs" + str(next_id), "incense_id": incense_id})
+	next_id += 1
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Consuming an incense applies its bonus for the rift about to start —
+## cleared on retreat_now()/finish_run() same as the rest of run state.
+func use_incense(consumable_id: String) -> void:
+	for c in consumables:
+		if c["id"] == consumable_id:
+			var def := GameData.find_incense(str(c["incense_id"]))
+			if def.is_empty():
+				return
+			active_incense = {"kind": def["kind"], "value": def["value"], "name": def["name"]}
+			consumables.erase(c)
+			save()
+			state_changed.emit()
+			return
 
 
 func learn_skill(hero_id: String, skill_id: String) -> String:
