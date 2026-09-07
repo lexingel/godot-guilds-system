@@ -1635,19 +1635,14 @@ func _render_roster(v: VBoxContainer) -> void:
 		cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
 		var tree: Array = GameData.subclass_skill_tree(h.pool_id)
+		var tier_label := {1: "Tier 1", 2: "Tier 2", 3: "Capstone"}
+		var cur_tier := -1
 		for n in tree:
-			var skill_id: String = n["id"]
-			var learned: bool = h.skills.get(skill_id, false)
-			var srow := HBoxContainer.new()
-			srow.add_child(_label("%s — %s (Lv%d, %d SP)%s" % [n["name"], Combat.describe_skill(n["kind"], n["value"]), n["req_level"], n["cost"], " [learned]" if learned else ""], 12))
-			if not learned:
-				srow.add_child(_button("Learn", func(hid=h.id, sid=skill_id):
-					var err := GameState.learn_skill(hid, sid)
-					if err != "":
-						push_warning(err)
-					render()
-				))
-			cv.add_child(srow)
+			var tier: int = int(n["tier"])
+			if tier != cur_tier:
+				cur_tier = tier
+				cv.add_child(_label(str(tier_label.get(tier, "")), 11, true))
+			cv.add_child(_skill_node_row(h, n))
 		var spent: int = h.skills.values().count(true)
 		if spent > 0:
 			cv.add_child(_button("Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
@@ -1690,6 +1685,73 @@ func _render_roster(v: VBoxContainer) -> void:
 
 	card.add_child(cv)
 	v.add_child(card)
+
+
+## One skill-tree node: icon + name/effect/requirement in a bordered row,
+## with a Learn button that disables itself (showing why) instead of only
+## failing after the click — level/prereq/SP gating mirrors learn_skill()'s
+## own checks exactly so the row never promises something a click can't do.
+func _skill_node_row(h: Hero, n: Dictionary) -> PanelContainer:
+	var skill_id: String = n["id"]
+	var learned: bool = h.skills.get(skill_id, false)
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE2 if not learned else Palette.SURFACE3
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Palette.RIFT if learned else Palette.LINE
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	style.content_margin_left = 6
+	style.content_margin_top = 4
+	style.content_margin_right = 6
+	style.content_margin_bottom = 4
+	panel.add_theme_stylebox_override("panel", style)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(_icon(str(n["icon"]), 28))
+
+	var mid := _vbox(0)
+	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mid.add_child(_label(str(n["name"]), 12))
+	mid.add_child(_label(Combat.describe_skill(str(n["kind"]), float(n["value"])), 11, true))
+	row.add_child(mid)
+
+	if learned:
+		row.add_child(_label("Learned", 11, true))
+	else:
+		var missing_level: bool = h.level < int(n["req_level"])
+		var missing_prereq := false
+		for req in n["requires"]:
+			if not h.skills.get(req, false):
+				missing_prereq = true
+		var missing_sp: bool = h.skill_points < int(n["cost"])
+		var reason := ""
+		if missing_level:
+			reason = "Requires Lv%d" % int(n["req_level"])
+		elif missing_prereq:
+			reason = "Needs prerequisite"
+		elif missing_sp:
+			reason = "Needs %d SP" % int(n["cost"])
+		if reason != "":
+			row.add_child(_label(reason, 11, true))
+		else:
+			var learn_btn := _button("Learn (%d SP)" % int(n["cost"]), func(hid=h.id, sid=skill_id):
+				var err := GameState.learn_skill(hid, sid)
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			learn_btn.add_theme_font_size_override("font_size", 11)
+			row.add_child(learn_btn)
+
+	panel.add_child(row)
+	return panel
 
 
 ## One hero's clickable portrait for the Roster row — a PanelContainer

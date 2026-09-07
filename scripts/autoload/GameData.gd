@@ -243,65 +243,69 @@ const SUBCLASS_ABILITIES := {
 	"duskrunner": {"name": "Between Heartbeats", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.4},
 }
 
+## Every node's "icon" points at a bespoke pixel-art icon under
+## assets/skills/ (extracted from a free CraftPix icon sheet) — 38 distinct
+## icons across the 2 universal Tier-1 nodes + 9 packages x 4 nodes, no two
+## nodes sharing an icon.
 const SUBCLASS_TIER1 := [
-	{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-	{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
+	{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": [], "icon": "res://assets/skills/sword_a.png"},
+	{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": [], "icon": "res://assets/skills/heart.png"},
 ]
 
 const KIND_SKILL_PACKAGE := {
 	"dmg_pct": [
-		{"id": "mastery", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Weapon Mastery", "requires": ["edge"]},
-		{"id": "killer_instinct", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Killing Instinct", "requires": ["hide"]},
-		{"id": "opening_fury", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Fury", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.22, "name": "Executioner's Edge", "requires": ["mastery", "killer_instinct"]},
+		{"id": "mastery", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Weapon Mastery", "requires": ["edge"], "icon": "res://assets/skills/sword_silver.png"},
+		{"id": "killer_instinct", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Killing Instinct", "requires": ["hide"], "icon": "res://assets/skills/gem_red.png"},
+		{"id": "opening_fury", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Fury", "requires": [], "icon": "res://assets/skills/sword_slash.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.22, "name": "Executioner's Edge", "requires": ["mastery", "killer_instinct"], "icon": "res://assets/skills/sword_big.png"},
 	],
 	"hp_pct": [
-		{"id": "iron_skin", "tier": 2, "req_level": 4, "cost": 1, "kind": "hp_pct", "value": 0.10, "name": "Iron Skin", "requires": ["hide"]},
-		{"id": "steady_guard", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Steady Guard", "requires": ["edge"]},
-		{"id": "second_wind", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Second Wind", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hp_pct", "value": 0.25, "name": "Unbreakable", "requires": ["iron_skin", "steady_guard"]},
+		{"id": "iron_skin", "tier": 2, "req_level": 4, "cost": 1, "kind": "hp_pct", "value": 0.10, "name": "Iron Skin", "requires": ["hide"], "icon": "res://assets/skills/shield_blue.png"},
+		{"id": "steady_guard", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Steady Guard", "requires": ["edge"], "icon": "res://assets/skills/shield_basic.png"},
+		{"id": "second_wind", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Second Wind", "requires": [], "icon": "res://assets/skills/potion_red_sm.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hp_pct", "value": 0.25, "name": "Unbreakable", "requires": ["iron_skin", "steady_guard"], "icon": "res://assets/skills/shield_split.png"},
 	],
 	"first_round_pct": [
-		{"id": "focus", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.12, "name": "Focused Opening", "requires": ["edge"]},
-		{"id": "lightfoot", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Light on Feet", "requires": ["hide"]},
-		{"id": "precise_read", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Precise Read", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "first_round_pct", "value": 0.35, "name": "Perfect Opening", "requires": ["focus", "lightfoot"]},
+		{"id": "focus", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.12, "name": "Focused Opening", "requires": ["edge"], "icon": "res://assets/skills/dagger_blue.png"},
+		{"id": "lightfoot", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Light on Feet", "requires": ["hide"], "icon": "res://assets/skills/boots.png"},
+		{"id": "precise_read", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Precise Read", "requires": [], "icon": "res://assets/skills/eye_gem.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "first_round_pct", "value": 0.35, "name": "Perfect Opening", "requires": ["focus", "lightfoot"], "icon": "res://assets/skills/helm.png"},
 	],
 	"escalate_pct": [
-		{"id": "buildup", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Building Momentum", "requires": ["edge"]},
-		{"id": "adrenaline", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Adrenaline", "requires": ["hide"]},
-		{"id": "second_breath", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.04, "name": "Second Breath", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "escalate_pct", "value": 0.06, "name": "Unstoppable Momentum", "requires": ["buildup", "adrenaline"]},
+		{"id": "buildup", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Building Momentum", "requires": ["edge"], "icon": "res://assets/skills/gear.png"},
+		{"id": "adrenaline", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Adrenaline", "requires": ["hide"], "icon": "res://assets/skills/dagger_red.png"},
+		{"id": "second_breath", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.04, "name": "Second Breath", "requires": [], "icon": "res://assets/skills/potion_blue_sm.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "escalate_pct", "value": 0.06, "name": "Unstoppable Momentum", "requires": ["buildup", "adrenaline"], "icon": "res://assets/skills/leaf_big.png"},
 	],
 	"mend_pct": [
-		{"id": "smite", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Smite", "requires": ["edge"]},
-		{"id": "mending", "tier": 2, "req_level": 4, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Mending Chant", "requires": ["hide"]},
-		{"id": "ward2", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Ward of Mercy", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "mend_pct", "value": 0.10, "name": "Guardian Angel", "requires": ["smite", "mending"]},
+		{"id": "smite", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Smite", "requires": ["edge"], "icon": "res://assets/skills/sword_dual.png"},
+		{"id": "mending", "tier": 2, "req_level": 4, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Mending Chant", "requires": ["hide"], "icon": "res://assets/skills/potion_blue.png"},
+		{"id": "ward2", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Ward of Mercy", "requires": [], "icon": "res://assets/skills/shield_orange.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "mend_pct", "value": 0.10, "name": "Guardian Angel", "requires": ["smite", "mending"], "icon": "res://assets/skills/potion_red.png"},
 	],
 	"hazard_guard_pct": [
-		{"id": "danger_sense", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Danger Sense", "requires": ["hide"]},
-		{"id": "preempt", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Preemptive Strike", "requires": ["edge"]},
-		{"id": "steady_hand", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Steady Hand", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hazard_guard_pct", "value": 0.20, "name": "Unshakeable", "requires": ["danger_sense", "preempt"]},
+		{"id": "danger_sense", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Danger Sense", "requires": ["hide"], "icon": "res://assets/skills/ring.png"},
+		{"id": "preempt", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Preemptive Strike", "requires": ["edge"], "icon": "res://assets/skills/gem_blue_a.png"},
+		{"id": "steady_hand", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Steady Hand", "requires": [], "icon": "res://assets/skills/boots_brown.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hazard_guard_pct", "value": 0.20, "name": "Unshakeable", "requires": ["danger_sense", "preempt"], "icon": "res://assets/skills/armor_chest.png"},
 	],
 	"dodge_pct": [
-		{"id": "evasion", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.12, "name": "Evasive Training", "requires": ["hide"]},
-		{"id": "momentum", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Fleeting Strike", "requires": ["edge"]},
-		{"id": "gambit", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Gambit", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["evasion", "momentum"]},
+		{"id": "evasion", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.12, "name": "Evasive Training", "requires": ["hide"], "icon": "res://assets/skills/face_hood.png"},
+		{"id": "momentum", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Fleeting Strike", "requires": ["edge"], "icon": "res://assets/skills/wing.png"},
+		{"id": "gambit", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Gambit", "requires": [], "icon": "res://assets/skills/gem_blue_b.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["evasion", "momentum"], "icon": "res://assets/skills/shard_blue.png"},
 	],
 	"wipe_guard": [
-		{"id": "shieldwall", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Shield Wall", "requires": ["hide"]},
-		{"id": "vanguard", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Vanguard Strike", "requires": ["edge"]},
-		{"id": "instinct", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Battle Instinct", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "wipe_guard", "value": 0.25, "name": "Last Stand", "requires": ["shieldwall", "vanguard"]},
+		{"id": "shieldwall", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Shield Wall", "requires": ["hide"], "icon": "res://assets/skills/armor_shoulder.png"},
+		{"id": "vanguard", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Vanguard Strike", "requires": ["edge"], "icon": "res://assets/skills/gem_cluster.png"},
+		{"id": "instinct", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Battle Instinct", "requires": [], "icon": "res://assets/skills/cloak_a.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "wipe_guard", "value": 0.25, "name": "Last Stand", "requires": ["shieldwall", "vanguard"], "icon": "res://assets/skills/trophy.png"},
 	],
 	"boss_alpha_strike": [
-		{"id": "buildup2", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Arcane Buildup", "requires": ["edge"]},
-		{"id": "ward", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Ward Sigil", "requires": ["hide"]},
-		{"id": "slip", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Arcane Slip", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "boss_alpha_strike", "value": 1.0, "name": "Cataclysm", "requires": ["buildup2", "ward"]},
+		{"id": "buildup2", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Arcane Buildup", "requires": ["edge"], "icon": "res://assets/skills/star.png"},
+		{"id": "ward", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Ward Sigil", "requires": ["hide"], "icon": "res://assets/skills/gem_blue_big.png"},
+		{"id": "slip", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Arcane Slip", "requires": [], "icon": "res://assets/skills/shard_green.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "boss_alpha_strike", "value": 1.0, "name": "Cataclysm", "requires": ["buildup2", "ward"], "icon": "res://assets/skills/ingot_gold.png"},
 	],
 }
 
@@ -510,6 +514,62 @@ const HERO_PORTRAIT_PATH := {
 	"cleric": "res://assets/heroes/cleric.png",
 	"rogue": "res://assets/heroes/rogue.png",
 }
+## One bespoke portrait per subclass (hand-picked and background-removed from
+## the free Batareya character pack, same pipeline as the 5 HERO_PORTRAIT_PATH
+## renders) — gives all 50 CLASS_POOL entries a distinct look instead of
+## sharing their role's single portrait.
+const SUBCLASS_PORTRAIT_PATH := {
+	"squire": "res://assets/heroes/subclass/squire.png",
+	"footman": "res://assets/heroes/subclass/footman.png",
+	"duelist": "res://assets/heroes/subclass/duelist.png",
+	"bulwark": "res://assets/heroes/subclass/bulwark.png",
+	"berserker": "res://assets/heroes/subclass/berserker.png",
+	"iron-guard": "res://assets/heroes/subclass/iron-guard.png",
+	"bloodletter": "res://assets/heroes/subclass/bloodletter.png",
+	"runeblade": "res://assets/heroes/subclass/runeblade.png",
+	"ashen-templar": "res://assets/heroes/subclass/ashen-templar.png",
+	"rift-sovereign": "res://assets/heroes/subclass/rift-sovereign.png",
+	"trapper": "res://assets/heroes/subclass/trapper.png",
+	"slinger": "res://assets/heroes/subclass/slinger.png",
+	"pathfinder": "res://assets/heroes/subclass/pathfinder.png",
+	"longshot": "res://assets/heroes/subclass/longshot.png",
+	"blade-dancer": "res://assets/heroes/subclass/blade-dancer.png",
+	"warden": "res://assets/heroes/subclass/warden.png",
+	"stormtracker": "res://assets/heroes/subclass/stormtracker.png",
+	"rift-ranger": "res://assets/heroes/subclass/rift-ranger.png",
+	"deadfall-hunter": "res://assets/heroes/subclass/deadfall-hunter.png",
+	"voidwalker": "res://assets/heroes/subclass/voidwalker.png",
+	"apprentice": "res://assets/heroes/subclass/apprentice.png",
+	"cinderling": "res://assets/heroes/subclass/cinderling.png",
+	"fledgling-seer": "res://assets/heroes/subclass/fledgling-seer.png",
+	"cinder-adept": "res://assets/heroes/subclass/cinder-adept.png",
+	"frost-scholar": "res://assets/heroes/subclass/frost-scholar.png",
+	"wardweaver": "res://assets/heroes/subclass/wardweaver.png",
+	"stormcaller": "res://assets/heroes/subclass/stormcaller.png",
+	"pyromancer": "res://assets/heroes/subclass/pyromancer.png",
+	"archon-of-storms": "res://assets/heroes/subclass/archon-of-storms.png",
+	"the-unbound": "res://assets/heroes/subclass/the-unbound.png",
+	"peddler": "res://assets/heroes/subclass/peddler.png",
+	"acolyte": "res://assets/heroes/subclass/acolyte.png",
+	"herbalist": "res://assets/heroes/subclass/herbalist.png",
+	"lay-brother": "res://assets/heroes/subclass/lay-brother.png",
+	"battle-chaplain": "res://assets/heroes/subclass/battle-chaplain.png",
+	"zealot": "res://assets/heroes/subclass/zealot.png",
+	"rift-medic": "res://assets/heroes/subclass/rift-medic.png",
+	"dawnkeeper": "res://assets/heroes/subclass/dawnkeeper.png",
+	"sanctified-shield": "res://assets/heroes/subclass/sanctified-shield.png",
+	"alchemist": "res://assets/heroes/subclass/alchemist.png",
+	"scavenger": "res://assets/heroes/subclass/scavenger.png",
+	"runaway": "res://assets/heroes/subclass/runaway.png",
+	"cutpurse": "res://assets/heroes/subclass/cutpurse.png",
+	"skirmisher": "res://assets/heroes/subclass/skirmisher.png",
+	"footpad": "res://assets/heroes/subclass/footpad.png",
+	"shadowfoot": "res://assets/heroes/subclass/shadowfoot.png",
+	"fleetblade": "res://assets/heroes/subclass/fleetblade.png",
+	"nightblade": "res://assets/heroes/subclass/nightblade.png",
+	"wraithstep": "res://assets/heroes/subclass/wraithstep.png",
+	"duskrunner": "res://assets/heroes/subclass/duskrunner.png",
+}
 ## AI-generated combat animation frames (5 each: frame 0 is the static portrait,
 ## 1-4 are the motion). Only combos that actually produced usable motion exist —
 ## Warrior/hurt and Ranger/attack never did after 3 rounds of prompt iteration,
@@ -585,9 +645,14 @@ static func find_class(pool_id: String) -> Dictionary:
 	return {}
 
 
-## Champions have no cls_id (no skill tree), so their role has to come from
-## their pool_id's CLASS_POOL entry instead — this covers both.
+## Prefers a subclass-specific portrait (SUBCLASS_PORTRAIT_PATH, one of the 50
+## CLASS_POOL entries) so recruited heroes look visually distinct beyond their
+## role. Falls back to the 5 shared role portraits for anything not in that
+## map — a Champion's pool_id is never a real subclass id, so this covers
+## Champions the same way it always has.
 static func portrait_for_hero(cls_id: String, pool_id: String) -> String:
+	if SUBCLASS_PORTRAIT_PATH.has(pool_id):
+		return SUBCLASS_PORTRAIT_PATH[pool_id]
 	var role := cls_id
 	if role == "":
 		role = find_class(pool_id).get("role", "")
