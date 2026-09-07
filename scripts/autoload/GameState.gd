@@ -949,7 +949,7 @@ func learn_skill(hero_id: String, skill_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
-	var n := GameData.find_skill_node(h.cls_id, skill_id)
+	var n := GameData.find_skill_node(h.pool_id, skill_id)
 	if n.is_empty() or h.skills.get(skill_id, false):
 		return ""
 	if h.level < int(n["req_level"]):

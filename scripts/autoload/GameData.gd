@@ -175,58 +175,145 @@ const DIFFICULTIES := [
 # whether Ascendant itself is a selectable tier in this port).
 const ENDLESS_BASE := {"monster_hp": 125, "monster_dmg": 14, "coin": [85, 140], "crystal": [20, 36], "token_base": 36, "detector_chance": 0.22, "rec_power": 280}
 
-const ABILITIES := {
-	"warrior": {"name": "Rally", "desc": "+30% team damage for the rest of this fight."},
-	"ranger": {"name": "Piercing Volley", "desc": "-40% the monster's damage for the rest of this fight."},
-	"mage": {"name": "Overcharge", "desc": "An immediate burst of damage against the monster."},
-	"cleric": {"name": "Blessing", "desc": "Fully heals the party immediately."},
-	"rogue": {"name": "Ambush", "desc": "This round's attack deals +90% damage."},
+## Per-subclass identity, not per-role: each of the 50 CLASS_POOL entries gets
+## its own active ability and its own skill-tree specialization instead of the
+## 5 shared role abilities/trees this used to be. Abilities are data-driven —
+## one generic effect dispatcher in Combat.resolve_round reads {effect,value}
+## from SUBCLASS_ABILITIES, so adding/tuning an ability never touches game
+## logic. Skill trees stay 2 universal Tier-1 nodes (SUBCLASS_TIER1, unchanged
+## from the old per-role trees) + a 4-node "signature package" keyed by the
+## subclass's own CLASS_POOL `kind` (KIND_SKILL_PACKAGE) — subclasses sharing
+## a kind already play similarly (same innate stat), so their trees
+## reinforcing that same kind is a feature, not a shortcut.
+const SUBCLASS_ABILITIES := {
+	# -- Warrior --
+	"squire": {"name": "Reckless Swing", "desc": "An all-in burst against the weakest foe.", "effect": "burst_lowest", "value": 0.8},
+	"footman": {"name": "Shield Brace", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.15},
+	"duelist": {"name": "Riposte", "desc": "+chance to counter-attack for the rest of this fight.", "effect": "counter_surge", "value": 0.25},
+	"bulwark": {"name": "Unyielding Wall", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.25},
+	"berserker": {"name": "Blood Frenzy", "desc": "Sacrifices own HP for a heavy burst on the weakest foe.", "effect": "self_sac_burst", "value": 1.4},
+	"iron-guard": {"name": "Fortify", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
+	"bloodletter": {"name": "Open Wound", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"runeblade": {"name": "Inscribed Strike", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.3},
+	"ashen-templar": {"name": "Undying Vow", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.5},
+	"rift-sovereign": {"name": "Sovereign's Wrath", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
+	# -- Ranger --
+	"trapper": {"name": "Snare Volley", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.85},
+	"slinger": {"name": "Improvised Shot", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
+	"pathfinder": {"name": "Sure Footing", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.1},
+	"longshot": {"name": "One Arrow", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 0.9},
+	"blade-dancer": {"name": "Opening Performance", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.2},
+	"warden": {"name": "Walked Worse Halls", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
+	"stormtracker": {"name": "Chase the Lightning", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.035},
+	"rift-ranger": {"name": "Read the Room", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.15},
+	"deadfall-hunter": {"name": "Reversed Trap", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.75},
+	"voidwalker": {"name": "Half-Step Out", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.22},
+	# -- Mage --
+	"apprentice": {"name": "Unsteady Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
+	"cinderling": {"name": "First Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.85},
+	"fledgling-seer": {"name": "Half-Second Warning", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.08},
+	"cinder-adept": {"name": "Warming Cast", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.03},
+	"frost-scholar": {"name": "Cold Study", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.2},
+	"wardweaver": {"name": "Faster Ward", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"stormcaller": {"name": "Building Storm", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"pyromancer": {"name": "The Rift Leans Away", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.2},
+	"archon-of-storms": {"name": "Thunder's Door", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
+	"the-unbound": {"name": "No Name Holds It", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.6},
+	# -- Cleric --
+	"peddler": {"name": "Quick Bandage", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
+	"acolyte": {"name": "Quiet Prayer", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
+	"herbalist": {"name": "Field Kit", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.4},
+	"lay-brother": {"name": "Censer Swing", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
+	"battle-chaplain": {"name": "Keep Moving", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.12},
+	"zealot": {"name": "Faith and Blade", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.0},
+	"rift-medic": {"name": "Faster Than the Wounds", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.55},
+	"dawnkeeper": {"name": "First Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.35},
+	"sanctified-shield": {"name": "Not Today", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.4},
+	"alchemist": {"name": "Faster Brew", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	# -- Rogue --
+	"scavenger": {"name": "Know the Puddles", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.08},
+	"runaway": {"name": "Never Fought Fair", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.1},
+	"cutpurse": {"name": "Leaves With More", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.8},
+	"skirmisher": {"name": "Never Where You Struck", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.13},
+	"footpad": {"name": "Nobody Heard Them", "desc": "+chance to counter-attack for the rest of this fight.", "effect": "counter_surge", "value": 0.2},
+	"shadowfoot": {"name": "Barely Noticed", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.18},
+	"fleetblade": {"name": "Getting Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"nightblade": {"name": "Strikes From the Dark", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.2},
+	"wraithstep": {"name": "Two Footprints", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 1.0},
+	"duskrunner": {"name": "Between Heartbeats", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.4},
 }
 
-# Every class tree shares the same shape: 2 generic Tier-1 nodes, 3
-# class-flavored Tier-2 nodes (only 2 gate the capstone), one capstone.
-const CLASS_SKILLS := {
-	"warrior": [
-		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
-		{"id": "vanguard", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Vanguard Strike", "requires": ["edge"]},
-		{"id": "shieldwall", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Shield Wall", "requires": ["hide"]},
-		{"id": "instinct", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Battle Instinct", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "wipe_guard", "value": 0.25, "name": "Last Stand", "requires": ["vanguard", "shieldwall"]},
+const SUBCLASS_TIER1 := [
+	{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
+	{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
+]
+
+const KIND_SKILL_PACKAGE := {
+	"dmg_pct": [
+		{"id": "mastery", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Weapon Mastery", "requires": ["edge"]},
+		{"id": "killer_instinct", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Killing Instinct", "requires": ["hide"]},
+		{"id": "opening_fury", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Fury", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.22, "name": "Executioner's Edge", "requires": ["mastery", "killer_instinct"]},
 	],
-	"ranger": [
-		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
-		{"id": "focus", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.12, "name": "Focused Shot", "requires": ["edge"]},
-		{"id": "lightfoot", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Light-Footed", "requires": ["hide"]},
-		{"id": "sustain", "tier": 2, "req_level": 5, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Sustained Aim", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "first_round_pct", "value": 0.35, "name": "Dead Eye", "requires": ["focus", "lightfoot"]},
+	"hp_pct": [
+		{"id": "iron_skin", "tier": 2, "req_level": 4, "cost": 1, "kind": "hp_pct", "value": 0.10, "name": "Iron Skin", "requires": ["hide"]},
+		{"id": "steady_guard", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Steady Guard", "requires": ["edge"]},
+		{"id": "second_wind", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Second Wind", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hp_pct", "value": 0.25, "name": "Unbreakable", "requires": ["iron_skin", "steady_guard"]},
 	],
-	"mage": [
-		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
-		{"id": "buildup", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Arcane Buildup", "requires": ["edge"]},
-		{"id": "ward", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Ward Sigil", "requires": ["hide"]},
-		{"id": "slip", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Arcane Slip", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "boss_alpha_strike", "value": 1.0, "name": "Cataclysm", "requires": ["buildup", "ward"]},
+	"first_round_pct": [
+		{"id": "focus", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.12, "name": "Focused Opening", "requires": ["edge"]},
+		{"id": "lightfoot", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Light on Feet", "requires": ["hide"]},
+		{"id": "precise_read", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Precise Read", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "first_round_pct", "value": 0.35, "name": "Perfect Opening", "requires": ["focus", "lightfoot"]},
 	],
-	"cleric": [
-		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
+	"escalate_pct": [
+		{"id": "buildup", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Building Momentum", "requires": ["edge"]},
+		{"id": "adrenaline", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Adrenaline", "requires": ["hide"]},
+		{"id": "second_breath", "tier": 2, "req_level": 5, "cost": 1, "kind": "mend_pct", "value": 0.04, "name": "Second Breath", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "escalate_pct", "value": 0.06, "name": "Unstoppable Momentum", "requires": ["buildup", "adrenaline"]},
+	],
+	"mend_pct": [
 		{"id": "smite", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Smite", "requires": ["edge"]},
 		{"id": "mending", "tier": 2, "req_level": 4, "cost": 1, "kind": "mend_pct", "value": 0.05, "name": "Mending Chant", "requires": ["hide"]},
 		{"id": "ward2", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Ward of Mercy", "requires": []},
 		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "mend_pct", "value": 0.10, "name": "Guardian Angel", "requires": ["smite", "mending"]},
 	],
-	"rogue": [
-		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": []},
-		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": []},
-		{"id": "momentum", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Momentum", "requires": ["edge"]},
-		{"id": "evasion", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.12, "name": "Evasion", "requires": ["hide"]},
+	"hazard_guard_pct": [
+		{"id": "danger_sense", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Danger Sense", "requires": ["hide"]},
+		{"id": "preempt", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Preemptive Strike", "requires": ["edge"]},
+		{"id": "steady_hand", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Steady Hand", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "hazard_guard_pct", "value": 0.20, "name": "Unshakeable", "requires": ["danger_sense", "preempt"]},
+	],
+	"dodge_pct": [
+		{"id": "evasion", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.12, "name": "Evasive Training", "requires": ["hide"]},
+		{"id": "momentum", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Fleeting Strike", "requires": ["edge"]},
 		{"id": "gambit", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Gambit", "requires": []},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["momentum", "evasion"]},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["evasion", "momentum"]},
+	],
+	"wipe_guard": [
+		{"id": "shieldwall", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Shield Wall", "requires": ["hide"]},
+		{"id": "vanguard", "tier": 2, "req_level": 4, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Vanguard Strike", "requires": ["edge"]},
+		{"id": "instinct", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Battle Instinct", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "wipe_guard", "value": 0.25, "name": "Last Stand", "requires": ["shieldwall", "vanguard"]},
+	],
+	"boss_alpha_strike": [
+		{"id": "buildup2", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Arcane Buildup", "requires": ["edge"]},
+		{"id": "ward", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Ward Sigil", "requires": ["hide"]},
+		{"id": "slip", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Arcane Slip", "requires": []},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 3, "kind": "boss_alpha_strike", "value": 1.0, "name": "Cataclysm", "requires": ["buildup2", "ward"]},
 	],
 }
+
+
+## A subclass's full skill tree: the 2 universal Tier-1 nodes plus the
+## 4-node package matching its own CLASS_POOL `kind` (falls back to the
+## dmg_pct package for anything not in CLASS_POOL, e.g. a Champion's
+## non-subclass pool_id — harmless since Champions never learn skills).
+static func subclass_skill_tree(pool_id: String) -> Array:
+	var cls := find_class(pool_id)
+	var kind: String = cls.get("kind", "dmg_pct")
+	return SUBCLASS_TIER1 + KIND_SKILL_PACKAGE.get(kind, KIND_SKILL_PACKAGE["dmg_pct"])
 
 # Champion system (deferred beyond this slice, but the rank ladder is shared
 # with recruited heroes, so it's ported now). Rank sets weight (pull odds),
@@ -246,8 +333,10 @@ const CHAMP_KIND_BASE := {
 	"mend_pct": 0.03, "dodge_pct": 0.08, "hazard_guard_pct": 0.10, "wipe_guard": 0.2, "boss_alpha_strike": 1.0,
 }
 
-# 50 classes across the 5 roles, 10 per role. `role` picks the CLASS_SKILLS
-# tree; rank/kind/flavor are the same F-S vocabulary the Champion pool uses.
+# 50 classes across the 5 roles, 10 per role. `role` picks the Ability/anim
+# assets; `kind` picks the skill-tree package (subclass_skill_tree) and the
+# id itself picks the unique Ability (SUBCLASS_ABILITIES); rank/flavor are the
+# same F-S vocabulary the Champion pool uses.
 const CLASS_POOL := [
 	# -- Warrior (melee bruisers & tanks) --
 	{"id": "squire", "name": "Squire", "role": "warrior", "rank": "F", "type": "Ember", "hp_ratio": 1.0, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "A guild recruit swinging a borrowed blade."},
@@ -546,8 +635,8 @@ static func find_branch_node(key: String) -> Dictionary:
 	return {}
 
 
-static func find_skill_node(role: String, skill_id: String) -> Dictionary:
-	for n in CLASS_SKILLS.get(role, []):
+static func find_skill_node(pool_id: String, skill_id: String) -> Dictionary:
+	for n in subclass_skill_tree(pool_id):
 		if n["id"] == skill_id:
 			return n
 	return {}

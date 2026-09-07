@@ -17,7 +17,7 @@ const RARITY_NOUNS := ["Sigil", "Charm", "Shard", "Idol", "Emblem"]
 
 func hero_skill_total(h: Hero, kind: String) -> float:
 	var s := 0.0
-	var tree: Array = GameData.CLASS_SKILLS.get(h.cls_id, [])
+	var tree: Array = GameData.subclass_skill_tree(h.pool_id)
 	for n in tree:
 		if n["kind"] == kind and h.skills.get(n["id"], false):
 			s += n["value"]
@@ -536,7 +536,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var ability_cooldowns: Dictionary = {}
 	var pending_actions: Dictionary = {}
 	for h in party:
-		if GameData.ABILITIES.has(h.cls_id) and h.level >= 3:
+		if GameData.SUBCLASS_ABILITIES.has(h.pool_id) and h.level >= 3:
 			ability_cooldowns[h.id] = 0
 		pending_actions[h.id] = {"action": "attack", "target": 0}
 
@@ -652,31 +652,76 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			defending[h.id] = true
 		elif action == "ability" and int(cooldowns.get(h.id, 999)) == 0:
 			cooldowns[h.id] = ABILITY_COOLDOWN_ROUNDS
-			var ability_id: String = h.cls_id
-			log.append("%s uses %s!" % [h.name, GameData.ABILITIES[ability_id]["name"]])
-			match ability_id:
-				"cleric":
+			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
+			var eff: String = ab["effect"]
+			var val: float = float(ab["value"])
+			log.append("%s uses %s!" % [h.name, ab["name"]])
+			match eff:
+				"mend_burst":
 					for h2 in party:
-						h2.hp = max_hp(h2)
-					log.append("The party is fully mended.")
-				"ranger":
+						if h2.hp > 0:
+							h2.hp = min(max_hp(h2), h2.hp + int(round(max_hp(h2) * val)))
+					log.append("The party mends.")
+				"monster_dmg_mult":
 					for m in monsters:
-						m["dmg"] = float(m["dmg"]) * 0.6
+						m["dmg"] = float(m["dmg"]) * val
 					log.append("The enemies' strength is sapped.")
-				"warrior":
-					state["team_dmg_base"] = team_dmg_base * 1.3
-				"mage":
-					var mage_idx := _lowest_hp_living_monster_idx(monsters)
-					if mage_idx >= 0:
-						var burst: float = team_dmg_base
-						monsters[mage_idx]["hp"] = float(monsters[mage_idx]["hp"]) - burst
-						log.append("Overcharge unleashes a burst on %s for %d!" % [monsters[mage_idx]["name"], round(burst)])
-				"rogue":
-					var rogue_idx := _lowest_hp_living_monster_idx(monsters)
-					if rogue_idx >= 0:
-						var dealt2: float = team_dmg_base * escalate_mult * 1.9
-						monsters[rogue_idx]["hp"] = float(monsters[rogue_idx]["hp"]) - dealt2
-						log.append("Ambush lands on %s for %d!" % [monsters[rogue_idx]["name"], round(dealt2)])
+				"team_dmg_mult":
+					state["team_dmg_base"] = team_dmg_base * val
+				"burst_lowest":
+					var idx := _lowest_hp_living_monster_idx(monsters)
+					if idx >= 0:
+						var burst: float = team_dmg_base * escalate_mult * val
+						monsters[idx]["hp"] = float(monsters[idx]["hp"]) - burst
+						log.append("A burst lands on %s for %d!" % [monsters[idx]["name"], round(burst)])
+				"cleave_burst":
+					for m in monsters:
+						if float(m["hp"]) > 0:
+							var dealt2: float = team_dmg_base * escalate_mult * val
+							m["hp"] = float(m["hp"]) - dealt2
+					log.append("A wave of damage sweeps every foe.")
+				"execute_burst":
+					var idx2 := _lowest_hp_living_monster_idx(monsters)
+					if idx2 >= 0:
+						var missing_frac: float = 1.0 - float(monsters[idx2]["hp"]) / float(monsters[idx2]["max_hp"])
+						var dealt3: float = team_dmg_base * val * (1.0 + missing_frac)
+						monsters[idx2]["hp"] = float(monsters[idx2]["hp"]) - dealt3
+						log.append("A finishing blow strikes %s for %d!" % [monsters[idx2]["name"], round(dealt3)])
+				"shield_lowest":
+					var alive_for_ability: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
+					if not alive_for_ability.is_empty():
+						var lowest: Hero = alive_for_ability[0]
+						for hh2 in alive_for_ability:
+							if hh2.hp < lowest.hp:
+								lowest = hh2
+						var shields: Dictionary = state["hero_shields"]
+						var amt: float = max_hp(lowest) * val
+						shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
+						log.append("%s is shielded for %d." % [lowest.name, int(round(amt))])
+				"reset_cooldowns":
+					for hid in cooldowns.keys():
+						cooldowns[hid] = 0
+					log.append("Every ability is ready again.")
+				"dodge_surge":
+					state["dodge"] = min(0.6, float(state["dodge"]) + val)
+					log.append("The party moves lighter on its feet.")
+				"escalate_surge":
+					state["escalate"] = float(state["escalate"]) + val
+					log.append("Every attack counts for more now.")
+				"counter_surge":
+					state["counter"] = min(0.6, float(state["counter"]) + val)
+					log.append("The party stands ready to strike back.")
+				"wipe_guard_surge":
+					state["wipe_guard"] = min(0.9, float(state["wipe_guard"]) + val)
+					log.append("The party braces against disaster.")
+				"self_sac_burst":
+					var idx3 := _lowest_hp_living_monster_idx(monsters)
+					if idx3 >= 0:
+						var self_cost: int = max(1, int(round(max_hp(h) * 0.15)))
+						h.hp = max(1, h.hp - self_cost)
+						var burst2: float = team_dmg_base * escalate_mult * val
+						monsters[idx3]["hp"] = float(monsters[idx3]["hp"]) - burst2
+						log.append("%s sacrifices %d HP for a burst on %s for %d!" % [h.name, self_cost, monsters[idx3]["name"], round(burst2)])
 
 	if float(state["kill_shield"]) > 0.0:
 		var got_kill := false

@@ -1009,7 +1009,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 
 			if cooldowns.has(h.id):
 				var cd: int = int(cooldowns[h.id])
-				var ab: Dictionary = GameData.ABILITIES[h.cls_id]
+				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 				var ab_label := "%s (%d)" % [str(ab["name"]), cd] if cd > 0 else str(ab["name"])
 				var ab_btn := _button(ab_label, func(hid=h.id):
 					GameState.set_hero_action(hid, "ability")
@@ -1634,7 +1634,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	if expanded_skill_hero == h.id:
 		cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
-		var tree: Array = GameData.CLASS_SKILLS.get(h.cls_id, [])
+		var tree: Array = GameData.subclass_skill_tree(h.pool_id)
 		for n in tree:
 			var skill_id: String = n["id"]
 			var learned: bool = h.skills.get(skill_id, false)
