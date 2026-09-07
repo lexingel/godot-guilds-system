@@ -18,6 +18,7 @@ var confirm_reset: bool = false
 var _combat_animating: bool = false
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
+var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
 
 
 func _ready() -> void:
@@ -326,37 +327,51 @@ func _render_onboard(v: VBoxContainer) -> void:
 
 
 # ---------------- Rift Hall ----------------
+## Lesser and Endless Rift are each a gate on the rift chamber's background
+## art, clickable straight into Party Assembly — no intermediate detail view
+## since there's nothing else to decide here, unlike Guild Management/
+## Inventory's hubs. The sealed third gateway in the art has no hotspot yet,
+## matching "Greater/Ascendant coming later."
 func _render_rift_hall(v: VBoxContainer) -> void:
 	_topbar(v)
 	v.add_child(_label("Rift Hall", 20))
-	for d in GameData.DIFFICULTIES:
-		var card := PanelContainer.new()
-		var cv := _vbox(4)
-		var did: String = d["id"]
-		cv.add_child(_label("%s — Floors %d · Rec. Power %d" % [d["name"], d["floors"], d["rec_power"]], 16))
-		cv.add_child(_primary_button("Assemble Party", func(diff_id=did):
-			pending_party.clear()
-			screen = "party_assembly"
-			_pending_diff_id = diff_id
-			_pending_endless = false
-			render()
-		))
-		card.add_child(cv)
-		v.add_child(card)
 
-	var endless_card := PanelContainer.new()
-	var ecv := _vbox(4)
-	ecv.add_child(_label("Endless Rift — scales forever. Best cycle: %d" % GameState.best_endless_cycle, 16))
-	ecv.add_child(_primary_button("Assemble Party", func():
-		pending_party.clear()
-		screen = "party_assembly"
-		_pending_diff_id = "endless"
-		_pending_endless = true
-		render()
-	))
-	endless_card.add_child(ecv)
-	v.add_child(endless_card)
+	var scene_size := Vector2(700, 340)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
 
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.RIFTHALL_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+
+	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	var lesser: Dictionary = GameData.DIFFICULTIES[0]
+	var gate_entries := [
+		["%s — Floors %d · Rec. Power %d" % [lesser["name"], lesser["floors"], lesser["rec_power"]],
+			Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98),
+			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = str(lesser["id"]); _pending_endless = false; render()],
+		["Endless Rift — scales forever. Best cycle: %d" % GameState.best_endless_cycle,
+			Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
+			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = "endless"; _pending_endless = true; render()],
+	]
+	for entry in gate_entries:
+		var label_text: String = entry[0]
+		var hit_rect: Rect2 = entry[1]
+		var native_rect: Rect2 = entry[2]
+		var cb: Callable = entry[3]
+		var glow_rect := Rect2(
+			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
+			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
+		)
+		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, cb)
+		hotspot.position = hit_rect.position
+		scene.add_child(hotspot)
+
+	v.add_child(scene)
 	v.add_child(_label("Greater Rift / Ascendant Rift — coming in a later pass.", 12))
 	v.add_child(_button("Back to Terminal", func():
 		screen = "terminal"
@@ -1119,6 +1134,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		term_tab = "camp"
 		medical_picker_bed = -1
 		mgmt_branch = ""
+		inv_category = ""
 		render()
 	))
 	v.add_child(_hsep())
@@ -1404,6 +1420,7 @@ func _render_management(v: VBoxContainer) -> void:
 		if b["id"] == mgmt_branch:
 			branch = b
 	v.add_child(_button("< Back to Branches", func(): mgmt_branch = ""; render()))
+	v.add_child(_banner(GameData.BRANCH_BANNER[mgmt_branch], 700, 150))
 	v.add_child(_label("%s — %s" % [branch["name"], branch["sub"]], 16))
 	for n in branch["nodes"]:
 		_render_management_node(v, branch, n)
@@ -1513,95 +1530,160 @@ func _render_roster(v: VBoxContainer) -> void:
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes recruited yet."))
 		return
-	for h in GameState.heroes:
-		var card := PanelContainer.new()
-		var cv := _vbox(4)
-		cv.add_child(_title_strip(h.name))
-		cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
-		cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
-		cv.add_child(_label("Power %d" % Combat.power_of(h), 12, true))
 
-		var actions := HBoxContainer.new()
-		actions.add_child(_button("Reroll Trait (60c)", func(id=h.id):
-			var err := GameState.reroll_trait(id)
+	var still_here: Array[Hero] = []
+	still_here.assign(GameState.heroes.filter(func(h): return h.id == selected_hero_id))
+	if still_here.is_empty():
+		selected_hero_id = ""
+
+	var portrait_row := HBoxContainer.new()
+	portrait_row.add_theme_constant_override("separation", 12)
+	for h in GameState.heroes:
+		portrait_row.add_child(_roster_portrait_button(h))
+	v.add_child(portrait_row)
+
+	if selected_hero_id == "":
+		v.add_child(_label("Click a hero above for their details.", 12, true))
+		return
+	var h: Hero = still_here[0]
+
+	var card := PanelContainer.new()
+	var cv := _vbox(4)
+	cv.add_child(_title_strip(h.name))
+	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
+	cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+	cv.add_child(_label("Power %d" % Combat.power_of(h), 12, true))
+
+	var actions := HBoxContainer.new()
+	actions.add_child(_button("Reroll Trait (60c)", func(id=h.id):
+		var err := GameState.reroll_trait(id)
+		if err != "":
+			push_warning(err)
+		render()
+	))
+	if h.trait_name != "":
+		actions.add_child(_button("Scrub Trait (30c)", func(id=h.id):
+			var err := GameState.scrub_trait(id)
 			if err != "":
 				push_warning(err)
 			render()
 		))
-		if h.trait_name != "":
-			actions.add_child(_button("Scrub Trait (30c)", func(id=h.id):
-				var err := GameState.scrub_trait(id)
+	actions.add_child(_button("Skills" if expanded_skill_hero != h.id else "Hide Skills", func(id=h.id):
+		expanded_skill_hero = "" if expanded_skill_hero == id else id
+		render()
+	))
+	if h.level >= 10:
+		var cur_cls := GameData.find_class(h.pool_id)
+		if not cur_cls.is_empty() and not GameState.evolution_target(cur_cls).is_empty():
+			var next_cls := GameState.evolution_target(cur_cls)
+			var next_rank := GameData.find_rank(next_cls["rank"])
+			actions.add_child(_button("Evolve → %s (%dcr)" % [next_cls["name"], int(next_rank["cost"])], func(id=h.id):
+				var err := GameState.evolve_hero(id)
 				if err != "":
 					push_warning(err)
 				render()
 			))
-		actions.add_child(_button("Skills" if expanded_skill_hero != h.id else "Hide Skills", func(id=h.id):
-			expanded_skill_hero = "" if expanded_skill_hero == id else id
-			render()
-		))
-		if h.level >= 10:
-			var cur_cls := GameData.find_class(h.pool_id)
-			if not cur_cls.is_empty() and not GameState.evolution_target(cur_cls).is_empty():
-				var next_cls := GameState.evolution_target(cur_cls)
-				var next_rank := GameData.find_rank(next_cls["rank"])
-				actions.add_child(_button("Evolve → %s (%dcr)" % [next_cls["name"], int(next_rank["cost"])], func(id=h.id):
-					var err := GameState.evolve_hero(id)
+	cv.add_child(actions)
+
+	if expanded_skill_hero == h.id:
+		cv.add_child(_hsep())
+		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
+		var tree: Array = GameData.CLASS_SKILLS.get(h.cls_id, [])
+		for n in tree:
+			var skill_id: String = n["id"]
+			var learned: bool = h.skills.get(skill_id, false)
+			var srow := HBoxContainer.new()
+			srow.add_child(_label("%s — %s (Lv%d, %d SP)%s" % [n["name"], Combat.describe_skill(n["kind"], n["value"]), n["req_level"], n["cost"], " [learned]" if learned else ""], 12))
+			if not learned:
+				srow.add_child(_button("Learn", func(hid=h.id, sid=skill_id):
+					var err := GameState.learn_skill(hid, sid)
 					if err != "":
 						push_warning(err)
 					render()
 				))
-		cv.add_child(actions)
+			cv.add_child(srow)
+		var spent: int = h.skills.values().count(true)
+		if spent > 0:
+			cv.add_child(_button("Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
+				var err := GameState.respec_hero(id)
+				if err != "":
+					push_warning(err)
+				render()
+			))
 
-		if expanded_skill_hero == h.id:
-			cv.add_child(_hsep())
-			cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
-			var tree: Array = GameData.CLASS_SKILLS.get(h.cls_id, [])
-			for n in tree:
-				var skill_id: String = n["id"]
-				var learned: bool = h.skills.get(skill_id, false)
-				var srow := HBoxContainer.new()
-				srow.add_child(_label("%s — %s (Lv%d, %d SP)%s" % [n["name"], Combat.describe_skill(n["kind"], n["value"]), n["req_level"], n["cost"], " [learned]" if learned else ""], 12))
-				if not learned:
-					srow.add_child(_button("Learn", func(hid=h.id, sid=skill_id):
-						var err := GameState.learn_skill(hid, sid)
-						if err != "":
-							push_warning(err)
-						render()
-					))
-				cv.add_child(srow)
-			var spent: int = h.skills.values().count(true)
-			if spent > 0:
-				cv.add_child(_button("Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
-					var err := GameState.respec_hero(id)
-					if err != "":
-						push_warning(err)
-					render()
-				))
+	var equipped_items: Array[Item] = []
+	equipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == h.id))
+	if not equipped_items.is_empty():
+		var erow := HBoxContainer.new()
+		for it in equipped_items:
+			erow.add_child(_button("%s (%s) — unequip" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category]], func(id=it.id):
+				var target: Item = null
+				for x in GameState.items:
+					if x.id == id:
+						target = x
+						break
+				if target:
+					GameState.equip_item(h.id, target.slot_type(), target.equipped_idx, "")
+				render()
+			))
+		cv.add_child(erow)
 
-		var equipped_items: Array[Item] = []
-		equipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == h.id))
-		if not equipped_items.is_empty():
-			var erow := HBoxContainer.new()
-			for it in equipped_items:
-				erow.add_child(_button("%s (%s) — unequip" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category]], func(id=it.id):
-					var target: Item = null
-					for x in GameState.items:
-						if x.id == id:
-							target = x
-							break
-					if target:
-						GameState.equip_item(h.id, target.slot_type(), target.equipped_idx, "")
-					render()
-				))
-			cv.add_child(erow)
+	card.add_child(cv)
+	v.add_child(card)
 
-		var hero_row := HBoxContainer.new()
-		var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-		if portrait_path != "":
-			hero_row.add_child(_icon(portrait_path, 64))
-		hero_row.add_child(cv)
-		card.add_child(hero_row)
-		v.add_child(card)
+
+## One hero's clickable portrait for the Roster row — a PanelContainer
+## (bordered/highlighted when selected) with a flat invisible Button on top,
+## same layered-hotspot approach as the camp/management screens.
+func _roster_portrait_button(h: Hero) -> Control:
+	var w := 72.0
+	var ht := 100.0
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(w, ht)
+	wrap.size = Vector2(w, ht)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(w, ht)
+	panel.size = Vector2(w, ht)
+	if selected_hero_id == h.id:
+		var sel_style := StyleBoxFlat.new()
+		sel_style.bg_color = Palette.SURFACE2
+		sel_style.border_width_left = 2
+		sel_style.border_width_top = 2
+		sel_style.border_width_right = 2
+		sel_style.border_width_bottom = 2
+		sel_style.border_color = Palette.RIFT
+		sel_style.corner_radius_top_left = 8
+		sel_style.corner_radius_top_right = 8
+		sel_style.corner_radius_bottom_left = 8
+		sel_style.corner_radius_bottom_right = 8
+		sel_style.content_margin_top = 4
+		panel.add_theme_stylebox_override("panel", sel_style)
+	var pv := _vbox(2)
+	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait_path != "":
+		var icon_wrap := CenterContainer.new()
+		icon_wrap.add_child(_icon(portrait_path, 48))
+		pv.add_child(icon_wrap)
+	pv.add_child(_label(h.name.split(" the ")[0], 10))
+	pv.add_child(_label("%d/%d HP" % [h.hp, Combat.max_hp(h)], 9, true))
+	panel.add_child(pv)
+	wrap.add_child(panel)
+
+	var btn := Button.new()
+	btn.flat = true
+	btn.custom_minimum_size = Vector2(w, ht)
+	btn.size = Vector2(w, ht)
+	var clear_style := StyleBoxEmpty.new()
+	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(style_name, clear_style)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.pressed.connect(func(id=h.id):
+		selected_hero_id = "" if selected_hero_id == id else id
+		render()
+	)
+	wrap.add_child(btn)
+	return wrap
 
 
 func _first_free_slot(h: Hero, slot_type: String) -> int:
@@ -1617,7 +1699,62 @@ func _first_free_slot(h: Hero, slot_type: String) -> int:
 
 
 func _render_inventory(v: VBoxContainer) -> void:
-	v.add_child(_label("Inventory", 16))
+	if inv_category == "":
+		_render_inventory_hub(v)
+		return
+	v.add_child(_button("< Back to Inventory", func(): inv_category = ""; render()))
+	match inv_category:
+		"relics": _render_inventory_relics(v)
+		"detectors": _render_inventory_detectors(v)
+		_: _render_inventory_items(v)
+
+
+## The 3 Inventory categories as clickable stations on a storage-vault scene
+## (a chest for Items, a glowing altar for Relics, a table with a spyglass
+## for Detectors) — same background-prop-as-button + hover-glow pattern as
+## the camp/management screens.
+func _render_inventory_hub(v: VBoxContainer) -> void:
+	var scene_size := Vector2(700, 340)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
+
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.INVENTORY_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+
+	# hit_rect (generous, easy-to-click) + native_rect (the station's own
+	# tight bounds in the source 320x200 art, for the hover glow).
+	var cat_entries := [
+		["items", "Items", Rect2(0, 0, 230, 340), Rect2(3, 103, 97, 70)],
+		["relics", "Relics", Rect2(230, 0, 240, 340), Rect2(133, 58, 62, 100)],
+		["detectors", "Rift Detectors", Rect2(470, 0, 230, 340), Rect2(210, 65, 110, 95)],
+	]
+	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	for entry in cat_entries:
+		var cid: String = entry[0]
+		var label_text: String = entry[1]
+		var hit_rect: Rect2 = entry[2]
+		var native_rect: Rect2 = entry[3]
+		var glow_rect := Rect2(
+			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
+			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
+		)
+		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, func(id=cid):
+			inv_category = id
+			render()
+		)
+		hotspot.position = hit_rect.position
+		scene.add_child(hotspot)
+
+	v.add_child(scene)
+
+
+func _render_inventory_items(v: VBoxContainer) -> void:
+	v.add_child(_label("Items", 16))
 	var unequipped_items: Array[Item] = []
 	unequipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == ""))
 	if unequipped_items.is_empty():
@@ -1640,7 +1777,8 @@ func _render_inventory(v: VBoxContainer) -> void:
 		))
 		v.add_child(row)
 
-	v.add_child(_hsep())
+
+func _render_inventory_relics(v: VBoxContainer) -> void:
 	v.add_child(_label("Relics — %d/%d slots equipped" % [Combat.equipped_relics().size(), GameState.relic_slot_cap()], 16))
 	for r in GameState.relics:
 		var rrow := HBoxContainer.new()
@@ -1671,7 +1809,8 @@ func _render_inventory(v: VBoxContainer) -> void:
 				))
 		v.add_child(rrow)
 
-	v.add_child(_hsep())
+
+func _render_inventory_detectors(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Detectors", 16))
 	if GameState.detectors.is_empty():
 		v.add_child(_label("No Detectors.", 12))

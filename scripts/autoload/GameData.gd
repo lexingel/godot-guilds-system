@@ -362,6 +362,15 @@ const MEDICAL_BG := "res://assets/screens/medical_bg.png"
 const ROSTER_BG := "res://assets/screens/roster_bg.png"
 const MANAGEMENT_BG := "res://assets/screens/management_bg.png"
 const BED_ICON := "res://assets/screens/bed_icon.png"
+const RIFTHALL_BG := "res://assets/screens/rifthall_bg.png"
+const INVENTORY_BG := "res://assets/screens/inventory_bg.png"
+const OPS_BANNER := "res://assets/screens/ops_banner.png"
+const INFRA_BANNER := "res://assets/screens/infra_banner.png"
+const LOGISTICS_BANNER := "res://assets/screens/logistics_banner.png"
+const RESEARCH_BANNER := "res://assets/screens/research_banner.png"
+const BRANCH_BANNER := {
+	"ops": OPS_BANNER, "infra": INFRA_BANNER, "log": LOGISTICS_BANNER, "res": RESEARCH_BANNER,
+}
 const CAMP_HUB_ICON_PATH := {
 	"roster": "res://assets/camp/icon_roster.png",
 	"inventory": "res://assets/camp/icon_inventory.png",
