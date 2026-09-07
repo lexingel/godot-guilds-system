@@ -351,6 +351,21 @@ const CURRENCY_ICON_PATH := {
 	"crystals": "res://assets/ui/icon_crystals.png",
 	"tokens": "res://assets/ui/icon_tokens.png",
 }
+const CREST_PATH: Array[String] = [
+	"res://assets/camp/crest_1.png", "res://assets/camp/crest_2.png",
+	"res://assets/camp/crest_3.png", "res://assets/camp/crest_4.png",
+	"res://assets/camp/crest_5.png", "res://assets/camp/crest_6.png",
+	"res://assets/camp/crest_7.png", "res://assets/camp/crest_8.png",
+]
+const CAMP_BG := "res://assets/camp/camp_bg.png"
+const CAMP_HUB_ICON_PATH := {
+	"roster": "res://assets/camp/icon_roster.png",
+	"inventory": "res://assets/camp/icon_inventory.png",
+	"recruits": "res://assets/camp/icon_recruits.png",
+	"medical": "res://assets/camp/icon_medical.png",
+	"management": "res://assets/camp/icon_management.png",
+	"rift": "res://assets/camp/icon_rift.png",
+}
 const HERO_PORTRAIT_PATH := {
 	"warrior": "res://assets/heroes/warrior.png",
 	"ranger": "res://assets/heroes/ranger.png",

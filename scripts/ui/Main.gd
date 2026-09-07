@@ -7,7 +7,8 @@ extends Control
 @onready var root: MarginContainer = $Root
 
 var screen: String = "onboard"     # onboard | rift_hall | party_assembly | rift_run | terminal
-var term_tab: String = "roster"    # roster | recruits
+var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management
+var pending_crest: int = 1
 var pending_party: Array[String] = []
 var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
@@ -22,6 +23,8 @@ func _ready() -> void:
 		GameState.reset()
 	if GameState.guild_name != "":
 		screen = "terminal" if GameState.run.is_empty() else "rift_run"
+	else:
+		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
 	GameState.state_changed.connect(render)
 	render()
 
@@ -256,6 +259,7 @@ func render() -> void:
 func _topbar(v: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
+	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
 	row.add_child(_label("%s —" % GameState.guild_name, 16))
 	for entry in [
 		[GameData.CURRENCY_ICON_PATH["coins"], GameState.coins],
@@ -276,11 +280,23 @@ func _render_onboard(v: VBoxContainer) -> void:
 	var edit := LineEdit.new()
 	edit.placeholder_text = "Guild name"
 	v.add_child(edit)
-	v.add_child(_button("Found the Guild", func():
+
+	v.add_child(_label("Choose a Crest", 16))
+	var crest_row := HBoxContainer.new()
+	crest_row.add_theme_constant_override("separation", 12)
+	crest_row.add_child(_icon(GameData.CREST_PATH[pending_crest - 1], 64))
+	crest_row.add_child(_button("Randomize", func():
+		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
+		render()
+	))
+	v.add_child(crest_row)
+
+	v.add_child(_primary_button("Found the Guild", func():
 		var n := edit.text.strip_edges()
 		if n == "":
 			return
 		GameState.guild_name = n
+		GameState.guild_crest = pending_crest
 		GameState.refresh_recruit_pool()
 		GameState.save()
 		screen = "terminal"
@@ -1073,22 +1089,67 @@ func _render_terminal(v: VBoxContainer) -> void:
 	if not tier["next"].is_empty():
 		tier_line += " (%d to %s)" % [int(tier["next"]["min"]) - int(tier["total"]), tier["next"]["name"]]
 	v.add_child(_label(tier_line, 12, true))
-	var tabs := HBoxContainer.new()
-	tabs.add_child(_button("Roster", func(): term_tab = "roster"; render()))
-	tabs.add_child(_button("Inventory", func(): term_tab = "inventory"; render()))
-	tabs.add_child(_button("Hero Recruits", func(): term_tab = "recruits"; render()))
-	tabs.add_child(_button("Medical Bay", func(): term_tab = "medical"; render()))
-	tabs.add_child(_button("Guild Management", func(): term_tab = "management"; render()))
-	tabs.add_child(_button("Rift Hall", func(): screen = "rift_hall"; render()))
-	v.add_child(tabs)
-	v.add_child(_hsep())
 
+	if term_tab == "camp":
+		_render_camp(v)
+		return
+
+	v.add_child(_button("< Back to Camp", func(): term_tab = "camp"; render()))
+	v.add_child(_hsep())
 	match term_tab:
 		"inventory": _render_inventory(v)
 		"recruits": _render_recruits(v)
 		"medical": _render_medical_bay(v)
 		"management": _render_management(v)
 		_: _render_roster(v)
+
+
+## The guild hub: a camp scene with one clickable icon-button per section,
+## replacing the old plain row of tab buttons. Buttons are placed with
+## explicit positions over the background the same way the battle arena
+## places its sprites (a plain Control, not a layout Container).
+func _render_camp(v: VBoxContainer) -> void:
+	v.add_child(_label("Guild Name", 12, true))
+	v.add_child(_label(GameState.guild_name, 20))
+
+	var camp_size := Vector2(700, 340)
+	var camp := Control.new()
+	camp.custom_minimum_size = camp_size
+
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.CAMP_BG)
+	bg.custom_minimum_size = camp_size
+	bg.size = camp_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	camp.add_child(bg)
+
+	var hub_entries := [
+		["roster", "Roster", func(): term_tab = "roster"; render()],
+		["inventory", "Inventory", func(): term_tab = "inventory"; render()],
+		["recruits", "Hero Recruits", func(): term_tab = "recruits"; render()],
+		["medical", "Medical Bay", func(): term_tab = "medical"; render()],
+		["management", "Guild Management", func(): term_tab = "management"; render()],
+		["rift", "Rift Hall", func(): screen = "rift_hall"; render()],
+	]
+	var cols := 3
+	var col_w: float = camp_size.x / cols
+	var row_h: float = camp_size.y / 2.0
+	for i in hub_entries.size():
+		var key: String = hub_entries[i][0]
+		var label_text: String = hub_entries[i][1]
+		var cb: Callable = hub_entries[i][2]
+		var col := i % cols
+		var row := i / cols
+		var btn := _button(label_text, cb)
+		btn.icon = load(GameData.CAMP_HUB_ICON_PATH[key])
+		btn.expand_icon = true
+		btn.custom_minimum_size = Vector2(col_w - 24, 64)
+		btn.size = Vector2(col_w - 24, 64)
+		btn.position = Vector2(col * col_w + 12, row * row_h + row_h - 84)
+		camp.add_child(btn)
+
+	v.add_child(camp)
 
 
 func _render_recruits(v: VBoxContainer) -> void:

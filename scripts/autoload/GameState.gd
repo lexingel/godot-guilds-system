@@ -11,6 +11,7 @@ const SAVE_PATH := "user://save.json"
 const RELIC_MAX_LEVEL := 5
 
 var guild_name: String = ""
+var guild_crest: int = 1   # 1-8, index into GameData.CREST_PATH
 var next_id: int = 1
 var coins: int = 60
 var crystals: int = 15
@@ -174,6 +175,7 @@ func cartography_unlocked() -> bool:
 
 func reset() -> void:
 	guild_name = ""
+	guild_crest = 1
 	next_id = 1
 	coins = 60
 	crystals = 15
@@ -215,7 +217,7 @@ func _run_for_save() -> Dictionary:
 
 func save() -> void:
 	var data := {
-		"guild_name": guild_name, "next_id": next_id, "coins": coins,
+		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
 		"crystals": crystals, "tokens": tokens,
 		"heroes": heroes.map(func(h): return h.to_dict()),
 		"relics": relics.map(func(r): return r.to_dict()),
@@ -242,6 +244,7 @@ func load_save() -> bool:
 		return false
 	var data: Dictionary = parsed
 	guild_name = data.get("guild_name", "")
+	guild_crest = data.get("guild_crest", 1)
 	next_id = data.get("next_id", 1)
 	coins = data.get("coins", 60)
 	crystals = data.get("crystals", 15)
