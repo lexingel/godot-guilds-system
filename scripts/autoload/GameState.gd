@@ -681,14 +681,30 @@ func field_triage_action() -> String:
 	return ""
 
 
+## True for any hero worth a bed — actually downed, or merely wounded (hp
+## below max but still able to fight). Beds are a shared resource across
+## both, matching the original design intent ("heroes without a bed still
+## recover, just at the normal slower passive rate").
+func needs_recovery(h: Hero) -> bool:
+	return h.is_downed() or (h.hp > 0 and h.hp < Combat.max_hp(h))
+
+
 func assign_to_bed(hero_id: String) -> void:
 	var h := find_hero(hero_id)
-	if not h or not h.is_downed() or h.bedded:
+	if not h or h.bedded or not needs_recovery(h):
 		return
 	if occupied_beds() >= medical_bed_cap():
 		return
-	var remaining := h.downed_until - int(Time.get_unix_time_from_system() * 1000)
-	h.downed_until = int(Time.get_unix_time_from_system() * 1000) + int(round(remaining * 0.4))
+	var now := int(Time.get_unix_time_from_system() * 1000)
+	if h.is_downed():
+		var remaining := h.downed_until - now
+		h.downed_until = now + int(round(remaining * 0.4))
+	else:
+		if h.heal_until <= 0:
+			var missing := 1.0 - float(h.hp) / float(Combat.max_hp(h))
+			h.heal_until = now + int(recovery_ms() * missing)
+		var remaining2 := h.heal_until - now
+		h.heal_until = now + int(round(remaining2 * 0.4))
 	h.bedded = true
 	save()
 	state_changed.emit()
@@ -697,9 +713,42 @@ func assign_to_bed(hero_id: String) -> void:
 func occupied_beds() -> int:
 	var n := 0
 	for h in heroes:
-		if h.bedded and h.is_downed():
+		if h.bedded and needs_recovery(h):
 			n += 1
 	return n
+
+
+## Lazily resolves every hero's recovery timers against wall-clock time —
+## called once per render() the same way is_downed() already lazily compares
+## against Time.get_unix_time_from_system(). Closes a real gap: previously a
+## downed hero's `downed_until` elapsing never actually restored their HP,
+## and a merely-wounded hero (survived a fight below max HP) had no recovery
+## timer at all, so Medical Bay's "recovering passively" label was aspirational.
+func resolve_recovery() -> void:
+	var now := int(Time.get_unix_time_from_system() * 1000)
+	var changed := false
+	for h in heroes:
+		if h.downed_until > 0 and now >= h.downed_until:
+			h.downed_until = 0
+			h.heal_until = 0
+			h.bedded = false
+			h.hp = Combat.max_hp(h)
+			changed = true
+		elif h.hp > 0 and h.hp < Combat.max_hp(h) and not h.is_downed():
+			if h.heal_until <= 0:
+				var missing := 1.0 - float(h.hp) / float(Combat.max_hp(h))
+				h.heal_until = now + int(recovery_ms() * missing)
+				changed = true
+			elif now >= h.heal_until:
+				h.hp = Combat.max_hp(h)
+				h.heal_until = 0
+				h.bedded = false
+				changed = true
+		elif h.heal_until != 0:
+			h.heal_until = 0
+			changed = true
+	if changed:
+		save()
 
 
 func sell_detector(detector_id: String) -> void:

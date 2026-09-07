@@ -258,6 +258,7 @@ func _title_strip(text: String) -> PanelContainer:
 
 
 func render() -> void:
+	GameState.resolve_recovery()
 	_clear_root()
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1337,9 +1338,9 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	scene.add_child(bg)
 
 	var bedded: Array[Hero] = []
-	bedded.assign(GameState.heroes.filter(func(h): return h.is_downed() and h.bedded))
+	bedded.assign(GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and h.bedded))
 	var waiting: Array[Hero] = []
-	waiting.assign(GameState.heroes.filter(func(h): return h.is_downed() and not h.bedded))
+	waiting.assign(GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded))
 
 	var cap := GameState.medical_bed_cap()
 	var bed_w := 64.0
@@ -1357,7 +1358,8 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 			var h: Hero = bedded[i]
 			bed_rect.modulate = Color(0.8, 0.85, 1.0)
 			scene.add_child(bed_wrap)
-			var secs: int = max(0, int((h.downed_until - now_ms) / 1000.0))
+			var until: int = h.downed_until if h.is_downed() else h.heal_until
+			var secs: int = max(0, int((until - now_ms) / 1000.0))
 			var name_label := _label(h.name, 10, true)
 			name_label.position = Vector2(bx - 10, by + bed_h + 2)
 			scene.add_child(name_label)
@@ -1388,12 +1390,13 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	if medical_picker_bed >= 0 and medical_picker_bed < cap:
 		var picker := _vbox(4)
 		if waiting.is_empty():
-			picker.add_child(_label("No downed heroes waiting for a bed.", 12, true))
+			picker.add_child(_label("No wounded heroes waiting for a bed.", 12, true))
 		else:
 			picker.add_child(_label("Assign to bed %d:" % (medical_picker_bed + 1), 12, true))
 			for h in waiting:
+				var status := "downed" if h.is_downed() else "wounded"
 				var row := HBoxContainer.new()
-				row.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)]))
+				row.add_child(_label("%s — %d/%d HP (%s)" % [h.name, h.hp, Combat.max_hp(h), status]))
 				row.add_child(_primary_button("Assign", func(id=h.id):
 					GameState.assign_to_bed(id)
 					medical_picker_bed = -1
@@ -1402,11 +1405,9 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 				picker.add_child(row)
 		v.add_child(picker)
 
-	var resting: Array[Hero] = []
-	resting.assign(GameState.heroes.filter(func(h): return h.hp < Combat.max_hp(h) and not h.is_downed()))
-	if not resting.is_empty():
-		v.add_child(_label("Recovering (no bed needed):", 12, true))
-		for h in resting:
+	if medical_picker_bed == -1 and not waiting.is_empty():
+		v.add_child(_label("Recovering without a bed (slower):", 12, true))
+		for h in waiting:
 			v.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
 
 
