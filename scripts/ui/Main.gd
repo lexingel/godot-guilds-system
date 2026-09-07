@@ -1341,7 +1341,7 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 			var h: Hero = bedded[i]
 			bed_rect.modulate = Color(0.8, 0.85, 1.0)
 			scene.add_child(bed_wrap)
-			var secs := max(0, int((h.downed_until - now_ms) / 1000.0))
+			var secs: int = max(0, int((h.downed_until - now_ms) / 1000.0))
 			var name_label := _label(h.name, 10, true)
 			name_label.position = Vector2(bx - 10, by + bed_h + 2)
 			scene.add_child(name_label)
