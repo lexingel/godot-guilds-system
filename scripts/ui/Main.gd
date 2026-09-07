@@ -625,13 +625,35 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	))
 
 
+## Bounds an animation wait to `timeout_sec` of real engine time instead of
+## trusting `sig` alone. Reproduced twice: Resolve Round's animation chain
+## (tween.finished / SceneTreeTimer.timeout) can simply never fire — once
+## even on a foregrounded, unthrottled tab — which used to wedge
+## _combat_animating forever behind the early-return guard on the button,
+## making every further click a silent no-op until the page was reloaded.
+## Polls via process_frame rather than racing a second timer against the
+## first, since process_frame is the one signal that must still fire for
+## anything on screen to ever change — timing out against it can't get stuck
+## the same way a stalled Tween or SceneTreeTimer can.
+func _await_or_timeout(sig: Signal, timeout_sec: float) -> void:
+	var fired := [false]
+	var mark_fired := func(): fired[0] = true
+	sig.connect(mark_fired, CONNECT_ONE_SHOT)
+	var elapsed := 0.0
+	while not fired[0] and elapsed < timeout_sec:
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+	if sig.is_connected(mark_fired):
+		sig.disconnect(mark_fired)
+
+
 ## Frame-swaps `rect.texture` through `frames` once, a short delay between each.
 ## No explicit reset to the resting pose needed — the render() call right after
 ## _play_round always rebuilds portraits from the static portrait path anyway.
 func _play_frames(rect: TextureRect, frames: Array[String], frame_time: float = 0.08) -> void:
 	for path in frames:
 		rect.texture = load(path)
-		await get_tree().create_timer(frame_time).timeout
+		await _await_or_timeout(get_tree().create_timer(frame_time).timeout, frame_time + 1.0)
 
 
 ## Fallback for the two combos with no usable AI-generated motion (Warrior's
@@ -643,7 +665,7 @@ func _tween_lunge(wrapper: Control) -> void:
 	var tween := create_tween()
 	tween.tween_property(wrapper, "position:x", start_x + 12.0, 0.12)
 	tween.tween_property(wrapper, "position:x", start_x, 0.12)
-	await tween.finished
+	await _await_or_timeout(tween.finished, 1.0)
 
 
 func _tween_hurt(wrapper: Control) -> void:
@@ -654,14 +676,14 @@ func _tween_hurt(wrapper: Control) -> void:
 	tween.chain().tween_property(wrapper, "position:x", start_x + 6.0, 0.08)
 	tween.chain().tween_property(wrapper, "position:x", start_x, 0.08)
 	tween.parallel().tween_property(wrapper, "modulate", Color(1, 1, 1), 0.24)
-	await tween.finished
+	await _await_or_timeout(tween.finished, 1.0)
 
 
 func _flash_white(wrapper: Control) -> void:
 	var tween := create_tween()
 	tween.tween_property(wrapper, "modulate", Color(2, 2, 2), 0.06)
 	tween.tween_property(wrapper, "modulate", Color(1, 1, 1), 0.18)
-	await tween.finished
+	await _await_or_timeout(tween.finished, 1.0)
 
 
 ## A gentle, endless breathing/sway loop for a hero or monster wrapper so the
@@ -693,7 +715,7 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
 	var tween := create_tween()
 	tween.tween_property(l, "position:y", l.position.y - 24, 0.6)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
-	await tween.finished
+	await _await_or_timeout(tween.finished, 1.5)
 	l.queue_free()
 
 
@@ -738,7 +760,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			await _flash_white(monster_wrappers[i])
 			await _spawn_damage_number(monster_wrappers[i], "-%d" % int(round(dmg)), Palette.HAZARD)
 
-	await get_tree().create_timer(0.15).timeout
+	await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
 
 	# Every monster still alive after the heroes' attack phase takes its
 	# retaliation swing now. Whether a given swing actually landed or was
