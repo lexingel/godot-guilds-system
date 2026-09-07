@@ -151,11 +151,17 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 	return out
 
 
-func _log_richtext(lines: Array, party: Array[Hero], monsters: Array) -> RichTextLabel:
+## Fixed-height, internally-scrolled log — `fit_content` used to grow the
+## label a line taller every round, pushing the action buttons further down
+## the page each time. scroll_follow keeps the newest line in view without
+## the caller needing to manage scroll position.
+func _log_richtext(lines: Array, party: Array[Hero], monsters: Array, height: float = 160.0) -> RichTextLabel:
 	var rt := RichTextLabel.new()
 	rt.bbcode_enabled = true
-	rt.fit_content = true
-	rt.scroll_active = false
+	rt.custom_minimum_size = Vector2(0, height)
+	rt.size = Vector2(0, height)
+	rt.scroll_active = true
+	rt.scroll_follow = true
 	rt.add_theme_font_size_override("normal_font_size", 12)
 	var body := ""
 	for line in lines:
@@ -993,8 +999,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var current_action: String = str(act.get("action", "attack"))
 			var current_target: int = int(act.get("target", 0))
 
-			var action_row := HBoxContainer.new()
-			action_row.add_theme_constant_override("separation", 4)
+			var attack_row := HBoxContainer.new()
+			attack_row.add_theme_constant_override("separation", 4)
 			for i in monsters.size():
 				if float(monsters[i]["hp"]) <= 0:
 					continue
@@ -1002,19 +1008,26 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					GameState.set_hero_action(hid, "attack", ti)
 					render()
 				)
+				atk_btn.icon = load(GameData.sprite_for_monster(str(monsters[i]["name"])))
+				atk_btn.add_theme_constant_override("icon_max_width", 16)
 				atk_btn.add_theme_font_size_override("font_size", 11)
 				atk_btn.toggle_mode = true
 				atk_btn.button_pressed = current_action == "attack" and current_target == i
-				action_row.add_child(atk_btn)
+				attack_row.add_child(atk_btn)
+			hero_block.add_child(attack_row)
 
+			var action_row := HBoxContainer.new()
+			action_row.add_theme_constant_override("separation", 4)
 			if cooldowns.has(h.id):
 				var cd: int = int(cooldowns[h.id])
 				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
-				var ab_label := "%s (%d)" % [str(ab["name"]), cd] if cd > 0 else str(ab["name"])
+				var ab_label := "%s — Cooldown: %d" % [str(ab["name"]), cd] if cd > 0 else "%s — Ready" % str(ab["name"])
 				var ab_btn := _button(ab_label, func(hid=h.id):
 					GameState.set_hero_action(hid, "ability")
 					render()
 				)
+				ab_btn.icon = load(GameData.ability_icon(h.pool_id))
+				ab_btn.add_theme_constant_override("icon_max_width", 16)
 				ab_btn.add_theme_font_size_override("font_size", 11)
 				ab_btn.toggle_mode = true
 				ab_btn.button_pressed = current_action == "ability"
@@ -1025,6 +1038,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				GameState.set_hero_action(hid, "defend")
 				render()
 			)
+			defend_btn.icon = load("res://assets/skills/shield_basic.png")
+			defend_btn.add_theme_constant_override("icon_max_width", 16)
 			defend_btn.add_theme_font_size_override("font_size", 11)
 			defend_btn.toggle_mode = true
 			defend_btn.button_pressed = current_action == "defend"
@@ -1170,7 +1185,13 @@ func _render_terminal(v: VBoxContainer) -> void:
 	var tier_line := "%s — %d levels purchased" % [tier["name"], tier["total"]]
 	if not tier["next"].is_empty():
 		tier_line += " (%d to %s)" % [int(tier["next"]["min"]) - int(tier["total"]), tier["next"]["name"]]
-	v.add_child(_label(tier_line, 12, true))
+	var tier_row := HBoxContainer.new()
+	tier_row.add_theme_constant_override("separation", 6)
+	var tier_icon_path: String = GameData.GUILD_TIER_ICON.get(str(tier["name"]), "")
+	if tier_icon_path != "":
+		tier_row.add_child(_icon(tier_icon_path, 18))
+	tier_row.add_child(_label(tier_line, 12, true))
+	v.add_child(tier_row)
 
 	if term_tab == "camp":
 		_render_camp(v)
@@ -1633,6 +1654,19 @@ func _render_roster(v: VBoxContainer) -> void:
 
 	if expanded_skill_hero == h.id:
 		cv.add_child(_hsep())
+		if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
+			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
+			var ab_row := HBoxContainer.new()
+			ab_row.add_theme_constant_override("separation", 8)
+			ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
+			var ab_mid := _vbox(0)
+			ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
+			ab_mid.add_child(_label(str(ab["desc"]), 11, true))
+			ab_row.add_child(ab_mid)
+			if h.level < 3:
+				ab_row.add_child(_label("Unlocks at Lv3", 11, true))
+			cv.add_child(ab_row)
+			cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
 		var tree: Array = GameData.subclass_skill_tree(h.pool_id)
 		var tier_label := {1: "Tier 1", 2: "Tier 2", 3: "Capstone"}

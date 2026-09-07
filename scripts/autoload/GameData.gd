@@ -243,6 +243,30 @@ const SUBCLASS_ABILITIES := {
 	"duskrunner": {"name": "Between Heartbeats", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.4},
 }
 
+## One icon per ability *effect* (13 shapes, not 50 abilities) reusing the
+## same assets/skills/ icons skill-tree nodes already draw from — abilities
+## and skill nodes never render on the same screen, so sharing icons across
+## the two doesn't read as a collision.
+const ABILITY_EFFECT_ICON := {
+	"mend_burst": "res://assets/skills/potion_red.png",
+	"monster_dmg_mult": "res://assets/skills/eye_gem.png",
+	"team_dmg_mult": "res://assets/skills/sword_big.png",
+	"burst_lowest": "res://assets/skills/sword_slash.png",
+	"cleave_burst": "res://assets/skills/sword_dual.png",
+	"execute_burst": "res://assets/skills/dagger_red.png",
+	"shield_lowest": "res://assets/skills/shield_blue.png",
+	"reset_cooldowns": "res://assets/skills/gear.png",
+	"dodge_surge": "res://assets/skills/wing.png",
+	"escalate_surge": "res://assets/skills/gem_red.png",
+	"counter_surge": "res://assets/skills/shield_split.png",
+	"wipe_guard_surge": "res://assets/skills/shield_basic.png",
+	"self_sac_burst": "res://assets/skills/dagger_blue.png",
+}
+
+static func ability_icon(pool_id: String) -> String:
+	var ab: Dictionary = SUBCLASS_ABILITIES.get(pool_id, {})
+	return ABILITY_EFFECT_ICON.get(str(ab.get("effect", "")), "res://assets/skills/sword_a.png")
+
 ## Every node's "icon" points at a bespoke pixel-art icon under
 ## assets/skills/ (extracted from a free CraftPix icon sheet) — 38 distinct
 ## icons across the 2 universal Tier-1 nodes + 9 packages x 4 nodes, no two
@@ -441,6 +465,16 @@ const GUILD_TIERS := [
 	{"min": 25, "name": "Renowned Guild"},
 	{"min": 45, "name": "Legendary Guild"},
 ]
+
+## One badge per Guild Tier, reusing existing assets/skills/ icons (no new
+## generation) so the guild's growth reads as more than a text line — a
+## visibly bigger/richer badge the more Guild Management levels are bought.
+const GUILD_TIER_ICON := {
+	"Founding Guild": "res://assets/skills/shield_basic.png",
+	"Established Guild": "res://assets/skills/star.png",
+	"Renowned Guild": "res://assets/skills/gem_blue_big.png",
+	"Legendary Guild": "res://assets/skills/ingot_gold.png",
+}
 
 const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
 
