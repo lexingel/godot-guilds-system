@@ -1124,44 +1124,81 @@ func _render_camp(v: VBoxContainer) -> void:
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	camp.add_child(bg)
 
-	var hub_entries := [
-		["roster", "Roster", func(): term_tab = "roster"; render()],
-		["inventory", "Inventory", func(): term_tab = "inventory"; render()],
-		["recruits", "Hero Recruits", func(): term_tab = "recruits"; render()],
-		["medical", "Medical Bay", func(): term_tab = "medical"; render()],
-		["management", "Guild Management", func(): term_tab = "management"; render()],
-		["rift", "Rift Hall", func(): screen = "rift_hall"; render()],
+	# 5 of the 6 sections click on a prop already drawn in the background art
+	# itself (no separate icon layered on top) — rect positions hand-picked
+	# against camp_bg.png: the angled green tent lower-left (Medical Bay),
+	# the pointy green tent above it (Roster), the crossed swords near the
+	# banners (Inventory), the campfire (Hero Recruits), and the lighter tan
+	# tent on the right (Guild Management). Rift Hall has no matching prop in
+	# the scene, so it keeps its own generated portal icon.
+	var area_entries := [
+		["Medical Bay", Rect2(14, 132, 171, 98), func(): term_tab = "medical"; render()],
+		["Roster", Rect2(182, 99, 132, 60), func(): term_tab = "roster"; render()],
+		["Inventory", Rect2(376, 111, 62, 42), func(): term_tab = "inventory"; render()],
+		["Hero Recruits", Rect2(314, 193, 94, 79), func(): term_tab = "recruits"; render()],
+		["Guild Management", Rect2(459, 105, 117, 76), func(): term_tab = "management"; render()],
 	]
-	# Hand-placed to sit on top of the matching prop already drawn in the
-	# camp background art (banner-post, chest-on-altar, parchment-post,
-	# medic figure, campfire, rift portal) rather than a generic grid —
-	# per the user's marked-up screenshot of where each belongs.
-	var hub_spots := {
-		"roster": Vector2(163, 90),
-		"inventory": Vector2(350, 65),
-		"recruits": Vector2(565, 90),
-		"medical": Vector2(130, 195),
-		"management": Vector2(350, 215),
-		"rift": Vector2(565, 220),
-	}
-	var icon_size := 56.0
-	for entry in hub_entries:
-		var key: String = entry[0]
-		var label_text: String = entry[1]
+	for entry in area_entries:
+		var label_text: String = entry[0]
+		var rect: Rect2 = entry[1]
 		var cb: Callable = entry[2]
-		var spot: Vector2 = hub_spots[key]
-
-		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH[key], icon_size, label_text, cb)
-		hotspot.position = spot - Vector2(icon_size / 2.0, icon_size / 2.0)
+		var hotspot := _camp_area_hotspot(rect.size, label_text, cb)
+		hotspot.position = rect.position
 		camp.add_child(hotspot)
+
+	var rift_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], 56.0, "Rift Hall", func(): screen = "rift_hall"; render())
+	rift_icon.position = Vector2(565, 220) - Vector2(28, 28)
+	camp.add_child(rift_icon)
 
 	v.add_child(camp)
 
 
-## The camp's clickable objects are the icons themselves — a bare
-## TextureButton (no Button chrome/box around it) with a caption label
-## underneath and a hover brighten for click affordance, rather than a
-## conventional button widget layered on top of the scene.
+## An invisible clickable region over a prop already drawn in the background
+## art — no icon texture of its own, just a faint highlight on hover for
+## affordance and a caption underneath, so the scene's own art reads as the
+## button instead of a graphic layered on top of it.
+func _camp_area_hotspot(size: Vector2, label_text: String, cb: Callable) -> Control:
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(size.x, size.y + 16)
+	wrap.size = Vector2(size.x, size.y + 16)
+
+	var glow := ColorRect.new()
+	glow.color = Color(1, 1, 1, 0.16)
+	glow.size = size
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	glow.visible = false
+
+	# A flat Button with every stylebox cleared to transparent, rather than a
+	# TextureButton with no texture assigned — proven reliable input handling
+	# (every other button in the game already is this class) instead of
+	# relying on an untextured TextureButton's hit-testing.
+	var btn := Button.new()
+	btn.flat = true
+	btn.text = ""
+	btn.custom_minimum_size = size
+	btn.size = size
+	var clear_style := StyleBoxEmpty.new()
+	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(style_name, clear_style)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.pressed.connect(cb)
+	btn.mouse_entered.connect(func(): glow.visible = true)
+	btn.mouse_exited.connect(func(): glow.visible = false)
+	wrap.add_child(btn)
+	wrap.add_child(glow)
+
+	var caption := _label(label_text, 11, true)
+	caption.position = Vector2(0, size.y + 1)
+	caption.custom_minimum_size = Vector2(size.x, 0)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wrap.add_child(caption)
+
+	return wrap
+
+
+## The camp's one icon-based hotspot (Rift Hall, no matching background
+## prop) — a bare TextureButton (no Button chrome/box) with a caption label
+## underneath and a hover brighten for click affordance.
 func _camp_hotspot(icon_path: String, size: float, label_text: String, cb: Callable) -> Control:
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(size, size + 18)
