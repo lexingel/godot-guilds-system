@@ -1135,21 +1135,52 @@ func _render_camp(v: VBoxContainer) -> void:
 	var cols := 3
 	var col_w: float = camp_size.x / cols
 	var row_h: float = camp_size.y / 2.0
+	var icon_size := 56.0
 	for i in hub_entries.size():
 		var key: String = hub_entries[i][0]
 		var label_text: String = hub_entries[i][1]
 		var cb: Callable = hub_entries[i][2]
 		var col := i % cols
 		var row := i / cols
-		var btn := _button(label_text, cb)
-		btn.icon = load(GameData.CAMP_HUB_ICON_PATH[key])
-		btn.expand_icon = true
-		btn.custom_minimum_size = Vector2(col_w - 24, 64)
-		btn.size = Vector2(col_w - 24, 64)
-		btn.position = Vector2(col * col_w + 12, row * row_h + row_h - 84)
-		camp.add_child(btn)
+		var spot_x: float = col * col_w + col_w / 2.0
+		var spot_y: float = row * row_h + row_h - 60.0
+
+		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH[key], icon_size, label_text, cb)
+		hotspot.position = Vector2(spot_x - icon_size / 2.0, spot_y - icon_size)
+		camp.add_child(hotspot)
 
 	v.add_child(camp)
+
+
+## The camp's clickable objects are the icons themselves — a bare
+## TextureButton (no Button chrome/box around it) with a caption label
+## underneath and a hover brighten for click affordance, rather than a
+## conventional button widget layered on top of the scene.
+func _camp_hotspot(icon_path: String, size: float, label_text: String, cb: Callable) -> Control:
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(size, size + 18)
+	wrap.size = Vector2(size, size + 18)
+
+	var tb := TextureButton.new()
+	tb.texture_normal = load(icon_path)
+	tb.ignore_texture_size = true
+	tb.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	tb.custom_minimum_size = Vector2(size, size)
+	tb.size = Vector2(size, size)
+	tb.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	tb.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	tb.pressed.connect(cb)
+	tb.mouse_entered.connect(func(): tb.modulate = Color(1.25, 1.25, 1.25))
+	tb.mouse_exited.connect(func(): tb.modulate = Color(1, 1, 1))
+	wrap.add_child(tb)
+
+	var caption := _label(label_text, 11, true)
+	caption.position = Vector2(0, size + 2)
+	caption.custom_minimum_size = Vector2(size, 0)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wrap.add_child(caption)
+
+	return wrap
 
 
 func _render_recruits(v: VBoxContainer) -> void:
