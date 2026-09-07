@@ -738,7 +738,14 @@ func resolve_recovery() -> void:
 	var now := int(Time.get_unix_time_from_system() * 1000)
 	var changed := false
 	for h in heroes:
-		if h.downed_until > 0 and now >= h.downed_until:
+		if h.hp <= 0 and h.downed_until <= 0:
+			# Safety net for saves from before the per-hero knockout fix: a
+			# hero could reach 0 HP mid-fight (party kept fighting and won)
+			# with no downed_until ever set, permanently invisible to
+			# needs_recovery()/Medical Bay. Give them a timer retroactively.
+			h.downed_until = now + recovery_ms()
+			changed = true
+		elif h.downed_until > 0 and now >= h.downed_until:
 			h.downed_until = 0
 			h.heal_until = 0
 			h.bedded = false

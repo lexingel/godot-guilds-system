@@ -803,13 +803,20 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 	var party: Array[Hero] = state["party"]
 	var log: Array[String] = state["log"]
 	var hardcore: bool = state["hardcore"]
-	if not won and not retreated:
-		if hardcore:
-			log.append("Your party is overwhelmed... and lost for good.")
-		else:
-			for h in party:
-				h.downed_until = int(Time.get_unix_time_from_system() * 1000) + GameState.recovery_ms()
+	var full_loss := not won and not retreated
+	if full_loss and hardcore:
+		log.append("Your party is overwhelmed... and lost for good.")
+	else:
+		if full_loss:
 			log.append("Your party is overwhelmed...")
+		# Any hero knocked out mid-fight (hp hit 0 while the party kept
+		# fighting and ultimately won, or before a retreat) still needs a
+		# recovery timer — not just the whole-party-wiped case above, or
+		# they'd sit at 0 HP forever, invisible to needs_recovery()/Medical Bay.
+		var now := int(Time.get_unix_time_from_system() * 1000)
+		for h in party:
+			if h.hp <= 0 and h.downed_until <= 0:
+				h.downed_until = now + GameState.recovery_ms()
 
 	var result := {
 		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monsters"][0]["name"],
