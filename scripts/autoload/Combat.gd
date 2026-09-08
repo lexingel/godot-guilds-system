@@ -483,9 +483,11 @@ func drop_rate_bonus() -> float:
 ## call. Each living hero has their own pending action (state["pending_actions"],
 ## hero_id -> {"action": "attack"/"ability"/"defend", "target": monster index,
 ## meaningful only for "attack"}, mutated between renders by
-## GameState.set_hero_action without resolving anything) and, if their role
-## qualifies, their own Ability cooldown (state["ability_cooldowns"], hero_id
-## -> int). HP lives directly on each Hero throughout (no pooling), so win/
+## GameState.set_hero_action without resolving anything) and, if their
+## subclass qualifies, their own Ability cooldown (Hero.ability_cooldown,
+## persistent on the hero — not reset per fight, ticks down once per node via
+## GameState.tick_ability_cooldowns so it carries across shop/hazard nodes
+## too). HP lives directly on each Hero throughout (no pooling), so win/
 ## retreat/loss need no redistribution step. Monsters live in state["monsters"]
 ## (Array of {name, hp, max_hp, dmg, mechanic, is_main} — mechanic is only ever
 ## non-empty on the "is_main" unit, and only for a "boss" encounter). Every
@@ -533,11 +535,8 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		monsters[0]["hp"] = float(monsters[0]["hp"]) - alpha
 		log.append("An opening volley lands for %d!" % round(alpha))
 
-	var ability_cooldowns: Dictionary = {}
 	var pending_actions: Dictionary = {}
 	for h in party:
-		if GameData.SUBCLASS_ABILITIES.has(h.pool_id) and h.level >= 3:
-			ability_cooldowns[h.id] = 0
 		pending_actions[h.id] = {"action": "attack", "target": 0}
 
 	return {
@@ -548,9 +547,15 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
 		"cooldown_shave": cooldown_shave, "kill_shield": kill_shield, "hero_shields": {},
-		"round_num": 0, "log": log, "ability_cooldowns": ability_cooldowns,
+		"round_num": 0, "log": log,
 		"pending_actions": pending_actions,
 	}
+
+
+## True if `h` has an Ability at all (subclass qualifies + level 3+) — used to
+## gate both the combat action-button row and the Ability's cooldown ticking.
+static func qualifies_for_ability(h: Hero) -> bool:
+	return GameData.SUBCLASS_ABILITIES.has(h.pool_id) and h.level >= 3
 
 
 const ABILITY_COOLDOWN_ROUNDS := 3
@@ -615,7 +620,6 @@ func resolve_round(state: Dictionary) -> Dictionary:
 	var log: Array[String] = state["log"]
 	var party: Array[Hero] = state["party"]
 	var pending: Dictionary = state["pending_actions"]
-	var cooldowns: Dictionary = state["ability_cooldowns"]
 	var monsters: Array = state["monsters"]
 
 	var living: Array[Hero] = []
@@ -631,9 +635,9 @@ func resolve_round(state: Dictionary) -> Dictionary:
 	var attack_mult: float = (1.0 + float(state["first_round_bonus"]) if round_num == 1 else 1.0) * (1.0 + float(state["escalate"]) * (round_num - 1))
 	var escalate_mult: float = 1.0 + float(state["escalate"]) * (round_num - 1)
 
-	for hid in cooldowns.keys():
-		if int(cooldowns[hid]) > 0:
-			cooldowns[hid] = int(cooldowns[hid]) - 1
+	for h in party:
+		if h.ability_cooldown > 0:
+			h.ability_cooldown -= 1
 
 	var defending := {}   # hero_id -> true, checked against each retaliation below
 	for h in living:
@@ -650,8 +654,8 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
 		elif action == "defend":
 			defending[h.id] = true
-		elif action == "ability" and int(cooldowns.get(h.id, 999)) == 0:
-			cooldowns[h.id] = ABILITY_COOLDOWN_ROUNDS
+		elif action == "ability" and h.ability_cooldown == 0:
+			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 			var eff: String = ab["effect"]
 			var val: float = float(ab["value"])
@@ -699,8 +703,8 @@ func resolve_round(state: Dictionary) -> Dictionary:
 						shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
 						log.append("%s is shielded for %d." % [lowest.name, int(round(amt))])
 				"reset_cooldowns":
-					for hid in cooldowns.keys():
-						cooldowns[hid] = 0
+					for h2 in party:
+						h2.ability_cooldown = 0
 					log.append("Every ability is ready again.")
 				"dodge_surge":
 					state["dodge"] = min(0.6, float(state["dodge"]) + val)
@@ -795,9 +799,9 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
 			log.append("%s counters, striking %s for %d!" % [target.name, m["name"], counter_dmg])
 		if (evaded or heavy_hit) and float(state["cooldown_shave"]) > 0.0 and randf() < float(state["cooldown_shave"]):
-			for hid in cooldowns.keys():
-				if int(cooldowns[hid]) > 0:
-					cooldowns[hid] = int(cooldowns[hid]) - 1
+			for h2 in party:
+				if h2.ability_cooldown > 0:
+					h2.ability_cooldown -= 1
 			log.append("The Chronometer hums — abilities cool faster!")
 		var shields: Dictionary = state["hero_shields"]
 		if back > 0.0 and float(shields.get(target.id, 0.0)) > 0.0:

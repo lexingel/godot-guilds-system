@@ -818,7 +818,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var monsters: Array = state["monsters"]
 		var party: Array[Hero] = state["party"]
 
-		const ARENA_SIZE := Vector2(420, 460)
+		const ARENA_SIZE := Vector2(420, 400)
 		var arena := Control.new()
 		arena.custom_minimum_size = ARENA_SIZE
 
@@ -906,7 +906,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var hero_left := 24.0
 		var hero_band := ARENA_SIZE.x - 48.0
 		var hero_step: float = hero_band / max(1, living_heroes.size())
-		var hero_size := 84.0
+		# Shrinks for a fuller party so 3-4 heroes' nameplates don't overlap
+		# each other in the same fixed-width arena (mirrors the monster row's
+		# own size-scales-with-count spacing above).
+		var hero_size: float = clampf(84.0 - (living_heroes.size() - 1) * 8.0, 56.0, 84.0)
 		# Name + HP bar sit above the head as a nameplate rather than below
 		# the feet -- a below-sprite placement overlapped the body, since the
 		# portrait's visible content doesn't end at a predictable fixed offset
@@ -928,7 +931,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			_start_idle_sway(h_wrapper)
 			hero_wrappers[h.id] = h_wrapper
 			hero_rects[h.id] = h_rect
-			var h_name_label := _label(h.name, 11, true)
+			var h_name_label := _label(h.name.split(" the ")[0], 11, true)
 			h_name_label.position = Vector2(h_x - 10, hero_top - 32)
 			arena.add_child(h_name_label)
 			var h_bar := _hp_bar(h.hp, Combat.max_hp(h), 70.0)
@@ -959,7 +962,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var incoming := Combat.describe_incoming(state)
 		if incoming != "":
 			left.add_child(_label(incoming, 12, true))
-		left.add_child(_log_richtext(state["log"], party, monsters))
+		left.add_child(_log_richtext(state["log"], party, monsters, 100.0))
 
 		# The action controls live in their own bordered panel (reusing the
 		# Theme's existing PanelContainer style, same as every card elsewhere
@@ -987,11 +990,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		menu_style.content_margin_right = 10.0
 		menu_style.content_margin_bottom = 10.0
 		menu_panel.add_theme_stylebox_override("panel", menu_style)
-		var menu := _vbox(6)
+		var menu := _vbox(3)
 		menu_panel.add_child(menu)
 
 		var pending: Dictionary = state["pending_actions"]
-		var cooldowns: Dictionary = state["ability_cooldowns"]
 		for h in party:
 			var hero_block := _vbox(2)
 			if h.hp <= 0:
@@ -1026,8 +1028,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 
 			var action_row := HBoxContainer.new()
 			action_row.add_theme_constant_override("separation", 4)
-			if cooldowns.has(h.id):
-				var cd: int = int(cooldowns[h.id])
+			if Combat.qualifies_for_ability(h):
+				var cd: int = h.ability_cooldown
 				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 				var ab_label := "%s — Cooldown: %d" % [str(ab["name"]), cd] if cd > 0 else "%s — Ready" % str(ab["name"])
 				var ab_btn := _button(ab_label, func(hid=h.id):

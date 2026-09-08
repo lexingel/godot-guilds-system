@@ -25,6 +25,7 @@ var heal_until: int = 0          # msec timestamp, 0 = not scheduled (full HP, o
 var bedded: bool = false
 var hp: int = 0
 var is_champion: bool = false
+var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 
 
 func is_downed() -> bool:
@@ -38,6 +39,7 @@ func to_dict() -> Dictionary:
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name,
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
+		"ability_cooldown": ability_cooldown,
 	}
 
 
@@ -64,4 +66,5 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.bedded = d.get("bedded", false)
 	h.hp = d.get("hp", 0)
 	h.is_champion = d.get("is_champion", false)
+	h.ability_cooldown = d.get("ability_cooldown", 0)
 	return h

@@ -625,7 +625,20 @@ func buy_shop_offer(idx: int) -> void:
 	state_changed.emit()
 
 
+## Ability cooldowns live on the Hero (not reset per fight) and already tick
+## down once per combat round inside Combat.resolve_round. A shop/hazard node
+## has no rounds of its own, so without this it would give abilities a free
+## pass — call this once per non-combat node so cooldowns count every node
+## as a "turn", combat or not.
+func tick_ability_cooldowns() -> void:
+	for h in current_party():
+		if h.ability_cooldown > 0:
+			h.ability_cooldown -= 1
+
+
 func advance_node() -> void:
+	if not (current_node_kind() in ["combat", "boss", "elite"]):
+		tick_ability_cooldowns()
 	run["pos"] = int(run["pos"]) + 1
 	run["node_state"] = {}
 	auto_resolve_single_option()
