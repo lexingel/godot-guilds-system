@@ -603,13 +603,20 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			))
 		return
 
-	v.add_child(_hsep())
-	for h in GameState.current_party():
-		v.add_child(_label("%s%s — %d/%d HP%s" % [h.name, " (Champion)" if h.is_champion else "", h.hp, Combat.max_hp(h), " (downed)" if h.is_downed() else ""]))
-	v.add_child(_hsep())
-
 	var options := GameState.current_layer_options()
 	var kind := GameState.current_node_kind()
+	# The battle screen already shows every hero's HP twice over (arena
+	# nameplates + the action menu) and has its own Retreat button — repeating
+	# a third party-HP list and a second Retreat button above/below it just
+	# forced extra scrolling to reach the actual action buttons every round.
+	var is_combat_kind := kind in ["combat", "boss", "elite"]
+
+	if not is_combat_kind:
+		v.add_child(_hsep())
+		for h in GameState.current_party():
+			v.add_child(_label("%s%s — %d/%d HP%s" % [h.name, " (Champion)" if h.is_champion else "", h.hp, Combat.max_hp(h), " (downed)" if h.is_downed() else ""]))
+		v.add_child(_hsep())
+
 	if kind == "" and options.size() > 1:
 		v.add_child(_label("Choose your path:"))
 		for opt in options:
@@ -623,12 +630,13 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			"shop": _render_shop_node(v)
 			"hazard": _render_hazard_node(v)
 
-	v.add_child(_hsep())
-	v.add_child(_button("Retreat (keep loot, no Seal Tokens)", func():
-		GameState.retreat_now()
-		screen = "terminal"
-		render()
-	))
+	if not is_combat_kind:
+		v.add_child(_hsep())
+		v.add_child(_button("Retreat (keep loot, no Seal Tokens)", func():
+			GameState.retreat_now()
+			screen = "terminal"
+			render()
+		))
 
 
 ## Bounds an animation wait to `timeout_sec` of real engine time instead of
