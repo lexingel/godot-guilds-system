@@ -161,7 +161,7 @@ func _log_richtext(lines: Array, party: Array[Hero], monsters: Array, height: fl
 	rt.custom_minimum_size = Vector2(0, height)
 	rt.size = Vector2(0, height)
 	rt.scroll_active = true
-	rt.scroll_follow = true
+	rt.scroll_following = true
 	rt.add_theme_font_size_override("normal_font_size", 12)
 	var body := ""
 	for line in lines:
