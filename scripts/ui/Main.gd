@@ -20,6 +20,7 @@ var _combat_animating: bool = false
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
+var combat_selected_hero_id: String = ""   # which hero's action bar is showing in combat; falls back to the first living hero
 
 
 func _ready() -> void:
@@ -972,6 +973,88 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
 
 
+## One hero's tab in the battle screen's action-bar header: portrait + HP bar
+## + a small badge for whatever action they're currently set to (a monster's
+## own sprite for Attack, the class ability icon for Ability, a shield for
+## Defend) so the whole party's plan reads at a glance without switching
+## tabs. Clicking a tab makes that hero's full action bar show below —
+## reused from the reference battle screens' turn-order strip, but repurposed
+## honestly: this game resolves every hero's action in the same round rather
+## than one at a time, so the strip picks "whose bar am I editing," not
+## "whose turn is it."
+func _hero_action_tab(h: Hero, monsters: Array, pending: Dictionary, selected: bool) -> Control:
+	var w := 64.0
+	var ht := 84.0
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(w, ht)
+	wrap.size = Vector2(w, ht)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(w, ht)
+	panel.size = Vector2(w, ht)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE3 if selected else Palette.SURFACE2
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Palette.RIFT if selected else Palette.LINE
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_top = 4
+	panel.add_theme_stylebox_override("panel", style)
+
+	var downed := h.hp <= 0
+	var pv := _vbox(2)
+	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait_path != "":
+		var icon_wrap := CenterContainer.new()
+		var pic := _icon(portrait_path, 36)
+		if downed:
+			pic.modulate = Color(0.4, 0.4, 0.4, 0.7)
+		icon_wrap.add_child(pic)
+		pv.add_child(icon_wrap)
+	pv.add_child(_label(h.name.split(" the ")[0], 9))
+	if downed:
+		pv.add_child(_label("Down", 8, true))
+	else:
+		var bar_wrap := CenterContainer.new()
+		bar_wrap.add_child(_hp_bar(h.hp, Combat.max_hp(h), w - 12.0))
+		pv.add_child(bar_wrap)
+		var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
+		var action: String = str(act.get("action", "attack"))
+		var badge_icon := "res://assets/skills/shield_basic.png"
+		if action == "attack":
+			var ti := int(act.get("target", 0))
+			if ti >= 0 and ti < monsters.size():
+				badge_icon = GameData.sprite_for_monster(str(monsters[ti]["name"]))
+		elif action == "ability":
+			badge_icon = GameData.ability_icon(h.pool_id)
+		var badge_wrap := CenterContainer.new()
+		badge_wrap.add_child(_icon(badge_icon, 16))
+		pv.add_child(badge_wrap)
+	panel.add_child(pv)
+	wrap.add_child(panel)
+
+	if not downed:
+		var btn := Button.new()
+		btn.flat = true
+		btn.custom_minimum_size = wrap.custom_minimum_size
+		btn.size = wrap.size
+		var clear_style := StyleBoxEmpty.new()
+		for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+			btn.add_theme_stylebox_override(style_name, clear_style)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.pressed.connect(func(hid=h.id):
+			combat_selected_hero_id = hid
+			render()
+		)
+		wrap.add_child(btn)
+	return wrap
+
+
 func _render_combat_node(v: VBoxContainer) -> void:
 	var ns: Dictionary = GameState.run.get("node_state", {})
 	var kind := GameState.current_node_kind()
@@ -990,71 +1073,50 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var state: Dictionary = ns["combat_state"]
 		var monsters: Array = state["monsters"]
 		var party: Array[Hero] = state["party"]
+		var living_heroes: Array[Hero] = []
+		living_heroes.assign(party.filter(func(h): return h.hp > 0))
 
-		const ARENA_SIZE := Vector2(420, 400)
+		# One shared battlefield — heroes on the left, monsters on the right,
+		# facing each other across the same ground — rather than the previous
+		# stacked monster-band/hero-band diorama. Matches every reference
+		# battle screen's side-by-side confrontation instead of a top/bottom
+		# split, and now spans the full content width with the action bar
+		# stacked below it (also reference-matched: scene on top, commands in
+		# a bottom strip) instead of sharing a row with a side menu.
+		const ARENA_SIZE := Vector2(700, 300)
 		var arena := Control.new()
 		arena.custom_minimum_size = ARENA_SIZE
 
-		# Two stacked zones (monsters up top, heroes below) rather than one
-		# continuous scene — each gets its own copy of the same background
-		# image, scaled independently to its own band, with a visible divider
-		# between them. Tried a single unified background first; monsters
-		# there kept reading as floating regardless of position/shadows, so
-		# this gives each side its own clearly-grounded little stage instead.
 		var bg_path: String = GameData.BATTLE_BACKGROUNDS[int(state["background_idx"]) % GameData.BATTLE_BACKGROUNDS.size()]
-		var divider_h := 9.0
-		var monster_zone_h := (ARENA_SIZE.y - divider_h) / 2.0
-		var hero_zone_h := monster_zone_h
-		var hero_zone_y := monster_zone_h + divider_h
+		var bg := TextureRect.new()
+		bg.texture = load(bg_path)
+		bg.custom_minimum_size = ARENA_SIZE
+		bg.size = ARENA_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_SCALE
+		bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		arena.add_child(bg)
 
-		var monster_bg := TextureRect.new()
-		monster_bg.texture = load(bg_path)
-		monster_bg.custom_minimum_size = Vector2(ARENA_SIZE.x, monster_zone_h)
-		monster_bg.size = Vector2(ARENA_SIZE.x, monster_zone_h)
-		monster_bg.stretch_mode = TextureRect.STRETCH_SCALE
-		monster_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		arena.add_child(monster_bg)
+		# Both rows share this baseline Y (bottom of the sprite) so the two
+		# sides read as standing on the same ground rather than floating at
+		# independent heights.
+		var ground_y: float = ARENA_SIZE.y * 0.62
 
-		var divider := ColorRect.new()
-		divider.color = Color(Palette.RIFT.r, Palette.RIFT.g, Palette.RIFT.b, 0.45)
-		divider.position = Vector2(0, monster_zone_h)
-		divider.size = Vector2(ARENA_SIZE.x, divider_h)
-		arena.add_child(divider)
-
-		var hero_bg := TextureRect.new()
-		hero_bg.texture = load(bg_path)
-		hero_bg.custom_minimum_size = Vector2(ARENA_SIZE.x, hero_zone_h)
-		hero_bg.size = Vector2(ARENA_SIZE.x, hero_zone_h)
-		hero_bg.position = Vector2(0, hero_zone_y)
-		hero_bg.stretch_mode = TextureRect.STRETCH_SCALE
-		hero_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		arena.add_child(hero_bg)
-
-		# Monster sprites in a row across the top zone, mirroring the hero row
-		# in the bottom zone — one per living or fallen monster (fallen ones
-		# stay visible, dimmed). Every monster sprite has real attack/hurt
-		# animation frames (GameData.monster_anim_frames), played by
-		# _play_round the same way hero frames are. Every wrapper still gets
-		# the idle sway so the arena isn't static between rounds. Horizontal
-		# spacing is computed from the actual monster count (1-3 here) rather
-		# than a fixed step, so it doesn't crowd/overlap regardless of how many
-		# showed up this fight. Size scales with the monster's own max HP
-		# (clamped) so a boss/elite main unit reads as a bigger threat than a
-		# weak add or a divided-stats regular mob, rather than every monster
-		# being a uniform size.
+		# Monsters occupy the right ~52% of the field, heroes the left ~44%,
+		# with a gap between so neither side's plates crowd the other's.
+		# Size still scales with the monster's own max HP (clamped) so a
+		# boss/elite main unit reads as a bigger threat than a weak add.
 		var monster_wrappers: Dictionary = {}
 		var monster_rects: Dictionary = {}
-		var monster_left := 24.0
-		var monster_band := ARENA_SIZE.x - 48.0
-		var monster_step: float = monster_band / max(1, monsters.size())
-		var monster_top := monster_zone_h * 0.35
+		var monster_zone_x: float = ARENA_SIZE.x * 0.5
+		var monster_zone_w: float = ARENA_SIZE.x - monster_zone_x - 20.0
+		var monster_step: float = monster_zone_w / max(1, monsters.size())
 		for i in monsters.size():
 			var m: Dictionary = monsters[i]
-			var m_x: float = monster_left + i * monster_step
-			var m_size: int = clampi(56 + int(float(m["max_hp"]) / 2.5), 60, 100)
+			var m_x: float = monster_zone_x + i * monster_step
+			var m_size: int = clampi(56 + int(float(m["max_hp"]) / 2.5), 60, 96)
 			var m_rect := _icon(GameData.sprite_for_monster(str(m["name"])), m_size)
 			var m_wrapper := _wrap_icon(m_rect)
-			m_wrapper.position = Vector2(m_x, monster_top)
+			m_wrapper.position = Vector2(m_x, ground_y - m_size)
 			_add_ground_shadow(arena, m_wrapper.position, float(m_size))
 			if float(m["hp"]) <= 0:
 				m_wrapper.modulate = Color(0.35, 0.35, 0.35, 0.7)
@@ -1063,29 +1125,17 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			arena.add_child(m_wrapper)
 			monster_wrappers[i] = m_wrapper
 			monster_rects[i] = m_rect
-			var m_plate_w: float = clampf(monster_step - 10.0, 70.0, 110.0)
+			var m_plate_w: float = clampf(monster_step - 10.0, 70.0, 100.0)
 			var m_plate := _status_plate(str(m["name"]), max(0, int(m["hp"])), int(m["max_hp"]), m_plate_w)
-			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, monster_top + m_size + 2)
+			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, ground_y - m_size - m_plate_w * (52.0 / 176.0) - 6.0)
 			arena.add_child(m_plate)
 
-		# Hero portraits in a row along the bottom, living heroes only, spaced
-		# from the actual living count for the same reason as the monsters above.
 		var hero_wrappers: Dictionary = {}
 		var hero_rects: Dictionary = {}
-		var living_heroes: Array[Hero] = []
-		living_heroes.assign(party.filter(func(h): return h.hp > 0))
-		var hero_left := 24.0
-		var hero_band := ARENA_SIZE.x - 48.0
-		var hero_step: float = hero_band / max(1, living_heroes.size())
-		# Shrinks for a fuller party so 3-4 heroes' nameplates don't overlap
-		# each other in the same fixed-width arena (mirrors the monster row's
-		# own size-scales-with-count spacing above).
+		var hero_zone_x := 20.0
+		var hero_zone_w: float = ARENA_SIZE.x * 0.4
+		var hero_step: float = hero_zone_w / max(1, living_heroes.size())
 		var hero_size: float = clampf(84.0 - (living_heroes.size() - 1) * 8.0, 56.0, 84.0)
-		# Name + HP bar sit above the head as a nameplate rather than below
-		# the feet -- a below-sprite placement overlapped the body, since the
-		# portrait's visible content doesn't end at a predictable fixed offset
-		# the way the normalized monster sprites do.
-		var hero_top: float = hero_zone_y + hero_zone_h * 0.2
 		var row_i := 0
 		for h in party:
 			if h.hp <= 0:
@@ -1093,10 +1143,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 			if portrait_path == "":
 				continue
-			var h_x: float = hero_left + row_i * hero_step
+			var h_x: float = hero_zone_x + row_i * hero_step
 			var h_rect := _icon(portrait_path, int(hero_size))
 			var h_wrapper := _wrap_icon(h_rect)
-			h_wrapper.position = Vector2(h_x, hero_top)
+			h_wrapper.position = Vector2(h_x, ground_y - hero_size)
 			_add_ground_shadow(arena, h_wrapper.position, hero_size)
 			arena.add_child(h_wrapper)
 			_start_idle_sway(h_wrapper)
@@ -1104,7 +1154,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			hero_rects[h.id] = h_rect
 			var h_plate_w: float = clampf(hero_step - 6.0, 70.0, 100.0)
 			var h_plate := _status_plate(h.name.split(" the ")[0], h.hp, Combat.max_hp(h), h_plate_w)
-			h_plate.position = Vector2(h_x + hero_size * 0.5 - h_plate_w * 0.5, hero_top - h_plate_w * (52.0 / 176.0) - 4.0)
+			h_plate.position = Vector2(h_x + hero_size * 0.5 - h_plate_w * 0.5, ground_y - hero_size - h_plate_w * (52.0 / 176.0) - 6.0)
 			arena.add_child(h_plate)
 			row_i += 1
 
@@ -1124,25 +1174,20 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		frame.size = ARENA_SIZE
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		arena.add_child(frame)
-
-		var left := _vbox(8)
-		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		v.add_child(arena)
 
 		var incoming := Combat.describe_incoming(state)
 		if incoming != "":
-			left.add_child(_label(incoming, 12, true))
-		left.add_child(_log_richtext(state["log"], party, monsters, 100.0))
+			v.add_child(_label(incoming, 12, true))
 
-		# The action controls live in their own bordered panel (reusing the
-		# Theme's existing PanelContainer style, same as every card elsewhere
-		# in the game) so it reads as a compact battle menu rather than more
-		# loose page content, with smaller text/buttons than the rest of the
-		# UI to fit 1-4 heroes' worth of controls without sprawling.
+		if combat_selected_hero_id == "" or not living_heroes.any(func(h): return h.id == combat_selected_hero_id):
+			combat_selected_hero_id = living_heroes[0].id if not living_heroes.is_empty() else ""
+
+		# The action controls live in their own bordered panel below the
+		# arena (reusing the same flat style the old side menu used — the
+		# shared Theme's texture-based panel is tuned for fixed-size cards
+		# and renders wrong at this panel's variable width/height).
 		var menu_panel := PanelContainer.new()
-		# Explicit flat style rather than the shared Theme's texture-based
-		# panel — that StyleBoxTexture is tuned for the fixed-size cards it's
-		# used on elsewhere and rendered as a wrong, over-bright color at this
-		# panel's size (variable height depending on party size).
 		var menu_style := StyleBoxFlat.new()
 		menu_style.bg_color = Palette.SURFACE2
 		menu_style.border_width_left = 1
@@ -1159,18 +1204,29 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		menu_style.content_margin_right = 10.0
 		menu_style.content_margin_bottom = 10.0
 		menu_panel.add_theme_stylebox_override("panel", menu_style)
-		var menu := _vbox(3)
+		var menu := _vbox(6)
 		menu_panel.add_child(menu)
 
 		var pending: Dictionary = state["pending_actions"]
+
+		# Hero tab row: click a tab to make that hero's full action bar show
+		# below — every tab's badge icon reflects whatever action that hero
+		# is currently set to, so the whole party's plan for this round is
+		# visible without switching tabs (reused/repurposed from the
+		# reference battle screens' turn-order strip — see _hero_action_tab).
+		var tab_row := HBoxContainer.new()
+		tab_row.add_theme_constant_override("separation", 8)
 		for h in party:
-			var hero_block := _vbox(4)
-			if h.hp <= 0:
-				hero_block.add_child(_label("%s — down for the count" % h.name, 11, true))
-				menu.add_child(hero_block)
-				continue
-			hero_block.add_child(_status_plate(h.name, h.hp, Combat.max_hp(h), 150.0))
-			var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
+			tab_row.add_child(_hero_action_tab(h, monsters, pending, h.id == combat_selected_hero_id))
+		menu.add_child(tab_row)
+		menu.add_child(_hsep())
+
+		var sel_hero: Hero = null
+		for h in living_heroes:
+			if h.id == combat_selected_hero_id:
+				sel_hero = h
+		if sel_hero:
+			var act: Dictionary = pending.get(sel_hero.id, {"action": "attack", "target": 0})
 			var current_action: String = str(act.get("action", "attack"))
 			var current_target: int = int(act.get("target", 0))
 
@@ -1179,34 +1235,33 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				if float(monsters[i]["hp"]) <= 0:
 					continue
 				var target_name: String = str(monsters[i]["name"]).split(" ")[0]
-				var attack_cb := func(hid=h.id, ti=i):
+				var attack_cb := func(hid=sel_hero.id, ti=i):
 					GameState.set_hero_action(hid, "attack", ti)
 					render()
 				slots.append(_action_slot(GameData.sprite_for_monster(str(monsters[i]["name"])), "",
 					current_action == "attack" and current_target == i, false,
-					attack_cb, 52.0, "Atk %s" % target_name
+					attack_cb, 64.0, "Atk %s" % target_name
 				))
-			if Combat.qualifies_for_ability(h):
-				var cd: int = h.ability_cooldown
-				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}).get("name", "Ability")).split(" ")[0]
-				var ability_cb := func(hid=h.id):
+			if Combat.qualifies_for_ability(sel_hero):
+				var cd: int = sel_hero.ability_cooldown
+				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(sel_hero.pool_id, {}).get("name", "Ability")).split(" ")[0]
+				var ability_cb := func(hid=sel_hero.id):
 					GameState.set_hero_action(hid, "ability")
 					render()
-				slots.append(_action_slot(GameData.ability_icon(h.pool_id), str(cd) if cd > 0 else "",
+				slots.append(_action_slot(GameData.ability_icon(sel_hero.pool_id), str(cd) if cd > 0 else "",
 					current_action == "ability", cd > 0,
-					ability_cb, 52.0, ability_name
+					ability_cb, 64.0, ability_name
 				))
-			var defend_cb := func(hid=h.id):
+			var defend_cb := func(hid=sel_hero.id):
 				GameState.set_hero_action(hid, "defend")
 				render()
 			slots.append(_action_slot("res://assets/skills/shield_basic.png", "",
 				current_action == "defend", false,
-				defend_cb, 52.0, "Defend"
+				defend_cb, 64.0, "Defend"
 			))
-			hero_block.add_child(_slot_row(slots))
-			menu.add_child(hero_block)
-			if h != party[party.size() - 1]:
-				menu.add_child(_hsep())
+			menu.add_child(_slot_row(slots))
+		else:
+			menu.add_child(_label("The party is down.", 12, true))
 
 		var bottom_row := HBoxContainer.new()
 		bottom_row.add_child(_primary_button("Resolve Round", func():
@@ -1234,13 +1289,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			render()
 		))
 		menu.add_child(bottom_row)
-		left.add_child(menu_panel)
+		v.add_child(menu_panel)
 
-		var split := HBoxContainer.new()
-		split.add_theme_constant_override("separation", 12)
-		split.add_child(left)
-		split.add_child(arena)
-		v.add_child(split)
+		# The round log stays available but demoted — a small strip below the
+		# action bar rather than sharing equal billing with the arena, since
+		# none of the reference battle screens foreground a scrolling log
+		# (damage numbers/animations carry the moment-to-moment feedback now).
+		v.add_child(_log_richtext(state["log"], party, monsters, 70.0))
 		return
 
 	var result: Dictionary = ns["result"]
