@@ -618,6 +618,22 @@ const CAMP_HUB_ICON_PATH := {
 	"management": "res://assets/camp/icon_management.png",
 	"rift": "res://assets/camp/icon_rift.png",
 }
+## Ornate slot-frame borders, one per rarity tier — reused everywhere a
+## rarity needs to read at a glance: equip slots on the paper-doll Roster
+## screen and the battle screen's action-bar slots (which always use the
+## "common" frame, since actions aren't items). AI-generated (PixelLab),
+## same pipeline as every other UI asset this project uses.
+const RARITY_FRAME_PATH := {
+	"common": "res://assets/ui/frame_common.png",
+	"rare": "res://assets/ui/frame_rare.png",
+	"epic": "res://assets/ui/frame_epic.png",
+	"legendary": "res://assets/ui/frame_legendary.png",
+}
+const STATUS_PLATE_PATH := "res://assets/ui/status_plate.png"
+const PORTRAIT_FRAME_PATH := "res://assets/ui/portrait_frame.png"
+const ABILITY_BAR_STRIP_PATH := "res://assets/ui/ability_bar_strip.png"
+const HERO_DETAIL_BG := "res://assets/screens/hero_detail_bg.png"
+
 const HERO_PORTRAIT_PATH := {
 	"warrior": "res://assets/heroes/warrior.png",
 	"ranger": "res://assets/heroes/ranger.png",

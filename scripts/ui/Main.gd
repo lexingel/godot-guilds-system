@@ -14,6 +14,7 @@ var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
 var expanded_skill_hero: String = ""
+var expanded_slot: String = ""     # "weapon:0"/"gear:2" — which equip slot's picker is open, scoped to the selected hero
 var confirm_reset: bool = false
 var _combat_animating: bool = false
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
@@ -92,24 +93,171 @@ func _hp_bar(current: int, max_val: int, width: float) -> ProgressBar:
 	return bar
 
 
+## An ornate name+HP readout — GameData.STATUS_PLATE_PATH's frame (a small
+## oval name-tab up top, an open rectangular slot below it) with the name
+## centered in the tab and an _hp_bar + "cur/max" text centered in the slot.
+## Used for both arena nameplates and the action-menu's per-hero header.
+func _status_plate(name_text: String, hp: int, max_hp_val: int, width: float = 160.0) -> Control:
+	var height := width * (52.0 / 176.0)
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(width, height)
+	wrap.size = Vector2(width, height)
+	var bg := _icon(GameData.STATUS_PLATE_PATH, 1)
+	bg.custom_minimum_size = Vector2(width, height)
+	bg.size = Vector2(width, height)
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	wrap.add_child(bg)
+
+	var name_label := _label(name_text, 10)
+	name_label.size = Vector2(width, height * 0.3)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.position = Vector2(0, height * 0.06)
+	wrap.add_child(name_label)
+
+	var bar_w := width * 0.68
+	var bar := _hp_bar(hp, max_hp_val, bar_w)
+	bar.position = Vector2((width - bar_w) * 0.5, height * 0.56)
+	wrap.add_child(bar)
+	var hp_label := _label("%d/%d" % [hp, max_hp_val], 9, true)
+	hp_label.size = Vector2(width, height * 0.3)
+	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hp_label.position = Vector2(0, height * 0.68)
+	wrap.add_child(hp_label)
+	return wrap
+
+
+## One battle-action slot: an ornate frame (GameData.RARITY_FRAME_PATH,
+## "common" for every action — actions aren't loot, the frame is just the
+## established slot language) with the action's icon centered inside, an
+## optional cooldown-round badge in the corner, a short caption underneath so
+## the action reads without guessing at an icon, and an invisible Button on
+## top for input/selection state — same layered-hotspot approach as the camp
+## hub's clickable props. Selected state is a filled tint (not just a thin
+## border) since the border alone was too easy to miss against the wooden
+## shelf background.
+func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "") -> Control:
+	var label_h := 14.0 if label_text != "" else 0.0
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(size, size + label_h)
+	wrap.size = Vector2(size, size + label_h)
+
+	var frame := _icon(GameData.RARITY_FRAME_PATH["common"], int(size))
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	wrap.add_child(frame)
+
+	if selected:
+		var glow := PanelContainer.new()
+		var glow_style := StyleBoxFlat.new()
+		glow_style.bg_color = Color(Palette.RIFT.r, Palette.RIFT.g, Palette.RIFT.b, 0.32)
+		glow_style.border_width_left = 2
+		glow_style.border_width_top = 2
+		glow_style.border_width_right = 2
+		glow_style.border_width_bottom = 2
+		glow_style.border_color = Palette.RIFT
+		glow_style.corner_radius_top_left = 4
+		glow_style.corner_radius_top_right = 4
+		glow_style.corner_radius_bottom_left = 4
+		glow_style.corner_radius_bottom_right = 4
+		glow.add_theme_stylebox_override("panel", glow_style)
+		glow.custom_minimum_size = Vector2(size, size)
+		glow.size = Vector2(size, size)
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		wrap.add_child(glow)
+
+	if icon_path != "":
+		var icon_size := size * 0.6
+		var icon := _icon(icon_path, int(icon_size))
+		icon.position = Vector2((size - icon_size) * 0.5, (size - icon_size) * 0.5)
+		if disabled:
+			icon.modulate = Color(0.5, 0.5, 0.5, 0.7)
+		wrap.add_child(icon)
+
+	if cooldown_text != "":
+		var badge := PanelContainer.new()
+		var badge_style := StyleBoxFlat.new()
+		badge_style.bg_color = Palette.HAZARD
+		badge_style.corner_radius_top_left = 8
+		badge_style.corner_radius_top_right = 8
+		badge_style.corner_radius_bottom_left = 8
+		badge_style.corner_radius_bottom_right = 8
+		badge_style.content_margin_left = 3
+		badge_style.content_margin_right = 3
+		badge.add_theme_stylebox_override("panel", badge_style)
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var badge_label := _label(cooldown_text, 9)
+		badge.add_child(badge_label)
+		badge.position = Vector2(size * 0.62, size * 0.62)
+		wrap.add_child(badge)
+
+	if label_text != "":
+		var lbl := _label(label_text, 9, disabled)
+		lbl.custom_minimum_size = Vector2(size, label_h)
+		lbl.size = Vector2(size, label_h)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.clip_text = true
+		lbl.position = Vector2(0, size)
+		wrap.add_child(lbl)
+
+	var btn := Button.new()
+	btn.flat = true
+	btn.custom_minimum_size = wrap.custom_minimum_size
+	btn.size = wrap.size
+	btn.disabled = disabled
+	var clear_style := StyleBoxEmpty.new()
+	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(style_name, clear_style)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if label_text != "":
+		btn.tooltip_text = label_text
+	btn.pressed.connect(cb)
+	wrap.add_child(btn)
+	return wrap
+
+
+## A row of _action_slot controls on a wooden "ability bar" shelf background
+## (GameData.ABILITY_BAR_STRIP_PATH, 9-sliced via StyleBoxTexture so it
+## stretches to fit however many slots a hero has this fight).
+func _slot_row(children: Array) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var style := StyleBoxTexture.new()
+	style.texture = load(GameData.ABILITY_BAR_STRIP_PATH)
+	style.texture_margin_left = 60
+	style.texture_margin_right = 60
+	style.texture_margin_top = 14
+	style.texture_margin_bottom = 14
+	style.content_margin_left = 8.0
+	style.content_margin_top = 6.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 6.0
+	panel.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for c in children:
+		row.add_child(c)
+	panel.add_child(row)
+	return panel
+
+
 ## Pixel-art icon at a fixed size, nearest-neighbor filtered to stay crisp
 ## (matches the HTML's image-rendering:pixelated).
 func _icon(path: String, size: int = 24) -> TextureRect:
 	var t := TextureRect.new()
 	t.texture = load(path)
+	# Godot 4's default expand_mode (KEEP_SIZE) treats the texture's native
+	# resolution as a floor the moment `.size` is assigned — Control.size's
+	# setter clamps up to get_combined_minimum_size(), and under KEEP_SIZE that
+	# minimum is the texture's own pixel size. So expand_mode has to switch to
+	# IGNORE_SIZE *before* `.size`/`custom_minimum_size` are set below, or the
+	# clamp bakes in a too-large size that IGNORE_SIZE can no longer shrink
+	# back down (bit both a 192x192 UI frame requested at 96 and a 92x200
+	# hero portrait requested at 78 before this was reordered).
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.custom_minimum_size = Vector2(size, size)
 	# Containers apply custom_minimum_size as actual size automatically, but a
 	# plain Control parent (the combat arena's freely-positioned sprites) does
 	# not — without this the TextureRect renders at its native texture
 	# resolution instead of the intended icon size.
 	t.size = Vector2(size, size)
-	# Godot 4's default expand_mode (KEEP_SIZE) treats the texture's native
-	# resolution as a floor on the control's effective minimum size — harmless
-	# for small square sprites (monsters, 48x48) but silently re-inflates any
-	# source image taller/wider than the requested box (hero portraits are
-	# 92x200 natively) back toward its native size, ignoring the size set
-	# above. IGNORE_SIZE lets our explicit size win regardless of source res.
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	return t
@@ -915,12 +1063,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			arena.add_child(m_wrapper)
 			monster_wrappers[i] = m_wrapper
 			monster_rects[i] = m_rect
-			var m_name_label := _label(str(m["name"]), 11, true)
-			m_name_label.position = Vector2(m_x - 10, monster_top + m_size + 4)
-			arena.add_child(m_name_label)
-			var m_bar := _hp_bar(max(0, int(m["hp"])), int(m["max_hp"]), 70.0)
-			m_bar.position = Vector2(m_x - 5, monster_top + m_size + 20)
-			arena.add_child(m_bar)
+			var m_plate_w: float = clampf(monster_step - 10.0, 70.0, 110.0)
+			var m_plate := _status_plate(str(m["name"]), max(0, int(m["hp"])), int(m["max_hp"]), m_plate_w)
+			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, monster_top + m_size + 2)
+			arena.add_child(m_plate)
 
 		# Hero portraits in a row along the bottom, living heroes only, spaced
 		# from the actual living count for the same reason as the monsters above.
@@ -956,12 +1102,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			_start_idle_sway(h_wrapper)
 			hero_wrappers[h.id] = h_wrapper
 			hero_rects[h.id] = h_rect
-			var h_name_label := _label(h.name.split(" the ")[0], 11, true)
-			h_name_label.position = Vector2(h_x - 10, hero_top - 32)
-			arena.add_child(h_name_label)
-			var h_bar := _hp_bar(h.hp, Combat.max_hp(h), 70.0)
-			h_bar.position = Vector2(h_x - 5, hero_top - 16)
-			arena.add_child(h_bar)
+			var h_plate_w: float = clampf(hero_step - 6.0, 70.0, 100.0)
+			var h_plate := _status_plate(h.name.split(" the ")[0], h.hp, Combat.max_hp(h), h_plate_w)
+			h_plate.position = Vector2(h_x + hero_size * 0.5 - h_plate_w * 0.5, hero_top - h_plate_w * (52.0 / 176.0) - 4.0)
+			arena.add_child(h_plate)
 			row_i += 1
 
 		# A border frame overlay, drawn last so it sits on top of everything
@@ -1020,67 +1164,46 @@ func _render_combat_node(v: VBoxContainer) -> void:
 
 		var pending: Dictionary = state["pending_actions"]
 		for h in party:
-			var hero_block := _vbox(2)
+			var hero_block := _vbox(4)
 			if h.hp <= 0:
 				hero_block.add_child(_label("%s — down for the count" % h.name, 11, true))
 				menu.add_child(hero_block)
 				continue
-			var hero_top_row := HBoxContainer.new()
-			hero_top_row.add_child(_label(h.name, 12))
-			hero_top_row.add_child(_hp_bar(h.hp, Combat.max_hp(h), 80.0))
-			hero_top_row.add_child(_label("%d/%d" % [h.hp, Combat.max_hp(h)], 10, true))
-			hero_block.add_child(hero_top_row)
+			hero_block.add_child(_status_plate(h.name, h.hp, Combat.max_hp(h), 150.0))
 			var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
 			var current_action: String = str(act.get("action", "attack"))
 			var current_target: int = int(act.get("target", 0))
 
-			var attack_row := HBoxContainer.new()
-			attack_row.add_theme_constant_override("separation", 4)
+			var slots: Array = []
 			for i in monsters.size():
 				if float(monsters[i]["hp"]) <= 0:
 					continue
-				var atk_btn := _button(str(monsters[i]["name"]), func(hid=h.id, ti=i):
+				var target_name: String = str(monsters[i]["name"]).split(" ")[0]
+				var attack_cb := func(hid=h.id, ti=i):
 					GameState.set_hero_action(hid, "attack", ti)
 					render()
-				)
-				atk_btn.icon = load(GameData.sprite_for_monster(str(monsters[i]["name"])))
-				atk_btn.add_theme_constant_override("icon_max_width", 16)
-				atk_btn.add_theme_font_size_override("font_size", 11)
-				atk_btn.toggle_mode = true
-				atk_btn.button_pressed = current_action == "attack" and current_target == i
-				attack_row.add_child(atk_btn)
-			hero_block.add_child(attack_row)
-
-			var action_row := HBoxContainer.new()
-			action_row.add_theme_constant_override("separation", 4)
+				slots.append(_action_slot(GameData.sprite_for_monster(str(monsters[i]["name"])), "",
+					current_action == "attack" and current_target == i, false,
+					attack_cb, 52.0, "Atk %s" % target_name
+				))
 			if Combat.qualifies_for_ability(h):
 				var cd: int = h.ability_cooldown
-				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
-				var ab_label := "%s — Cooldown: %d" % [str(ab["name"]), cd] if cd > 0 else "%s — Ready" % str(ab["name"])
-				var ab_btn := _button(ab_label, func(hid=h.id):
+				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}).get("name", "Ability")).split(" ")[0]
+				var ability_cb := func(hid=h.id):
 					GameState.set_hero_action(hid, "ability")
 					render()
-				)
-				ab_btn.icon = load(GameData.ability_icon(h.pool_id))
-				ab_btn.add_theme_constant_override("icon_max_width", 16)
-				ab_btn.add_theme_font_size_override("font_size", 11)
-				ab_btn.toggle_mode = true
-				ab_btn.button_pressed = current_action == "ability"
-				ab_btn.disabled = cd > 0
-				action_row.add_child(ab_btn)
-
-			var defend_btn := _button("Defend", func(hid=h.id):
+				slots.append(_action_slot(GameData.ability_icon(h.pool_id), str(cd) if cd > 0 else "",
+					current_action == "ability", cd > 0,
+					ability_cb, 52.0, ability_name
+				))
+			var defend_cb := func(hid=h.id):
 				GameState.set_hero_action(hid, "defend")
 				render()
-			)
-			defend_btn.icon = load("res://assets/skills/shield_basic.png")
-			defend_btn.add_theme_constant_override("icon_max_width", 16)
-			defend_btn.add_theme_font_size_override("font_size", 11)
-			defend_btn.toggle_mode = true
-			defend_btn.button_pressed = current_action == "defend"
-			action_row.add_child(defend_btn)
-
-			hero_block.add_child(action_row)
+			slots.append(_action_slot("res://assets/skills/shield_basic.png", "",
+				current_action == "defend", false,
+				defend_cb, 52.0, "Defend"
+			))
+			hero_block.add_child(_slot_row(slots))
 			menu.add_child(hero_block)
 			if h != party[party.size() - 1]:
 				menu.add_child(_hsep())
@@ -1654,7 +1777,36 @@ func _render_roster(v: VBoxContainer) -> void:
 	cv.add_child(_title_strip(h.name))
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
 	cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
-	cv.add_child(_label("Power %d" % Combat.power_of(h), 12, true))
+
+	# Portrait + a live stat readout side by side, framed with the same
+	# PORTRAIT_FRAME_PATH art the paper-doll design has been carrying unused
+	# since it was first generated — every number here is the real derived
+	# stat (Combat.power_of/max_hp/hero_skill_total), not a fantasy stat this
+	# game doesn't track.
+	var visual_row := HBoxContainer.new()
+	visual_row.add_theme_constant_override("separation", 14)
+	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait_path != "":
+		var pf_size := 96.0
+		var frame_wrap := Control.new()
+		frame_wrap.custom_minimum_size = Vector2(pf_size, pf_size)
+		frame_wrap.size = Vector2(pf_size, pf_size)
+		var pf_icon := _icon(portrait_path, int(pf_size * 0.82))
+		pf_icon.position = Vector2(pf_size * 0.09, pf_size * 0.09)
+		frame_wrap.add_child(pf_icon)
+		var pf_frame := _icon(GameData.PORTRAIT_FRAME_PATH, int(pf_size))
+		pf_frame.stretch_mode = TextureRect.STRETCH_SCALE
+		frame_wrap.add_child(pf_frame)
+		visual_row.add_child(frame_wrap)
+	var stats_v := _vbox(2)
+	stats_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
+	stats_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
+	for kind in GameData.BUILD_KINDS:
+		var total := Combat.hero_skill_total(h, kind)
+		if total != 0.0:
+			stats_v.add_child(_label(Combat.describe_skill(kind, total), 11, true))
+	visual_row.add_child(stats_v)
+	cv.add_child(visual_row)
 
 	var actions := HBoxContainer.new()
 	actions.add_child(_button("Reroll Trait (60c)", func(id=h.id):
@@ -1721,38 +1873,24 @@ func _render_roster(v: VBoxContainer) -> void:
 				render()
 			))
 
-	var equipped_items: Array[Item] = []
-	equipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == h.id))
-	for it in equipped_items:
-		var irow := HBoxContainer.new()
-		var label_text := "%s (%s)" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category]]
-		if it.unique_id != "":
-			label_text += " — %s" % _loot_desc(it, false)
-		if it.socketed_kind != "":
-			label_text += " [socketed: %s]" % Combat.describe_skill(it.socketed_kind, it.socketed_value)
-		irow.add_child(_label(label_text, 12))
-		irow.add_child(_button("Unequip", func(id=it.id):
-			var target: Item = null
-			for x in GameState.items:
-				if x.id == id:
-					target = x
-					break
-			if target:
-				GameState.equip_item(h.id, target.slot_type(), target.equipped_idx, "")
-			render()
-		))
-		if it.socketed_kind == "":
-			for r in GameState.runestones:
-				var rdef := GameData.find_runestone(str(r["runestone_id"]))
-				if rdef.get("category", "") != it.slot_type():
-					continue
-				irow.add_child(_button("Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=it.id):
-					var err := GameState.socket_runestone(rid, iid)
-					if err != "":
-						push_warning(err)
-					render()
-				))
-		cv.add_child(irow)
+	cv.add_child(_hsep())
+	cv.add_child(_label("Weapon", 12, true))
+	var weapon_row := HBoxContainer.new()
+	weapon_row.add_theme_constant_override("separation", 8)
+	for i in GameData.weapon_slots(h.pool_id):
+		weapon_row.add_child(_equip_slot_frame(h, "weapon", i))
+	cv.add_child(weapon_row)
+	if expanded_slot.begins_with("weapon:"):
+		_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[1]))
+
+	cv.add_child(_label("Gear", 12, true))
+	var gear_row := HBoxContainer.new()
+	gear_row.add_theme_constant_override("separation", 8)
+	for i in GameData.gear_slots(h.rank):
+		gear_row.add_child(_equip_slot_frame(h, "gear", i))
+	cv.add_child(gear_row)
+	if expanded_slot.begins_with("gear:"):
+		_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[1]))
 
 	card.add_child(cv)
 	v.add_child(card)
@@ -1873,6 +2011,7 @@ func _roster_portrait_button(h: Hero) -> Control:
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn.pressed.connect(func(id=h.id):
 		selected_hero_id = "" if selected_hero_id == id else id
+		expanded_slot = ""
 		render()
 	)
 	wrap.add_child(btn)
@@ -1889,6 +2028,109 @@ func _first_free_slot(h: Hero, slot_type: String) -> int:
 		if not used.has(i):
 			return i
 	return -1
+
+
+func _find_equipped_at(hero_id: String, slot_type: String, idx: int) -> Item:
+	for it in GameState.items:
+		if it.equipped_to == hero_id and it.slot_type() == slot_type and it.equipped_idx == idx:
+			return it
+	return null
+
+
+## One equip-slot frame for the Roster paper-doll: a rarity-tinted border
+## (RARITY_FRAME_PATH — "common" when empty) with the equipped item's category
+## icon centered inside (blank when empty) and a short caption underneath
+## (the item's first name word, or "Weapon"/"Gear" when empty) so the slot
+## reads without opening anything. Clicking toggles this slot's inline
+## equip-picker below the row — same expand/collapse pattern already used for
+## the Skills button and Medical Bay's bed picker.
+func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0) -> Control:
+	var equipped := _find_equipped_at(h.id, slot_type, idx)
+	var slot_key := "%s:%d" % [slot_type, idx]
+	var is_open := expanded_slot == slot_key
+	var label_text := equipped.name.split(" ")[0] if equipped else ("Weapon" if slot_type == "weapon" else "Gear")
+	var icon_path: String = GameData.ITEM_CATEGORY_ICON_PATH[equipped.category] if equipped else ""
+	var cb := func():
+		expanded_slot = "" if is_open else slot_key
+		render()
+	return _action_slot(icon_path, "", is_open, false, cb, size, label_text)
+
+
+## The picker for whichever equip slot is currently expanded: shows the
+## equipped item (with Unequip + matching Socket options) if any, then every
+## unequipped item that fits this hero and slot with an Equip button — reuses
+## GameState.equip_item/item_fits_hero exactly like the old Inventory-tab
+## "Equip →" flow did, just triggered from the hero's own card instead.
+func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: int) -> void:
+	var equipped := _find_equipped_at(h.id, slot_type, idx)
+	var picker := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE3
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Palette.RIFT
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	style.content_margin_left = 8
+	style.content_margin_top = 6
+	style.content_margin_right = 8
+	style.content_margin_bottom = 6
+	picker.add_theme_stylebox_override("panel", style)
+	var pv := _vbox(4)
+
+	if equipped:
+		var erow := HBoxContainer.new()
+		erow.add_theme_constant_override("separation", 8)
+		erow.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[equipped.category], 18))
+		erow.add_child(_label("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12))
+		pv.add_child(erow)
+		var eactions := HBoxContainer.new()
+		eactions.add_child(_button("Unequip", func(hid=h.id, st=slot_type, i=idx):
+			GameState.equip_item(hid, st, i, "")
+			render()
+		))
+		if equipped.socketed_kind != "":
+			eactions.add_child(_label("Socketed: %s" % Combat.describe_skill(equipped.socketed_kind, equipped.socketed_value), 11, true))
+		else:
+			for r in GameState.runestones:
+				var rdef := GameData.find_runestone(str(r["runestone_id"]))
+				if rdef.get("category", "") != slot_type:
+					continue
+				eactions.add_child(_button("Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=equipped.id):
+					var err := GameState.socket_runestone(rid, iid)
+					if err != "":
+						push_warning(err)
+					render()
+				))
+		pv.add_child(eactions)
+		pv.add_child(_hsep())
+
+	var candidates: Array[Item] = []
+	candidates.assign(GameState.items.filter(func(it): return it.equipped_to == "" and it.slot_type() == slot_type and GameState.item_fits_hero(it, h)))
+	if candidates.is_empty():
+		pv.add_child(_label("No unequipped %s available." % ("weapons" if slot_type == "weapon" else "gear"), 11, true))
+	for it in candidates:
+		var crow := HBoxContainer.new()
+		crow.add_theme_constant_override("separation", 8)
+		crow.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18))
+		crow.add_child(_label("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12))
+		crow.add_child(_button("Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
+			GameState.equip_item(hid, st, i, iid)
+			expanded_slot = ""
+			render()
+		))
+		pv.add_child(crow)
+
+	pv.add_child(_button("Close", func():
+		expanded_slot = ""
+		render()
+	))
+	picker.add_child(pv)
+	cv.add_child(picker)
 
 
 func _render_inventory(v: VBoxContainer) -> void:
