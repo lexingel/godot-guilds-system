@@ -220,6 +220,12 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 ## stretches to fit however many slots a hero has this fight).
 func _slot_row(children: Array) -> PanelContainer:
 	var panel := PanelContainer.new()
+	# Without this, a VBoxContainer parent stretches the panel to its own
+	# full width — the StyleBoxTexture then stretches its tileable middle
+	# band across that whole leftover width, showing stray bits of the
+	# source art (looks like unrelated furniture) to the right of the actual
+	# buttons instead of the bar just hugging its own content.
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var style := StyleBoxTexture.new()
 	style.texture = load(GameData.ABILITY_BAR_STRIP_PATH)
 	style.texture_margin_left = 60
@@ -1101,14 +1107,19 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# independent heights.
 		var ground_y: float = ARENA_SIZE.y * 0.62
 
-		# Monsters occupy the right ~52% of the field, heroes the left ~44%,
-		# with a gap between so neither side's plates crowd the other's.
-		# Size still scales with the monster's own max HP (clamped) so a
-		# boss/elite main unit reads as a bigger threat than a weak add.
+		# Each side's units pack into a narrow zone near ITS OWN edge of the
+		# field, leaving a wide fixed no-man's-land in the middle (from 34%
+		# to 66% of the width, regardless of how many units are on either
+		# side) — a tight per-side spacing next to a deliberately open gap is
+		# what actually reads as "two groups facing off" rather than one row
+		# of evenly-spaced individuals (the previous 40%/50%+ split put too
+		# little daylight between the sides relative to their own internal
+		# spacing). Size still scales with the monster's own max HP (clamped)
+		# so a boss/elite main unit reads as a bigger threat than a weak add.
 		var monster_wrappers: Dictionary = {}
 		var monster_rects: Dictionary = {}
-		var monster_zone_x: float = ARENA_SIZE.x * 0.5
-		var monster_zone_w: float = ARENA_SIZE.x - monster_zone_x - 20.0
+		var monster_zone_x: float = ARENA_SIZE.x * 0.66
+		var monster_zone_w: float = ARENA_SIZE.x - monster_zone_x - 24.0
 		var monster_step: float = monster_zone_w / max(1, monsters.size())
 		for i in monsters.size():
 			var m: Dictionary = monsters[i]
@@ -1132,8 +1143,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 
 		var hero_wrappers: Dictionary = {}
 		var hero_rects: Dictionary = {}
-		var hero_zone_x := 20.0
-		var hero_zone_w: float = ARENA_SIZE.x * 0.4
+		var hero_zone_x := 24.0
+		var hero_zone_w: float = ARENA_SIZE.x * 0.34 - hero_zone_x
 		var hero_step: float = hero_zone_w / max(1, living_heroes.size())
 		var hero_size: float = clampf(84.0 - (living_heroes.size() - 1) * 8.0, 56.0, 84.0)
 		var row_i := 0
