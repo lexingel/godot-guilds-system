@@ -94,35 +94,31 @@ func _hp_bar(current: int, max_val: int, width: float) -> ProgressBar:
 	return bar
 
 
-## An ornate name+HP readout — GameData.STATUS_PLATE_PATH's frame (a small
-## oval name-tab up top, an open rectangular slot below it) with the name
-## centered in the tab and an _hp_bar + "cur/max" text centered in the slot.
-## Used for both arena nameplates and the action-menu's per-hero header.
+## A plain floating name + HP readout above a hero/monster in the arena — a
+## name label over a colored bar with "cur/max" text, no ornate frame. Swapped
+## from an earlier wooden-nameplate-prop version to match the reference battle
+## screens' simple floating HP bars.
+const STATUS_PLATE_HEIGHT := 34.0
 func _status_plate(name_text: String, hp: int, max_hp_val: int, width: float = 160.0) -> Control:
-	var height := width * (52.0 / 176.0)
 	var wrap := Control.new()
-	wrap.custom_minimum_size = Vector2(width, height)
-	wrap.size = Vector2(width, height)
-	var bg := _icon(GameData.STATUS_PLATE_PATH, 1)
-	bg.custom_minimum_size = Vector2(width, height)
-	bg.size = Vector2(width, height)
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	wrap.add_child(bg)
+	wrap.custom_minimum_size = Vector2(width, STATUS_PLATE_HEIGHT)
+	wrap.size = Vector2(width, STATUS_PLATE_HEIGHT)
 
-	var name_label := _label(name_text, 10)
-	name_label.size = Vector2(width, height * 0.3)
+	var name_label := _label(name_text, 11)
+	name_label.size = Vector2(width, 15)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.position = Vector2(0, height * 0.06)
+	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	name_label.add_theme_constant_override("shadow_offset_x", 1)
+	name_label.add_theme_constant_override("shadow_offset_y", 1)
 	wrap.add_child(name_label)
 
-	var bar_w := width * 0.68
-	var bar := _hp_bar(hp, max_hp_val, bar_w)
-	bar.position = Vector2((width - bar_w) * 0.5, height * 0.56)
+	var bar := _hp_bar(hp, max_hp_val, width)
+	bar.position = Vector2(0, 16)
 	wrap.add_child(bar)
 	var hp_label := _label("%d/%d" % [hp, max_hp_val], 9, true)
-	hp_label.size = Vector2(width, height * 0.3)
+	hp_label.size = Vector2(width, 12)
 	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hp_label.position = Vector2(0, height * 0.68)
+	hp_label.position = Vector2(0, 27)
 	wrap.add_child(hp_label)
 	return wrap
 
@@ -1116,6 +1112,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# little daylight between the sides relative to their own internal
 		# spacing). Size still scales with the monster's own max HP (clamped)
 		# so a boss/elite main unit reads as a bigger threat than a weak add.
+		# A small per-position vertical offset applied within each side's row —
+		# a flat single line read as too uniform/lined-up next to the
+		# reference battle screens, which stagger their party into a loose
+		# cluster at varied depths. Cycles if a side somehow has more than 4
+		# living units (never happens today, but harmless if it did).
+		const DEPTH_STAGGER := [0.0, 20.0, -8.0, 28.0]
+
 		var monster_wrappers: Dictionary = {}
 		var monster_rects: Dictionary = {}
 		var monster_zone_x: float = ARENA_SIZE.x * 0.66
@@ -1124,10 +1127,11 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		for i in monsters.size():
 			var m: Dictionary = monsters[i]
 			var m_x: float = monster_zone_x + i * monster_step
+			var m_ground: float = ground_y + DEPTH_STAGGER[i % DEPTH_STAGGER.size()]
 			var m_size: int = clampi(56 + int(float(m["max_hp"]) / 2.5), 60, 96)
 			var m_rect := _icon(GameData.sprite_for_monster(str(m["name"])), m_size)
 			var m_wrapper := _wrap_icon(m_rect)
-			m_wrapper.position = Vector2(m_x, ground_y - m_size)
+			m_wrapper.position = Vector2(m_x, m_ground - m_size)
 			_add_ground_shadow(arena, m_wrapper.position, float(m_size))
 			if float(m["hp"]) <= 0:
 				m_wrapper.modulate = Color(0.35, 0.35, 0.35, 0.7)
@@ -1138,7 +1142,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			monster_rects[i] = m_rect
 			var m_plate_w: float = clampf(monster_step - 10.0, 70.0, 100.0)
 			var m_plate := _status_plate(str(m["name"]), max(0, int(m["hp"])), int(m["max_hp"]), m_plate_w)
-			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, ground_y - m_size - m_plate_w * (52.0 / 176.0) - 6.0)
+			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, m_ground - m_size - STATUS_PLATE_HEIGHT - 6.0)
 			arena.add_child(m_plate)
 
 		var hero_wrappers: Dictionary = {}
@@ -1155,9 +1159,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			if portrait_path == "":
 				continue
 			var h_x: float = hero_zone_x + row_i * hero_step
+			var h_ground: float = ground_y + DEPTH_STAGGER[row_i % DEPTH_STAGGER.size()]
 			var h_rect := _icon(portrait_path, int(hero_size))
 			var h_wrapper := _wrap_icon(h_rect)
-			h_wrapper.position = Vector2(h_x, ground_y - hero_size)
+			h_wrapper.position = Vector2(h_x, h_ground - hero_size)
 			_add_ground_shadow(arena, h_wrapper.position, hero_size)
 			arena.add_child(h_wrapper)
 			_start_idle_sway(h_wrapper)
@@ -1165,7 +1170,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			hero_rects[h.id] = h_rect
 			var h_plate_w: float = clampf(hero_step - 6.0, 70.0, 100.0)
 			var h_plate := _status_plate(h.name.split(" the ")[0], h.hp, Combat.max_hp(h), h_plate_w)
-			h_plate.position = Vector2(h_x + hero_size * 0.5 - h_plate_w * 0.5, ground_y - hero_size - h_plate_w * (52.0 / 176.0) - 6.0)
+			h_plate.position = Vector2(h_x + hero_size * 0.5 - h_plate_w * 0.5, h_ground - hero_size - STATUS_PLATE_HEIGHT - 6.0)
 			arena.add_child(h_plate)
 			row_i += 1
 
@@ -1185,6 +1190,20 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		frame.size = ARENA_SIZE
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		arena.add_child(frame)
+
+		# A round counter banner across the top of the arena — the reference
+		# battle screens announce "Round N" at the start of each round; ours
+		# stays up the whole round instead of flashing in and fading, since
+		# animating it would mean threading another tween through the already
+		# carefully-sequenced _play_round animation chain for a cosmetic touch.
+		var round_label := _label("Round %d" % (int(state.get("round_num", 0)) + 1), 16)
+		round_label.size = Vector2(ARENA_SIZE.x, 22)
+		round_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		round_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		round_label.add_theme_constant_override("shadow_offset_x", 1)
+		round_label.add_theme_constant_override("shadow_offset_y", 1)
+		round_label.position = Vector2(0, 6)
+		arena.add_child(round_label)
 		v.add_child(arena)
 
 		var incoming := Combat.describe_incoming(state)
