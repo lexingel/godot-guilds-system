@@ -18,6 +18,11 @@ const RARITIES := [
 	{"id": "common", "name": "Common", "mult": 1.0, "cost": 40, "weight": 60},
 	{"id": "rare", "name": "Rare", "mult": 1.4, "cost": 120, "weight": 32},
 	{"id": "epic", "name": "Epic", "mult": 1.9, "cost": 320, "weight": 8},
+	# Legendary doesn't scale a rolled stat by `mult` like the other three —
+	# it's a fixed pick from UNIQUE_ITEMS/UNIQUE_RELICS instead (see
+	# Combat.gen_unique_item/gen_unique_relic). `mult`/`cost` exist only so
+	# find_rarity() still has something sane to return.
+	{"id": "legendary", "name": "Legendary", "mult": 1.0, "cost": 800, "weight": 1},
 ]
 
 const POS_TRAITS := ["Battle-Hardened", "Swift", "Iron Skin"]
@@ -134,6 +139,78 @@ static func find_runestone(runestone_id: String) -> Dictionary:
 	for r in RUNESTONE_TYPES:
 		if r["id"] == runestone_id:
 			return r
+	return {}
+
+## Legendary items: fixed (never rolled) hero-bound gear, each with one
+## effect outside the normal BUILD_KINDS vocabulary (dispatched by `effect` in
+## Combat.resolve_round via Combat.hero_has_unique_item) plus, on most, a real
+## drawback in the *existing* kind vocabulary so it still flows through
+## hero_item_total/hero_skill_total for free. "locked_role"/"locked_subclasses"
+## restrict who can equip it - "" / [] means no restriction.
+const UNIQUE_ITEMS := [
+	{"id": "bloodthirst_fang", "name": "Bloodthirst Fang", "category": "weapon",
+	 "effect": "lifesteal_pct", "value": 0.25,
+	 "drawback_kind": "hazard_guard_pct", "drawback_value": -0.15,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "Heals the wielder for 25% of the damage they deal each round they attack. -15% hazard severity guard."},
+	{"id": "widows_edge", "name": "Widow's Edge", "category": "weapon",
+	 "effect": "execute_below_pct", "value": 0.15,
+	 "drawback_kind": "dmg_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "Instantly finishes a foe this hero's attack would drop below 15% HP. -10% damage otherwise."},
+	{"id": "last_stand_plate", "name": "Last Stand Plate", "category": "armor",
+	 "effect": "desperate_dodge", "value": 0.30,
+	 "drawback_kind": "dodge_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "The lower this hero's HP, up to +30% dodge chance near death. -10% dodge chance at full HP."},
+	{"id": "oathbound_talisman", "name": "Oathbound Talisman", "category": "focus",
+	 "effect": "mend_shield_proc", "value": 0.15,
+	 "drawback_kind": "dmg_pct", "drawback_value": -0.15,
+	 "locked_role": "cleric", "locked_subclasses": [],
+	 "desc": "Whenever the party mends, also shields the lowest-HP ally for 15% of their max HP. -15% damage. Cleric only."},
+]
+
+## Legendary relics: same idea as UNIQUE_ITEMS but party-wide. `effect`/`value`
+## dispatch via Combat.party_has_unique_relic; drawback kinds are restricted
+## to ones relic specials already aggregate into (mend/dodge/escalate/
+## hazard_guard/first_round/wipe_guard - never dmg_pct/hp_pct, which relics
+## have no path into). "combo_with" is another unique_id that, when also
+## equipped, doubles this relic's own effect (checked by combo_partner_id).
+const UNIQUE_RELICS := [
+	{"id": "gamblers_coin", "name": "The Gambler's Coin", "type": "Ember",
+	 "effect": "coinflip_dmg", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "",
+	 "combo_with": "",
+	 "desc": "Each round: 50% chance the party's damage is doubled, 50% chance it's halved."},
+	{"id": "ashes_of_the_fallen", "name": "Ashes of the Fallen", "type": "Umbral",
+	 "effect": "desperation_dmg", "value": 0.30,
+	 "drawback_kind": "hazard_guard_pct", "drawback_value": -0.10, "drawback_label": "-10% hazard severity guard",
+	 "combo_with": "twin_embers",
+	 "desc": "+damage the more wounded the party collectively is, up to +30% at the brink of death. -10% hazard severity guard."},
+	{"id": "sable_standard", "name": "Sable Standard", "type": "Arcane",
+	 "effect": "mono_role_dmg", "value": 0.25,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "",
+	 "combo_with": "",
+	 "desc": "+25% team damage, but only while every living hero shares the same role."},
+	{"id": "twin_embers", "name": "Twin Embers", "type": "Ember",
+	 "effect": "", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "",
+	 "combo_with": "ashes_of_the_fallen",
+	 "special_kind": "escalate_pct", "special_value": 0.02,
+	 "desc": "+2% dmg/round (stacking) on its own. Paired with Ashes of the Fallen, that relic's desperation bonus doubles."},
+]
+
+static func find_unique_item(unique_id: String) -> Dictionary:
+	for u in UNIQUE_ITEMS:
+		if u["id"] == unique_id:
+			return u
+	return {}
+
+
+static func find_unique_relic(unique_id: String) -> Dictionary:
+	for u in UNIQUE_RELICS:
+		if u["id"] == unique_id:
+			return u
 	return {}
 
 # Classes agile/skilled enough to dual-wield get 2 weapon slots instead of 1 —

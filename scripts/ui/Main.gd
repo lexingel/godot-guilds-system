@@ -151,6 +151,31 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 	return out
 
 
+## A piece of loot's display text — a Legendary's real effect lives in
+## GameData.find_unique_item/relic's authored `desc`, not in kind/value or
+## the generic Relic.desc() (built for the normal rolled case), so every
+## loot-listing site (reward choice, shop, inventory) routes through here
+## instead of duplicating the unique/normal branch three times.
+func _loot_desc(obj, is_relic: bool) -> String:
+	if is_relic:
+		var r: Relic = obj
+		if r.unique_id != "":
+			var d := str(GameData.find_unique_relic(r.unique_id).get("desc", ""))
+			if r.combo_with != "" and Combat.party_has_unique_relic(r.combo_with):
+				d += " [combo active!]"
+			return d
+		return r.desc()
+	var it: Item = obj
+	if it.unique_id != "":
+		return str(GameData.find_unique_item(it.unique_id).get("desc", ""))
+	return Combat.describe_skill(it.kind, it.value)
+
+
+func _loot_display_name(obj) -> String:
+	var uid: String = obj.unique_id
+	return "★ %s" % obj.name if uid != "" else obj.name
+
+
 ## Fixed-height, internally-scrolled log — `fit_content` used to grow the
 ## label a line taller every round, pushing the action buttons further down
 ## the page each time. scroll_follow keeps the newest line in view without
@@ -1116,9 +1141,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				var opt: Dictionary = options[i]
 				var obj = opt["obj"]
 				var is_relic: bool = opt["loot_type"] == "relic"
-				var desc: String = obj.desc() if is_relic else Combat.describe_skill(obj.kind, obj.value)
+				var desc: String = _loot_desc(obj, is_relic)
 				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
-				var btn := _button("%s — %s" % [obj.name, desc], func(idx=i):
+				var btn := _button("%s — %s" % [_loot_display_name(obj), desc], func(idx=i):
 					GameState.pick_combat_reward(idx)
 					render()
 				)
@@ -1150,13 +1175,13 @@ func _render_shop_node(v: VBoxContainer) -> void:
 	for i in offers.size():
 		var off: Dictionary = offers[i]
 		var obj = off["obj"]
-		var desc: String = obj.desc() if off["loot_type"] == "relic" else Combat.describe_skill(obj.kind, obj.value)
-		var bought: bool = off.get("bought", false)
 		var is_relic: bool = off["loot_type"] == "relic"
+		var desc: String = _loot_desc(obj, is_relic)
+		var bought: bool = off.get("bought", false)
 		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
 		var row := HBoxContainer.new()
 		row.add_child(_icon(icon_path, 20))
-		row.add_child(_label("%s — %s (%dc)%s" % [obj.name, desc, off["price"], " [bought]" if bought else ""]))
+		row.add_child(_label("%s — %s (%dc)%s" % [_loot_display_name(obj), desc, off["price"], " [bought]" if bought else ""]))
 		if not bought:
 			row.add_child(_button("Buy", func(idx=i):
 				GameState.buy_shop_offer(idx)
@@ -1700,7 +1725,9 @@ func _render_roster(v: VBoxContainer) -> void:
 	equipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == h.id))
 	for it in equipped_items:
 		var irow := HBoxContainer.new()
-		var label_text := "%s (%s)" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category]]
+		var label_text := "%s (%s)" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category]]
+		if it.unique_id != "":
+			label_text += " — %s" % _loot_desc(it, false)
 		if it.socketed_kind != "":
 			label_text += " [socketed: %s]" % Combat.describe_skill(it.socketed_kind, it.socketed_value)
 		irow.add_child(_label(label_text, 12))
@@ -1928,11 +1955,11 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	for it in unequipped_items:
 		var row := HBoxContainer.new()
 		row.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20))
-		row.add_child(_label("%s (%s) — %s" % [it.name, GameData.ITEM_CATEGORY_LABEL[it.category], Combat.describe_skill(it.kind, it.value)], 12))
+		row.add_child(_label("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12))
 		for h2 in GameState.heroes:
 			var slot := it.slot_type()
 			var free_idx := _first_free_slot(h2, slot)
-			if free_idx >= 0:
+			if free_idx >= 0 and GameState.item_fits_hero(it, h2):
 				row.add_child(_button("Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
 					GameState.equip_item(hid, s, idx, iid)
 					render()
@@ -1985,7 +2012,7 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 	for r in GameState.relics:
 		var rrow := HBoxContainer.new()
 		rrow.add_child(_icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20))
-		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [r.name, r.type, r.level, r.desc()], 12))
+		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12))
 		rrow.add_child(_button("Unequip" if r.equipped else "Equip", func(id=r.id):
 			GameState.toggle_equip_relic(id)
 			render()

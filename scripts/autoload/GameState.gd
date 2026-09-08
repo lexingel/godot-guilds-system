@@ -547,7 +547,7 @@ func push_through_hazard() -> void:
 		log.append("The Anchor Artifact snuffs the hazard before it strikes.")
 		dmg = 0.0
 	else:
-		var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct"))
+		var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct"))
 		dmg = round(dmg * (1.0 - guard))
 		var shield: int = run.get("shield", 0)
 		var abs_amt: int = min(shield, int(dmg))
@@ -1087,6 +1087,17 @@ func item_slot_type_of(it: Item) -> String:
 	return it.slot_type()
 
 
+## A Legendary item's locked_role/locked_subclasses restricts who can equip
+## it — empty on both means no restriction (every normal item, and most
+## Legendaries).
+func item_fits_hero(it: Item, h: Hero) -> bool:
+	if it.locked_role != "" and h.cls_id != it.locked_role:
+		return false
+	if not it.locked_subclasses.is_empty() and not it.locked_subclasses.has(h.pool_id):
+		return false
+	return true
+
+
 func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -> void:
 	var h := find_hero(hero_id)
 	if not h:
@@ -1105,6 +1116,8 @@ func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -
 			target = it
 			break
 	if not target or target.slot_type() != slot_type:
+		return
+	if not item_fits_hero(target, h):
 		return
 	var cap := GameData.weapon_slots(h.pool_id) if slot_type == "weapon" else GameData.gear_slots(h.rank)
 	if idx >= cap:
@@ -1132,7 +1145,7 @@ func upgrade_relic(relic_id: String) -> String:
 		if r.has_special():
 			var growth := 1.30 if r.level >= 3 else 1.15
 			r.special_value = snappedf(r.special_value * growth, 0.001)
-		elif next_lvl >= 3:
+		elif next_lvl >= 3 and r.unique_id == "":
 			var domain := Combat.domain_for_type(r.type)
 			var pool: Array = GameData.RELIC_SPECIALS.filter(func(x): return x["domain"] == domain)
 			var s: Dictionary = pool[randi() % pool.size()]

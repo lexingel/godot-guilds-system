@@ -206,6 +206,8 @@ func generate_champion() -> Hero:
 
 
 func gen_relic(rarity_id: String) -> Relic:
+	if rarity_id == "legendary":
+		return gen_unique_relic()
 	var type: String = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	var rarity := GameData.find_rarity(rarity_id)
 	var noun: String = RARITY_NOUNS[randi() % RARITY_NOUNS.size()]
@@ -228,7 +230,38 @@ func gen_relic(rarity_id: String) -> Relic:
 	return r
 
 
+## A fixed pick from GameData.UNIQUE_RELICS — no rarity-mult scaling, the
+## effect/value/drawback are exactly as authored. "Twin Embers" is the one
+## entry whose own effect is a normal rollable-style special (escalate_pct)
+## rather than a bespoke mechanic, so it reuses special_kind/special_value
+## instead of `effect` — Combat.resolve_round only dispatches on unique_id
+## for the entries that actually need bespoke behavior.
+func gen_unique_relic() -> Relic:
+	var def: Dictionary = GameData.UNIQUE_RELICS[randi() % GameData.UNIQUE_RELICS.size()]
+	var r := Relic.new()
+	r.id = "rl" + str(GameState.next_id)
+	GameState.next_id += 1
+	r.name = str(def["name"])
+	r.type = str(def["type"])
+	r.rarity = "legendary"
+	r.dmg = 0
+	r.hp = 0
+	r.unique_id = str(def["id"])
+	r.combo_with = str(def.get("combo_with", ""))
+	if def.has("special_kind"):
+		r.special_kind = str(def["special_kind"])
+		r.special_value = float(def["special_value"])
+		r.special_label = str(def["desc"])
+	if str(def.get("drawback_kind", "")) != "":
+		r.drawback_kind = str(def["drawback_kind"])
+		r.drawback_value = float(def["drawback_value"])
+		r.drawback_label = str(def["drawback_label"])
+	return r
+
+
 func gen_item(rarity_id: String) -> Item:
+	if rarity_id == "legendary":
+		return gen_unique_item()
 	var rarity := GameData.find_rarity(rarity_id)
 	var category: String = GameData.ITEM_CATEGORIES[randi() % GameData.ITEM_CATEGORIES.size()]
 	var kinds: Array = GameData.ITEM_CATEGORY_KINDS[category]
@@ -244,6 +277,27 @@ func gen_item(rarity_id: String) -> Item:
 	it.rarity = rarity["id"]
 	it.kind = kind
 	it.value = value
+	return it
+
+
+## A fixed pick from GameData.UNIQUE_ITEMS — see gen_unique_relic for why
+## this bypasses the normal category/kind roll entirely.
+func gen_unique_item() -> Item:
+	var def: Dictionary = GameData.UNIQUE_ITEMS[randi() % GameData.UNIQUE_ITEMS.size()]
+	var it := Item.new()
+	it.id = "it" + str(GameState.next_id)
+	GameState.next_id += 1
+	it.name = str(def["name"])
+	it.category = str(def["category"])
+	it.rarity = "legendary"
+	it.kind = ""
+	it.value = 0.0
+	it.unique_id = str(def["id"])
+	it.drawback_kind = str(def.get("drawback_kind", ""))
+	it.drawback_value = float(def.get("drawback_value", 0.0))
+	it.locked_role = str(def.get("locked_role", ""))
+	var subs: Array = def.get("locked_subclasses", [])
+	it.locked_subclasses.assign(subs)
 	return it
 
 
@@ -442,6 +496,26 @@ func relic_special_total(kind: String) -> float:
 	return s
 
 
+## Mirrors relic_special_total but for a Legendary relic's drawback — only
+## ever called for kinds relics already aggregate elsewhere (see
+## GameData.UNIQUE_RELICS's own doc comment on that restriction).
+func relic_drawback_total(kind: String) -> float:
+	var s := 0.0
+	for r in equipped_relics():
+		if r.drawback_kind == kind:
+			s += r.drawback_value
+	return s
+
+
+## True if an equipped relic's unique_id matches — used both to gate a
+## unique relic's own bespoke effect and to check a combo partner.
+func party_has_unique_relic(unique_id: String) -> bool:
+	for r in equipped_relics():
+		if r.unique_id == unique_id:
+			return true
+	return false
+
+
 func hero_item_total(h: Hero, kind: String) -> float:
 	var s := 0.0
 	for it in GameState.items:
@@ -450,7 +524,17 @@ func hero_item_total(h: Hero, kind: String) -> float:
 				s += it.value
 			if it.socketed_kind == kind:
 				s += it.socketed_value
+			if it.drawback_kind == kind:
+				s += it.drawback_value
 	return s
+
+
+## True if `h` has the named Legendary item (by unique_id) equipped.
+func hero_has_unique_item(h: Hero, unique_id: String) -> bool:
+	for it in GameState.items:
+		if it.equipped_to == h.id and it.unique_id == unique_id:
+			return true
+	return false
 
 
 func synergy_bonus() -> Dictionary:
@@ -509,11 +593,11 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		raw_sum += dmg_of(h)
 	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party))
 
-	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + synergy_value_for("first_round_pct")
-	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + synergy_value_for("escalate_pct")
-	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + synergy_value_for("mend_pct"))
-	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + synergy_value_for("dodge_pct"))
-	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard"))
+	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct")
+	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct") + synergy_value_for("escalate_pct")
+	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct"))
+	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct"))
+	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard") + relic_drawback_total("wipe_guard"))
 	var counter: float = min(0.6, relic_special_total("counter_pct"))
 	var cooldown_shave: float = min(0.75, relic_special_total("cooldown_shave_pct"))
 	var kill_shield: float = min(0.6, relic_special_total("kill_shield_pct"))
@@ -635,6 +719,34 @@ func resolve_round(state: Dictionary) -> Dictionary:
 	var attack_mult: float = (1.0 + float(state["first_round_bonus"]) if round_num == 1 else 1.0) * (1.0 + float(state["escalate"]) * (round_num - 1))
 	var escalate_mult: float = 1.0 + float(state["escalate"]) * (round_num - 1)
 
+	# Legendary relic round-wide multipliers — rolled/computed fresh each
+	# round (unlike team_dmg_base, these aren't meant to be permanent), then
+	# folded into this round's attack_mult only.
+	if party_has_unique_relic("gamblers_coin"):
+		if randf() < 0.5:
+			attack_mult *= 2.0
+			log.append("The Gambler's Coin shines bright — damage is doubled this round!")
+		else:
+			attack_mult *= 0.5
+			log.append("The Gambler's Coin shows its dark face — damage is halved this round.")
+	if party_has_unique_relic("ashes_of_the_fallen"):
+		var desperation_cap := 0.30
+		if party_has_unique_relic("twin_embers"):
+			desperation_cap *= 2.0
+		var total_max := 0.0
+		var total_missing := 0.0
+		for h3 in living:
+			total_max += max_hp(h3)
+			total_missing += max_hp(h3) - h3.hp
+		if total_max > 0.0:
+			attack_mult *= 1.0 + desperation_cap * (total_missing / total_max)
+	if party_has_unique_relic("sable_standard"):
+		var roles_seen := {}
+		for h3 in living:
+			roles_seen[h3.cls_id] = true
+		if roles_seen.size() == 1:
+			attack_mult *= 1.25
+
 	for h in party:
 		if h.ability_cooldown > 0:
 			h.ability_cooldown -= 1
@@ -650,8 +762,20 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			if target_idx < 0:
 				continue
 			var dealt: float = dmg_of(h) / raw_sum * team_dmg_base * attack_mult
+			if hero_has_unique_item(h, "widows_edge"):
+				var edge_def := GameData.find_unique_item("widows_edge")
+				var after_hp: float = float(monsters[target_idx]["hp"]) - dealt
+				var target_max: float = float(monsters[target_idx]["max_hp"])
+				if after_hp > 0.0 and target_max > 0.0 and after_hp / target_max < float(edge_def["value"]):
+					dealt = float(monsters[target_idx]["hp"])
+					log.append("%s's Widow's Edge finds the killing blow!" % h.name)
 			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - dealt
 			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
+			if hero_has_unique_item(h, "bloodthirst_fang"):
+				var fang_def := GameData.find_unique_item("bloodthirst_fang")
+				var healed: int = max(1, int(round(dealt * float(fang_def["value"]))))
+				h.hp = min(max_hp(h), h.hp + healed)
+				log.append("%s drains %d HP from the strike." % [h.name, healed])
 		elif action == "defend":
 			defending[h.id] = true
 		elif action == "ability" and h.ability_cooldown == 0:
@@ -768,6 +892,23 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				mended = true
 		if mended:
 			log.append("The party mends its wounds.")
+			var talisman_wearer: Hero = null
+			for h4 in living:
+				if hero_has_unique_item(h4, "oathbound_talisman"):
+					talisman_wearer = h4
+					break
+			if talisman_wearer:
+				var still_alive: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
+				if not still_alive.is_empty():
+					var lowest_h: Hero = still_alive[0]
+					for hh3 in still_alive:
+						if hh3.hp < lowest_h.hp:
+							lowest_h = hh3
+					var talisman_def := GameData.find_unique_item("oathbound_talisman")
+					var shields2: Dictionary = state["hero_shields"]
+					var shield_amt: float = max_hp(lowest_h) * float(talisman_def["value"])
+					shields2[lowest_h.id] = float(shields2.get(lowest_h.id, 0.0)) + shield_amt
+					log.append("The Oathbound Talisman shields %s for %d." % [lowest_h.name, int(round(shield_amt))])
 
 	if living.filter(func(h): return h.hp > 0).is_empty():
 		return _finish_combat(state, false, false)
@@ -787,8 +928,13 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
 		if defending.has(target.id):
 			back *= 0.5
+		var effective_dodge: float = float(state["dodge"])
+		if hero_has_unique_item(target, "last_stand_plate"):
+			var plate_def := GameData.find_unique_item("last_stand_plate")
+			var missing_frac2: float = 1.0 - float(target.hp) / float(max_hp(target))
+			effective_dodge += float(plate_def["value"]) * missing_frac2
 		var evaded := false
-		if not warded and float(state["dodge"]) > 0.0 and randf() < float(state["dodge"]):
+		if not warded and effective_dodge > 0.0 and randf() < effective_dodge:
 			log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
 			evaded = true
 		var heavy_hit: bool = back >= float(max_hp(target)) * 0.25
