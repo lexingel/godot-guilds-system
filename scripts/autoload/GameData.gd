@@ -236,6 +236,17 @@ const HAZARD_TYPES := [
 	{"id": "vault", "name": "Sealed Vault Trap", "dmg_mult": 1.2, "bonus_chance": 0.5, "bonus_type": "coins"},
 ]
 
+## One illustration per hazard type — the hazard node used to be a bare name
+## label with no art at all. PixelLab-generated (generate-image-v2, 320x200 —
+## the same native size every other scene backdrop in this project uses).
+const HAZARD_BG := {
+	"poison": "res://assets/screens/hazard_poison.png",
+	"lava": "res://assets/screens/hazard_lava.png",
+	"collapse": "res://assets/screens/hazard_collapse.png",
+	"wraith": "res://assets/screens/hazard_wraith.png",
+	"vault": "res://assets/screens/hazard_vault.png",
+}
+
 const FIRST_NAMES := ["Aldric", "Bryn", "Coren", "Dessa", "Elowen", "Fenwick", "Gara", "Hollis", "Ianthe", "Joric", "Kestrel", "Liora", "Maren", "Nyx", "Oren", "Petra", "Quill", "Roth", "Sable", "Tavin", "Ysolde", "Zeph"]
 const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth"]
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]

@@ -1439,11 +1439,43 @@ func _render_shop_node(v: VBoxContainer) -> void:
 	))
 
 
+## Hazard severity reads purely off dmg_mult (the one number that already
+## drives how much this hazard actually hurts) — under 1.0 means the hazard
+## is net-favorable to push through, up to +15% is a normal risk, anything
+## higher is a real spike worth pausing on.
+func _hazard_severity_color(dmg_mult: float) -> Color:
+	if dmg_mult < 1.0:
+		return Palette.RIFT
+	elif dmg_mult <= 1.15:
+		return Palette.GOLD
+	return Palette.HAZARD
+
+
+func _hazard_severity_label(dmg_mult: float) -> String:
+	if dmg_mult < 1.0:
+		return "Mild"
+	elif dmg_mult <= 1.15:
+		return "Moderate"
+	return "Severe"
+
+
 func _render_hazard_node(v: VBoxContainer) -> void:
 	GameState.ensure_hazard()
 	var ns: Dictionary = GameState.run["node_state"]
 	var hz: Dictionary = ns["hazard"]
-	v.add_child(_label(hz["name"]))
+	var bg_path: String = GameData.HAZARD_BG.get(str(hz["id"]), "")
+	if bg_path != "":
+		v.add_child(_banner(bg_path, 700, 190))
+
+	var dmg_mult: float = float(hz["dmg_mult"])
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	name_row.add_child(_label(str(hz["name"]), 16))
+	var sev_label := _label(_hazard_severity_label(dmg_mult), 12)
+	sev_label.add_theme_color_override("font_color", _hazard_severity_color(dmg_mult))
+	name_row.add_child(sev_label)
+	v.add_child(name_row)
+
 	if not ns.get("resolved", false):
 		v.add_child(_button("Push Through", func():
 			GameState.push_through_hazard()
@@ -1452,7 +1484,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	else:
 		for line in ns.get("log", []):
 			v.add_child(_label(str(line), 12))
-		v.add_child(_button("Continue", func():
+		v.add_child(_primary_button("Continue", func():
 			GameState.advance_node()
 			render()
 		))
