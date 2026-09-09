@@ -226,6 +226,7 @@ func save() -> void:
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
 		"crystals": crystals, "tokens": tokens,
 		"heroes": heroes.map(func(h): return h.to_dict()),
+		"recruit_pool": recruit_pool.map(func(h): return h.to_dict()),
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
 		"detectors": detectors,
@@ -257,6 +258,14 @@ func load_save() -> bool:
 	crystals = data.get("crystals", 15)
 	tokens = data.get("tokens", 0)
 	heroes.assign(data.get("heroes", []).map(func(d): return Hero.from_dict(d)))
+	recruit_pool.assign(data.get("recruit_pool", []).map(func(d): return Hero.from_dict(d)))
+	if recruit_pool.is_empty() and guild_name != "":
+		# Saves from before recruit_pool was persisted (or an old save with no
+		# key at all) would otherwise show an empty Hero Recruits screen until
+		# the next rift seal — refresh_recruit_pool() always produces exactly
+		# 4 offers, so a genuinely empty pool only ever means "missing data,"
+		# never "no offers today."
+		refresh_recruit_pool()
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
 	detectors.assign(data.get("detectors", []))

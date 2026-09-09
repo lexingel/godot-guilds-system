@@ -123,6 +123,27 @@ func _status_plate(name_text: String, hp: int, max_hp_val: int, width: float = 1
 	return wrap
 
 
+## A hero portrait inside GameData.PORTRAIT_FRAME_PATH's ornate frame, sized
+## to `size` — shared by the Roster hero card and Recruit offer cards so a
+## hero's portrait always reads the same way wherever it appears. Returns an
+## empty sized box if this class/pool has no portrait art (never happens for
+## the 5 real classes today, but keeps callers from needing their own guard).
+func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
+	var frame_wrap := Control.new()
+	frame_wrap.custom_minimum_size = Vector2(size, size)
+	frame_wrap.size = Vector2(size, size)
+	var portrait_path := GameData.portrait_for_hero(cls_id, pool_id)
+	if portrait_path == "":
+		return frame_wrap
+	var pf_icon := _icon(portrait_path, int(size * 0.82))
+	pf_icon.position = Vector2(size * 0.09, size * 0.09)
+	frame_wrap.add_child(pf_icon)
+	var pf_frame := _icon(GameData.PORTRAIT_FRAME_PATH, int(size))
+	pf_frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame_wrap.add_child(pf_frame)
+	return frame_wrap
+
+
 ## One battle-action slot: an ornate frame (GameData.RARITY_FRAME_PATH,
 ## "common" for every action — actions aren't loot, the frame is just the
 ## established slot language) with the action's icon centered inside, an
@@ -1629,15 +1650,39 @@ func _render_recruits(v: VBoxContainer) -> void:
 	v.add_child(_label("Hero Recruits — %d/%d roster slots" % [GameState.heroes.size(), GameState.hero_slot_cap()]))
 	for h in GameState.recruit_pool:
 		var rank := GameData.find_rank(h.rank)
+		var card := PanelContainer.new()
+		var style := StyleBoxFlat.new()
+		style.bg_color = Palette.SURFACE2
+		style.border_width_left = 1
+		style.border_width_top = 1
+		style.border_width_right = 1
+		style.border_width_bottom = 1
+		style.border_color = Palette.LINE
+		style.corner_radius_top_left = 8
+		style.corner_radius_top_right = 8
+		style.corner_radius_bottom_right = 8
+		style.corner_radius_bottom_left = 8
+		style.content_margin_left = 8.0
+		style.content_margin_top = 6.0
+		style.content_margin_right = 8.0
+		style.content_margin_bottom = 6.0
+		card.add_theme_stylebox_override("panel", style)
 		var row := HBoxContainer.new()
-		row.add_child(_label("%s — Rank %s %s (%dc)" % [h.name, h.rank, h.cls_id.capitalize(), int(rank["cost"])]))
+		row.add_theme_constant_override("separation", 10)
+		row.add_child(_framed_portrait(h.cls_id, h.pool_id, 56.0))
+		var mid := _vbox(2)
+		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mid.add_child(_label(h.name, 13))
+		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
+		row.add_child(mid)
 		row.add_child(_primary_button("Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
 			render()
 		))
-		v.add_child(row)
+		card.add_child(row)
+		v.add_child(card)
 
 
 func _render_medical_bay(v: VBoxContainer) -> void:
@@ -1886,19 +1931,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	# game doesn't track.
 	var visual_row := HBoxContainer.new()
 	visual_row.add_theme_constant_override("separation", 14)
-	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-	if portrait_path != "":
-		var pf_size := 96.0
-		var frame_wrap := Control.new()
-		frame_wrap.custom_minimum_size = Vector2(pf_size, pf_size)
-		frame_wrap.size = Vector2(pf_size, pf_size)
-		var pf_icon := _icon(portrait_path, int(pf_size * 0.82))
-		pf_icon.position = Vector2(pf_size * 0.09, pf_size * 0.09)
-		frame_wrap.add_child(pf_icon)
-		var pf_frame := _icon(GameData.PORTRAIT_FRAME_PATH, int(pf_size))
-		pf_frame.stretch_mode = TextureRect.STRETCH_SCALE
-		frame_wrap.add_child(pf_frame)
-		visual_row.add_child(frame_wrap)
+	visual_row.add_child(_framed_portrait(h.cls_id, h.pool_id, 96.0))
 	var stats_v := _vbox(2)
 	stats_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
 	stats_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
