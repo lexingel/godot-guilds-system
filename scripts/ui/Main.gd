@@ -21,6 +21,8 @@ var medical_picker_bed: int = -1   # which empty bed slot is showing its hero pi
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
 var combat_selected_hero_id: String = ""   # which hero's action bar is showing in combat; falls back to the first living hero
+var roster_sort: String = "power"          # "power" | "level" | "rank" — cycled via the Roster tab's Sort button
+var inv_sort: String = "rarity"            # "rarity" | "value" | "name" — cycled via the Inventory tab's Sort button
 
 
 func _ready() -> void:
@@ -1170,8 +1172,35 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			monster_rects[i] = m_rect
 			var m_plate_w: float = clampf(monster_step - 10.0, 70.0, 100.0)
 			var m_plate := _status_plate(str(m["name"]), max(0, int(m["hp"])), int(m["max_hp"]), m_plate_w)
-			m_plate.position = Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, m_ground - m_size - STATUS_PLATE_HEIGHT - 6.0)
+			var m_plate_pos := Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, m_ground - m_size - STATUS_PLATE_HEIGHT - 6.0)
+			m_plate.position = m_plate_pos
 			arena.add_child(m_plate)
+
+			# A persistent badge for the boss's own mechanic (Enraged/Warded/
+			# Regenerating/Frenzied) sitting on its status plate all fight,
+			# not just as a transient text hint above the action bar — see
+			# GameData.BOSS_MECHANIC_ICON.
+			var mechanic: Dictionary = m.get("mechanic", {})
+			if not mechanic.is_empty():
+				var mech_icon_path: String = GameData.BOSS_MECHANIC_ICON.get(str(mechanic["id"]), "")
+				if mech_icon_path != "":
+					var mech_badge := PanelContainer.new()
+					var mech_style := StyleBoxFlat.new()
+					mech_style.bg_color = Palette.SURFACE3
+					mech_style.border_width_left = 1
+					mech_style.border_width_top = 1
+					mech_style.border_width_right = 1
+					mech_style.border_width_bottom = 1
+					mech_style.border_color = Palette.ELITE
+					mech_style.corner_radius_top_left = 999
+					mech_style.corner_radius_top_right = 999
+					mech_style.corner_radius_bottom_left = 999
+					mech_style.corner_radius_bottom_right = 999
+					mech_badge.add_theme_stylebox_override("panel", mech_style)
+					mech_badge.add_child(_icon(mech_icon_path, 14))
+					mech_badge.position = m_plate_pos + Vector2(m_plate_w - 16.0, -6.0)
+					mech_badge.tooltip_text = "%s — %s" % [str(mechanic["name"]), str(mechanic["desc"])]
+					arena.add_child(mech_badge)
 
 		var hero_wrappers: Dictionary = {}
 		var hero_rects: Dictionary = {}
@@ -1937,6 +1966,35 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 	v.add_child(row)
 
 
+## A small button that cycles through `options` (each {id, label}) and calls
+## `on_change(new_id)` — shared by the Roster and Inventory tabs' Sort
+## controls so both screens follow the same "click to cycle" pattern instead
+## of a dropdown neither otherwise uses in this UI.
+func _sort_cycle_button(current: String, options: Array, on_change: Callable) -> Button:
+	var idx := 0
+	for i in options.size():
+		if options[i]["id"] == current:
+			idx = i
+	return _button("Sort: %s" % str(options[idx]["label"]), func():
+		var next_idx: int = (idx + 1) % options.size()
+		on_change.call(options[next_idx]["id"])
+		render()
+	)
+
+
+func _sorted_heroes() -> Array[Hero]:
+	var out: Array[Hero] = []
+	out.assign(GameState.heroes)
+	match roster_sort:
+		"power":
+			out.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+		"level":
+			out.sort_custom(func(a, b): return a.level > b.level)
+		"rank":
+			out.sort_custom(func(a, b): return float(GameData.find_rank(a.rank)["mult"]) > float(GameData.find_rank(b.rank)["mult"]))
+	return out
+
+
 func _render_roster(v: VBoxContainer) -> void:
 	v.add_child(_banner(GameData.ROSTER_BG, 760, 190))
 	if GameState.heroes.is_empty():
@@ -1948,9 +2006,15 @@ func _render_roster(v: VBoxContainer) -> void:
 	if still_here.is_empty():
 		selected_hero_id = ""
 
+	v.add_child(_sort_cycle_button(roster_sort, [
+		{"id": "power", "label": "Power"},
+		{"id": "level", "label": "Level"},
+		{"id": "rank", "label": "Rank"},
+	], func(new_id): roster_sort = new_id))
+
 	var portrait_row := HBoxContainer.new()
 	portrait_row.add_theme_constant_override("separation", 12)
-	for h in GameState.heroes:
+	for h in _sorted_heroes():
 		portrait_row.add_child(_roster_portrait_button(h))
 	v.add_child(portrait_row)
 
@@ -2363,10 +2427,29 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 	v.add_child(scene)
 
 
+func _rarity_rank(rarity_id: String) -> int:
+	for i in GameData.RARITIES.size():
+		if GameData.RARITIES[i]["id"] == rarity_id:
+			return i
+	return 0
+
+
 func _render_inventory_items(v: VBoxContainer) -> void:
 	v.add_child(_label("Items", 16))
 	var unequipped_items: Array[Item] = []
 	unequipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == ""))
+	v.add_child(_sort_cycle_button(inv_sort, [
+		{"id": "rarity", "label": "Rarity"},
+		{"id": "value", "label": "Value"},
+		{"id": "name", "label": "Name"},
+	], func(new_id): inv_sort = new_id))
+	match inv_sort:
+		"rarity":
+			unequipped_items.sort_custom(func(a, b): return _rarity_rank(a.rarity) > _rarity_rank(b.rarity))
+		"value":
+			unequipped_items.sort_custom(func(a, b): return a.value > b.value)
+		"name":
+			unequipped_items.sort_custom(func(a, b): return a.name < b.name)
 	if unequipped_items.is_empty():
 		v.add_child(_label("No unequipped items.", 12))
 	for it in unequipped_items:
@@ -2426,7 +2509,21 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 
 func _render_inventory_relics(v: VBoxContainer) -> void:
 	v.add_child(_label("Relics — %d/%d slots equipped" % [Combat.equipped_relics().size(), GameState.relic_slot_cap()], 16))
-	for r in GameState.relics:
+	v.add_child(_sort_cycle_button(inv_sort, [
+		{"id": "rarity", "label": "Rarity"},
+		{"id": "level", "label": "Level"},
+		{"id": "name", "label": "Name"},
+	], func(new_id): inv_sort = new_id))
+	var relics_sorted: Array[Relic] = []
+	relics_sorted.assign(GameState.relics)
+	match inv_sort:
+		"rarity":
+			relics_sorted.sort_custom(func(a, b): return _rarity_rank(a.rarity) > _rarity_rank(b.rarity))
+		"level", "value":
+			relics_sorted.sort_custom(func(a, b): return a.level > b.level)
+		"name":
+			relics_sorted.sort_custom(func(a, b): return a.name < b.name)
+	for r in relics_sorted:
 		var rrow := HBoxContainer.new()
 		rrow.add_child(_icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20))
 		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12))

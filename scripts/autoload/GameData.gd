@@ -228,6 +228,17 @@ const BOSS_MECHANICS := [
 	{"id": "frenzied", "name": "Frenzied", "desc": "Hits harder than expected from the very first round."},
 ]
 
+## A persistent badge icon per boss mechanic, shown on the boss's own status
+## plate in the arena for the whole fight — previously a boss's mechanic was
+## only ever mentioned via Combat.describe_incoming's transient text hint
+## above the action bar, easy to miss once you stopped rereading it.
+const BOSS_MECHANIC_ICON := {
+	"enrage": "res://assets/skills/sword_big.png",
+	"warded": "res://assets/skills/shield_split.png",
+	"regen": "res://assets/skills/potion_red.png",
+	"frenzied": "res://assets/skills/wing.png",
+}
+
 const HAZARD_TYPES := [
 	{"id": "poison", "name": "Poison Fog", "dmg_mult": 1.0, "bonus_chance": 0.3, "bonus_type": "crystals"},
 	{"id": "lava", "name": "Cracked Lava Floor", "dmg_mult": 1.3, "bonus_chance": 0.15, "bonus_type": "crystals"},
