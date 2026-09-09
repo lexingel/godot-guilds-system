@@ -1115,9 +1115,15 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# A small per-position vertical offset applied within each side's row —
 		# a flat single line read as too uniform/lined-up next to the
 		# reference battle screens, which stagger their party into a loose
-		# cluster at varied depths. Cycles if a side somehow has more than 4
-		# living units (never happens today, but harmless if it did).
+		# cluster at varied depths. Paired with DEPTH_SCALE so a unit staggered
+		# "back" (negative offset, higher on screen) also shrinks and one
+		# staggered "front" (positive, lower) grows — without that, moving a
+		# same-size sprite up/down just reads as floating rather than standing
+		# further back on the ground, since real perspective ties apparent
+		# size to distance. Cycles if a side somehow has more than 4 living
+		# units (never happens today, but harmless if it did).
 		const DEPTH_STAGGER := [0.0, 20.0, -8.0, 28.0]
+		const DEPTH_SCALE := [1.0, 1.1, 0.93, 1.15]
 
 		var monster_wrappers: Dictionary = {}
 		var monster_rects: Dictionary = {}
@@ -1127,8 +1133,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		for i in monsters.size():
 			var m: Dictionary = monsters[i]
 			var m_x: float = monster_zone_x + i * monster_step
-			var m_ground: float = ground_y + DEPTH_STAGGER[i % DEPTH_STAGGER.size()]
-			var m_size: int = clampi(56 + int(float(m["max_hp"]) / 2.5), 60, 96)
+			var depth_i := i % DEPTH_STAGGER.size()
+			var m_ground: float = ground_y + DEPTH_STAGGER[depth_i]
+			var m_size: int = clampi(int((56 + float(m["max_hp"]) / 2.5) * DEPTH_SCALE[depth_i]), 56, 110)
 			var m_rect := _icon(GameData.sprite_for_monster(str(m["name"])), m_size)
 			var m_wrapper := _wrap_icon(m_rect)
 			m_wrapper.position = Vector2(m_x, m_ground - m_size)
@@ -1150,7 +1157,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var hero_zone_x := 24.0
 		var hero_zone_w: float = ARENA_SIZE.x * 0.34 - hero_zone_x
 		var hero_step: float = hero_zone_w / max(1, living_heroes.size())
-		var hero_size: float = clampf(84.0 - (living_heroes.size() - 1) * 8.0, 56.0, 84.0)
+		var hero_base_size: float = clampf(84.0 - (living_heroes.size() - 1) * 8.0, 56.0, 84.0)
 		var row_i := 0
 		for h in party:
 			if h.hp <= 0:
@@ -1159,7 +1166,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			if portrait_path == "":
 				continue
 			var h_x: float = hero_zone_x + row_i * hero_step
-			var h_ground: float = ground_y + DEPTH_STAGGER[row_i % DEPTH_STAGGER.size()]
+			var h_depth_i := row_i % DEPTH_STAGGER.size()
+			var h_ground: float = ground_y + DEPTH_STAGGER[h_depth_i]
+			var hero_size: float = hero_base_size * DEPTH_SCALE[h_depth_i]
 			var h_rect := _icon(portrait_path, int(hero_size))
 			var h_wrapper := _wrap_icon(h_rect)
 			h_wrapper.position = Vector2(h_x, h_ground - hero_size)
@@ -1321,11 +1330,18 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		menu.add_child(bottom_row)
 		v.add_child(menu_panel)
 
-		# The round log stays available but demoted — a small strip below the
-		# action bar rather than sharing equal billing with the arena, since
-		# none of the reference battle screens foreground a scrolling log
-		# (damage numbers/animations carry the moment-to-moment feedback now).
-		v.add_child(_log_richtext(state["log"], party, monsters, 70.0))
+		# The round log stays available but demoted — a strip below the action
+		# bar rather than sharing equal billing with the arena, since none of
+		# the reference battle screens foreground a scrolling log (damage
+		# numbers/animations carry the moment-to-moment feedback now). Only
+		# the most recent lines are rendered (rather than the whole fight's
+		# log) and the box is tall enough for a typical round's worth of
+		# lines, so reading "what just happened" doesn't actually require
+		# scrolling — a fixed height still caps it so a long boss fight's full
+		# log can't push the layout down the way it used to.
+		var full_log: Array = state["log"]
+		var recent_log: Array = full_log.slice(max(0, full_log.size() - 10))
+		v.add_child(_log_richtext(recent_log, party, monsters, 130.0))
 		return
 
 	var result: Dictionary = ns["result"]
