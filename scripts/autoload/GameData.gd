@@ -553,6 +553,30 @@ const GUILD_TIER_ICON := {
 	"Legendary Guild": "res://assets/skills/ingot_gold.png",
 }
 
+## One icon per Guild Management upgrade node, keyed "branch.node" — all
+## reused from the existing assets/skills/ set (no new generation needed;
+## every concept here already had a decent visual match sitting unused).
+## Previously these nodes were a bare text line with no icon at all.
+const MANAGEMENT_NODE_ICON := {
+	"ops.roster": "res://assets/skills/shield_basic.png",
+	"ops.medical": "res://assets/skills/heart.png",
+	"ops.drill": "res://assets/skills/sword_slash.png",
+	"ops.trait": "res://assets/skills/star.png",
+	"infra.crystal": "res://assets/skills/gem_blue_big.png",
+	"infra.stab": "res://assets/skills/shield_blue.png",
+	"infra.seal": "res://assets/skills/trophy.png",
+	"infra.energy": "res://assets/skills/gem_red.png",
+	"log.broker": "res://assets/skills/ingot_gold.png",
+	"log.scout": "res://assets/skills/eye_gem.png",
+	"log.merchant": "res://assets/skills/gem_blue_a.png",
+	"log.detector": "res://assets/skills/gem_cluster.png",
+	"res.relic": "res://assets/skills/shard_blue.png",
+	"res.theory": "res://assets/skills/potion_blue.png",
+	"res.recycle": "res://assets/skills/shard_green.png",
+	"res.cart": "res://assets/skills/ring.png",
+	"res.vault": "res://assets/skills/shield_orange.png",
+}
+
 const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
 
 const BOSS_ENRAGE_ROUND := 4

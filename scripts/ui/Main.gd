@@ -1867,12 +1867,20 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 	var key := "%s.%s" % [branch["id"], n["id"]]
 	var cur := GameState.lvl(key)
 	var maxed := cur >= int(n["max"])
-	var row := _vbox(2)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var icon_path: String = GameData.MANAGEMENT_NODE_ICON.get(key, "")
+	if icon_path != "":
+		row.add_child(_icon(icon_path, 28))
+
+	var col := _vbox(2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cur_desc := Combat.describe_node_effect(n["id"], cur)
 	var line := "%s (Lvl %d/%d) — %s" % [n["name"], cur, n["max"], cur_desc]
 	if not maxed:
 		line += " → %s" % Combat.describe_node_effect(n["id"], cur + 1)
-	row.add_child(_label(line, 12))
+	col.add_child(_label(line, 12))
 	var brow := HBoxContainer.new()
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
@@ -1892,7 +1900,8 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 		))
 	elif not cap.is_empty() and GameState.has_cap(key):
 		brow.add_child(_label("%s unlocked" % cap["name"], 12))
-	row.add_child(brow)
+	col.add_child(brow)
+	row.add_child(col)
 	v.add_child(row)
 
 
