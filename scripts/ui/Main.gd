@@ -6,6 +6,9 @@ extends Control
 
 @onready var root: MarginContainer = $Root
 
+const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
+const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
+
 var screen: String = "onboard"     # onboard | rift_hall | party_assembly | rift_run | terminal
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management
 var pending_crest: int = 1
@@ -58,6 +61,7 @@ func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_override("font", DISPLAY_FONT if size >= 18 else BODY_FONT)
 	if muted:
 		l.add_theme_color_override("font_color", Palette.MUTED)
 	return l
