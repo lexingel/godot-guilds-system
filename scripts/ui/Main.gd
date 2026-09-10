@@ -512,10 +512,16 @@ func render() -> void:
 		if not GameState.run.is_empty():
 			screen = "rift_run"
 	_clear_root()
+	var outer := _vbox(10)
+	root.add_child(outer)
+	if screen != "onboard":
+		_topbar(outer, _breadcrumb_for_screen())
+
 	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	root.add_child(scroll)
+	outer.add_child(scroll)
 	var v := _vbox(14)
 	# Rift Run gets extra width for the combat arena (background + positioned
 	# sprites) sitting alongside the log/action column — every other screen
@@ -532,7 +538,19 @@ func render() -> void:
 		"terminal": _render_terminal(v)
 
 
-func _topbar(v: VBoxContainer) -> void:
+## Pinned HUD stays outside the ScrollContainer, so the guild identity,
+## currencies, and "where am I" breadcrumb never scroll out of view.
+func _breadcrumb_for_screen() -> String:
+	match screen:
+		"rift_hall": return "Training Ground"
+		"rift_map": return "Rift Map"
+		"party_assembly": return "Party Assembly"
+		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
+		"terminal": return "Terminal" if term_tab == "camp" else "Terminal — %s" % term_tab.capitalize()
+		_: return ""
+
+
+func _topbar(container: Control, breadcrumb: String = "") -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
@@ -546,8 +564,10 @@ func _topbar(v: VBoxContainer) -> void:
 		stat_row.add_child(_icon(entry[0], 18))
 		stat_row.add_child(_label(str(entry[1]), 16))
 		row.add_child(stat_row)
-	v.add_child(row)
-	v.add_child(_hsep())
+	container.add_child(row)
+	if breadcrumb != "":
+		container.add_child(_label(breadcrumb, 12, true))
+	container.add_child(_hsep())
 
 
 # ---------------- Onboard ----------------
@@ -588,7 +608,6 @@ func _render_onboard(v: VBoxContainer) -> void:
 ## Inventory's hubs. The chained third gateway in the art gets a hotspot too
 ## once GameState.greater_rift_unlocked() — inert (no hotspot at all) before that.
 func _render_rift_hall(v: VBoxContainer) -> void:
-	_topbar(v)
 	v.add_child(_label("Rift Hall", 20))
 
 	var scene_size := Vector2(700, 340)
@@ -659,7 +678,6 @@ const RIFT_MAP_MARKER_POS: Array[Vector2] = [
 ]
 
 func _render_rift_map_hub(v: VBoxContainer) -> void:
-	_topbar(v)
 	v.add_child(_label("Rift Map", 20))
 	v.add_child(_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
 
@@ -731,7 +749,6 @@ var _pending_map_slot_idx: int = -1
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
-	_topbar(v)
 	v.add_child(_label("Assemble Party (pick up to 4)", 20))
 	var champ := GameState.ensure_champion()
 	var champ_row := HBoxContainer.new()
@@ -935,7 +952,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		screen = "terminal"
 		render()
 		return
-	_topbar(v)
 	if GameState.run.get("is_riftbreak", false):
 		var rb_label := _label("⚠ Riftbreak! An unaddressed rift's threat has spilled out and forced this fight.", 14)
 		rb_label.add_theme_color_override("font_color", Palette.HAZARD)
@@ -1817,7 +1833,6 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 
 # ---------------- Terminal ----------------
 func _render_terminal(v: VBoxContainer) -> void:
-	_topbar(v)
 	if _flavor_toast != "":
 		v.add_child(_label(_flavor_toast, 12, true))
 		_flavor_toast = ""
