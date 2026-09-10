@@ -439,6 +439,26 @@ func _primary_button(text: String, cb: Callable) -> Button:
 	return b
 
 
+## Every non-hotspot button in the game goes through one of these two — an
+## icon alongside whatever text the button already had (costs/sort state/
+## toggle state stay readable, the icon just adds a scannable visual cue).
+## Two separate wrappers (rather than one with a bool flag) so a call site
+## converts by just adding a leading icon argument and renaming the function,
+## with no trailing-argument fiddling after a multi-line callback closure.
+func _icon_button(icon_path: String, text: String, cb: Callable) -> Button:
+	var b := _button(text, cb)
+	if icon_path != "":
+		b.icon = load(icon_path)
+	return b
+
+
+func _icon_primary_button(icon_path: String, text: String, cb: Callable) -> Button:
+	var b := _primary_button(text, cb)
+	if icon_path != "":
+		b.icon = load(icon_path)
+	return b
+
+
 func _hsep() -> HSeparator:
 	return HSeparator.new()
 
@@ -521,13 +541,13 @@ func _render_onboard(v: VBoxContainer) -> void:
 	var crest_row := HBoxContainer.new()
 	crest_row.add_theme_constant_override("separation", 12)
 	crest_row.add_child(_icon(GameData.CREST_PATH[pending_crest - 1], 64))
-	crest_row.add_child(_button("Randomize", func():
+	crest_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Randomize", func():
 		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
 		render()
 	))
 	v.add_child(crest_row)
 
-	v.add_child(_primary_button("Found the Guild", func():
+	v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
 		var n := edit.text.strip_edges()
 		if n == "":
 			return
@@ -598,36 +618,46 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	v.add_child(scene)
 	if not GameState.greater_rift_unlocked():
 		v.add_child(_label("Greater Rift — Seal %d more Rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed], 12))
-	v.add_child(_button("Back to Terminal", func():
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Terminal", func():
 		screen = "terminal"
 		render()
 	))
 
 
-## The slot list itself stays plain (rank/countdown/Enter, no per-slot
-## hotspot art — 6+ shifting rifts don't map onto fixed hand-placed gates the
-## way Rift Hall's two do), but the screen gets the same establishing-shot
-## background treatment as every other hub. Each row shows the slot's rolled
-## rank (colored via Palette.rank_color) and a live mm:ss countdown to its
-## Riftbreak, computed fresh every render() the same way every other
-## lazily-resolved timer in this project already is.
+## 6 real hotspots positioned directly on the rift-marker glows already
+## visible in riftmap_bg.png, matching Rift Hall's own gate-hotspot pattern —
+## each a small portal icon (reusing icon_rift.png, the same purple-swirl
+## icon Rift Hall's own gate uses) with a persistent "Rank X — mm:ss" caption
+## instead of a fixed label, since that's live per-render info a player needs
+## to see without hovering. First-draft marker coordinates (native 320x200
+## image space, adjustable after a visual check like every other hand-placed
+## hotspot this project has added), scaled the same way every other scene's
+## hotspots already are.
+const RIFT_MAP_MARKER_POS: Array[Vector2] = [
+	Vector2(90, 60), Vector2(190, 55), Vector2(60, 100),
+	Vector2(160, 90), Vector2(240, 95), Vector2(110, 130),
+]
+
 func _render_rift_map_hub(v: VBoxContainer) -> void:
 	_topbar(v)
 	v.add_child(_label("Rift Map", 20))
 	v.add_child(_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
 
 	var scene_size := Vector2(700, 200)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
+
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.RIFTMAP_BG)
 	bg.custom_minimum_size = scene_size
 	bg.size = scene_size
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	v.add_child(bg)
+	scene.add_child(bg)
 
-	v.add_child(_hsep())
-
+	var map_scale := Vector2(scene_size.x / 320.0, scene_size.y / 200.0)
 	var now := int(Time.get_unix_time_from_system() * 1000)
+	var icon_size := 32.0
 	for i in GameState.rift_map.size():
 		var slot: Dictionary = GameState.rift_map[i]
 		if slot.is_empty():
@@ -637,14 +667,9 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 		var remain_s := remain_ms / 1000
 		var mm := remain_s / 60
 		var ss := remain_s % 60
+		var caption := "Rank %s — %02d:%02d" % [rank, mm, ss]
 
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		var rank_label := _label("Rank %s" % rank, 14)
-		rank_label.add_theme_color_override("font_color", Palette.rank_color(rank))
-		row.add_child(rank_label)
-		row.add_child(_label("%02d:%02d remaining" % [mm, ss], 12, true))
-		row.add_child(_button("Enter", func(idx=i, r=rank):
+		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], icon_size, caption, func(idx=i, r=rank):
 			pending_party.clear()
 			pending_relic_options.clear()
 			pending_relic_choice = -1
@@ -652,15 +677,21 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 			_pending_map_slot_idx = idx
 			screen = "party_assembly"
 			render()
-		))
-		v.add_child(row)
+		)
+		var marker: Vector2 = RIFT_MAP_MARKER_POS[i % RIFT_MAP_MARKER_POS.size()]
+		hotspot.position = Vector2(marker.x * map_scale.x, marker.y * map_scale.y) - Vector2(icon_size, icon_size) / 2.0
+		var rank_label := hotspot.get_child(1) as Label
+		rank_label.add_theme_color_override("font_color", Palette.rank_color(rank))
+		scene.add_child(hotspot)
+
+	v.add_child(scene)
 
 	if not GameState.pending_riftbreak_ranks.is_empty():
 		v.add_child(_hsep())
 		v.add_child(_label("A Riftbreak is looming — %d unaddressed rift(s) will spill out next time you return to the Terminal." % GameState.pending_riftbreak_ranks.size(), 12, true))
 
 	v.add_child(_hsep())
-	v.add_child(_button("Back to Terminal", func():
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Terminal", func():
 		screen = "terminal"
 		render()
 	))
@@ -688,7 +719,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if champ_portrait != "":
 		champ_row.add_child(_icon(champ_portrait, 48))
 	champ_row.add_child(_label("Champion: %s — Rank %s (always joins) · %d/%d HP" % [champ.name, champ.rank, champ.hp, Combat.max_hp(champ)], 13))
-	champ_row.add_child(_button("Back" if champ.formation != "back" else "Front", func(id=champ.id, f=champ.formation):
+	champ_row.add_child(_icon_button("res://assets/skills/shield_orange.png" if champ.formation != "back" else "res://assets/skills/shield_basic.png", "Back" if champ.formation != "back" else "Front", func(id=champ.id, f=champ.formation):
 		GameState.set_hero_formation(id, "back" if f != "back" else "front")
 		render()
 	))
@@ -712,7 +743,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			row.add_child(_icon(portrait_path, 40))
 		var status := " (downed)" if h.is_downed() else ""
 		row.add_child(_label("%s — Lv%d %s · %d/%d HP%s" % [h.name, h.level, h.cls_id.capitalize(), h.hp, Combat.max_hp(h), status]))
-		row.add_child(_button("Back" if h.formation != "back" else "Front", func(id=h.id, f=h.formation):
+		row.add_child(_icon_button("res://assets/skills/shield_orange.png" if h.formation != "back" else "res://assets/skills/shield_basic.png", "Back" if h.formation != "back" else "Front", func(id=h.id, f=h.formation):
 			GameState.set_hero_formation(id, "back" if f != "back" else "front")
 			render()
 		))
@@ -792,7 +823,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
 	v.add_child(_hsep())
-	v.add_child(_primary_button("Enter the Rift", func():
+	v.add_child(_icon_primary_button(GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -813,7 +844,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		screen = "rift_run"
 		render()
 	))
-	v.add_child(_button("Back", func():
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
 		screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
 		_pending_rift_rank = ""
 		_pending_map_slot_idx = -1
@@ -924,14 +955,14 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		if sealed_dict.get("continuing", false):
 			v.add_child(_label("Endless cycle %d begins..." % int(sealed_dict["cycle"])))
-			v.add_child(_button("Continue Endless Run", func():
+			v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue Endless Run", func():
 				GameState.continue_endless()
 				render()
 			))
 		else:
 			for line in _run_summary_lines():
 				v.add_child(_label(line, 12, true))
-			v.add_child(_button("Return to Terminal", func():
+			v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
 				GameState.finish_run()
 				screen = "terminal"
 				render()
@@ -955,7 +986,13 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	if kind == "" and options.size() > 1:
 		v.add_child(_label("Choose your path:"))
 		for opt in options:
-			v.add_child(_button(str(opt).capitalize(), func(picked=str(opt)):
+			var opt_icon: String
+			match str(opt):
+				"shop": opt_icon = GameData.CURRENCY_ICON_PATH["coins"]
+				"hazard": opt_icon = "res://assets/skills/shield_split.png"
+				"elite": opt_icon = "res://assets/skills/sword_big.png"
+				_: opt_icon = "res://assets/skills/sword_a.png"
+			v.add_child(_icon_button(opt_icon, str(opt).capitalize(), func(picked=str(opt)):
 				GameState.choose_node_type(picked)
 				render()
 			))
@@ -967,7 +1004,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 
 	if not is_combat_kind:
 		v.add_child(_hsep())
-		v.add_child(_button("Retreat (keep loot, no Seal Tokens)", func():
+		v.add_child(_icon_button("res://assets/skills/wing.png", "Retreat (keep loot, no Seal Tokens)", func():
 			GameState.retreat_now()
 			screen = "terminal"
 			render()
@@ -1224,7 +1261,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	if not ns.has("combat_state") and not ns.has("result"):
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
-		v.add_child(_primary_button("Engage", func():
+		v.add_child(_icon_primary_button("res://assets/skills/sword_a.png", "Engage", func():
 			GameState.engage_node()
 			render()
 		))
@@ -1525,7 +1562,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			menu.add_child(_label("The party is down.", 12, true))
 
 		var bottom_row := HBoxContainer.new()
-		bottom_row.add_child(_primary_button("Resolve Round", func():
+		bottom_row.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Resolve Round", func():
 			# Guard against a second click firing while the first is still
 			# mid-animation — that would start a second _play_round on the same
 			# state, and whichever finishes first would render() (destroying
@@ -1545,7 +1582,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			_combat_animating = false
 			render()
 		))
-		bottom_row.add_child(_button("Retreat", func():
+		bottom_row.add_child(_icon_button("res://assets/skills/wing.png", "Retreat", func():
 			# Same guard as Resolve Round: retreating while a round's animation
 			# is genuinely still in-flight would mutate the same `state` dict
 			# _play_round is reading and immediately render() out from under
@@ -1586,7 +1623,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# A Riftbreak is a consequence, not an opportunity — no loot, no
 			# reward choice, straight back to the Terminal.
 			v.add_child(_label("Threat repelled. The rift's spillover is contained — no loot from a fight like this."))
-			v.add_child(_primary_button("Return to Terminal", func():
+			v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
 				GameState.finish_run()
 				screen = "terminal"
 				render()
@@ -1617,7 +1654,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				btn.icon = load(icon_path)
 				v.add_child(btn)
 		else:
-			v.add_child(_primary_button("Continue", func():
+			v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
 					GameState.seal_rift()
 				else:
@@ -1632,7 +1669,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# the voluntary "Reset Guild" button) since this is a consequence,
 		# not a choice.
 		v.add_child(_label("Due to the rift break, a large portion of the world is in struggle now. Your guild has been erased."))
-		v.add_child(_primary_button("Found a New Guild", func():
+		v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Found a New Guild", func():
 			GameState.reset()
 			GameState.save()
 			screen = "onboard"
@@ -1647,7 +1684,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			v.add_child(_label(str(result["flavor"]), 12, true))
 		for line in _run_summary_lines():
 			v.add_child(_label(line, 12, true))
-		v.add_child(_button("Return to Terminal", func():
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
 			GameState.finish_run()
 			screen = "terminal"
 			render()
@@ -1670,12 +1707,12 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		row.add_child(_icon(icon_path, 20))
 		row.add_child(_label("%s — %s (%dc)%s" % [_loot_display_name(obj), desc, off["price"], " [bought]" if bought else ""]))
 		if not bought:
-			row.add_child(_button("Buy", func(idx=i):
+			row.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
 			))
 		v.add_child(row)
-	v.add_child(_button("Continue", func():
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 		GameState.advance_node()
 		render()
 	))
@@ -1742,17 +1779,17 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	if not ns.get("resolved", false):
 		var choice_row := HBoxContainer.new()
 		choice_row.add_theme_constant_override("separation", 8)
-		choice_row.add_child(_button("Push Through", func():
+		choice_row.add_child(_icon_button("res://assets/skills/boots.png", "Push Through", func():
 			GameState.push_through_hazard()
 			render()
 		))
-		var bypass_btn := _button("Bypass (%d Crystals)" % GameState.HAZARD_BYPASS_COST, func():
+		var bypass_btn := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass (%d Crystals)" % GameState.HAZARD_BYPASS_COST, func():
 			GameState.bypass_hazard()
 			render()
 		)
 		bypass_btn.disabled = not GameState.can_afford_hazard_bypass()
 		choice_row.add_child(bypass_btn)
-		choice_row.add_child(_button("Risk it for Loot", func():
+		choice_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot", func():
 			GameState.risk_hazard()
 			render()
 		))
@@ -1760,7 +1797,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	else:
 		for line in ns.get("log", []):
 			v.add_child(_label(str(line), 12))
-		v.add_child(_primary_button("Continue", func():
+		v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 			GameState.advance_node()
 			render()
 		))
@@ -1795,7 +1832,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		_render_camp(v)
 		return
 
-	v.add_child(_button("< Back to Camp", func():
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Camp", func():
 		term_tab = "camp"
 		medical_picker_bed = -1
 		mgmt_branch = ""
@@ -2007,7 +2044,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
 		row.add_child(mid)
-		row.add_child(_primary_button("Recruit", func(id=h.id):
+		row.add_child(_icon_primary_button(GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
@@ -2020,7 +2057,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 func _render_medical_bay(v: VBoxContainer) -> void:
 	v.add_child(_label("Medical Bay — %d/%d beds occupied" % [GameState.occupied_beds(), GameState.medical_bed_cap()], 16))
 	if GameState.field_triage_available():
-		v.add_child(_button("Field Triage (heal whole roster, once per rift cycle)%s" % ("" if not GameState.triage_used_this_cycle else " [used]"), func():
+		v.add_child(_icon_button("res://assets/skills/heart.png", "Field Triage (heal whole roster, once per rift cycle)%s" % ("" if not GameState.triage_used_this_cycle else " [used]"), func():
 			var err := GameState.field_triage_action()
 			if err != "":
 				push_warning(err)
@@ -2099,7 +2136,7 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 				var status := "downed" if h.is_downed() else "wounded"
 				var row := HBoxContainer.new()
 				row.add_child(_label("%s — %d/%d HP (%s)" % [h.name, h.hp, Combat.max_hp(h), status]))
-				row.add_child(_primary_button("Assign", func(id=h.id):
+				row.add_child(_icon_primary_button("res://assets/skills/heart.png", "Assign", func(id=h.id):
 					GameState.assign_to_bed(id)
 					medical_picker_bed = -1
 					render()
@@ -2173,7 +2210,7 @@ func _render_management(v: VBoxContainer) -> void:
 	for b in GameData.BRANCHES:
 		if b["id"] == mgmt_branch:
 			branch = b
-	v.add_child(_button("< Back to Branches", func(): mgmt_branch = ""; render()))
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Branches", func(): mgmt_branch = ""; render()))
 	v.add_child(_banner(GameData.BRANCH_BANNER[mgmt_branch], 700, 150))
 	v.add_child(_label("%s — %s" % [branch["name"], branch["sub"]], 16))
 	for n in branch["nodes"]:
@@ -2226,7 +2263,7 @@ func _render_management_hub(v: VBoxContainer) -> void:
 
 	v.add_child(scene)
 
-	var reset_btn := _button("Click again to confirm reset" if confirm_reset else "Reset Guild", func():
+	var reset_btn := _icon_button("res://assets/skills/shard_green.png", "Click again to confirm reset" if confirm_reset else "Reset Guild", func():
 		if not confirm_reset:
 			confirm_reset = true
 			render()
@@ -2267,7 +2304,7 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 	var brow := HBoxContainer.new()
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
-		brow.add_child(_button("Upgrade (%dcr)" % cost, func(k=key):
+		brow.add_child(_icon_button(icon_path, "Upgrade (%dcr)" % cost, func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
@@ -2275,7 +2312,7 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 		))
 	var cap: Dictionary = n.get("cap", {})
 	if not cap.is_empty() and maxed and not GameState.has_cap(key):
-		brow.add_child(_button("%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
+		brow.add_child(_icon_button(icon_path, "%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
 			var err := GameState.buy_cap(k)
 			if err != "":
 				push_warning(err)
@@ -2297,7 +2334,7 @@ func _sort_cycle_button(current: String, options: Array, on_change: Callable) ->
 	for i in options.size():
 		if options[i]["id"] == current:
 			idx = i
-	return _button("Sort: %s" % str(options[idx]["label"]), func():
+	return _icon_button(GameData.BUTTON_ICON_PATH["sort"], "Sort: %s" % str(options[idx]["label"]), func():
 		var next_idx: int = (idx + 1) % options.size()
 		on_change.call(options[next_idx]["id"])
 		render()
@@ -2353,7 +2390,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	for scar_name in h.scars:
 		var scar_row := HBoxContainer.new()
 		scar_row.add_child(_label("Scar: %s" % scar_name, 12, true))
-		scar_row.add_child(_button("Scrub (30c)", func(id=h.id, sn=scar_name):
+		scar_row.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
 			if err != "":
 				push_warning(err)
@@ -2380,20 +2417,20 @@ func _render_roster(v: VBoxContainer) -> void:
 	cv.add_child(visual_row)
 
 	var actions := HBoxContainer.new()
-	actions.add_child(_button("Reroll Trait (60c)", func(id=h.id):
+	actions.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (60c)", func(id=h.id):
 		var err := GameState.reroll_trait(id)
 		if err != "":
 			push_warning(err)
 		render()
 	))
 	if h.trait_name != "":
-		actions.add_child(_button("Scrub Trait (30c)", func(id=h.id):
+		actions.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub Trait (30c)", func(id=h.id):
 			var err := GameState.scrub_trait(id)
 			if err != "":
 				push_warning(err)
 			render()
 		))
-	actions.add_child(_button("Skills" if expanded_skill_hero != h.id else "Hide Skills", func(id=h.id):
+	actions.add_child(_icon_button("res://assets/skills/eye_gem.png", "Skills" if expanded_skill_hero != h.id else "Hide Skills", func(id=h.id):
 		expanded_skill_hero = "" if expanded_skill_hero == id else id
 		render()
 	))
@@ -2402,7 +2439,7 @@ func _render_roster(v: VBoxContainer) -> void:
 		if not cur_cls.is_empty() and not GameState.evolution_target(cur_cls).is_empty():
 			var next_cls := GameState.evolution_target(cur_cls)
 			var next_rank := GameData.find_rank(next_cls["rank"])
-			actions.add_child(_button("Evolve → %s (%dcr)" % [next_cls["name"], int(next_rank["cost"])], func(id=h.id):
+			actions.add_child(_icon_button("res://assets/skills/star.png", "Evolve → %s (%dcr)" % [next_cls["name"], int(next_rank["cost"])], func(id=h.id):
 				var err := GameState.evolve_hero(id)
 				if err != "":
 					push_warning(err)
@@ -2439,7 +2476,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			cv.add_child(_skill_node_row(h, n))
 		var spent: int = h.skills.values().count(true)
 		if spent > 0:
-			cv.add_child(_button("Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
+			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
 				var err := GameState.respec_hero(id)
 				if err != "":
 					push_warning(err)
@@ -2523,7 +2560,7 @@ func _skill_node_row(h: Hero, n: Dictionary) -> PanelContainer:
 		if reason != "":
 			row.add_child(_label(reason, 11, true))
 		else:
-			var learn_btn := _button("Learn (%d SP)" % int(n["cost"]), func(hid=h.id, sid=skill_id):
+			var learn_btn := _icon_button(str(n.get("icon", "")), "Learn (%d SP)" % int(n["cost"]), func(hid=h.id, sid=skill_id):
 				var err := GameState.learn_skill(hid, sid)
 				if err != "":
 					push_warning(err)
@@ -2662,7 +2699,7 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 		erow.add_child(_label("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12))
 		pv.add_child(erow)
 		var eactions := HBoxContainer.new()
-		eactions.add_child(_button("Unequip", func(hid=h.id, st=slot_type, i=idx):
+		eactions.add_child(_icon_button("res://assets/skills/armor_chest.png", "Unequip", func(hid=h.id, st=slot_type, i=idx):
 			GameState.equip_item(hid, st, i, "")
 			render()
 		))
@@ -2673,7 +2710,7 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 				var rdef := GameData.find_runestone(str(r["runestone_id"]))
 				if rdef.get("category", "") != slot_type:
 					continue
-				eactions.add_child(_button("Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=equipped.id):
+				eactions.add_child(_icon_button("res://assets/skills/ring.png", "Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=equipped.id):
 					var err := GameState.socket_runestone(rid, iid)
 					if err != "":
 						push_warning(err)
@@ -2691,14 +2728,14 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 		crow.add_theme_constant_override("separation", 8)
 		crow.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18))
 		crow.add_child(_label("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12))
-		crow.add_child(_button("Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
+		crow.add_child(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
 			GameState.equip_item(hid, st, i, iid)
 			expanded_slot = ""
 			render()
 		))
 		pv.add_child(crow)
 
-	pv.add_child(_button("Close", func():
+	pv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", func():
 		expanded_slot = ""
 		render()
 	))
@@ -2710,7 +2747,7 @@ func _render_inventory(v: VBoxContainer) -> void:
 	if inv_category == "":
 		_render_inventory_hub(v)
 		return
-	v.add_child(_button("< Back to Inventory", func(): inv_category = ""; render()))
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Inventory", func(): inv_category = ""; render()))
 	match inv_category:
 		"relics": _render_inventory_relics(v)
 		"detectors": _render_inventory_detectors(v)
@@ -2794,11 +2831,11 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			var slot := it.slot_type()
 			var free_idx := _first_free_slot(h2, slot)
 			if free_idx >= 0 and GameState.item_fits_hero(it, h2):
-				row.add_child(_button("Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
+				row.add_child(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
 					GameState.equip_item(hid, s, idx, iid)
 					render()
 				))
-		row.add_child(_button("Sell", func(id=it.id):
+		row.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
 			GameState.sell_item(id)
 			render()
 		))
@@ -2814,7 +2851,7 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	for def in GameData.INCENSE_TYPES:
 		var irow := HBoxContainer.new()
 		irow.add_child(_label("%s (%dcr) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12))
-		irow.add_child(_button("Buy", func(iid=def["id"]):
+		irow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(iid=def["id"]):
 			var err := GameState.buy_incense(iid)
 			if err != "":
 				push_warning(err)
@@ -2832,7 +2869,7 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	for rdef in GameData.RUNESTONE_TYPES:
 		var rrow := HBoxContainer.new()
 		rrow.add_child(_label("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12))
-		rrow.add_child(_button("Buy", func(rid=rdef["id"]):
+		rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(rid=rdef["id"]):
 			var err := GameState.buy_runestone(rid)
 			if err != "":
 				push_warning(err)
@@ -2861,26 +2898,26 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 		var rrow := HBoxContainer.new()
 		rrow.add_child(_icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20))
 		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12))
-		rrow.add_child(_button("Unequip" if r.equipped else "Equip", func(id=r.id):
+		rrow.add_child(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip" if r.equipped else "Equip", func(id=r.id):
 			GameState.toggle_equip_relic(id)
 			render()
 		))
 		if r.level < GameState.RELIC_MAX_LEVEL:
 			var rar := GameData.find_rarity(r.rarity)
 			var cost := int(round(15.0 * float(rar["mult"]) * r.level))
-			rrow.add_child(_button("Upgrade (%dcr)" % cost, func(id=r.id):
+			rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade (%dcr)" % cost, func(id=r.id):
 				var err := GameState.upgrade_relic(id)
 				if err != "":
 					push_warning(err)
 				render()
 			))
 		if not r.equipped:
-			rrow.add_child(_button("Sell", func(id=r.id):
+			rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=r.id):
 				GameState.sell_relic(id)
 				render()
 			))
 			if GameState.recycle_unlocked():
-				rrow.add_child(_button("Scrap", func(id=r.id):
+				rrow.add_child(_icon_button("res://assets/skills/ingot_gold.png", "Scrap", func(id=r.id):
 					GameState.scrap_relic(id)
 					render()
 				))
@@ -2895,11 +2932,11 @@ func _render_inventory_detectors(v: VBoxContainer) -> void:
 		var drow := HBoxContainer.new()
 		var det_id: String = d["id"]
 		drow.add_child(_label("%s Detector" % str(d["tier"]).capitalize(), 12))
-		drow.add_child(_button("Sell", func(id=det_id):
+		drow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=det_id):
 			GameState.sell_detector(id)
 			render()
 		))
-		drow.add_child(_button("Use for Shop Boost", func(id=det_id):
+		drow.add_child(_icon_button("res://assets/skills/star.png", "Use for Shop Boost", func(id=det_id):
 			var err := GameState.use_detector_for_shop_boost(id)
 			if err != "":
 				push_warning(err)

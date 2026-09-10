@@ -830,6 +830,16 @@ const CURRENCY_ICON_PATH := {
 	"crystals": "res://assets/ui/icon_crystals.png",
 	"tokens": "res://assets/ui/icon_tokens.png",
 }
+## The 4 new generic action icons Phase 14 needed on top of the existing
+## assets/skills/ set (which already covered swords/shields/potions/gems/a
+## star/a trophy/a heart/boots/rings/armor — enough for most button actions
+## without new art at all).
+const BUTTON_ICON_PATH := {
+	"confirm": "res://assets/skills/icon_confirm.png",
+	"back": "res://assets/skills/icon_back.png",
+	"dice": "res://assets/skills/icon_dice.png",
+	"sort": "res://assets/skills/icon_sort.png",
+}
 const CREST_PATH: Array[String] = [
 	"res://assets/camp/crest_1.png", "res://assets/camp/crest_2.png",
 	"res://assets/camp/crest_3.png", "res://assets/camp/crest_4.png",
