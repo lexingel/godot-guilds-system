@@ -239,6 +239,32 @@ const BOSS_MECHANIC_ICON := {
 	"frenzied": "res://assets/skills/wing.png",
 }
 
+## One archetype ability per regular monster name (MONSTER_NAMES) — every
+## fight used to run identical generic attack math regardless of which
+## monster showed up. Scoped to regular "combat"-tier monsters only (standalone
+## or as elite/boss adds via Combat.gen_monsters); elite mains keep their stat
+## multipliers and bosses keep BOSS_MECHANICS, both untouched.
+const MONSTER_ABILITIES := {
+	"Gloom Stalker": {"kind": "poison", "name": "Venomous Bite", "value": 0.06},
+	"Sable Fang": {"kind": "poison", "name": "Venomous Bite", "value": 0.06},
+	"Rift Wisp": {"kind": "healer", "name": "Mending Pulse", "value": 0.10},
+	"Marrow Crawler": {"kind": "healer", "name": "Mending Pulse", "value": 0.10},
+	"Husk Brute": {"kind": "shielded", "name": "Bone Ward", "value": 0.3},
+	"Hollow Reaver": {"kind": "shielded", "name": "Bone Ward", "value": 0.3},
+	"Ember Whelp": {"kind": "frenzy", "name": "Death Frenzy", "value": 0.4},
+	"Cinder Moth": {"kind": "frenzy", "name": "Death Frenzy", "value": 0.4},
+}
+
+## Badge icons for MONSTER_ABILITIES — reuses BOSS_MECHANIC_ICON's picks where
+## the concept already matches (healer/frenzy both mean the same thing a boss
+## mechanic would), no new art needed.
+const MONSTER_ABILITY_ICON := {
+	"poison": "res://assets/skills/shard_green.png",
+	"healer": "res://assets/skills/potion_red.png",
+	"shielded": "res://assets/skills/shield_orange.png",
+	"frenzy": "res://assets/skills/wing.png",
+}
+
 const HAZARD_TYPES := [
 	{"id": "poison", "name": "Poison Fog", "dmg_mult": 1.0, "bonus_chance": 0.3, "bonus_type": "crystals"},
 	{"id": "lava", "name": "Cracked Lava Floor", "dmg_mult": 1.3, "bonus_chance": 0.15, "bonus_type": "crystals"},

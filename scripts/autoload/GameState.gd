@@ -218,6 +218,8 @@ func _run_for_save() -> Dictionary:
 		"shield": run.get("shield", 0), "boss_rounds": run.get("boss_rounds", 0),
 		"node_kind": run.get("node_kind", ""), "node_state": {},
 		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
+		"start_coins": run.get("start_coins", coins), "start_crystals": run.get("start_crystals", crystals),
+		"start_tokens": run.get("start_tokens", tokens), "heroes_lost": run.get("heroes_lost", 0),
 	}
 
 
@@ -298,6 +300,8 @@ func load_save() -> bool:
 			"shield": run_data.get("shield", 0), "boss_rounds": run_data.get("boss_rounds", 0),
 			"node_kind": run_data.get("node_kind", ""), "node_state": {},
 			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
+			"start_coins": run_data.get("start_coins", coins), "start_crystals": run_data.get("start_crystals", crystals),
+			"start_tokens": run_data.get("start_tokens", tokens), "heroes_lost": run_data.get("heroes_lost", 0),
 		}
 	return true
 
@@ -392,6 +396,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
+		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
 	}
 	ensure_champion()
 	auto_resolve_single_option()
@@ -478,8 +483,12 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 				run["boss_rounds"] = int(result["rounds"])
 		elif hardcore and not bool(result.get("retreated", false)):
 			var party: Array[Hero] = state["party"]
+			var lost := 0
 			for h in party:
+				if not h.is_champion:
+					lost += 1
 				heroes.erase(h)
+			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
 		ns["result"] = result
 	run["node_state"] = ns
 	save()
@@ -542,7 +551,11 @@ func ensure_hazard() -> void:
 	run["node_state"] = ns
 
 
-func push_through_hazard() -> void:
+## Shared core for all 3 hazard choices — `dmg_scale` multiplies the normal
+## damage roll (1.0 = unchanged), `bonus_chance_override` replaces the
+## hazard's own bonus_chance when >= 0.0 (a negative value means "use the
+## hazard's own chance unmodified").
+func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 	var diff := _diff()
 	var party: Array[Hero] = []
 	party.assign(current_party().filter(func(h): return not h.is_downed() and h.hp > 0))
@@ -550,7 +563,7 @@ func push_through_hazard() -> void:
 	var ns: Dictionary = run["node_state"]
 	var hz: Dictionary = ns["hazard"]
 	var log: Array[String] = []
-	var dmg: float = (6.0 + int(diff["floors"]) * 2.0) * float(hz["dmg_mult"])
+	var dmg: float = (6.0 + int(diff["floors"]) * 2.0) * float(hz["dmg_mult"]) * dmg_scale
 	if not run.get("anchor_used", false) and anchor_artifact():
 		run["anchor_used"] = true
 		log.append("The Anchor Artifact snuffs the hazard before it strikes.")
@@ -572,7 +585,8 @@ func push_through_hazard() -> void:
 				if h.hp <= 0:
 					h.downed_until = int(Time.get_unix_time_from_system() * 1000) + recovery_ms()
 			log.append("The hazard deals %d damage across the party." % int(dmg))
-	if randf() < float(hz["bonus_chance"]):
+	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
+	if randf() < bonus_chance:
 		var c := randi() % 5 + 2
 		if hz["bonus_type"] == "coins":
 			coins += c
@@ -582,6 +596,38 @@ func push_through_hazard() -> void:
 			log.append("Stray Crystals found in the rubble: +%d." % c)
 	ns["resolved"] = true
 	ns["log"] = log
+	run["node_state"] = ns
+	save()
+	state_changed.emit()
+
+
+## The safe default: full damage roll, the hazard's own normal bonus chance.
+func push_through_hazard() -> void:
+	_apply_hazard(1.0, -1.0)
+
+
+## The gambler's choice: double damage exposure, guaranteed bonus reward.
+func risk_hazard() -> void:
+	_apply_hazard(2.0, 1.0)
+
+
+const HAZARD_BYPASS_COST := 15
+
+
+func can_afford_hazard_bypass() -> bool:
+	return crystals >= HAZARD_BYPASS_COST
+
+
+## Pay Crystals to skip the hazard entirely — no damage, no reward, no
+## resistance/anchor math (there's nothing to resist or block).
+func bypass_hazard() -> void:
+	if not can_afford_hazard_bypass():
+		return
+	ensure_hazard()
+	var ns: Dictionary = run["node_state"]
+	crystals -= HAZARD_BYPASS_COST
+	ns["resolved"] = true
+	ns["log"] = ["You pay %d Crystals and bypass the hazard entirely." % HAZARD_BYPASS_COST]
 	run["node_state"] = ns
 	save()
 	state_changed.emit()

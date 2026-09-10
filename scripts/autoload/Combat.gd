@@ -406,12 +406,14 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			m["dmg"] = max(1, int(round(float(m["dmg"]) / float(count))))
 			m["max_hp"] = m["hp"]
 			m["mechanic"] = {}
+			m["ability"] = GameData.MONSTER_ABILITIES.get(str(m["name"]), {})
 			m["is_main"] = i == 0
 			monsters.append(m)
 		return monsters
 
 	var main := gen_monster(diff, floor_idx, kind)
 	main["is_main"] = true
+	main["ability"] = {}
 	if kind == "boss":
 		var mechanic: Dictionary = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
 		if mechanic["id"] == "frenzied":
@@ -430,6 +432,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			add["dmg"] = max(1, int(round(add["dmg"] * 0.6)))
 			add["max_hp"] = add["hp"]
 			add["mechanic"] = {}
+			add["ability"] = GameData.MONSTER_ABILITIES.get(str(add["name"]), {})
 			add["is_main"] = false
 			monsters.append(add)
 	return monsters
@@ -619,6 +622,17 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		monsters[0]["hp"] = float(monsters[0]["hp"]) - alpha
 		log.append("An opening volley lands for %d!" % round(alpha))
 
+	# A "shielded"-ability monster starts the fight with a one-time absorb
+	# shield on incoming hero damage — pre-filled here (once, not re-rolled
+	# each round) mirroring how alpha_strikes above is also a one-time
+	# fight-start effect rather than a per-round one.
+	var monster_shields: Dictionary = {}
+	for i in monsters.size():
+		var ability: Dictionary = monsters[i].get("ability", {})
+		if ability.get("kind") == "shielded":
+			monster_shields[i] = float(monsters[i]["max_hp"]) * float(ability["value"])
+			log.append("%s: %s (shielded)" % [str(monsters[i]["name"]), str(ability["name"])])
+
 	var pending_actions: Dictionary = {}
 	for h in party:
 		pending_actions[h.id] = {"action": "attack", "target": 0}
@@ -631,6 +645,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
 		"cooldown_shave": cooldown_shave, "kill_shield": kill_shield, "hero_shields": {},
+		"monster_shields": monster_shields, "hero_poison": {},
 		"round_num": 0, "log": log,
 		"pending_actions": pending_actions,
 	}
@@ -769,6 +784,13 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				if after_hp > 0.0 and target_max > 0.0 and after_hp / target_max < float(edge_def["value"]):
 					dealt = float(monsters[target_idx]["hp"])
 					log.append("%s's Widow's Edge finds the killing blow!" % h.name)
+			var m_shields: Dictionary = state["monster_shields"]
+			if dealt > 0.0 and float(m_shields.get(target_idx, 0.0)) > 0.0:
+				var m_have: float = float(m_shields[target_idx])
+				var m_absorbed: float = min(m_have, dealt)
+				m_shields[target_idx] = m_have - m_absorbed
+				dealt -= m_absorbed
+				log.append("%s's ward absorbs %d damage." % [monsters[target_idx]["name"], int(round(m_absorbed))])
 			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - dealt
 			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
 			if hero_has_unique_item(h, "bloodthirst_fang"):
@@ -883,6 +905,50 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + regen_heal)
 			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
 
+	# "healer"-ability monsters mend the lowest-HP *other* living monster each
+	# round they survive — same shape as the regen loop just above, but
+	# targeting an ally instead of healing self.
+	for m in monsters:
+		if float(m["hp"]) <= 0 or m.get("ability", {}).get("kind") != "healer":
+			continue
+		var lowest_idx := -1
+		var lowest_ratio := 1.0
+		for j in monsters.size():
+			if monsters[j] == m or float(monsters[j]["hp"]) <= 0:
+				continue
+			var ratio: float = float(monsters[j]["hp"]) / float(monsters[j]["max_hp"])
+			if ratio < 1.0 and ratio < lowest_ratio:
+				lowest_ratio = ratio
+				lowest_idx = j
+		if lowest_idx >= 0:
+			var heal_amt: float = round(float(monsters[lowest_idx]["max_hp"]) * float(m["ability"]["value"]))
+			monsters[lowest_idx]["hp"] = min(float(monsters[lowest_idx]["max_hp"]), float(monsters[lowest_idx]["hp"]) + heal_amt)
+			log.append("%s mends %s for %d." % [m["name"], monsters[lowest_idx]["name"], heal_amt])
+
+	# Poison ticks on any hero still carrying it — refreshed (not stacked) by
+	# a poison-ability monster's hit, see the retaliation loop above.
+	var poison: Dictionary = state["hero_poison"]
+	for hero_id in poison.keys().duplicate():
+		var h5: Hero = null
+		for hp_candidate in party:
+			if hp_candidate.id == str(hero_id):
+				h5 = hp_candidate
+				break
+		if h5 == null or h5.hp <= 0:
+			poison.erase(hero_id)
+			continue
+		var entry: Dictionary = poison[hero_id]
+		var tick: int = max(1, int(round(max_hp(h5) * float(entry["value"]))))
+		h5.hp = max(0, h5.hp - tick)
+		log.append("%s suffers %d poison damage." % [h5.name, tick])
+		if h5.hp <= 0:
+			log.append("%s is knocked out!" % h5.name)
+		entry["rounds"] = int(entry["rounds"]) - 1
+		if entry["rounds"] <= 0 or h5.hp <= 0:
+			poison.erase(hero_id)
+		else:
+			poison[hero_id] = entry
+
 	if float(state["mend"]) > 0.0:
 		var mended := false
 		for h in living:
@@ -922,10 +988,13 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			break
 		var target: Hero = alive_now[randi() % alive_now.size()]
 		var mech: Dictionary = m.get("mechanic", {})
+		var ability: Dictionary = m.get("ability", {})
 		var back: float = float(m["dmg"])
 		var warded: bool = mech.get("id") == "warded" and round_num <= 2
 		if mech.get("id") == "enrage" and round_num > GameData.BOSS_ENRAGE_ROUND:
 			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
+		if ability.get("kind") == "frenzy" and float(m["hp"]) / float(m["max_hp"]) <= 0.3:
+			back = round(back * (1.0 + float(ability["value"])))
 		if defending.has(target.id):
 			back *= 0.5
 		var effective_dodge: float = float(state["dodge"])
@@ -966,6 +1035,9 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			else:
 				target.hp = max(0, target.hp - dealt_back)
 				log.append("The %s hits %s for %d." % [m["name"], target.name, dealt_back])
+				if ability.get("kind") == "poison" and target.hp > 0:
+					state["hero_poison"][target.id] = {"rounds": 2, "value": float(ability["value"])}
+					log.append("%s is poisoned!" % target.name)
 				if target.hp <= 0:
 					log.append("%s is knocked out!" % target.name)
 

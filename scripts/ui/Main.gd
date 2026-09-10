@@ -795,6 +795,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 				render()
 			))
 		else:
+			for line in _run_summary_lines():
+				v.add_child(_label(line, 12, true))
 			v.add_child(_button("Return to Terminal", func():
 				GameState.finish_run()
 				screen = "terminal"
@@ -1177,12 +1179,21 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			arena.add_child(m_plate)
 
 			# A persistent badge for the boss's own mechanic (Enraged/Warded/
-			# Regenerating/Frenzied) sitting on its status plate all fight,
-			# not just as a transient text hint above the action bar — see
-			# GameData.BOSS_MECHANIC_ICON.
+			# Regenerating/Frenzied) or, for a regular monster, its
+			# MONSTER_ABILITIES archetype (poison/healer/shielded/frenzy) —
+			# sitting on its status plate all fight instead of only a
+			# transient text hint above the action bar.
 			var mechanic: Dictionary = m.get("mechanic", {})
-			if not mechanic.is_empty():
-				var mech_icon_path: String = GameData.BOSS_MECHANIC_ICON.get(str(mechanic["id"]), "")
+			var ability: Dictionary = m.get("ability", {})
+			if not mechanic.is_empty() or not ability.is_empty():
+				var mech_icon_path: String
+				var mech_tooltip: String
+				if not mechanic.is_empty():
+					mech_icon_path = GameData.BOSS_MECHANIC_ICON.get(str(mechanic["id"]), "")
+					mech_tooltip = "%s — %s" % [str(mechanic["name"]), str(mechanic["desc"])]
+				else:
+					mech_icon_path = GameData.MONSTER_ABILITY_ICON.get(str(ability["kind"]), "")
+					mech_tooltip = str(ability["name"])
 				if mech_icon_path != "":
 					var mech_badge := PanelContainer.new()
 					var mech_style := StyleBoxFlat.new()
@@ -1199,7 +1210,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					mech_badge.add_theme_stylebox_override("panel", mech_style)
 					mech_badge.add_child(_icon(mech_icon_path, 14))
 					mech_badge.position = m_plate_pos + Vector2(m_plate_w - 16.0, -6.0)
-					mech_badge.tooltip_text = "%s — %s" % [str(mechanic["name"]), str(mechanic["desc"])]
+					mech_badge.tooltip_text = mech_tooltip
 					arena.add_child(mech_badge)
 
 		var hero_wrappers: Dictionary = {}
@@ -1434,6 +1445,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	else:
 		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
 		v.add_child(_label(defeat_text))
+		for line in _run_summary_lines():
+			v.add_child(_label(line, 12, true))
 		v.add_child(_button("Return to Terminal", func():
 			GameState.finish_run()
 			screen = "terminal"
@@ -1488,6 +1501,27 @@ func _hazard_severity_label(dmg_mult: float) -> String:
 	return "Severe"
 
 
+## A short recap for the two screens a run can end on (sealed or wiped/
+## retreated) — floor reached, net currency change this run (coins/crystals/
+## tokens can be spent as well as earned mid-run, e.g. at a shop, so "net
+## change" is the honest framing, not "earned"), and heroes lost to Hardcore
+## if any. Deliberately reads only numbers that already exist or are a cheap
+## snapshot diff — no new combat-hot-path instrumentation.
+func _run_summary_lines() -> Array[String]:
+	var lines: Array[String] = []
+	var layers: Array = GameState.run.get("layers", [])
+	if not layers.is_empty():
+		lines.append("Floor %d/%d reached" % [int(GameState.run.get("pos", 0)) + 1, layers.size()])
+	var coin_delta := GameState.coins - int(GameState.run.get("start_coins", GameState.coins))
+	var crystal_delta := GameState.crystals - int(GameState.run.get("start_crystals", GameState.crystals))
+	var token_delta := GameState.tokens - int(GameState.run.get("start_tokens", GameState.tokens))
+	lines.append("%+d Coins, %+d Crystals, %+d Tokens this run" % [coin_delta, crystal_delta, token_delta])
+	var lost := int(GameState.run.get("heroes_lost", 0))
+	if lost > 0:
+		lines.append("%d hero%s lost" % [lost, "es" if lost > 1 else ""])
+	return lines
+
+
 func _render_hazard_node(v: VBoxContainer) -> void:
 	GameState.ensure_hazard()
 	var ns: Dictionary = GameState.run["node_state"]
@@ -1506,10 +1540,23 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	v.add_child(name_row)
 
 	if not ns.get("resolved", false):
-		v.add_child(_button("Push Through", func():
+		var choice_row := HBoxContainer.new()
+		choice_row.add_theme_constant_override("separation", 8)
+		choice_row.add_child(_button("Push Through", func():
 			GameState.push_through_hazard()
 			render()
 		))
+		var bypass_btn := _button("Bypass (%d Crystals)" % GameState.HAZARD_BYPASS_COST, func():
+			GameState.bypass_hazard()
+			render()
+		)
+		bypass_btn.disabled = not GameState.can_afford_hazard_bypass()
+		choice_row.add_child(bypass_btn)
+		choice_row.add_child(_button("Risk it for Loot", func():
+			GameState.risk_hazard()
+			render()
+		))
+		v.add_child(choice_row)
 	else:
 		for line in ns.get("log", []):
 			v.add_child(_label(str(line), 12))
