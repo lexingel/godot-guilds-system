@@ -1,10 +1,12 @@
-[gd_resource type="Theme" load_steps=12 format=3 uid="uid://6cplcuy1r006"]
+[gd_resource type="Theme" load_steps=16 format=3 uid="uid://6cplcuy1r006"]
 
 [ext_resource type="Texture2D" uid="uid://3utet2fvfs8q" path="res://assets/ui/panel.png" id="1"]
 [ext_resource type="Texture2D" uid="uid://41dsrxtni81l" path="res://assets/ui/button_normal.png" id="2"]
 [ext_resource type="Texture2D" uid="uid://ylqyobg3xify" path="res://assets/ui/button_hover.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://d2d48qurvcy52" path="res://assets/ui/button_pressed.png" id="4"]
 [ext_resource type="Texture2D" uid="uid://bcp4swwd5kkrr" path="res://assets/ui/button_disabled.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://xn0twavhln1r" path="res://assets/ui/card_panel.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://dxbjwohvuoow3" path="res://assets/ui/stat_tile.png" id="7"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_disabled"]
 content_margin_left = 14.0
@@ -64,6 +66,28 @@ texture_margin_top = 16.0
 texture_margin_right = 16.0
 texture_margin_bottom = 16.0
 
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_card_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+texture = ExtResource("6")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+texture = ExtResource("7")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
 [resource]
 default_font_size = 14
 Button/colors/font_color = Color(0.925, 0.906, 0.957, 1)
@@ -88,3 +112,7 @@ LineEdit/colors/font_placeholder_color = Color(0.604, 0.565, 0.678, 1)
 LineEdit/styles/focus = SubResource("StyleBoxTexture_btn_hover")
 LineEdit/styles/normal = SubResource("StyleBoxTexture_btn_normal")
 PanelContainer/styles/panel = SubResource("StyleBoxTexture_panel")
+CardPanel/base_type = &"PanelContainer"
+CardPanel/styles/panel = SubResource("StyleBoxTexture_card_panel")
+StatTile/base_type = &"PanelContainer"
+StatTile/styles/panel = SubResource("StyleBoxTexture_stat_tile")

@@ -563,7 +563,10 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		var stat_row := HBoxContainer.new()
 		stat_row.add_child(_icon(entry[0], 18))
 		stat_row.add_child(_label(str(entry[1]), 16))
-		row.add_child(stat_row)
+		var tile := PanelContainer.new()
+		tile.theme_type_variation = &"StatTile"
+		tile.add_child(stat_row)
+		row.add_child(tile)
 	container.add_child(row)
 	if breadcrumb != "":
 		container.add_child(_label(breadcrumb, 12, true))
@@ -2410,6 +2413,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	var h: Hero = still_here[0]
 
 	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanel"
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
