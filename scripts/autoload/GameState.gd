@@ -34,6 +34,9 @@ var pending_shop_boost: bool = false
 var run: Dictionary = {}   # {} = no active run
 var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String,"expires_at":int}] or [{}] (empty, refilled lazily)
 var pending_riftbreak_ranks: Array[String] = []   # ranks that broke since the last Terminal visit, merged into one encounter
+var monsters_seen: Array[String] = []      # bestiary — every monster/elite/boss name ever encountered
+var bosses_defeated: Array[String] = []    # bestiary — boss names ever defeated
+var hazards_seen: Array[String] = []       # bestiary — hazard type ids ever rolled
 
 
 func lvl(key: String) -> int:
@@ -206,6 +209,9 @@ func reset() -> void:
 	for i in 6:
 		rift_map.append({})
 	pending_riftbreak_ranks = []
+	monsters_seen = []
+	bosses_defeated = []
+	hazards_seen = []
 
 
 ## Only run's primitive/ID-based fields survive a save — node_state can hold
@@ -231,6 +237,7 @@ func _run_for_save() -> Dictionary:
 		"rift_rank": run.get("rift_rank", ""), "is_riftbreak": run.get("is_riftbreak", false),
 		"riftbreak_severity": run.get("riftbreak_severity", 0),
 		"riftbreak_worst_index": run.get("riftbreak_worst_index", 0),
+		"riftbreak_flavor": run.get("riftbreak_flavor", ""),
 	}
 
 
@@ -252,6 +259,7 @@ func save() -> void:
 		"pending_shop_boost": pending_shop_boost,
 		"run": _run_for_save(),
 		"rift_map": rift_map, "pending_riftbreak_ranks": pending_riftbreak_ranks,
+		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -295,6 +303,9 @@ func load_save() -> bool:
 		for i in 6:
 			rift_map.append({})
 	pending_riftbreak_ranks.assign(data.get("pending_riftbreak_ranks", []))
+	monsters_seen.assign(data.get("monsters_seen", []))
+	bosses_defeated.assign(data.get("bosses_defeated", []))
+	hazards_seen.assign(data.get("hazards_seen", []))
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
 	var champ_data = data.get("current_champion")
@@ -327,6 +338,7 @@ func load_save() -> bool:
 			"rift_rank": run_data.get("rift_rank", ""), "is_riftbreak": run_data.get("is_riftbreak", false),
 			"riftbreak_severity": run_data.get("riftbreak_severity", 0),
 			"riftbreak_worst_index": run_data.get("riftbreak_worst_index", 0),
+			"riftbreak_flavor": run_data.get("riftbreak_flavor", ""),
 		}
 	return true
 
@@ -529,6 +541,12 @@ func engage_node() -> void:
 		return
 	var kind := current_node_kind()
 	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
+	for m in state["monsters"]:
+		# Boss names are generated as "Vaelith, Lesser Warden" — split off the
+		# difficulty suffix so the same boss counts as seen regardless of tier.
+		var mname := str(m["name"]).split(",")[0]
+		if not monsters_seen.has(mname):
+			monsters_seen.append(mname)
 	run["node_state"] = {"type": "combat", "combat_state": state, "reward_chosen": false}
 	save()
 	state_changed.emit()
@@ -539,6 +557,20 @@ func engage_node() -> void:
 ## choose_node_type() just records a choice.
 ## `target` is a monster index into state["monsters"], meaningful only for
 ## "attack" — ignored (but still stored, harmlessly) for "ability"/"defend".
+## Party Assembly's Front/Back toggle — checks the roster first, then the
+## Champion (find_hero only searches `heroes`, and the Champion needs this
+## toggle too since their row has no other picker interaction).
+func set_hero_formation(hero_id: String, formation: String) -> void:
+	var h := find_hero(hero_id)
+	if not h and current_champion and current_champion.id == hero_id:
+		h = current_champion
+	if not h:
+		return
+	h.formation = formation
+	save()
+	state_changed.emit()
+
+
 func set_hero_action(hero_id: String, action: String, target: int = 0) -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
@@ -566,6 +598,9 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 				crystals += int(result["crystal"]) + int(result["bonus_crystal"])
 				if kind == "boss":
 					run["boss_rounds"] = int(result["rounds"])
+					var bname := str(result["monster_name"]).split(",")[0]
+					if not bosses_defeated.has(bname):
+						bosses_defeated.append(bname)
 		elif hardcore and not bool(result.get("retreated", false)):
 			var party: Array[Hero] = state["party"]
 			var lost := 0
@@ -574,6 +609,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 					lost += 1
 				heroes.erase(h)
 			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
+			if lost > 0:
+				result["flavor"] = GameData.narrative_line("hardcore_hero_lost")
 		# A Riftbreak loss (not a retreat) that stayed at or below Rank A costs
 		# a Coin/Crystal "compensation" penalty on top of the normal downing —
 		# the game-over branch (Rank S+) is handled entirely in Main.gd's
@@ -661,6 +698,9 @@ func ensure_hazard() -> void:
 	ns["hazard"] = hz
 	ns["resolved"] = false
 	run["node_state"] = ns
+	var hz_id := str(hz["id"])
+	if not hazards_seen.has(hz_id):
+		hazards_seen.append(hz_id)
 
 
 ## Shared core for all 3 hazard choices — `dmg_scale` multiplies the normal
@@ -681,7 +721,7 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 		log.append("The Anchor Artifact snuffs the hazard before it strikes.")
 		dmg = 0.0
 	else:
-		var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct"))
+		var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct") + Combat.bond_bonus_for(party, "hazard_guard_pct"))
 		dmg = round(dmg * (1.0 - guard))
 		var shield: int = run.get("shield", 0)
 		var abs_amt: int = min(shield, int(dmg))
@@ -825,7 +865,11 @@ func seal_rift() -> void:
 		next_id += 1
 		got_detector = true
 	tokens += earned_tokens
+	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
+	var flavor := GameData.narrative_line("fast_clear" if fast_clear else "rift_sealed")
+	if just_unlocked_greater:
+		flavor += " " + GameData.narrative_line("greater_rift_unlocked")
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
 	current_champion = Combat.generate_champion()
@@ -843,11 +887,11 @@ func seal_rift() -> void:
 		run["node_state"] = {}
 		run["boss_rounds"] = 0
 		auto_resolve_single_option()
-		run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "continuing": true, "cycle": new_cycle}
+		run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "continuing": true, "cycle": new_cycle, "flavor": flavor}
 		save()
 		state_changed.emit()
 		return
-	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector}
+	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "flavor": flavor}
 	save()
 	state_changed.emit()
 
@@ -1033,7 +1077,7 @@ func start_riftbreak_encounter() -> void:
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
 		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
 		"rift_rank": "", "is_riftbreak": true, "riftbreak_severity": severity,
-		"riftbreak_worst_index": worst_index,
+		"riftbreak_worst_index": worst_index, "riftbreak_flavor": GameData.narrative_line("riftbreak_begins"),
 	}
 	ensure_champion()
 	auto_resolve_single_option()

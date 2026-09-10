@@ -57,6 +57,18 @@ const ROLE_TRAITS := {
 static func is_role_trait(trait_name: String) -> bool:
 	return ROLE_TRAITS.values().has(trait_name)
 
+
+## One opener + one closer, joined — see NARRATIVE_LINES above. Returns ""
+## for an unknown event id (a missing/typo'd id just silently adds nothing,
+## rather than crashing whatever log line called this).
+static func narrative_line(event_id: String) -> String:
+	if not NARRATIVE_LINES.has(event_id):
+		return ""
+	var pools: Dictionary = NARRATIVE_LINES[event_id]
+	var openers: Array = pools["openers"]
+	var closers: Array = pools["closers"]
+	return "%s %s" % [openers[randi() % openers.size()], closers[randi() % closers.size()]]
+
 # Earned from being knocked out in combat (Combat._finish_combat), not rolled
 # at recruitment like TRAIT_TABLE above — a separate, capped-at-2 pool so a
 # scar reads as a distinct kind of thing from the base trait. Same kind/value
@@ -94,6 +106,33 @@ const TYPE_DOMAIN := {
 	"Umbral": "defense", "Arcane": "droprate",
 }
 
+# Hero-vs-monster elemental weakness (attack-only — doesn't affect retaliation
+# taken). Deliberately asymmetric rather than a clean 5-cycle: 3 of the 10
+# pairs are neutral (Ember-Arcane, Frost-Umbral, Verdant-Umbral), and Ember/
+# Arcane come out net stronger than Frost/Verdant. First-draft numbers,
+# tunable after playing.
+const TYPE_MATCHUPS := {
+	"Ember": {"strong_vs": ["Verdant", "Umbral"], "weak_vs": ["Frost"]},
+	"Frost": {"strong_vs": ["Ember"], "weak_vs": ["Verdant", "Arcane"]},
+	"Verdant": {"strong_vs": ["Frost"], "weak_vs": ["Ember", "Arcane"]},
+	"Umbral": {"strong_vs": ["Arcane"], "weak_vs": ["Ember"]},
+	"Arcane": {"strong_vs": ["Verdant", "Frost"], "weak_vs": ["Umbral"]},
+}
+
+# Mirrors UNIQUE_RELICS' existing "combo_with" named-partner pattern, as a
+# standing party-composition mechanic instead of a rare-relic-gated one.
+# Keyed by pool_id (subclass), not specific hero instances, so any two heroes
+# of those subclasses trigger it. Checked against Combat.bond_bonus_for.
+const HERO_BONDS := [
+	{"name": "Dueling Rivals", "a": "duelist", "b": "blade-dancer", "kind": "first_round_pct", "value": 0.08},
+	{"name": "Won't Let You Fall", "a": "sanctified-shield", "b": "ashen-templar", "kind": "wipe_guard", "value": 0.10},
+	{"name": "Half-Step Ahead", "a": "runaway", "b": "voidwalker", "kind": "dodge_pct", "value": 0.08},
+	{"name": "Shield and Spark", "a": "iron-guard", "b": "rift-medic", "kind": "mend_pct", "value": 0.06},
+	{"name": "Twin Shadows", "a": "nightblade", "b": "wraithstep", "kind": "dmg_pct", "value": 0.08},
+	{"name": "Kindled Together", "a": "berserker", "b": "pyromancer", "kind": "dmg_pct", "value": 0.08},
+	{"name": "Read the Room", "a": "rift-ranger", "b": "wardweaver", "kind": "hazard_guard_pct", "value": 0.06},
+]
+
 # Equipping 3+ of one element grants that element's own bonus.
 const SYNERGY_BONUS := {
 	"Ember": {"kind": "dmg_pct", "value": 0.15, "label": "+15% team damage"},
@@ -101,6 +140,64 @@ const SYNERGY_BONUS := {
 	"Verdant": {"kind": "mend_pct", "value": 0.08, "label": "Mends 8% of the party's HP pool each round"},
 	"Umbral": {"kind": "hazard_guard_pct", "value": 0.15, "label": "-15% hazard severity"},
 	"Arcane": {"kind": "loot_rarity_pct", "value": 0.10, "label": "+10% odds toward Rare/Epic loot"},
+}
+
+# A small combinatorial line-generator: each event id has an "openers" and
+# "closers" pool, joined at random (narrative_line below picks one of each) —
+# a modest amount of writing produces many more effective combinations than
+# hand-writing full lines per event. Deliberately name-free (no {hero} slots)
+# so the mechanism stays a single generic join everywhere — appended as an
+# extra atmospheric line alongside whatever mechanical log line already names
+# the hero/rank/etc. at that event's existing call site.
+const NARRATIVE_LINES := {
+	"rift_sealed": {
+		"openers": ["The rift closes behind you.", "Another door shuts.", "The tear in the world seals over.", "Quiet returns to the floor you just cleared."],
+		"closers": ["The world holds a little longer.", "Nobody will thank you for it.", "It won't stay closed forever.", "One less wound in the Rift's hide."],
+	},
+	"fast_clear": {
+		"openers": ["You were in and out before the rift even noticed.", "Clean work.", "No wasted swings, no wasted time.", "The Rift barely had a chance to answer."],
+		"closers": ["The Rift barely had time to react.", "Efficiency the guild will remember.", "Some fights end before they really begin.", "Not every victory needs to be hard-won."],
+	},
+	"boss_defeated": {
+		"openers": ["It fought like it knew what was coming.", "The rift's champion falls.", "Whatever it was guarding, it isn't guarding anymore.", "The floor goes quiet where it used to stand."],
+		"closers": ["Didn't matter.", "The rift itself feels smaller for it.", "The guild adds one more name to the list.", "Some things don't come back from a fight like that."],
+	},
+	"elite_defeated": {
+		"openers": ["Stronger than the rest, and still not strong enough.", "It made you work for it.", "A cut above the usual — until it wasn't.", "The Rift saves its better monsters for later. This one came early."],
+		"closers": ["That's the difference between elite and dead.", "Worth the extra scars.", "The rest of the floor felt easier after that.", "It won't be the last one like it."],
+	},
+	"hero_evolved": {
+		"openers": ["Something in them has shifted.", "The rift changes people.", "They walked out different than they walked in.", "Whatever they were before, it isn't enough anymore."],
+		"closers": ["This time, for the better.", "Growth has a cost, and they just paid it.", "The guild takes notice.", "Not every change happens by choice — but this one did."],
+	},
+	"legendary_drop": {
+		"openers": ["Something in the wreckage doesn't belong to this floor at all.", "The rift doesn't usually give things like this away.", "Buried under the ordinary, something extraordinary.", "Not every rift hides a find like this."],
+		"closers": ["Luck, or the Rift wanted rid of it.", "The guild will be talking about this one.", "Worth every wound it took to find it.", "Some things are worth the risk of coming back for."],
+	},
+	"hardcore_hero_lost": {
+		"openers": ["No recovery this time.", "The Rift doesn't give this one back.", "Some doors only open one way.", "The guild loses more than a name today."],
+		"closers": ["The guild remembers the ones it couldn't bring home.", "Hardcore Mode has no mercy, and neither did this fight.", "Grief is the price of that kind of risk.", "Not every hero makes it out of the Rift's reach."],
+	},
+	"guild_founded": {
+		"openers": ["A name, a crest, and nothing else yet.", "Every guild starts as an empty ledger.", "The banner goes up before anyone's earned it.", "No history yet. Just intent."],
+		"closers": ["That's how it always starts.", "The Rift doesn't care how you began, only how you end.", "Everything after this gets written the hard way.", "Whatever comes next, it starts here."],
+	},
+	"scar_gained": {
+		"openers": ["The rift left its mark.", "Some wounds don't close all the way.", "Not every scar shows on the skin.", "The fight is over. The fear isn't."],
+		"closers": ["Quiet about how it happened.", "A price paid for coming back at all.", "The rift takes more than HP sometimes.", "Not every cost gets fully repaid."],
+	},
+	"riftbreak_begins": {
+		"openers": ["The threat you left to fester finally comes looking for you.", "No warning this time.", "What you didn't finish, finishes coming for you.", "The rift you ignored didn't ignore you back."],
+		"closers": ["The spillover is already at the gates.", "This one isn't optional.", "You don't get to choose when this bill comes due.", "Whatever's coming, it's already arrived."],
+	},
+	"greater_rift_unlocked": {
+		"openers": ["The Rift Hall's third gate finally answers.", "Three rifts sealed, and the chains on the old gateway snap loose.", "The rubble in the doorway stops mattering.", "Something the guild wasn't ready for, until now it is."],
+		"closers": ["It was always waiting.", "Whatever's behind it, the guild has earned the right to find out.", "Not every gate opens with a key. Some just need proof.", "The easy floors are behind you now."],
+	},
+	"guild_tier_reached": {
+		"openers": ["Word spreads.", "Other guilds have started asking who you are.", "The name on the banner starts to mean something.", "Reputation is its own kind of currency."],
+		"closers": ["The guild's name means something now.", "Not everyone gets to hear it and stay calm.", "Whatever you're building, people have noticed.", "Growth like this doesn't go unnoticed for long."],
+	},
 }
 
 # Items: hero-bound gear distinct from party-wide Relics. 3 category umbrellas:
@@ -761,6 +858,7 @@ const CAMP_HUB_ICON_PATH := {
 	"management": "res://assets/camp/icon_management.png",
 	"rift": "res://assets/camp/icon_rift.png",
 	"rift_map": "res://assets/camp/icon_rift_map.png",
+	"bestiary": "res://assets/camp/icon_bestiary.png",
 }
 ## Ornate slot-frame borders, one per rarity tier — reused everywhere a
 ## rarity needs to read at a glance: equip slots on the paper-doll Roster

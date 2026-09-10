@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4fo41bqpkta4"
-path="res://.godot/imported/itemsA_r09c09.png-44472110dc942f7cd2e6a31bd1baebda.ctex"
+uid="uid://fsqsre4odd8u"
+path="res://.godot/imported/icon_bestiary.png-eb498c4f499227b724e2f5ac1177d93c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/itemsA_r09c09.png"
-dest_files=["res://.godot/imported/itemsA_r09c09.png-44472110dc942f7cd2e6a31bd1baebda.ctex"]
+source_file="res://assets/camp/icon_bestiary.png"
+dest_files=["res://.godot/imported/icon_bestiary.png-eb498c4f499227b724e2f5ac1177d93c.ctex"]
 
 [params]
 

@@ -17,6 +17,8 @@ var expanded_skill_hero: String = ""
 var expanded_slot: String = ""     # "weapon:0"/"gear:2" — which equip slot's picker is open, scoped to the selected hero
 var confirm_reset: bool = false
 var _combat_animating: bool = false
+var _flavor_toast: String = ""     # one-shot narrative line (e.g. guild founding) — shown once at the top of the next Terminal render, then cleared
+var _last_guild_tier_name: String = ""   # tracks Guild Tier across renders to detect "just reached a new tier" (tier itself is derived, not stored)
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
@@ -533,6 +535,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 		GameState.guild_crest = pending_crest
 		GameState.refresh_recruit_pool()
 		GameState.save()
+		_flavor_toast = GameData.narrative_line("guild_founded")
 		screen = "terminal"
 		render()
 	))
@@ -673,6 +676,10 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if champ_portrait != "":
 		champ_row.add_child(_icon(champ_portrait, 48))
 	champ_row.add_child(_label("Champion: %s — Rank %s (always joins) · %d/%d HP" % [champ.name, champ.rank, champ.hp, Combat.max_hp(champ)], 13))
+	champ_row.add_child(_button("Back" if champ.formation != "back" else "Front", func(id=champ.id, f=champ.formation):
+		GameState.set_hero_formation(id, "back" if f != "back" else "front")
+		render()
+	))
 	v.add_child(champ_row)
 	for h in GameState.heroes:
 		var row := HBoxContainer.new()
@@ -693,9 +700,27 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			row.add_child(_icon(portrait_path, 40))
 		var status := " (downed)" if h.is_downed() else ""
 		row.add_child(_label("%s — Lv%d %s · %d/%d HP%s" % [h.name, h.level, h.cls_id.capitalize(), h.hp, Combat.max_hp(h), status]))
+		row.add_child(_button("Back" if h.formation != "back" else "Front", func(id=h.id, f=h.formation):
+			GameState.set_hero_formation(id, "back" if f != "back" else "front")
+			render()
+		))
 		v.add_child(row)
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some from the Guild Terminal first."))
+
+	# Surface any Hero Bond among the currently-picked heroes (+ the Champion,
+	# who always joins) so it's discoverable while assembling a party, not
+	# just a silent combat bonus.
+	var picked_pool_ids := {champ.pool_id: true}
+	for h in GameState.heroes:
+		if pending_party.has(h.id):
+			picked_pool_ids[h.pool_id] = true
+	var active_bonds: Array[String] = []
+	for bond in GameData.HERO_BONDS:
+		if picked_pool_ids.has(bond["a"]) and picked_pool_ids.has(bond["b"]):
+			active_bonds.append(str(bond["name"]))
+	if not active_bonds.is_empty():
+		v.add_child(_label("Bond active: %s" % ", ".join(active_bonds), 12, true))
 
 	v.add_child(_hsep())
 	var choice_count := GameState.relic_choice_count()
@@ -858,6 +883,9 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var rb_label := _label("⚠ Riftbreak! An unaddressed rift's threat has spilled out and forced this fight.", 14)
 		rb_label.add_theme_color_override("font_color", Palette.HAZARD)
 		v.add_child(rb_label)
+		var rb_flavor := str(GameState.run.get("riftbreak_flavor", ""))
+		if rb_flavor != "":
+			v.add_child(_label(rb_flavor, 12, true))
 	var diff := GameState._diff()
 	var pos: int = int(GameState.run["pos"])
 	var total_layers: int = (GameState.run["layers"] as Array).size()
@@ -880,6 +908,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
 		]))
 		v.add_child(sealed_row)
+		if str(sealed_dict.get("flavor", "")) != "":
+			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		if sealed_dict.get("continuing", false):
 			v.add_child(_label("Endless cycle %d begins..." % int(sealed_dict["cycle"])))
 			v.add_child(_button("Continue Endless Run", func():
@@ -1308,6 +1338,30 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				mech_badge.tooltip_text = str(badge_specs[bi]["tooltip"])
 				arena.add_child(mech_badge)
 
+			# Elemental type badge (Elemental Weakness) — opposite side from the
+			# mechanic/ability badges above so the two never collide, reusing
+			# the same 5 relic-type gem icons already generated for Inventory.
+			var m_type := str(m.get("type", ""))
+			var m_type_icon: String = GameData.RELIC_TYPE_ICON_PATH.get(m_type, "")
+			if m_type_icon != "":
+				var type_badge := PanelContainer.new()
+				var type_style := StyleBoxFlat.new()
+				type_style.bg_color = Palette.SURFACE3
+				type_style.border_width_left = 1
+				type_style.border_width_top = 1
+				type_style.border_width_right = 1
+				type_style.border_width_bottom = 1
+				type_style.border_color = Palette.LINE
+				type_style.corner_radius_top_left = 999
+				type_style.corner_radius_top_right = 999
+				type_style.corner_radius_bottom_left = 999
+				type_style.corner_radius_bottom_right = 999
+				type_badge.add_theme_stylebox_override("panel", type_style)
+				type_badge.add_child(_icon(m_type_icon, 14))
+				type_badge.position = m_plate_pos + Vector2(2.0, -6.0)
+				type_badge.tooltip_text = "%s type" % m_type
+				arena.add_child(type_badge)
+
 		var hero_wrappers: Dictionary = {}
 		var hero_rects: Dictionary = {}
 		var hero_zone_x := 24.0
@@ -1531,6 +1585,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if bonus_crystal > 0:
 			victory_text += " (+%d bonus)" % bonus_crystal
 		v.add_child(_label(victory_text))
+		if kind == "boss" or kind == "elite":
+			v.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
 		if not options.is_empty() and not ns.get("reward_chosen", false):
 			v.add_child(_label("Choose a reward:"))
@@ -1540,8 +1596,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				var is_relic: bool = opt["loot_type"] == "relic"
 				var desc: String = _loot_desc(obj, is_relic)
 				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
-				var btn := _button("%s — %s" % [_loot_display_name(obj), desc], func(idx=i):
+				var btn := _button("%s — %s" % [_loot_display_name(obj), desc], func(idx=i, legendary=(obj.rarity == "legendary")):
 					GameState.pick_combat_reward(idx)
+					if legendary:
+						_flavor_toast = GameData.narrative_line("legendary_drop")
 					render()
 				)
 				btn.icon = load(icon_path)
@@ -1572,6 +1630,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		v.add_child(_label(defeat_text))
 		if result.has("riftbreak_compensation_coins"):
 			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
+		if str(result.get("flavor", "")) != "":
+			v.add_child(_label(str(result["flavor"]), 12, true))
 		for line in _run_summary_lines():
 			v.add_child(_label(line, 12, true))
 		v.add_child(_button("Return to Terminal", func():
@@ -1696,7 +1756,17 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 # ---------------- Terminal ----------------
 func _render_terminal(v: VBoxContainer) -> void:
 	_topbar(v)
+	if _flavor_toast != "":
+		v.add_child(_label(_flavor_toast, 12, true))
+		_flavor_toast = ""
 	var tier := Combat.guild_tier_info()
+	var tier_name := str(tier["name"])
+	# Guild Tier is purely derived (not stored), so "just reached a new tier"
+	# is detected by comparing against the last tier seen at render time —
+	# UI-only state, not persisted, same as _flavor_toast above.
+	if _last_guild_tier_name != "" and _last_guild_tier_name != tier_name:
+		v.add_child(_label(GameData.narrative_line("guild_tier_reached"), 12, true))
+	_last_guild_tier_name = tier_name
 	var tier_line := "%s — %d levels purchased" % [tier["name"], tier["total"]]
 	if not tier["next"].is_empty():
 		tier_line += " (%d to %s)" % [int(tier["next"]["min"]) - int(tier["total"]), tier["next"]["name"]]
@@ -1725,6 +1795,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		"recruits": _render_recruits(v)
 		"medical": _render_medical_bay(v)
 		"management": _render_management(v)
+		"bestiary": _render_bestiary(v)
 		_: _render_roster(v)
 
 
@@ -1791,6 +1862,13 @@ func _render_camp(v: VBoxContainer) -> void:
 	var rift_map_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift_map"], 56.0, "Rift Map", func(): screen = "rift_map"; render())
 	rift_map_icon.position = Vector2(230, 270) - Vector2(28, 28)
 	camp.add_child(rift_map_icon)
+
+	# Bestiary is a Terminal sub-tab (like Roster/Inventory), not a separate
+	# screen, so its hotspot sets term_tab instead of screen — continuing the
+	# same free-floating-icon row as Rift Hall/Rift Map above.
+	var bestiary_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["bestiary"], 56.0, "Bestiary", func(): term_tab = "bestiary"; render())
+	bestiary_icon.position = Vector2(310, 270) - Vector2(28, 28)
+	camp.add_child(bestiary_icon)
 
 	v.add_child(camp)
 
@@ -2020,6 +2098,57 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 		v.add_child(_label("Recovering without a bed (slower):", 12, true))
 		for h in waiting:
 			v.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
+
+
+## Pure checklist, no reward tied to completion — three sections (Monsters,
+## Bosses, Hazards) each grayed-out/silhouetted until GameState's matching
+## _seen/_defeated array records it, full color once encountered. Reuses
+## existing art everywhere (monster sprites, HAZARD_BG illustrations) — no
+## new generation beyond the one hub icon.
+func _render_bestiary(v: VBoxContainer) -> void:
+	v.add_child(_label("Bestiary", 20))
+
+	v.add_child(_label("Monsters", 14, true))
+	var monster_row := HBoxContainer.new()
+	monster_row.add_theme_constant_override("separation", 8)
+	for mname in GameData.MONSTER_NAMES + GameData.ELITE_NAMES:
+		var seen: bool = GameState.monsters_seen.has(mname)
+		var icon := _icon(GameData.sprite_for_monster(mname), 40)
+		if not seen:
+			icon.modulate = Color(0.25, 0.25, 0.25, 1.0)
+		var wrap := _wrap_icon(icon)
+		wrap.tooltip_text = mname if seen else "???"
+		monster_row.add_child(wrap)
+	v.add_child(monster_row)
+
+	v.add_child(_hsep())
+	v.add_child(_label("Bosses", 14, true))
+	var boss_row := HBoxContainer.new()
+	boss_row.add_theme_constant_override("separation", 8)
+	for bname in GameData.BOSS_NAMES:
+		var defeated: bool = GameState.bosses_defeated.has(bname)
+		var bicon := _icon(GameData.sprite_for_monster(bname), 40)
+		if not defeated:
+			bicon.modulate = Color(0.25, 0.25, 0.25, 1.0)
+		var bwrap := _wrap_icon(bicon)
+		bwrap.tooltip_text = bname if defeated else "???"
+		boss_row.add_child(bwrap)
+	v.add_child(boss_row)
+
+	v.add_child(_hsep())
+	v.add_child(_label("Hazards", 14, true))
+	var hazard_row := HBoxContainer.new()
+	hazard_row.add_theme_constant_override("separation", 8)
+	for hz in GameData.HAZARD_TYPES:
+		var hz_id := str(hz["id"])
+		var seen: bool = GameState.hazards_seen.has(hz_id)
+		var hicon := _icon(GameData.HAZARD_BG.get(hz_id, ""), 40)
+		if not seen:
+			hicon.modulate = Color(0.25, 0.25, 0.25, 1.0)
+		var hwrap := _wrap_icon(hicon)
+		hwrap.tooltip_text = str(hz["name"]) if seen else "???"
+		hazard_row.add_child(hwrap)
+	v.add_child(hazard_row)
 
 
 func _render_management(v: VBoxContainer) -> void:
@@ -2264,6 +2393,8 @@ func _render_roster(v: VBoxContainer) -> void:
 				var err := GameState.evolve_hero(id)
 				if err != "":
 					push_warning(err)
+				else:
+					_flavor_toast = GameData.narrative_line("hero_evolved")
 				render()
 			))
 	cv.add_child(actions)

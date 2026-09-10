@@ -101,6 +101,36 @@ func domain_for_type(type: String) -> String:
 	return others[randi() % others.size()]
 
 
+## Attack-only elemental multiplier: 1.3 if attacker_type is strong_vs
+## defender_type, 0.8 if weak_vs, 1.0 otherwise (including either side being
+## untyped/"" — combat kinds with no type, e.g. no hero picked yet, just no-op).
+func type_matchup_mult(attacker_type: String, defender_type: String) -> float:
+	if attacker_type == "" or defender_type == "" or not GameData.TYPE_MATCHUPS.has(attacker_type):
+		return 1.0
+	var matchup: Dictionary = GameData.TYPE_MATCHUPS[attacker_type]
+	if matchup["strong_vs"].has(defender_type):
+		return 1.3
+	if matchup["weak_vs"].has(defender_type):
+		return 0.8
+	return 1.0
+
+
+## Weighted retaliation-target pick: front row weight 3, back row weight 1
+## (a bias, not a hard block — an all-back-row candidates array just reduces
+## to a uniform roll among them, no special-casing needed).
+func weighted_formation_target(candidates: Array[Hero]) -> Hero:
+	var total := 0.0
+	for h in candidates:
+		total += 3.0 if h.formation != "back" else 1.0
+	var roll := randf() * total
+	for h in candidates:
+		var w: float = 3.0 if h.formation != "back" else 1.0
+		if roll < w:
+			return h
+		roll -= w
+	return candidates[candidates.size() - 1]
+
+
 func weighted_rarity() -> String:
 	var bonus := drop_rate_bonus()
 	var weights: Array[float] = []
@@ -439,6 +469,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			m["mechanic"] = {}
 			m["ability"] = GameData.MONSTER_ABILITIES.get(str(m["name"]), {})
 			m["is_main"] = i == 0
+			m["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 			monsters.append(m)
 		return monsters
 
@@ -464,6 +495,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	else:
 		main["mechanic"] = {}
 	main["max_hp"] = main["hp"]
+	main["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	monsters.append(main)
 
 	if randf() < 0.35:
@@ -476,6 +508,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			add["mechanic"] = {}
 			add["ability"] = GameData.MONSTER_ABILITIES.get(str(add["name"]), {})
 			add["is_main"] = false
+			add["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 			monsters.append(add)
 	return monsters
 
@@ -606,6 +639,21 @@ func drop_rate_bonus() -> float:
 	return relic_special_total("loot_rarity_pct") + synergy_value_for("loot_rarity_pct")
 
 
+## Sums every HERO_BONDS entry of this `kind` whose both pool_ids are present
+## among *living* party members — "living" matches the same standard
+## sable_standard's mono_role_dmg already uses (not just "in the roster").
+func bond_bonus_for(party: Array[Hero], kind: String) -> float:
+	var living_pool_ids := {}
+	for h in party:
+		if h.hp > 0:
+			living_pool_ids[h.pool_id] = true
+	var total := 0.0
+	for bond in GameData.HERO_BONDS:
+		if bond["kind"] == kind and living_pool_ids.has(bond["a"]) and living_pool_ids.has(bond["b"]):
+			total += float(bond["value"])
+	return total
+
+
 ## Turn-based combat, per-hero and per-monster: a fight starts with
 ## start_combat() (one-time setup: monster roll via gen_monsters(), all
 ## party-wide bonus totals) and then advances one round per resolve_round()
@@ -636,13 +684,13 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var raw_sum := 0.0
 	for h in party:
 		raw_sum += dmg_of(h)
-	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party))
+	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party) + bond_bonus_for(party, "dmg_pct"))
 
-	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct")
+	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct") + bond_bonus_for(party, "first_round_pct")
 	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct") + synergy_value_for("escalate_pct")
-	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct"))
-	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct"))
-	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard") + relic_drawback_total("wipe_guard"))
+	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct"))
+	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct"))
+	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard") + relic_drawback_total("wipe_guard") + bond_bonus_for(party, "wipe_guard"))
 	var counter: float = min(0.6, relic_special_total("counter_pct"))
 	var cooldown_shave: float = min(0.75, relic_special_total("cooldown_shave_pct"))
 	var kill_shield: float = min(0.6, relic_special_total("kill_shield_pct"))
@@ -829,7 +877,9 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				target_idx = _first_living_monster_idx(monsters)
 			if target_idx < 0:
 				continue
-			var dealt: float = dmg_of(h) / raw_sum * team_dmg_base * attack_mult
+			var type_mult := type_matchup_mult(h.type, str(monsters[target_idx].get("type", "")))
+			var formation_mult := 1.0 if bool(monsters[target_idx].get("is_main", true)) else 0.75
+			var dealt: float = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * type_mult * formation_mult
 			if hero_has_unique_item(h, "widows_edge"):
 				var edge_def := GameData.find_unique_item("widows_edge")
 				var after_hp: float = float(monsters[target_idx]["hp"]) - dealt
@@ -1040,7 +1090,7 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		alive_now.assign(party.filter(func(h): return h.hp > 0))
 		if alive_now.is_empty():
 			break
-		var target: Hero = alive_now[randi() % alive_now.size()]
+		var target: Hero = weighted_formation_target(alive_now)
 		var mech: Dictionary = m.get("mechanic", {})
 		var mech2: Dictionary = m.get("mechanic2", {})
 		var ability: Dictionary = m.get("ability", {})
@@ -1147,6 +1197,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 					if scar != "":
 						h.scars.append(scar)
 						log.append("%s is left with a lasting scar: %s." % [h.name, scar])
+						log.append(GameData.narrative_line("scar_gained"))
 
 	var result := {
 		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monsters"][0]["name"],
