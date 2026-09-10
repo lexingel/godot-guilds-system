@@ -437,6 +437,17 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		if mechanic["id"] == "frenzied":
 			main["dmg"] = int(round(main["dmg"] * 1.25))
 		main["mechanic"] = mechanic
+		# SS-rank-and-above mapped rifts roll a second, distinct mechanic
+		# alongside the first — every consumption site below (fight-start log,
+		# describe_incoming, the regen/retaliation loops, Main.gd's badge) reads
+		# "mechanic2" via .get() with an empty-dict default, so this is additive
+		# and doesn't touch the normal single-mechanic path at all.
+		if bool(diff.get("boss_double_mechanic", false)):
+			var pool: Array = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] != mechanic["id"])
+			var mechanic2: Dictionary = pool[randi() % pool.size()]
+			if mechanic2["id"] == "frenzied":
+				main["dmg"] = int(round(main["dmg"] * 1.25))
+			main["mechanic2"] = mechanic2
 	else:
 		main["mechanic"] = {}
 	main["max_hp"] = main["hp"]
@@ -635,6 +646,9 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	for m in monsters:
 		if not m["mechanic"].is_empty():
 			log.append("%s: %s" % [m["mechanic"]["name"], m["mechanic"]["desc"]])
+		var mechanic2: Dictionary = m.get("mechanic2", {})
+		if not mechanic2.is_empty():
+			log.append("%s: %s" % [mechanic2["name"], mechanic2["desc"]])
 	if alpha_strikes > 0:
 		var alpha: float = team_dmg_base * alpha_strikes
 		monsters[0]["hp"] = float(monsters[0]["hp"]) - alpha
@@ -686,13 +700,20 @@ const ABILITY_COOLDOWN_ROUNDS := 3
 func describe_incoming(state: Dictionary) -> String:
 	var monsters: Array = state["monsters"]
 	var main_mechanic: Dictionary = {}
+	var main_mechanic2: Dictionary = {}
 	for m in monsters:
 		if bool(m.get("is_main", false)):
 			main_mechanic = m["mechanic"]
+			main_mechanic2 = m.get("mechanic2", {})
 			break
 	var next_round: int = int(state.get("round_num", 0)) + 1
-	if not main_mechanic.is_empty():
-		match main_mechanic.get("id"):
+	# A double-mechanic boss (SS-rank+ mapped rift) checks both rolled
+	# mechanics here, same message per id as the single-mechanic case —
+	# whichever one matches first wins, same as only ever having had one.
+	for mech in [main_mechanic, main_mechanic2]:
+		if mech.is_empty():
+			continue
+		match mech.get("id"):
 			"warded":
 				if next_round <= 2:
 					return "Warded — dodge won't help this round."
@@ -714,7 +735,8 @@ func describe_incoming(state: Dictionary) -> String:
 		if float(m["hp"]) <= 0:
 			continue
 		var back: float = float(m["dmg"])
-		if bool(m.get("is_main", false)) and main_mechanic.get("id") == "enrage" and next_round > GameData.BOSS_ENRAGE_ROUND:
+		var is_enraging: bool = main_mechanic.get("id") == "enrage" or main_mechanic2.get("id") == "enrage"
+		if bool(m.get("is_main", false)) and is_enraging and next_round > GameData.BOSS_ENRAGE_ROUND:
 			back = back * (1.0 + 0.15 * (next_round - GameData.BOSS_ENRAGE_ROUND))
 		worst_back = max(worst_back, back)
 	var avg_max := 0.0
@@ -918,7 +940,8 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		return _finish_combat(state, true, false)
 
 	for m in monsters:
-		if float(m["hp"]) > 0 and m.get("mechanic", {}).get("id") == "regen":
+		var is_regen: bool = m.get("mechanic", {}).get("id") == "regen" or m.get("mechanic2", {}).get("id") == "regen"
+		if float(m["hp"]) > 0 and is_regen:
 			var regen_heal: float = round(float(m["max_hp"]) * 0.08)
 			m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + regen_heal)
 			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
@@ -1006,10 +1029,11 @@ func resolve_round(state: Dictionary) -> Dictionary:
 			break
 		var target: Hero = alive_now[randi() % alive_now.size()]
 		var mech: Dictionary = m.get("mechanic", {})
+		var mech2: Dictionary = m.get("mechanic2", {})
 		var ability: Dictionary = m.get("ability", {})
 		var back: float = float(m["dmg"])
-		var warded: bool = mech.get("id") == "warded" and round_num <= 2
-		if mech.get("id") == "enrage" and round_num > GameData.BOSS_ENRAGE_ROUND:
+		var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
+		if (mech.get("id") == "enrage" or mech2.get("id") == "enrage") and round_num > GameData.BOSS_ENRAGE_ROUND:
 			back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
 		if ability.get("kind") == "frenzy" and float(m["hp"]) / float(m["max_hp"]) <= 0.3:
 			back = round(back * (1.0 + float(ability["value"])))

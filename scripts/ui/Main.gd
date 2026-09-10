@@ -692,8 +692,14 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if choice_count > 0:
 		v.add_child(_label("Starting Relic (pick one, optional)"))
 		if pending_relic_options.is_empty():
+			# S-rank+ mapped rifts carry a "relic_rarity_floor_down" modifier —
+			# it suppresses Guild Management's inherited_power() floor-raise
+			# (which normally bumps a rolled Common up to Rare) for this
+			# starting-relic roll specifically, so an S+ rift's starting pick
+			# can't lean on that safety net the way a normal run's can.
+			var floor_suppressed: bool = _pending_rift_rank != "" and bool(GameData.RIFT_RANK_MODIFIERS.get(_pending_rift_rank, {}).get("relic_rarity_floor_down", 0))
 			for i in choice_count:
-				var rarity := "rare" if (GameState.inherited_power() and Combat.weighted_rarity() == "common") else Combat.weighted_rarity()
+				var rarity := "rare" if (GameState.inherited_power() and not floor_suppressed and Combat.weighted_rarity() == "common") else Combat.weighted_rarity()
 				pending_relic_options.append(Combat.gen_relic(rarity))
 	for i in pending_relic_options.size():
 		var r: Relic = pending_relic_options[i]
@@ -1254,40 +1260,43 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			m_plate.position = m_plate_pos
 			arena.add_child(m_plate)
 
-			# A persistent badge for the boss's own mechanic (Enraged/Warded/
-			# Regenerating/Frenzied) or, for a regular monster, its
-			# MONSTER_ABILITIES archetype (poison/healer/shielded/frenzy) —
-			# sitting on its status plate all fight instead of only a
-			# transient text hint above the action bar.
+			# A persistent badge for the boss's own mechanic(s) (Enraged/Warded/
+			# Regenerating/Frenzied — an SS-rank+ mapped rift's boss can carry
+			# two at once) or, for a regular monster, its MONSTER_ABILITIES
+			# archetype (poison/healer/shielded/frenzy) — sitting on its status
+			# plate all fight instead of only a transient text hint above the
+			# action bar.
 			var mechanic: Dictionary = m.get("mechanic", {})
+			var mechanic2: Dictionary = m.get("mechanic2", {})
 			var ability: Dictionary = m.get("ability", {})
-			if not mechanic.is_empty() or not ability.is_empty():
-				var mech_icon_path: String
-				var mech_tooltip: String
-				if not mechanic.is_empty():
-					mech_icon_path = GameData.BOSS_MECHANIC_ICON.get(str(mechanic["id"]), "")
-					mech_tooltip = "%s — %s" % [str(mechanic["name"]), str(mechanic["desc"])]
-				else:
-					mech_icon_path = GameData.MONSTER_ABILITY_ICON.get(str(ability["kind"]), "")
-					mech_tooltip = str(ability["name"])
-				if mech_icon_path != "":
-					var mech_badge := PanelContainer.new()
-					var mech_style := StyleBoxFlat.new()
-					mech_style.bg_color = Palette.SURFACE3
-					mech_style.border_width_left = 1
-					mech_style.border_width_top = 1
-					mech_style.border_width_right = 1
-					mech_style.border_width_bottom = 1
-					mech_style.border_color = Palette.ELITE
-					mech_style.corner_radius_top_left = 999
-					mech_style.corner_radius_top_right = 999
-					mech_style.corner_radius_bottom_left = 999
-					mech_style.corner_radius_bottom_right = 999
-					mech_badge.add_theme_stylebox_override("panel", mech_style)
-					mech_badge.add_child(_icon(mech_icon_path, 14))
-					mech_badge.position = m_plate_pos + Vector2(m_plate_w - 16.0, -6.0)
-					mech_badge.tooltip_text = mech_tooltip
-					arena.add_child(mech_badge)
+			var badge_specs: Array[Dictionary] = []
+			if not mechanic.is_empty():
+				badge_specs.append({"icon": GameData.BOSS_MECHANIC_ICON.get(str(mechanic["id"]), ""), "tooltip": "%s — %s" % [str(mechanic["name"]), str(mechanic["desc"])]})
+			if not mechanic2.is_empty():
+				badge_specs.append({"icon": GameData.BOSS_MECHANIC_ICON.get(str(mechanic2["id"]), ""), "tooltip": "%s — %s" % [str(mechanic2["name"]), str(mechanic2["desc"])]})
+			if mechanic.is_empty() and not ability.is_empty():
+				badge_specs.append({"icon": GameData.MONSTER_ABILITY_ICON.get(str(ability["kind"]), ""), "tooltip": str(ability["name"])})
+			for bi in badge_specs.size():
+				var mech_icon_path: String = str(badge_specs[bi]["icon"])
+				if mech_icon_path == "":
+					continue
+				var mech_badge := PanelContainer.new()
+				var mech_style := StyleBoxFlat.new()
+				mech_style.bg_color = Palette.SURFACE3
+				mech_style.border_width_left = 1
+				mech_style.border_width_top = 1
+				mech_style.border_width_right = 1
+				mech_style.border_width_bottom = 1
+				mech_style.border_color = Palette.ELITE
+				mech_style.corner_radius_top_left = 999
+				mech_style.corner_radius_top_right = 999
+				mech_style.corner_radius_bottom_left = 999
+				mech_style.corner_radius_bottom_right = 999
+				mech_badge.add_theme_stylebox_override("panel", mech_style)
+				mech_badge.add_child(_icon(mech_icon_path, 14))
+				mech_badge.position = m_plate_pos + Vector2(m_plate_w - 16.0 - bi * 20.0, -6.0)
+				mech_badge.tooltip_text = str(badge_specs[bi]["tooltip"])
+				arena.add_child(mech_badge)
 
 		var hero_wrappers: Dictionary = {}
 		var hero_rects: Dictionary = {}

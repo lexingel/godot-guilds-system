@@ -420,15 +420,16 @@ func _apply_rift_rank_modifiers(diff: Dictionary, rift_rank: String) -> Dictiona
 	out["hazard_severity_up"] = int(mods.get("hazard_severity_up", 0))
 	out["elite_chance_up"] = bool(mods.get("elite_chance_up", false))
 	out["shop_chance_down"] = bool(mods.get("shop_chance_down", false))
+	out["boss_double_mechanic"] = bool(mods.get("boss_double_mechanic", false))
 	return out
 
 
 ## `rift_rank` is "" for every existing caller (Rift Hall's Lesser/Endless
 ## picker) — only GameState.start_map_rift() passes a real rank, applying
-## RIFT_RANK_MODIFIERS on top of the normal Lesser Rift difficulty. Relic-
-## rarity-floor and boss-double-mechanic modifiers aren't wired into any
-## consumption site yet (Party Assembly's relic roll and boss mechanic
-## generation respectively) — flagged as a follow-up, not silently ignored.
+## RIFT_RANK_MODIFIERS on top of the normal Lesser Rift difficulty.
+## relic_rarity_floor_down is read directly against Main.gd's
+## _pending_rift_rank at Party Assembly's starting-relic roll (that roll
+## happens before a `diff`/run even exists, so it can't flow through here).
 func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, hardcore: bool, endless: bool, rift_rank: String = "") -> void:
 	var shield := 0
 	for r in Combat.equipped_relics():
