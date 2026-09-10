@@ -712,7 +712,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 			log.append("%s: %s" % [mechanic2["name"], mechanic2["desc"]])
 	if alpha_strikes > 0:
 		var alpha: float = team_dmg_base * alpha_strikes
-		monsters[0]["hp"] = float(monsters[0]["hp"]) - alpha
+		monsters[0]["hp"] = float(monsters[0]["hp"]) - round(alpha)
 		log.append("An opening volley lands for %d!" % round(alpha))
 
 	# A "shielded"-ability monster starts the fight with a one-time absorb
@@ -894,7 +894,7 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				m_shields[target_idx] = m_have - m_absorbed
 				dealt -= m_absorbed
 				log.append("%s's ward absorbs %d damage." % [monsters[target_idx]["name"], int(round(m_absorbed))])
-			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - dealt
+			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - round(dealt)
 			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
 			if hero_has_unique_item(h, "bloodthirst_fang"):
 				var fang_def := GameData.find_unique_item("bloodthirst_fang")
@@ -925,20 +925,20 @@ func resolve_round(state: Dictionary) -> Dictionary:
 					var idx := _lowest_hp_living_monster_idx(monsters)
 					if idx >= 0:
 						var burst: float = team_dmg_base * escalate_mult * val
-						monsters[idx]["hp"] = float(monsters[idx]["hp"]) - burst
+						monsters[idx]["hp"] = float(monsters[idx]["hp"]) - round(burst)
 						log.append("A burst lands on %s for %d!" % [monsters[idx]["name"], round(burst)])
 				"cleave_burst":
 					for m in monsters:
 						if float(m["hp"]) > 0:
 							var dealt2: float = team_dmg_base * escalate_mult * val
-							m["hp"] = float(m["hp"]) - dealt2
+							m["hp"] = float(m["hp"]) - round(dealt2)
 					log.append("A wave of damage sweeps every foe.")
 				"execute_burst":
 					var idx2 := _lowest_hp_living_monster_idx(monsters)
 					if idx2 >= 0:
 						var missing_frac: float = 1.0 - float(monsters[idx2]["hp"]) / float(monsters[idx2]["max_hp"])
 						var dealt3: float = team_dmg_base * val * (1.0 + missing_frac)
-						monsters[idx2]["hp"] = float(monsters[idx2]["hp"]) - dealt3
+						monsters[idx2]["hp"] = float(monsters[idx2]["hp"]) - round(dealt3)
 						log.append("A finishing blow strikes %s for %d!" % [monsters[idx2]["name"], round(dealt3)])
 				"shield_lowest":
 					var alive_for_ability: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
@@ -973,7 +973,7 @@ func resolve_round(state: Dictionary) -> Dictionary:
 						var self_cost: int = max(1, int(round(max_hp(h) * 0.15)))
 						h.hp = max(1, h.hp - self_cost)
 						var burst2: float = team_dmg_base * escalate_mult * val
-						monsters[idx3]["hp"] = float(monsters[idx3]["hp"]) - burst2
+						monsters[idx3]["hp"] = float(monsters[idx3]["hp"]) - round(burst2)
 						log.append("%s sacrifices %d HP for a burst on %s for %d!" % [h.name, self_cost, monsters[idx3]["name"], round(burst2)])
 
 	if float(state["kill_shield"]) > 0.0:
