@@ -72,9 +72,9 @@ func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 ## a quick-scan cue on top of the exact numbers shown alongside every bar.
 func _hp_color(ratio: float) -> Color:
 	if ratio > 0.5:
-		return Palette.RIFT
+		return Palette.RANK_E
 	elif ratio > 0.25:
-		return Palette.GOLD
+		return Palette.EMBER_BRIGHT
 	return Palette.HAZARD
 
 
@@ -175,12 +175,12 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 	if selected:
 		var glow := PanelContainer.new()
 		var glow_style := StyleBoxFlat.new()
-		glow_style.bg_color = Color(Palette.RIFT.r, Palette.RIFT.g, Palette.RIFT.b, 0.32)
+		glow_style.bg_color = Color(Palette.VIOLET.r, Palette.VIOLET.g, Palette.VIOLET.b, 0.32)
 		glow_style.border_width_left = 2
 		glow_style.border_width_top = 2
 		glow_style.border_width_right = 2
 		glow_style.border_width_bottom = 2
-		glow_style.border_color = Palette.RIFT
+		glow_style.border_color = Palette.VIOLET
 		glow_style.corner_radius_top_left = 4
 		glow_style.corner_radius_top_right = 4
 		glow_style.corner_radius_bottom_left = 4
@@ -324,7 +324,7 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 	var out := line.replace("[", "[lb]")
 	for h in party:
 		if h.name != "":
-			out = out.replace(h.name, "[color=#%s]%s[/color]" % [Palette.RIFT.to_html(false), h.name])
+			out = out.replace(h.name, "[color=#%s]%s[/color]" % [Palette.VIOLET.to_html(false), h.name])
 	for m in monsters:
 		var mname: String = str(m.get("name", ""))
 		if mname != "":
@@ -501,7 +501,7 @@ func _title_strip(text: String) -> PanelContainer:
 	style.corner_radius_top_right = 6
 	p.add_theme_stylebox_override("panel", style)
 	var l := _label(text, 14)
-	l.add_theme_color_override("font_color", Palette.RIFT)
+	l.add_theme_color_override("font_color", Palette.VIOLET)
 	p.add_child(l)
 	return p
 
@@ -889,8 +889,8 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 
 
 const MAP_NODE_COLOR := {
-	"combat": Palette.HAZARD, "elite": Palette.ELITE, "shop": Palette.GOLD,
-	"hazard": Palette.CRYSTAL, "boss": Palette.TOKEN,
+	"combat": Palette.HAZARD, "elite": Palette.ELITE, "shop": Palette.COINS,
+	"hazard": Palette.CRYSTALS, "boss": Palette.TOKENS,
 }
 const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B"}
 
@@ -1231,7 +1231,7 @@ func _hero_action_tab(h: Hero, monsters: Array, pending: Dictionary, selected: b
 	style.border_width_top = 2
 	style.border_width_right = 2
 	style.border_width_bottom = 2
-	style.border_color = Palette.RIFT if selected else Palette.LINE
+	style.border_color = Palette.VIOLET if selected else Palette.LINE
 	style.corner_radius_top_left = 6
 	style.corner_radius_top_right = 6
 	style.corner_radius_bottom_left = 6
@@ -1757,9 +1757,9 @@ func _render_shop_node(v: VBoxContainer) -> void:
 ## higher is a real spike worth pausing on.
 func _hazard_severity_color(dmg_mult: float) -> Color:
 	if dmg_mult < 1.0:
-		return Palette.RIFT
+		return Palette.RANK_E
 	elif dmg_mult <= 1.15:
-		return Palette.GOLD
+		return Palette.EMBER_BRIGHT
 	return Palette.HAZARD
 
 
@@ -2551,7 +2551,7 @@ func _skill_node_row(h: Hero, n: Dictionary) -> PanelContainer:
 	style.border_width_top = 1
 	style.border_width_right = 1
 	style.border_width_bottom = 1
-	style.border_color = Palette.RIFT if learned else Palette.LINE
+	style.border_color = Palette.VIOLET if learned else Palette.LINE
 	style.corner_radius_top_left = 6
 	style.corner_radius_top_right = 6
 	style.corner_radius_bottom_right = 6
@@ -2624,7 +2624,7 @@ func _roster_portrait_button(h: Hero) -> Control:
 		sel_style.border_width_top = 2
 		sel_style.border_width_right = 2
 		sel_style.border_width_bottom = 2
-		sel_style.border_color = Palette.RIFT
+		sel_style.border_color = Palette.VIOLET
 		sel_style.corner_radius_top_left = 8
 		sel_style.corner_radius_top_right = 8
 		sel_style.corner_radius_bottom_left = 8
@@ -2711,7 +2711,7 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	style.border_width_top = 1
 	style.border_width_right = 1
 	style.border_width_bottom = 1
-	style.border_color = Palette.RIFT
+	style.border_color = Palette.VIOLET
 	style.corner_radius_top_left = 6
 	style.corner_radius_top_right = 6
 	style.corner_radius_bottom_right = 6
