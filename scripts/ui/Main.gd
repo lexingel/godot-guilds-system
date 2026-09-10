@@ -481,6 +481,18 @@ func _icon_primary_button(icon_path: String, text: String, cb: Callable) -> Butt
 	return b
 
 
+## Same idea as _icon_primary_button, but the button's color follows what the
+## action represents instead of always reusing the theme's single accent —
+## "violet" for arcane/progression actions, "ember" for economy/danger/combat
+## actions, matching the same domain rule panels/stat-tiles already use.
+func _icon_domain_button(domain: String, icon_path: String, text: String, cb: Callable) -> Button:
+	var b := _button(text, cb)
+	b.theme_type_variation = &"ButtonViolet" if domain == "violet" else &"ButtonEmber"
+	if icon_path != "":
+		b.icon = load(icon_path)
+	return b
+
+
 func _hsep() -> HSeparator:
 	return HSeparator.new()
 
@@ -566,7 +578,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		stat_row.add_child(_icon(entry[0], 18))
 		stat_row.add_child(_label(str(entry[1]), 16))
 		var tile := PanelContainer.new()
-		tile.theme_type_variation = &"StatTile"
+		tile.theme_type_variation = &"StatTileEmber"
 		tile.add_child(stat_row)
 		row.add_child(tile)
 	container.add_child(row)
@@ -592,7 +604,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 	))
 	v.add_child(crest_row)
 
-	v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
+	v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
 		var n := edit.text.strip_edges()
 		if n == "":
 			return
@@ -859,7 +871,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
 	v.add_child(_hsep())
-	v.add_child(_icon_primary_button(GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
+	v.add_child(_icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -1296,7 +1308,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	if not ns.has("combat_state") and not ns.has("result"):
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
-		v.add_child(_icon_primary_button("res://assets/skills/sword_a.png", "Engage", func():
+		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", "Engage", func():
 			GameState.engage_node()
 			render()
 		))
@@ -1597,7 +1609,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			menu.add_child(_label("The party is down.", 12, true))
 
 		var bottom_row := HBoxContainer.new()
-		bottom_row.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Resolve Round", func():
+		bottom_row.add_child(_icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Resolve Round", func():
 			# Guard against a second click firing while the first is still
 			# mid-animation — that would start a second _play_round on the same
 			# state, and whichever finishes first would render() (destroying
@@ -1658,7 +1670,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# A Riftbreak is a consequence, not an opportunity — no loot, no
 			# reward choice, straight back to the Terminal.
 			v.add_child(_label("Threat repelled. The rift's spillover is contained — no loot from a fight like this."))
-			v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
+			v.add_child(_icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
 				GameState.finish_run()
 				screen = "terminal"
 				render()
@@ -1689,7 +1701,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				btn.icon = load(icon_path)
 				v.add_child(btn)
 		else:
-			v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+			v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
 					GameState.seal_rift()
 				else:
@@ -1704,7 +1716,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# the voluntary "Reset Guild" button) since this is a consequence,
 		# not a choice.
 		v.add_child(_label("Due to the rift break, a large portion of the world is in struggle now. Your guild has been erased."))
-		v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Found a New Guild", func():
+		v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found a New Guild", func():
 			GameState.reset()
 			GameState.save()
 			screen = "onboard"
@@ -1830,7 +1842,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	else:
 		for line in ns.get("log", []):
 			v.add_child(_label(str(line), 12))
-		v.add_child(_icon_primary_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+		v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 			GameState.advance_node()
 			render()
 		))
@@ -2076,7 +2088,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
 		row.add_child(mid)
-		row.add_child(_icon_primary_button(GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
+		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
@@ -2168,7 +2180,7 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 				var status := "downed" if h.is_downed() else "wounded"
 				var row := HBoxContainer.new()
 				row.add_child(_label("%s — %d/%d HP (%s)" % [h.name, h.hp, Combat.max_hp(h), status]))
-				row.add_child(_icon_primary_button("res://assets/skills/heart.png", "Assign", func(id=h.id):
+				row.add_child(_icon_domain_button("ember", "res://assets/skills/heart.png", "Assign", func(id=h.id):
 					GameState.assign_to_bed(id)
 					medical_picker_bed = -1
 					render()
@@ -2415,7 +2427,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	var h: Hero = still_here[0]
 
 	var card := PanelContainer.new()
-	card.theme_type_variation = &"CardPanel"
+	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
