@@ -604,15 +604,27 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	))
 
 
-## A plain list, not an illustrated scene — 6+ rifts shifting in and out
-## doesn't earn its own background art the way Rift Hall's two fixed gates
-## do. Each row shows the slot's rolled rank (colored via Palette.rank_color)
-## and a live mm:ss countdown to its Riftbreak, computed fresh every render()
-## the same way every other lazily-resolved timer in this project already is.
+## The slot list itself stays plain (rank/countdown/Enter, no per-slot
+## hotspot art — 6+ shifting rifts don't map onto fixed hand-placed gates the
+## way Rift Hall's two do), but the screen gets the same establishing-shot
+## background treatment as every other hub. Each row shows the slot's rolled
+## rank (colored via Palette.rank_color) and a live mm:ss countdown to its
+## Riftbreak, computed fresh every render() the same way every other
+## lazily-resolved timer in this project already is.
 func _render_rift_map_hub(v: VBoxContainer) -> void:
 	_topbar(v)
 	v.add_child(_label("Rift Map", 20))
 	v.add_child(_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
+
+	var scene_size := Vector2(700, 200)
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.RIFTMAP_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	v.add_child(bg)
+
 	v.add_child(_hsep())
 
 	var now := int(Time.get_unix_time_from_system() * 1000)
@@ -1612,12 +1624,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					GameState.advance_node()
 				render()
 			))
-	elif is_riftbreak and not result.get("retreated", false) and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
-		# Worst merged rank was S/SS/SSS — a forced game over, not a normal
-		# loss. Fires immediately with no confirm step (unlike the voluntary
-		# "Reset Guild" button) since this is a consequence, not a choice.
-		# Excludes a retreat — walking away from the fight isn't the same as
-		# losing it.
+	elif is_riftbreak and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
+		# Worst merged rank was S/SS/SSS — a forced game over, whether the
+		# fight was lost outright or the player retreated from it. Either way
+		# the rift's threat was never actually contained, so both carry the
+		# same consequence. Fires immediately with no confirm step (unlike
+		# the voluntary "Reset Guild" button) since this is a consequence,
+		# not a choice.
 		v.add_child(_label("Due to the rift break, a large portion of the world is in struggle now. Your guild has been erased."))
 		v.add_child(_primary_button("Found a New Guild", func():
 			GameState.reset()

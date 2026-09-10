@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c8qacpgckwkwk"
-path="res://.godot/imported/index.png-5122033cac747157decad52589e2295c.ctex"
+uid="uid://dqyvr8xe8qkmn"
+path="res://.godot/imported/riftmap_bg.png-c6bbfb6ed4efa9c7a86a518245338dec.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://index.png"
-dest_files=["res://.godot/imported/index.png-5122033cac747157decad52589e2295c.ctex"]
+source_file="res://assets/screens/riftmap_bg.png"
+dest_files=["res://.godot/imported/riftmap_bg.png-c6bbfb6ed4efa9c7a86a518245338dec.ctex"]
 
 [params]
 

@@ -611,16 +611,19 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
 			if lost > 0:
 				result["flavor"] = GameData.narrative_line("hardcore_hero_lost")
-		# A Riftbreak loss (not a retreat) that stayed at or below Rank A costs
-		# a Coin/Crystal "compensation" penalty on top of the normal downing —
-		# the game-over branch (Rank S+) is handled entirely in Main.gd's
-		# result rendering, before finish_run() is ever called, so it doesn't
-		# belong here. Stashed on `result` (not applied here as a live
-		# coins/crystals mutation) so Main.gd can render the exact amount
-		# without re-computing it, and so this stays a pure one-time effect of
-		# the round transitioning to "done" rather than something a render()
+		# A Riftbreak that ends any way other than a win — a real loss OR a
+		# retreat — means the rift's threat wasn't actually contained, so both
+		# carry the same consequence. At/below Rank A that's a Coin/Crystal
+		# "compensation" penalty on top of the normal downing (retreating
+		# skips the downing itself, just not this penalty) — the game-over
+		# branch (Rank S+) is handled entirely in Main.gd's result rendering,
+		# before finish_run() is ever called, so it doesn't belong here.
+		# Stashed on `result` (not applied here as a live coins/crystals
+		# mutation) so Main.gd can render the exact amount without
+		# re-computing it, and so this stays a pure one-time effect of the
+		# round transitioning to "done" rather than something a render()
 		# could accidentally repeat.
-		if run.get("is_riftbreak", false) and not result["won"] and not bool(result.get("retreated", false)) and int(run.get("riftbreak_worst_index", 0)) <= 5:
+		if run.get("is_riftbreak", false) and not result["won"] and int(run.get("riftbreak_worst_index", 0)) <= 5:
 			var sev := int(run.get("riftbreak_severity", 0))
 			var comp_coins: int = min(coins, 20 + sev * 10)
 			var comp_crystals: int = min(crystals, 5 + sev * 2)
