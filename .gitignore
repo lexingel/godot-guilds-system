@@ -3,3 +3,4 @@
 export.cfg
 build/
 *.translation
+.superpowers/
