@@ -242,6 +242,62 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 	return wrap
 
 
+## A compact clickable reward-choice card — icon on top, name/rarity/a short
+## wrapped description below, replacing the old full-width text button so
+## 2-3 rewards read as a row of cards (reference victory screens) instead of
+## a stack of buttons taking up the full column height. Same layered-hotspot
+## technique as _action_slot: decorative content first, an invisible flat
+## Button overlaid last for the actual click handling.
+func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable) -> Control:
+	const TILE_W := 156.0
+	const TILE_H := 122.0
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(TILE_W, TILE_H)
+	wrap.size = Vector2(TILE_W, TILE_H)
+
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelViolet"
+	panel.custom_minimum_size = Vector2(TILE_W, TILE_H)
+	panel.size = Vector2(TILE_W, TILE_H)
+	panel.clip_contents = true
+	var col := _vbox(2)
+	if icon_path != "":
+		var icon_row := HBoxContainer.new()
+		icon_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		icon_row.add_child(_icon(icon_path, 32))
+		col.add_child(icon_row)
+	var name_lbl := _label(name_text, 12)
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	name_lbl.custom_minimum_size = Vector2(TILE_W - 24.0, 0)
+	col.add_child(name_lbl)
+	if rarity_text != "":
+		var rarity_lbl := _label(rarity_text.capitalize(), 10, true)
+		rarity_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(rarity_lbl)
+	var desc_lbl := _label(desc_text, 10, true)
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_lbl.custom_minimum_size = Vector2(TILE_W - 24.0, 0)
+	col.add_child(desc_lbl)
+	panel.add_child(col)
+	wrap.add_child(panel)
+
+	var btn := Button.new()
+	btn.flat = true
+	btn.custom_minimum_size = wrap.custom_minimum_size
+	btn.size = wrap.size
+	var clear_style := StyleBoxEmpty.new()
+	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(style_name, clear_style)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.tooltip_text = "%s — %s" % [name_text, desc_text]
+	btn.pressed.connect(cb)
+	wrap.add_child(btn)
+	return wrap
+
+
 ## A row of _action_slot controls on a wooden "ability bar" shelf background
 ## (GameData.ABILITY_BAR_STRIP_PATH, 9-sliced via StyleBoxTexture so it
 ## stretches to fit however many slots a hero has this fight).
@@ -882,62 +938,145 @@ const MAP_NODE_COLOR := {
 	"hazard": Palette.CRYSTALS, "boss": Palette.TOKENS,
 }
 const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B"}
+const MAP_NODE_ICON := {
+	"combat": "res://assets/skills/sword_a.png",
+	"elite": "res://assets/skills/sword_big.png",
+	"shop": "res://assets/ui/icon_coins.png",
+	"hazard": "res://assets/skills/shield_split.png",
+	"boss": "res://assets/skills/icon_boss_skull.png",
+}
 
 
-func _map_node_marker(kind: String, is_current: bool) -> PanelContainer:
-	var p := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = MAP_NODE_COLOR.get(kind, Palette.LINE)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	style.content_margin_left = 6.0
-	style.content_margin_right = 6.0
-	style.content_margin_top = 4.0
-	style.content_margin_bottom = 4.0
-	if is_current:
-		style.border_width_left = 2
-		style.border_width_top = 2
-		style.border_width_right = 2
-		style.border_width_bottom = 2
-		style.border_color = Palette.TEXT
-	p.add_theme_stylebox_override("panel", style)
-	var l := _label(MAP_NODE_LABEL.get(kind, "?"), 13)
-	l.add_theme_color_override("font_color", Color(0, 0, 0, 1))
-	p.add_child(l)
-	return p
+## One marker on the path map — an icon in a domain-colored ring, matching
+## MAP_NODE_COLOR's existing per-kind hues. `cb` is an empty (invalid)
+## Callable for a marker that's purely informational (a future floor's
+## still-open preview, or any already-resolved floor) — only the current
+## floor's still-open fork options are actually clickable.
+func _path_node_marker(kind: String, is_current: bool, cb: Callable) -> Control:
+	const MARKER_SIZE := 34.0
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(MARKER_SIZE, MARKER_SIZE)
+	wrap.size = Vector2(MARKER_SIZE, MARKER_SIZE)
+
+	var ring := PanelContainer.new()
+	var ring_style := StyleBoxFlat.new()
+	ring_style.bg_color = Palette.INK
+	var border_w := 3 if is_current else 2
+	ring_style.border_width_left = border_w
+	ring_style.border_width_top = border_w
+	ring_style.border_width_right = border_w
+	ring_style.border_width_bottom = border_w
+	ring_style.border_color = MAP_NODE_COLOR.get(kind, Palette.LINE)
+	ring_style.corner_radius_top_left = 999
+	ring_style.corner_radius_top_right = 999
+	ring_style.corner_radius_bottom_left = 999
+	ring_style.corner_radius_bottom_right = 999
+	ring.add_theme_stylebox_override("panel", ring_style)
+	ring.custom_minimum_size = Vector2(MARKER_SIZE, MARKER_SIZE)
+	ring.size = Vector2(MARKER_SIZE, MARKER_SIZE)
+	wrap.add_child(ring)
+
+	var icon_path: String = MAP_NODE_ICON.get(kind, "")
+	if icon_path != "":
+		var icon_size := MARKER_SIZE * 0.6
+		var icon_node := _icon(icon_path, int(icon_size))
+		icon_node.position = Vector2((MARKER_SIZE - icon_size) * 0.5, (MARKER_SIZE - icon_size) * 0.5)
+		wrap.add_child(icon_node)
+	else:
+		var l := _label(MAP_NODE_LABEL.get(kind, "?"), 13)
+		l.add_theme_color_override("font_color", Color(0, 0, 0, 1))
+		l.position = Vector2(MARKER_SIZE * 0.32, MARKER_SIZE * 0.16)
+		wrap.add_child(l)
+
+	if cb.is_valid():
+		var btn := Button.new()
+		btn.flat = true
+		btn.custom_minimum_size = Vector2(MARKER_SIZE, MARKER_SIZE)
+		btn.size = Vector2(MARKER_SIZE, MARKER_SIZE)
+		var clear_style := StyleBoxEmpty.new()
+		for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+			btn.add_theme_stylebox_override(style_name, clear_style)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.tooltip_text = str(kind).capitalize()
+		btn.pressed.connect(cb)
+		wrap.add_child(btn)
+
+	return wrap
 
 
-## Horizontal overview of the whole rift path — a reskin of run["layers"]/
-## ["chosen"], not new state. Resolved floors show one marker; an unresolved
-## fork shows both its options side by side. Purely informational: the actual
-## fork-choice buttons for the current position render separately, below.
+## The whole rift path as a visual map — a background illustration with icon
+## markers positioned along a gentle winding line and thin connector
+## segments between consecutive floors, replacing the old flat row of
+## letter-in-circle markers (a reskin of run["layers"]/["chosen"], not new
+## state). A floor with an unresolved fork (2 possible encounter types, none
+## picked yet) shows both options; if it's the floor the player is actually
+## standing on, both options are clickable right here — picking one calls
+## GameState.choose_node_type directly from the map, the same
+## click-a-node-on-the-map interaction every reference map screen uses. This
+## replaces the separate "Choose your path" button list that used to render
+## further down in _render_rift_run.
 func _render_rift_map(v: VBoxContainer) -> void:
 	var layers: Array = GameState.run["layers"]
 	var chosen: Dictionary = GameState.run.get("chosen", {})
 	var pos: int = int(GameState.run["pos"])
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	for i in layers.size():
+
+	const MAP_SIZE := Vector2(900, 140)
+	var map_ctrl := Control.new()
+	map_ctrl.custom_minimum_size = MAP_SIZE
+
+	var bg := TextureRect.new()
+	bg.texture = load("res://assets/screens/riftpath_bg.png")
+	bg.custom_minimum_size = MAP_SIZE
+	bg.size = MAP_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	map_ctrl.add_child(bg)
+
+	var n := layers.size()
+	var margin := 40.0
+	var step: float = (MAP_SIZE.x - margin * 2.0) / float(max(1, n - 1))
+	var base_y := MAP_SIZE.y * 0.55
+	var anchors: Array[Vector2] = []
+	for i in n:
+		var ax: float = margin + step * i
+		var ay: float = base_y + sin(float(i) * 1.1) * 22.0
+		anchors.append(Vector2(ax, ay))
+
+	# Path line first, so the node markers draw on top of it rather than
+	# under it.
+	for i in n - 1:
+		var line := Line2D.new()
+		line.width = 3.0
+		line.default_color = Color(Palette.LINE.r, Palette.LINE.g, Palette.LINE.b, 0.85)
+		line.add_point(anchors[i])
+		line.add_point(anchors[i + 1])
+		map_ctrl.add_child(line)
+
+	for i in n:
 		var opts: Array = layers[i]["options"]
 		var resolved: String = str(chosen[i]) if chosen.has(i) else (str(opts[0]) if opts.size() == 1 else "")
-		var cell := HBoxContainer.new()
-		cell.add_theme_constant_override("separation", 2)
+		var anchor: Vector2 = anchors[i]
 		if resolved != "":
-			cell.add_child(_map_node_marker(resolved, i == pos))
+			var marker := _path_node_marker(resolved, i == pos, Callable())
+			marker.position = anchor - marker.size * 0.5
+			map_ctrl.add_child(marker)
 		else:
-			for opt in opts:
-				cell.add_child(_map_node_marker(str(opt), i == pos))
-		row.add_child(cell)
-		if i < layers.size() - 1:
-			row.add_child(_label("-", 12, true))
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 46)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.add_child(row)
-	v.add_child(scroll)
+			var spread := 24.0
+			for oi in opts.size():
+				var opt := str(opts[oi])
+				var oy: float = anchor.y + (float(oi) - float(opts.size() - 1) / 2.0) * spread
+				var cb := Callable()
+				if i == pos:
+					cb = func(picked=opt):
+						GameState.choose_node_type(picked)
+						render()
+				var marker2 := _path_node_marker(opt, i == pos, cb)
+				marker2.position = Vector2(anchor.x, oy) - marker2.size * 0.5
+				map_ctrl.add_child(marker2)
+
+	v.add_child(map_ctrl)
+	if pos < n and (layers[pos]["options"] as Array).size() > 1 and not chosen.has(pos):
+		v.add_child(_label("Choose your path — click a node above.", 12, true))
 
 
 # ---------------- Rift Run ----------------
@@ -993,7 +1132,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			))
 		return
 
-	var options := GameState.current_layer_options()
 	var kind := GameState.current_node_kind()
 	# The battle screen already shows every hero's HP twice over (arena
 	# nameplates + the action menu) and has its own Retreat button — repeating
@@ -1007,24 +1145,13 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label("%s%s — %d/%d HP%s" % [h.name, " (Champion)" if h.is_champion else "", h.hp, Combat.max_hp(h), " (downed)" if h.is_downed() else ""]))
 		v.add_child(_hsep())
 
-	if kind == "" and options.size() > 1:
-		v.add_child(_label("Choose your path:"))
-		for opt in options:
-			var opt_icon: String
-			match str(opt):
-				"shop": opt_icon = GameData.CURRENCY_ICON_PATH["coins"]
-				"hazard": opt_icon = "res://assets/skills/shield_split.png"
-				"elite": opt_icon = "res://assets/skills/sword_big.png"
-				_: opt_icon = "res://assets/skills/sword_a.png"
-			v.add_child(_icon_button(opt_icon, str(opt).capitalize(), func(picked=str(opt)):
-				GameState.choose_node_type(picked)
-				render()
-			))
-	else:
-		match kind:
-			"combat", "boss", "elite": _render_combat_node(v)
-			"shop": _render_shop_node(v)
-			"hazard": _render_hazard_node(v)
+	# An unresolved fork (kind == "") is now chosen directly on the path map
+	# rendered above — its two options are clickable node markers right
+	# there, so there's nothing further to render here until a pick is made.
+	match kind:
+		"combat", "boss", "elite": _render_combat_node(v)
+		"shop": _render_shop_node(v)
+		"hazard": _render_hazard_node(v)
 
 	if not is_combat_kind:
 		v.add_child(_hsep())
@@ -1305,7 +1432,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# split, and now spans the full content width with the action bar
 		# stacked below it (also reference-matched: scene on top, commands in
 		# a bottom strip) instead of sharing a row with a side menu.
-		const ARENA_SIZE := Vector2(700, 300)
+		const ARENA_SIZE := Vector2(700, 220)
 		var arena := Control.new()
 		arena.custom_minimum_size = ARENA_SIZE
 
@@ -1496,11 +1623,24 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		round_label.add_theme_constant_override("shadow_offset_y", 1)
 		round_label.position = Vector2(0, 6)
 		arena.add_child(round_label)
-		v.add_child(arena)
+
+		# Wrap the whole combat scene (arena + telegraph + action menu + log)
+		# in one bordered ember-domain frame with a tight internal gap instead
+		# of several independently-bordered pieces stacked at the screen's
+		# normal spacing — reads as one compact "battle panel" rather than a
+		# loose vertical stack, and the tighter gap measurably shrinks the
+		# footprint (the previous stack needed a scroll to see the action bar
+		# and log on a typical viewport; this doesn't).
+		var battle_frame := PanelContainer.new()
+		battle_frame.theme_type_variation = &"CardPanelEmber"
+		var battle_col := _vbox(6)
+		battle_frame.add_child(battle_col)
+
+		battle_col.add_child(arena)
 
 		var incoming := Combat.describe_incoming(state)
 		if incoming != "":
-			v.add_child(_label(incoming, 12, true))
+			battle_col.add_child(_label(incoming, 12, true))
 
 		if combat_selected_hero_id == "" or not living_heroes.any(func(h): return h.id == combat_selected_hero_id):
 			combat_selected_hero_id = living_heroes[0].id if not living_heroes.is_empty() else ""
@@ -1617,7 +1757,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			render()
 		))
 		menu.add_child(bottom_row)
-		v.add_child(menu_panel)
+		battle_col.add_child(menu_panel)
 
 		# The round log stays available but demoted — a strip below the action
 		# bar rather than sharing equal billing with the arena, since none of
@@ -1627,10 +1767,12 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# log) and the box is tall enough for a typical round's worth of
 		# lines, so reading "what just happened" doesn't actually require
 		# scrolling — a fixed height still caps it so a long boss fight's full
-		# log can't push the layout down the way it used to.
+		# log can't push the layout down the way it used to. Shrunk from 130
+		# to 80 as part of tightening the whole battle panel's footprint.
 		var full_log: Array = state["log"]
 		var recent_log: Array = full_log.slice(max(0, full_log.size() - 10))
-		v.add_child(_log_richtext(recent_log, party, monsters, 130.0))
+		battle_col.add_child(_log_richtext(recent_log, party, monsters, 80.0))
+		v.add_child(battle_frame)
 		return
 
 	var result: Dictionary = ns["result"]
@@ -1653,38 +1795,58 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				render()
 			))
 			return
+		# A single violet-domain banner frame for the whole victory moment
+		# (heading + currency gained + reward cards) instead of plain stacked
+		# labels — the same "wrap it in one bordered panel" treatment the
+		# battle screen just got, so a win reads as a distinct occasion
+		# rather than more of the same log-and-button stack.
+		var victory_frame := PanelContainer.new()
+		victory_frame.theme_type_variation = &"CardPanelViolet"
+		var victory_col := _vbox(8)
+		victory_frame.add_child(victory_col)
+
+		victory_col.add_child(_label("Victory!", 22))
 		var bonus_crystal: int = result.get("bonus_crystal", 0)
-		var victory_text := "Victory! +%d Coins, +%d Crystals" % [result["coin"], result["crystal"]]
+		var gains_row := HBoxContainer.new()
+		gains_row.add_theme_constant_override("separation", 14)
+		gains_row.add_child(_icon(GameData.CURRENCY_ICON_PATH["coins"], 18))
+		gains_row.add_child(_label("+%d" % int(result["coin"]), 14))
+		gains_row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 18))
+		var crystal_text := "+%d" % int(result["crystal"])
 		if bonus_crystal > 0:
-			victory_text += " (+%d bonus)" % bonus_crystal
-		v.add_child(_label(victory_text))
+			crystal_text += " (+%d bonus)" % bonus_crystal
+		gains_row.add_child(_label(crystal_text, 14))
+		victory_col.add_child(gains_row)
 		if kind == "boss" or kind == "elite":
-			v.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
+			victory_col.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
 		if not options.is_empty() and not ns.get("reward_chosen", false):
-			v.add_child(_label("Choose a reward:"))
+			victory_col.add_child(_label("Choose a reward:", 14))
+			var reward_row := HFlowContainer.new()
+			reward_row.add_theme_constant_override("h_separation", 10)
+			reward_row.add_theme_constant_override("v_separation", 10)
 			for i in options.size():
 				var opt: Dictionary = options[i]
 				var obj = opt["obj"]
 				var is_relic: bool = opt["loot_type"] == "relic"
 				var desc: String = _loot_desc(obj, is_relic)
 				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
-				var btn := _button("%s — %s" % [_loot_display_name(obj), desc], func(idx=i, legendary=(obj.rarity == "legendary")):
+				reward_row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), desc, func(idx=i, legendary=(obj.rarity == "legendary")):
 					GameState.pick_combat_reward(idx)
 					if legendary:
 						_flavor_toast = GameData.narrative_line("legendary_drop")
 					render()
-				)
-				btn.icon = load(icon_path)
-				v.add_child(btn)
+				))
+			victory_col.add_child(reward_row)
 		else:
-			v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+			victory_col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
 					GameState.seal_rift()
 				else:
 					GameState.advance_node()
 				render()
 			))
+		v.add_child(victory_frame)
 	elif is_riftbreak and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
 		# Worst merged rank was S/SS/SSS — a forced game over, whether the
 		# fight was lost outright or the player retreated from it. Either way
