@@ -20,6 +20,7 @@ var skills: Dictionary = {}      # skill_id -> true
 var base_hp: int
 var base_dmg: int
 var trait_name: String = ""      # "" means no trait ("Steadfast")
+var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
 var downed_until: int = 0        # msec timestamp, 0 = not downed
 var heal_until: int = 0          # msec timestamp, 0 = not scheduled (full HP, or downed instead)
 var bedded: bool = false
@@ -37,7 +38,7 @@ func to_dict() -> Dictionary:
 		"id": id, "name": name, "cls_id": cls_id, "pool_id": pool_id, "type": type,
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
-		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name,
+		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name, "scars": scars,
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown,
 	}
@@ -61,6 +62,7 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
 	h.trait_name = d.get("trait_name", "")
+	h.scars.assign(d.get("scars", []))
 	h.downed_until = d.get("downed_until", 0)
 	h.heal_until = d.get("heal_until", 0)
 	h.bedded = d.get("bedded", false)

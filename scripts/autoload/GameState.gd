@@ -28,6 +28,7 @@ var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
 var best_endless_cycle: int = 0
+var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var run: Dictionary = {}   # {} = no active run
@@ -197,6 +198,7 @@ func reset() -> void:
 	caps = {}
 	current_champion = null
 	best_endless_cycle = 0
+	rifts_sealed = 0
 	triage_used_this_cycle = false
 	pending_shop_boost = false
 	run = {}
@@ -245,6 +247,7 @@ func save() -> void:
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"best_endless_cycle": best_endless_cycle,
+		"rifts_sealed": rifts_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"run": _run_for_save(),
@@ -297,6 +300,7 @@ func load_save() -> bool:
 	var champ_data = data.get("current_champion")
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
 	best_endless_cycle = data.get("best_endless_cycle", 0)
+	rifts_sealed = data.get("rifts_sealed", 0)
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
 	pending_shop_boost = data.get("pending_shop_boost", false)
 
@@ -440,7 +444,12 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		next_id += 1
 		starting_relic.equipped = false
 		relics.append(starting_relic)
-	var diff := Combat.endless_diff_for_cycle(0) if endless else GameData.DIFFICULTIES[0]
+	var diff := Combat.endless_diff_for_cycle(0)
+	if not endless:
+		diff = GameData.DIFFICULTIES[0]
+		for d in GameData.DIFFICULTIES:
+			if d["id"] == diff_id:
+				diff = d
 	diff = _apply_rift_rank_modifiers(diff, rift_rank)
 	run = {
 		"diff_id": diff_id, "endless": endless, "cycle": 0, "hardcore": hardcore,
@@ -816,6 +825,7 @@ func seal_rift() -> void:
 		next_id += 1
 		got_detector = true
 	tokens += earned_tokens
+	rifts_sealed += 1
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
 	current_champion = Combat.generate_champion()
@@ -846,6 +856,12 @@ func continue_endless() -> void:
 	run["sealed"] = null
 	save()
 	state_changed.emit()
+
+
+## Earned by playing (sealing 3 rifts, lesser/greater/endless all count),
+## not by spending Guild Management currency like every other unlock today.
+func greater_rift_unlocked() -> bool:
+	return rifts_sealed >= 3
 
 
 func field_triage_action() -> String:
@@ -1272,6 +1288,24 @@ func scrub_trait(hero_id: String) -> String:
 	coins -= 30
 	h.trait_name = ""
 	h.hp = Combat.max_hp(h)
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Same gate/cost as scrub_trait — removes one named scar rather than the
+## base trait, and doesn't touch h.hp (a scar isn't tied to a heal-to-full
+## the way clearing the base trait is).
+func scrub_scar(hero_id: String, scar_name: String) -> String:
+	if lvl("ops.trait") < 1:
+		return "Unlock the Trait Management Office first"
+	var h := find_hero(hero_id)
+	if not h or not h.scars.has(scar_name):
+		return ""
+	if coins < 30:
+		return "Need 30 Coins"
+	coins -= 30
+	h.scars.erase(scar_name)
 	save()
 	state_changed.emit()
 	return ""

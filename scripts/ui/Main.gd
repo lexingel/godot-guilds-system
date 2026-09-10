@@ -542,8 +542,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 ## Lesser and Endless Rift are each a gate on the rift chamber's background
 ## art, clickable straight into Party Assembly — no intermediate detail view
 ## since there's nothing else to decide here, unlike Guild Management/
-## Inventory's hubs. The sealed third gateway in the art has no hotspot yet,
-## matching "Greater/Ascendant coming later."
+## Inventory's hubs. The chained third gateway in the art gets a hotspot too
+## once GameState.greater_rift_unlocked() — inert (no hotspot at all) before that.
 func _render_rift_hall(v: VBoxContainer) -> void:
 	_topbar(v)
 	v.add_child(_label("Rift Hall", 20))
@@ -570,6 +570,15 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
 			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = "endless"; _pending_endless = true; render()],
 	]
+	# The chained, rubble-blocked archway to the right stays inert until
+	# GameState.greater_rift_unlocked() (earned by sealing rifts, not bought
+	# with Guild Management currency) — no hotspot at all while locked, same
+	# as this gate's behavior before Greater Rift existed.
+	if GameState.greater_rift_unlocked():
+		var greater: Dictionary = GameData.DIFFICULTIES[1]
+		gate_entries.append(["%s — Floors %d · Rec. Power %d" % [greater["name"], greater["floors"], greater["rec_power"]],
+			Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140),
+			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = str(greater["id"]); _pending_endless = false; render()])
 	for entry in gate_entries:
 		var label_text: String = entry[0]
 		var hit_rect: Rect2 = entry[1]
@@ -584,7 +593,8 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		scene.add_child(hotspot)
 
 	v.add_child(scene)
-	v.add_child(_label("Greater Rift / Ascendant Rift — coming in a later pass.", 12))
+	if not GameState.greater_rift_unlocked():
+		v.add_child(_label("Greater Rift — Seal %d more Rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed], 12))
 	v.add_child(_button("Back to Terminal", func():
 		screen = "terminal"
 		render()
@@ -2198,6 +2208,16 @@ func _render_roster(v: VBoxContainer) -> void:
 	cv.add_child(_title_strip(h.name))
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
 	cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+	for scar_name in h.scars:
+		var scar_row := HBoxContainer.new()
+		scar_row.add_child(_label("Scar: %s" % scar_name, 12, true))
+		scar_row.add_child(_button("Scrub (30c)", func(id=h.id, sn=scar_name):
+			var err := GameState.scrub_scar(id, sn)
+			if err != "":
+				push_warning(err)
+			render()
+		))
+		cv.add_child(scar_row)
 
 	# Portrait + a live stat readout side by side, framed with the same
 	# PORTRAIT_FRAME_PATH art the paper-doll design has been carrying unused

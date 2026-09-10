@@ -57,6 +57,20 @@ const ROLE_TRAITS := {
 static func is_role_trait(trait_name: String) -> bool:
 	return ROLE_TRAITS.values().has(trait_name)
 
+# Earned from being knocked out in combat (Combat._finish_combat), not rolled
+# at recruitment like TRAIT_TABLE above — a separate, capped-at-2 pool so a
+# scar reads as a distinct kind of thing from the base trait. Same kind/value
+# shape (flows through Combat.hero_skill_total for free), deliberately milder
+# than a full NEG_TRAITS entry since up to 2 can stack on top of the trait.
+const SCAR_POOL := ["Shell-Shocked", "Trembling Hands", "Battle Fatigue", "Haunted", "Flinching"]
+const SCAR_TABLE := {
+	"Shell-Shocked": {"dodge_pct": -0.08},
+	"Trembling Hands": {"dmg_pct": -0.06},
+	"Battle Fatigue": {"hp_pct": -0.08},
+	"Haunted": {"mend_pct": -0.03},
+	"Flinching": {"first_round_pct": -0.10},
+}
+
 const RELIC_TYPES := ["Ember", "Frost", "Verdant", "Umbral", "Arcane"]
 
 # Each type nudges (doesn't lock) which power domain a relic's special favors —
@@ -293,6 +307,10 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 # deferred — see the plan's "explicitly deferred" list.
 const DIFFICULTIES := [
 	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 38, "monster_dmg": 5, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 70},
+	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
+	# Guild Management currency — sits between Lesser and the Ascendant-
+	# equivalent ENDLESS_BASE below. First-draft numbers, tunable after playing.
+	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 70, "monster_dmg": 9, "coin": [40, 70], "crystal": [11, 20], "token_base": 18, "detector_chance": 0.14, "power": "Medium", "rec_power": 150},
 ]
 
 # Endless Rift scales forever off these base stats (matches the HTML

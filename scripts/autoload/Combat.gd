@@ -26,6 +26,9 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	s += hero_item_total(h, kind)
 	if GameData.TRAIT_TABLE.has(h.trait_name):
 		s += GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)
+	for scar in h.scars:
+		if GameData.SCAR_TABLE.has(scar):
+			s += GameData.SCAR_TABLE[scar].get(kind, 0.0)
 	if GameState.active_incense.get("kind", "") == kind:
 		s += float(GameState.active_incense["value"])
 	return s
@@ -147,6 +150,16 @@ func pick_trait_name(role: String) -> String:
 	if r < 0.62:
 		return GameData.ROLE_TRAITS[role]
 	return ""
+
+
+## Uniform pick from SCAR_POOL excluding whatever the hero already has —
+## returns "" if every entry is already held (can't happen at the cap of 2
+## against a 5-entry pool, but keeps this safe regardless).
+func pick_scar_name(existing: Array[String]) -> String:
+	var choices: Array = GameData.SCAR_POOL.filter(func(s): return not existing.has(s))
+	if choices.is_empty():
+		return ""
+	return str(choices[randi() % choices.size()])
 
 
 const HERO_INNATE_MULT := 0.6
@@ -1126,6 +1139,14 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 		for h in party:
 			if h.hp <= 0 and h.downed_until <= 0:
 				h.downed_until = now + GameState.recovery_ms()
+				# A freshly-knocked-out roster hero has a chance to pick up a
+				# lasting scar, capped at 2 — champions are regenerated fresh
+				# every seal_rift() and carry no persistent state worth scarring.
+				if not h.is_champion and h.scars.size() < 2 and randf() < 0.5:
+					var scar := pick_scar_name(h.scars)
+					if scar != "":
+						h.scars.append(scar)
+						log.append("%s is left with a lasting scar: %s." % [h.name, scar])
 
 	var result := {
 		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monsters"][0]["name"],
