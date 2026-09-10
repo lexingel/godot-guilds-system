@@ -2,7 +2,8 @@ extends Control
 ## Root UI controller — mirrors guild-system.html's render() function: one
 ## place that clears and rebuilds the current screen's Controls from
 ## GameState, rather than a scene per screen. Uses the Cinzel/Overpass font
-## pairing and a themed panel hierarchy (CardPanel/StatTile) via guild_theme.tres.
+## pairing and a themed panel hierarchy (CardPanelViolet/CardPanelEmber/
+## StatTileViolet/StatTileEmber) via guild_theme.tres.
 
 @onready var root: MarginContainer = $Root
 
@@ -444,23 +445,6 @@ func _button(text: String, cb: Callable) -> Button:
 	return b
 
 
-## The single highest-intent action on a screen (Engage, Continue, Recruit,
-## Start Run, Confirm Reset) — reuses the theme's own hover/pressed textures
-## (already the rift-teal accent) in the button's resting state instead of
-## drawing new art, so it reads as "the one to click" without a second Theme.
-func _primary_button(text: String, cb: Callable) -> Button:
-	var b := _button(text, cb)
-	var hover_style := get_theme_stylebox("hover", "Button")
-	var pressed_style := get_theme_stylebox("pressed", "Button")
-	b.add_theme_stylebox_override("normal", hover_style)
-	b.add_theme_stylebox_override("hover", hover_style)
-	b.add_theme_stylebox_override("focus", hover_style)
-	b.add_theme_stylebox_override("pressed", pressed_style)
-	b.add_theme_color_override("font_color", get_theme_color("font_pressed_color", "Button"))
-	b.add_theme_color_override("font_hover_color", get_theme_color("font_pressed_color", "Button"))
-	return b
-
-
 ## Every non-hotspot button in the game goes through one of these two — an
 ## icon alongside whatever text the button already had (costs/sort state/
 ## toggle state stay readable, the icon just adds a scannable visual cue).
@@ -474,14 +458,7 @@ func _icon_button(icon_path: String, text: String, cb: Callable) -> Button:
 	return b
 
 
-func _icon_primary_button(icon_path: String, text: String, cb: Callable) -> Button:
-	var b := _primary_button(text, cb)
-	if icon_path != "":
-		b.icon = load(icon_path)
-	return b
-
-
-## Same idea as _icon_primary_button, but the button's color follows what the
+## Same idea as _icon_button, but the button's color follows what the
 ## action represents instead of always reusing the theme's single accent —
 ## "violet" for arcane/progression actions, "ember" for economy/danger/combat
 ## actions, matching the same domain rule panels/stat-tiles already use.

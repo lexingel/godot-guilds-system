@@ -20,8 +20,8 @@ const MUTED2 := Color(0.478, 0.427, 0.600, 1.0)   # #7a6d99
 
 # Domain accents — the two colors every trimmed component is assigned from,
 # plus a neutral Gunmetal for anything in neither domain. Each accent carries
-# a bright (bevel-light/glow) and deep (bevel-dark) pair for the pixel-bevel
-# texture generator in Task 3.
+# a bright (bevel-light/glow) and deep (bevel-dark) pair, mirrored by the
+# pixel-bevel texture generator's own hardcoded RGB values from Task 3.
 const VIOLET := Color(0.545, 0.361, 0.965, 1.0)       # #8b5cf6
 const VIOLET_BRIGHT := Color(0.788, 0.702, 1.0, 1.0)  # #c9b3ff
 const VIOLET_DEEP := Color(0.290, 0.165, 0.600, 1.0)  # #4a2a99
