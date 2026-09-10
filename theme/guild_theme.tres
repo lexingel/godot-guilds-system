@@ -1,13 +1,23 @@
-[gd_resource type="Theme" load_steps=17 format=3 uid="uid://6cplcuy1r006"]
+[gd_resource type="Theme" load_steps=37 format=3 uid="uid://6cplcuy1r006"]
 
 [ext_resource type="Texture2D" uid="uid://3utet2fvfs8q" path="res://assets/ui/panel.png" id="1"]
 [ext_resource type="Texture2D" uid="uid://41dsrxtni81l" path="res://assets/ui/button_normal.png" id="2"]
 [ext_resource type="Texture2D" uid="uid://ylqyobg3xify" path="res://assets/ui/button_hover.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://d2d48qurvcy52" path="res://assets/ui/button_pressed.png" id="4"]
 [ext_resource type="Texture2D" uid="uid://bcp4swwd5kkrr" path="res://assets/ui/button_disabled.png" id="5"]
-[ext_resource type="Texture2D" uid="uid://xn0twavhln1r" path="res://assets/ui/card_panel.png" id="6"]
-[ext_resource type="Texture2D" uid="uid://dxbjwohvuoow3" path="res://assets/ui/stat_tile.png" id="7"]
 [ext_resource type="FontFile" path="res://assets/fonts/Overpass-Regular.ttf" id="8"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel_violet.png" id="9"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel_ember.png" id="10"]
+[ext_resource type="Texture2D" path="res://assets/ui/stat_tile_violet.png" id="11"]
+[ext_resource type="Texture2D" path="res://assets/ui/stat_tile_ember.png" id="12"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_violet_normal.png" id="13"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_violet_hover.png" id="14"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_violet_pressed.png" id="15"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_violet_disabled.png" id="16"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_ember_normal.png" id="17"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_ember_hover.png" id="18"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_ember_pressed.png" id="19"]
+[ext_resource type="Texture2D" path="res://assets/ui/button_ember_disabled.png" id="20"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_disabled"]
 content_margin_left = 14.0
@@ -54,7 +64,7 @@ texture_margin_right = 14.0
 texture_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_hsep"]
-color = Color(0.227, 0.2, 0.275, 1)
+color = Color(0.239, 0.2, 0.341, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
 content_margin_left = 14.0
@@ -67,54 +77,188 @@ texture_margin_top = 16.0
 texture_margin_right = 16.0
 texture_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_card_panel"]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel_violet"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-texture = ExtResource("6")
+texture = ExtResource("9")
 texture_margin_left = 16.0
 texture_margin_top = 16.0
 texture_margin_right = 16.0
 texture_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile"]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel_ember"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-texture = ExtResource("7")
+texture = ExtResource("10")
 texture_margin_left = 16.0
 texture_margin_top = 16.0
 texture_margin_right = 16.0
 texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile_violet"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+texture = ExtResource("11")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile_ember"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+texture = ExtResource("12")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_violet_normal"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("13")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_violet_hover"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("14")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_violet_pressed"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("15")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_violet_disabled"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("16")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_ember_normal"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("17")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_ember_hover"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("18")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_ember_pressed"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("19")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_ember_disabled"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("20")
+texture_margin_left = 14.0
+texture_margin_top = 10.0
+texture_margin_right = 14.0
+texture_margin_bottom = 10.0
 
 [resource]
 default_font = ExtResource("8")
 default_font_size = 14
-Button/colors/font_color = Color(0.925, 0.906, 0.957, 1)
-Button/colors/font_disabled_color = Color(0.604, 0.565, 0.678, 1)
-Button/colors/font_hover_color = Color(0.925, 0.906, 0.957, 1)
+Button/colors/font_color = Color(0.914, 0.886, 0.961, 1)
+Button/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
+Button/colors/font_hover_color = Color(0.914, 0.886, 0.961, 1)
 Button/colors/font_pressed_color = Color(0.055, 0.055, 0.055, 1)
 Button/styles/disabled = SubResource("StyleBoxTexture_btn_disabled")
 Button/styles/focus = SubResource("StyleBoxTexture_btn_hover")
 Button/styles/hover = SubResource("StyleBoxTexture_btn_hover")
 Button/styles/normal = SubResource("StyleBoxTexture_btn_normal")
 Button/styles/pressed = SubResource("StyleBoxTexture_btn_pressed")
-CheckBox/colors/font_color = Color(0.925, 0.906, 0.957, 1)
-CheckButton/colors/font_color = Color(0.925, 0.906, 0.957, 1)
+CheckBox/colors/font_color = Color(0.914, 0.886, 0.961, 1)
+CheckButton/colors/font_color = Color(0.914, 0.886, 0.961, 1)
 CheckButton/colors/font_selected_color = Color(0.055, 0.055, 0.055, 1)
 CheckButton/styles/hover = SubResource("StyleBoxTexture_btn_hover")
 CheckButton/styles/normal = SubResource("StyleBoxTexture_btn_normal")
 CheckButton/styles/pressed = SubResource("StyleBoxTexture_btn_pressed")
 HSeparator/styles/separator = SubResource("StyleBoxLine_hsep")
-Label/colors/font_color = Color(0.925, 0.906, 0.957, 1)
-LineEdit/colors/font_color = Color(0.925, 0.906, 0.957, 1)
-LineEdit/colors/font_placeholder_color = Color(0.604, 0.565, 0.678, 1)
+Label/colors/font_color = Color(0.914, 0.886, 0.961, 1)
+LineEdit/colors/font_color = Color(0.914, 0.886, 0.961, 1)
+LineEdit/colors/font_placeholder_color = Color(0.659, 0.608, 0.788, 1)
 LineEdit/styles/focus = SubResource("StyleBoxTexture_btn_hover")
 LineEdit/styles/normal = SubResource("StyleBoxTexture_btn_normal")
 PanelContainer/styles/panel = SubResource("StyleBoxTexture_panel")
-CardPanel/base_type = &"PanelContainer"
-CardPanel/styles/panel = SubResource("StyleBoxTexture_card_panel")
-StatTile/base_type = &"PanelContainer"
-StatTile/styles/panel = SubResource("StyleBoxTexture_stat_tile")
+CardPanelViolet/base_type = &"PanelContainer"
+CardPanelViolet/styles/panel = SubResource("StyleBoxTexture_panel_violet")
+CardPanelEmber/base_type = &"PanelContainer"
+CardPanelEmber/styles/panel = SubResource("StyleBoxTexture_panel_ember")
+StatTileViolet/base_type = &"PanelContainer"
+StatTileViolet/styles/panel = SubResource("StyleBoxTexture_stat_tile_violet")
+StatTileEmber/base_type = &"PanelContainer"
+StatTileEmber/styles/panel = SubResource("StyleBoxTexture_stat_tile_ember")
+ButtonViolet/base_type = &"Button"
+ButtonViolet/colors/font_color = Color(0.086, 0.067, 0.133, 1)
+ButtonViolet/colors/font_hover_color = Color(0.086, 0.067, 0.133, 1)
+ButtonViolet/colors/font_pressed_color = Color(0.055, 0.055, 0.055, 1)
+ButtonViolet/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
+ButtonViolet/styles/normal = SubResource("StyleBoxTexture_btn_violet_normal")
+ButtonViolet/styles/hover = SubResource("StyleBoxTexture_btn_violet_hover")
+ButtonViolet/styles/focus = SubResource("StyleBoxTexture_btn_violet_hover")
+ButtonViolet/styles/pressed = SubResource("StyleBoxTexture_btn_violet_pressed")
+ButtonViolet/styles/disabled = SubResource("StyleBoxTexture_btn_violet_disabled")
+ButtonEmber/base_type = &"Button"
+ButtonEmber/colors/font_color = Color(0.086, 0.043, 0.024, 1)
+ButtonEmber/colors/font_hover_color = Color(0.086, 0.043, 0.024, 1)
+ButtonEmber/colors/font_pressed_color = Color(1.0, 0.9, 0.8, 1)
+ButtonEmber/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
+ButtonEmber/styles/normal = SubResource("StyleBoxTexture_btn_ember_normal")
+ButtonEmber/styles/hover = SubResource("StyleBoxTexture_btn_ember_hover")
+ButtonEmber/styles/focus = SubResource("StyleBoxTexture_btn_ember_hover")
+ButtonEmber/styles/pressed = SubResource("StyleBoxTexture_btn_ember_pressed")
+ButtonEmber/styles/disabled = SubResource("StyleBoxTexture_btn_ember_disabled")
