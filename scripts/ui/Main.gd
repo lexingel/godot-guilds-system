@@ -412,11 +412,27 @@ func _add_ground_shadow(parent: Control, wrapper_pos: Vector2, wrapper_size: flo
 ## Opt-in wrapping variant for long standalone text (combat log lines,
 ## descriptions) — safe to use only where the label is the sole child of its
 ## row (a VBoxContainer entry, not sharing an HBoxContainer with buttons).
-func _wrap_label(text: String, size: int = 14) -> Label:
-	var l := _label(text, size)
+func _wrap_label(text: String, size: int = 14, muted: bool = false) -> Label:
+	var l := _label(text, size, muted)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
+
+
+## For a row that mixes a wrapping text label with one or more buttons (item/
+## relic/skill rows with a name+description string next to Buy/Equip/Sell) —
+## the label gets SIZE_EXPAND_FILL + autowrap so it wraps onto multiple lines
+## instead of being clipped by its sibling controls; `leading` is an optional
+## icon/checkbox placed before the text, `actions` are placed after it.
+func _info_row(text: String, size: int, actions: Array[Control], leading: Control = null) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	if leading:
+		row.add_child(leading)
+	row.add_child(_wrap_label(text, size))
+	for a in actions:
+		row.add_child(a)
+	return row
 
 
 func _button(text: String, cb: Callable) -> Button:
@@ -785,16 +801,13 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 				pending_relic_options.append(Combat.gen_relic(rarity))
 	for i in pending_relic_options.size():
 		var r: Relic = pending_relic_options[i]
-		var row2 := HBoxContainer.new()
 		var rb := CheckButton.new()
 		rb.button_pressed = pending_relic_choice == i
 		rb.toggled.connect(func(on: bool):
 			pending_relic_choice = i if on else -1
 			render()
 		)
-		row2.add_child(rb)
-		row2.add_child(_label("%s (%s) — %s" % [r.name, r.type, r.desc()]))
-		v.add_child(row2)
+		v.add_child(_info_row("%s (%s) — %s" % [r.name, r.type, r.desc()], 14, [], rb))
 
 	if not GameState.consumables.is_empty():
 		v.add_child(_hsep())
@@ -802,16 +815,13 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		for c in GameState.consumables:
 			var cid: String = str(c["id"])
 			var def := GameData.find_incense(str(c["incense_id"]))
-			var irow := HBoxContainer.new()
 			var ib := CheckButton.new()
 			ib.button_pressed = pending_incense_id == cid
 			ib.toggled.connect(func(on: bool, id=cid):
 				pending_incense_id = id if on else ""
 				render()
 			)
-			irow.add_child(ib)
-			irow.add_child(_label("%s — %s" % [def["name"], def["desc"]]))
-			v.add_child(irow)
+			v.add_child(_info_row("%s — %s" % [def["name"], def["desc"]], 14, [], ib))
 
 	v.add_child(_hsep())
 	if _pending_rift_rank == "":
@@ -1707,15 +1717,13 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		var desc: String = _loot_desc(obj, is_relic)
 		var bought: bool = off.get("bought", false)
 		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
-		var row := HBoxContainer.new()
-		row.add_child(_icon(icon_path, 20))
-		row.add_child(_label("%s — %s (%dc)%s" % [_loot_display_name(obj), desc, off["price"], " [bought]" if bought else ""]))
+		var actions: Array[Control] = []
 		if not bought:
-			row.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(idx=i):
+			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
 			))
-		v.add_child(row)
+		v.add_child(_info_row("%s — %s (%dc)%s" % [_loot_display_name(obj), desc, off["price"], " [bought]" if bought else ""], 14, actions, _icon(icon_path, 20)))
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 		GameState.advance_node()
 		render()
@@ -2392,15 +2400,12 @@ func _render_roster(v: VBoxContainer) -> void:
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
 	cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 	for scar_name in h.scars:
-		var scar_row := HBoxContainer.new()
-		scar_row.add_child(_label("Scar: %s" % scar_name, 12, true))
-		scar_row.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
+		cv.add_child(_info_row("Scar: %s" % scar_name, 12, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
 			if err != "":
 				push_warning(err)
 			render()
-		))
-		cv.add_child(scar_row)
+		)]))
 
 	# Portrait + a live stat readout side by side, framed with the same
 	# PORTRAIT_FRAME_PATH art the paper-doll design has been carrying unused
@@ -2461,8 +2466,9 @@ func _render_roster(v: VBoxContainer) -> void:
 			ab_row.add_theme_constant_override("separation", 8)
 			ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
 			var ab_mid := _vbox(0)
+			ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
-			ab_mid.add_child(_label(str(ab["desc"]), 11, true))
+			ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
 			ab_row.add_child(ab_mid)
 			if h.level < 3:
 				ab_row.add_child(_label("Unlocks at Lv3", 11, true))
@@ -2542,7 +2548,7 @@ func _skill_node_row(h: Hero, n: Dictionary) -> PanelContainer:
 	var mid := _vbox(0)
 	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mid.add_child(_label(str(n["name"]), 12))
-	mid.add_child(_label(Combat.describe_skill(str(n["kind"]), float(n["value"])), 11, true))
+	mid.add_child(_wrap_label(Combat.describe_skill(str(n["kind"]), float(n["value"])), 11, true))
 	row.add_child(mid)
 
 	if learned:
@@ -2697,11 +2703,7 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	var pv := _vbox(4)
 
 	if equipped:
-		var erow := HBoxContainer.new()
-		erow.add_theme_constant_override("separation", 8)
-		erow.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[equipped.category], 18))
-		erow.add_child(_label("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12))
-		pv.add_child(erow)
+		pv.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12, [], _icon(GameData.ITEM_CATEGORY_ICON_PATH[equipped.category], 18)))
 		var eactions := HBoxContainer.new()
 		eactions.add_child(_icon_button("res://assets/skills/armor_chest.png", "Unequip", func(hid=h.id, st=slot_type, i=idx):
 			GameState.equip_item(hid, st, i, "")
@@ -2728,16 +2730,12 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	if candidates.is_empty():
 		pv.add_child(_label("No unequipped %s available." % ("weapons" if slot_type == "weapon" else "gear"), 11, true))
 	for it in candidates:
-		var crow := HBoxContainer.new()
-		crow.add_theme_constant_override("separation", 8)
-		crow.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18))
-		crow.add_child(_label("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12))
-		crow.add_child(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
+		var equip_btn := _icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
 			GameState.equip_item(hid, st, i, iid)
 			expanded_slot = ""
 			render()
-		))
-		pv.add_child(crow)
+		)
+		pv.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, [equip_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18)))
 
 	pv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", func():
 		expanded_slot = ""
@@ -2828,22 +2826,20 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	if unequipped_items.is_empty():
 		v.add_child(_label("No unequipped items.", 12))
 	for it in unequipped_items:
-		var row := HBoxContainer.new()
-		row.add_child(_icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20))
-		row.add_child(_label("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12))
+		var actions: Array[Control] = []
 		for h2 in GameState.heroes:
 			var slot := it.slot_type()
 			var free_idx := _first_free_slot(h2, slot)
 			if free_idx >= 0 and GameState.item_fits_hero(it, h2):
-				row.add_child(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
+				actions.append(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
 					GameState.equip_item(hid, s, idx, iid)
 					render()
 				))
-		row.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
+		actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
 			GameState.sell_item(id)
 			render()
 		))
-		v.add_child(row)
+		v.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, actions, _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20)))
 
 	v.add_child(_hsep())
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
@@ -2851,17 +2847,15 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 		v.add_child(_label("Owned:", 12, true))
 		for c in GameState.consumables:
 			var def := GameData.find_incense(str(c["incense_id"]))
-			v.add_child(_label("%s — %s" % [def["name"], def["desc"]], 12))
+			v.add_child(_wrap_label("%s — %s" % [def["name"], def["desc"]], 12))
 	for def in GameData.INCENSE_TYPES:
-		var irow := HBoxContainer.new()
-		irow.add_child(_label("%s (%dcr) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12))
-		irow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(iid=def["id"]):
+		var buy_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(iid=def["id"]):
 			var err := GameState.buy_incense(iid)
 			if err != "":
 				push_warning(err)
 			render()
-		))
-		v.add_child(irow)
+		)
+		v.add_child(_info_row("%s (%dcr) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12, [buy_btn]))
 
 	v.add_child(_hsep())
 	v.add_child(_label("Runestones — socket into an equipped item from its Roster card", 16))
@@ -2869,17 +2863,15 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 		v.add_child(_label("Owned:", 12, true))
 		for r in GameState.runestones:
 			var rdef := GameData.find_runestone(str(r["runestone_id"]))
-			v.add_child(_label("%s — %s" % [rdef["name"], rdef["desc"]], 12))
+			v.add_child(_wrap_label("%s — %s" % [rdef["name"], rdef["desc"]], 12))
 	for rdef in GameData.RUNESTONE_TYPES:
-		var rrow := HBoxContainer.new()
-		rrow.add_child(_label("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12))
-		rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(rid=rdef["id"]):
+		var buy_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(rid=rdef["id"]):
 			var err := GameState.buy_runestone(rid)
 			if err != "":
 				push_warning(err)
 			render()
-		))
-		v.add_child(rrow)
+		)
+		v.add_child(_info_row("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12, [buy_btn]))
 
 
 func _render_inventory_relics(v: VBoxContainer) -> void:
@@ -2899,33 +2891,31 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 		"name":
 			relics_sorted.sort_custom(func(a, b): return a.name < b.name)
 	for r in relics_sorted:
-		var rrow := HBoxContainer.new()
-		rrow.add_child(_icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20))
-		rrow.add_child(_label("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12))
-		rrow.add_child(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip" if r.equipped else "Equip", func(id=r.id):
+		var actions: Array[Control] = []
+		actions.append(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip" if r.equipped else "Equip", func(id=r.id):
 			GameState.toggle_equip_relic(id)
 			render()
 		))
 		if r.level < GameState.RELIC_MAX_LEVEL:
 			var rar := GameData.find_rarity(r.rarity)
 			var cost := int(round(15.0 * float(rar["mult"]) * r.level))
-			rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade (%dcr)" % cost, func(id=r.id):
+			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade (%dcr)" % cost, func(id=r.id):
 				var err := GameState.upgrade_relic(id)
 				if err != "":
 					push_warning(err)
 				render()
 			))
 		if not r.equipped:
-			rrow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=r.id):
+			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=r.id):
 				GameState.sell_relic(id)
 				render()
 			))
 			if GameState.recycle_unlocked():
-				rrow.add_child(_icon_button("res://assets/skills/ingot_gold.png", "Scrap", func(id=r.id):
+				actions.append(_icon_button("res://assets/skills/ingot_gold.png", "Scrap", func(id=r.id):
 					GameState.scrap_relic(id)
 					render()
 				))
-		v.add_child(rrow)
+		v.add_child(_info_row("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12, actions, _icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20)))
 
 
 func _render_inventory_detectors(v: VBoxContainer) -> void:
