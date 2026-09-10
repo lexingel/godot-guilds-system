@@ -22,6 +22,8 @@ const RANK_F := Color(0.545, 0.518, 0.588, 1.0)       # #8b8496
 const RANK_E := Color(0.435, 0.749, 0.451, 1.0)       # #6fbf73
 const RANK_D := Color(0.373, 0.659, 0.910, 1.0)       # #5fa8e8
 const RANK_S := Color(0.949, 0.788, 0.298, 1.0)       # #f2c94c
+const RANK_SS := Color(0.949, 0.400, 0.831, 1.0)      # #f266d4 (shimmering magenta — beyond S)
+const RANK_SSS := Color(0.980, 0.980, 0.941, 1.0)     # #fafaf0 (near-white gold — the rarest)
 
 static func rank_color(rank: String) -> Color:
 	match rank:
@@ -32,4 +34,6 @@ static func rank_color(rank: String) -> Color:
 		"B": return TOKEN
 		"A": return ELITE
 		"S": return RANK_S
+		"SS": return RANK_SS
+		"SSS": return RANK_SSS
 		_: return MUTED

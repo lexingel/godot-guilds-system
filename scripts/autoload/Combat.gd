@@ -126,6 +126,18 @@ func weighted_rank() -> String:
 	return "F"
 
 
+func weighted_rift_rank() -> String:
+	var total := 0
+	for r in GameData.RIFT_RANKS:
+		total += int(r["weight"])
+	var roll := randi() % total
+	for r in GameData.RIFT_RANKS:
+		if roll < int(r["weight"]):
+			return r["id"]
+		roll -= int(r["weight"])
+	return "F"
+
+
 func pick_trait_name(role: String) -> String:
 	var r := randf()
 	if r < 0.22:
@@ -328,6 +340,12 @@ func build_layers(diff: Dictionary) -> Array:
 	var layers: Array = [{"options": ["combat"]}]
 	var mid_count: int = int(diff["floors"]) - 2
 	var pool := ["combat", "combat", "shop", "hazard", "elite"]
+	# A mapped rift's elite_chance_up/shop_chance_down modifiers bias the pool
+	# by adding/removing one entry rather than reworking the odds formula.
+	if diff.get("elite_chance_up", false):
+		pool.append("elite")
+	if diff.get("shop_chance_down", false):
+		pool.erase("shop")
 	for i in mid_count:
 		var a: String = pool[randi() % pool.size()]
 		var b: String = pool[randi() % pool.size()]

@@ -481,6 +481,59 @@ const RANKS := [
 	{"id": "S", "weight": 1, "mult": 2.6, "cost": 650},
 ]
 
+## Rift Map ranks — reuses the hero-rank vocabulary (F-S) extended with two
+## rarer tiers (SS/SSS) for the map's random rift rolls. Weights preserve the
+## exact same relative odds as hero RANKS for F-S (just rescaled ×10 for the
+## finer granularity SS/SSS need); fuse_minutes is the real-time countdown
+## before an unaddressed rift Riftbreaks — shorter at higher rank, so a rare
+## S/SS/SSS sighting is genuinely fleeting. First-draft numbers, tunable after
+## the map is playable.
+const RIFT_RANKS := [
+	{"id": "F", "weight": 1000, "fuse_minutes": 45},
+	{"id": "E", "weight": 600, "fuse_minutes": 40},
+	{"id": "D", "weight": 350, "fuse_minutes": 35},
+	{"id": "C", "weight": 200, "fuse_minutes": 30},
+	{"id": "B", "weight": 100, "fuse_minutes": 25},
+	{"id": "A", "weight": 40, "fuse_minutes": 20},
+	{"id": "S", "weight": 10, "fuse_minutes": 15},
+	{"id": "SS", "weight": 3, "fuse_minutes": 10},
+	{"id": "SSS", "weight": 1, "fuse_minutes": 6},
+]
+
+static func find_rift_rank(rank_id: String) -> Dictionary:
+	for r in RIFT_RANKS:
+		if r["id"] == rank_id:
+			return r
+	return RIFT_RANKS[0]
+
+
+## 0-8 severity index for a Rift Rank id — used both to scale a Riftbreak
+## encounter's difficulty (summed across every merged pending rank) and to
+## decide the loss-consequence branch (index >= 6, i.e. S/SS/SSS, is the
+## game-ending branch; below that is the Coin/Crystal compensation branch).
+static func rift_rank_index(rank_id: String) -> int:
+	for i in RIFT_RANKS.size():
+		if RIFT_RANKS[i]["id"] == rank_id:
+			return i
+	return 0
+
+
+## Cumulative modifiers a mapped rift's rank folds into the fight/run — each
+## rank includes every modifier below it plus its own. Applied by
+## GameState.start_map_rift() to a copy of DIFFICULTIES[0], not by mutating
+## the base difficulty table itself. First-draft values, tunable later.
+const RIFT_RANK_MODIFIERS := {
+	"F": {},
+	"E": {"monster_hp_mult": 1.10},
+	"D": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10},
+	"C": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1},
+	"B": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true},
+	"A": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true},
+	"S": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1},
+	"SS": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1, "boss_double_mechanic": true},
+	"SSS": {"monster_hp_mult": 1.35, "monster_dmg_mult": 1.35, "hazard_severity_up": 2, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1, "boss_double_mechanic": true},
+}
+
 const CHAMP_KIND_BASE := {
 	"dmg_pct": 0.06, "hp_pct": 0.06, "first_round_pct": 0.15, "escalate_pct": 0.02,
 	"mend_pct": 0.03, "dodge_pct": 0.08, "hazard_guard_pct": 0.10, "wipe_guard": 0.2, "boss_alpha_strike": 1.0,
@@ -689,6 +742,7 @@ const CAMP_HUB_ICON_PATH := {
 	"medical": "res://assets/camp/icon_medical.png",
 	"management": "res://assets/camp/icon_management.png",
 	"rift": "res://assets/camp/icon_rift.png",
+	"rift_map": "res://assets/camp/icon_rift_map.png",
 }
 ## Ornate slot-frame borders, one per rarity tier — reused everywhere a
 ## rarity needs to read at a glance: equip slots on the paper-doll Roster

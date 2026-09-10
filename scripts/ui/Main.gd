@@ -464,6 +464,11 @@ func _title_strip(text: String) -> PanelContainer:
 
 func render() -> void:
 	GameState.resolve_recovery()
+	GameState.resolve_rift_map()
+	if screen == "terminal" and GameState.run.is_empty() and not GameState.pending_riftbreak_ranks.is_empty():
+		GameState.start_riftbreak_encounter()
+		if not GameState.run.is_empty():
+			screen = "rift_run"
 	_clear_root()
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -479,6 +484,7 @@ func render() -> void:
 	match screen:
 		"onboard": _render_onboard(v)
 		"rift_hall": _render_rift_hall(v)
+		"rift_map": _render_rift_map_hub(v)
 		"party_assembly": _render_party_assembly(v)
 		"rift_run": _render_rift_run(v)
 		"terminal": _render_terminal(v)
@@ -585,10 +591,66 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	))
 
 
+## A plain list, not an illustrated scene — 6+ rifts shifting in and out
+## doesn't earn its own background art the way Rift Hall's two fixed gates
+## do. Each row shows the slot's rolled rank (colored via Palette.rank_color)
+## and a live mm:ss countdown to its Riftbreak, computed fresh every render()
+## the same way every other lazily-resolved timer in this project already is.
+func _render_rift_map_hub(v: VBoxContainer) -> void:
+	_topbar(v)
+	v.add_child(_label("Rift Map", 20))
+	v.add_child(_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
+	v.add_child(_hsep())
+
+	var now := int(Time.get_unix_time_from_system() * 1000)
+	for i in GameState.rift_map.size():
+		var slot: Dictionary = GameState.rift_map[i]
+		if slot.is_empty():
+			continue
+		var rank := str(slot.get("rank", "F"))
+		var remain_ms: int = max(0, int(slot.get("expires_at", 0)) - now)
+		var remain_s := remain_ms / 1000
+		var mm := remain_s / 60
+		var ss := remain_s % 60
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var rank_label := _label("Rank %s" % rank, 14)
+		rank_label.add_theme_color_override("font_color", Palette.rank_color(rank))
+		row.add_child(rank_label)
+		row.add_child(_label("%02d:%02d remaining" % [mm, ss], 12, true))
+		row.add_child(_button("Enter", func(idx=i, r=rank):
+			pending_party.clear()
+			pending_relic_options.clear()
+			pending_relic_choice = -1
+			_pending_rift_rank = r
+			_pending_map_slot_idx = idx
+			screen = "party_assembly"
+			render()
+		))
+		v.add_child(row)
+
+	if not GameState.pending_riftbreak_ranks.is_empty():
+		v.add_child(_hsep())
+		v.add_child(_label("A Riftbreak is looming — %d unaddressed rift(s) will spill out next time you return to the Terminal." % GameState.pending_riftbreak_ranks.size(), 12, true))
+
+	v.add_child(_hsep())
+	v.add_child(_button("Back to Terminal", func():
+		screen = "terminal"
+		render()
+	))
+
+
 var _pending_diff_id: String = "lesser"
 var _pending_endless: bool = false
 var _pending_hardcore: bool = false
 var pending_incense_id: String = ""
+## Non-empty only when Party Assembly was entered from the Rift Map hub
+## (rather than Rift Hall) — routes "Enter the Rift" to start_map_rift()
+## instead of start_run(), hides the Hardcore toggle (retired from mapped
+## rifts), and sends "Back" to the map instead of the hall.
+var _pending_rift_rank: String = ""
+var _pending_map_slot_idx: int = -1
 
 
 # ---------------- Party Assembly ----------------
@@ -664,14 +726,17 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			v.add_child(irow)
 
 	v.add_child(_hsep())
-	var hc_toggle := CheckButton.new()
-	hc_toggle.text = "Hardcore Mode — ×1.5 rewards, a loss removes your heroes for good"
-	hc_toggle.button_pressed = _pending_hardcore
-	hc_toggle.toggled.connect(func(on: bool):
-		_pending_hardcore = on
-		render()
-	)
-	v.add_child(hc_toggle)
+	if _pending_rift_rank == "":
+		var hc_toggle := CheckButton.new()
+		hc_toggle.text = "Hardcore Mode — ×1.5 rewards, a loss removes your heroes for good"
+		hc_toggle.button_pressed = _pending_hardcore
+		hc_toggle.toggled.connect(func(on: bool):
+			_pending_hardcore = on
+			render()
+		)
+		v.add_child(hc_toggle)
+	else:
+		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
 	v.add_child(_hsep())
 	v.add_child(_primary_button("Enter the Rift", func():
@@ -683,15 +748,22 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		if pending_incense_id != "":
 			GameState.use_incense(pending_incense_id)
 			pending_incense_id = ""
-		GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
+		if _pending_rift_rank != "":
+			GameState.start_map_rift(_pending_map_slot_idx, ids, chosen)
+		else:
+			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_hardcore = false
+		_pending_rift_rank = ""
+		_pending_map_slot_idx = -1
 		screen = "rift_run"
 		render()
 	))
 	v.add_child(_button("Back", func():
-		screen = "rift_hall"
+		screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
+		_pending_rift_rank = ""
+		_pending_map_slot_idx = -1
 		render()
 	))
 
@@ -766,6 +838,10 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		render()
 		return
 	_topbar(v)
+	if GameState.run.get("is_riftbreak", false):
+		var rb_label := _label("⚠ Riftbreak! An unaddressed rift's threat has spilled out and forced this fight.", 14)
+		rb_label.add_theme_color_override("font_color", Palette.HAZARD)
+		v.add_child(rb_label)
 	var diff := GameState._diff()
 	var pos: int = int(GameState.run["pos"])
 	var total_layers: int = (GameState.run["layers"] as Array).size()
@@ -1413,7 +1489,18 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var log_party: Array[Hero] = GameState.current_party()
 	v.add_child(_log_richtext(result["log"], log_party, [{"name": result["monster_name"]}]))
 
+	var is_riftbreak: bool = GameState.run.get("is_riftbreak", false)
 	if result["won"]:
+		if is_riftbreak:
+			# A Riftbreak is a consequence, not an opportunity — no loot, no
+			# reward choice, straight back to the Terminal.
+			v.add_child(_label("Threat repelled. The rift's spillover is contained — no loot from a fight like this."))
+			v.add_child(_primary_button("Return to Terminal", func():
+				GameState.finish_run()
+				screen = "terminal"
+				render()
+			))
+			return
 		var bonus_crystal: int = result.get("bonus_crystal", 0)
 		var victory_text := "Victory! +%d Coins, +%d Crystals" % [result["coin"], result["crystal"]]
 		if bonus_crystal > 0:
@@ -1442,9 +1529,24 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					GameState.advance_node()
 				render()
 			))
+	elif is_riftbreak and not result.get("retreated", false) and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
+		# Worst merged rank was S/SS/SSS — a forced game over, not a normal
+		# loss. Fires immediately with no confirm step (unlike the voluntary
+		# "Reset Guild" button) since this is a consequence, not a choice.
+		# Excludes a retreat — walking away from the fight isn't the same as
+		# losing it.
+		v.add_child(_label("Due to the rift break, a large portion of the world is in struggle now. Your guild has been erased."))
+		v.add_child(_primary_button("Found a New Guild", func():
+			GameState.reset()
+			GameState.save()
+			screen = "onboard"
+			render()
+		))
 	else:
 		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
 		v.add_child(_label(defeat_text))
+		if result.has("riftbreak_compensation_coins"):
+			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
 		for line in _run_summary_lines():
 			v.add_child(_label(line, 12, true))
 		v.add_child(_button("Return to Terminal", func():
@@ -1655,9 +1757,15 @@ func _render_camp(v: VBoxContainer) -> void:
 
 	# Bottom-left, in the open ground below the small griffin banner-post and
 	# its nearby crates/barrels.
-	var rift_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], 56.0, "Rift Hall", func(): screen = "rift_hall"; render())
+	var rift_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], 56.0, "Rift Hall (Training Ground)", func(): screen = "rift_hall"; render())
 	rift_icon.position = Vector2(150, 270) - Vector2(28, 28)
 	camp.add_child(rift_icon)
+
+	# No matching background prop for this one either — placed a bit further
+	# right along the same open ground as the Rift Hall icon above.
+	var rift_map_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift_map"], 56.0, "Rift Map", func(): screen = "rift_map"; render())
+	rift_map_icon.position = Vector2(230, 270) - Vector2(28, 28)
+	camp.add_child(rift_map_icon)
 
 	v.add_child(camp)
 
