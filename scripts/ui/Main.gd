@@ -1470,6 +1470,12 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			render()
 		))
 		bottom_row.add_child(_button("Retreat", func():
+			# Same guard as Resolve Round: retreating while a round's animation
+			# is genuinely still in-flight would mutate the same `state` dict
+			# _play_round is reading and immediately render() out from under
+			# it, freeing the arena nodes its suspended awaits still reference.
+			if _combat_animating:
+				return
 			GameState.combat_retreat()
 			render()
 		))
