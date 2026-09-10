@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/ui/Main.gd" id="1"]
 [ext_resource type="Theme" uid="uid://6cplcuy1r006" path="res://theme/guild_theme.tres" id="2"]
-[ext_resource type="Texture2D" path="res://assets/ui/vignette.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://bnmovd7tg5bke" path="res://assets/ui/vignette.png" id="3"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -36,11 +36,11 @@ stretch_mode = 6
 mouse_filter = 2
 
 [node name="Embers" type="CPUParticles2D" parent="."]
-position = Vector2(640, 360)
+position = Vector2(640, 400)
 amount = 24
 lifetime = 6.0
 emission_shape = 3
-emission_rect_extents = Vector2(640, 360)
+emission_rect_extents = Vector2(760, 480)
 direction = Vector2(0, -1)
 spread = 25.0
 gravity = Vector2(0, -6)

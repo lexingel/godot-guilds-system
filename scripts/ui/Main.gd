@@ -1,8 +1,8 @@
 extends Control
 ## Root UI controller — mirrors guild-system.html's render() function: one
 ## place that clears and rebuilds the current screen's Controls from
-## GameState, rather than a scene per screen. Kept as plain Controls with no
-## custom Theme (visual polish is explicitly deferred past this slice).
+## GameState, rather than a scene per screen. Uses the Cinzel/Overpass font
+## pairing and a themed panel hierarchy (CardPanel/StatTile) via guild_theme.tres.
 
 @onready var root: MarginContainer = $Root
 
@@ -56,7 +56,8 @@ func _vbox(gap: int = 10) -> VBoxContainer:
 ## word, so inside an HBoxContainer row it gets squeezed to near-zero width
 ## and wraps every word onto its own line. Long text (combat log lines, item
 ## descriptions) instead sits in a VBoxContainer stretched to the fixed-width
-## content column, so it wraps at a sane width via wrap_text() below instead.
+## content column, so it wraps at a sane width via _wrap_label() below instead
+## — or via _info_row() when the wrapping text needs to share its row with buttons.
 func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -410,8 +411,9 @@ func _add_ground_shadow(parent: Control, wrapper_pos: Vector2, wrapper_size: flo
 
 
 ## Opt-in wrapping variant for long standalone text (combat log lines,
-## descriptions) — safe to use only where the label is the sole child of its
-## row (a VBoxContainer entry, not sharing an HBoxContainer with buttons).
+## descriptions) — use where the label is the sole child of its row (a
+## VBoxContainer entry). For a row that mixes wrapping text with sibling
+## buttons inside an HBoxContainer, use _info_row() instead.
 func _wrap_label(text: String, size: int = 14, muted: bool = false) -> Label:
 	var l := _label(text, size, muted)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -424,12 +426,12 @@ func _wrap_label(text: String, size: int = 14, muted: bool = false) -> Label:
 ## the label gets SIZE_EXPAND_FILL + autowrap so it wraps onto multiple lines
 ## instead of being clipped by its sibling controls; `leading` is an optional
 ## icon/checkbox placed before the text, `actions` are placed after it.
-func _info_row(text: String, size: int, actions: Array[Control], leading: Control = null) -> HBoxContainer:
+func _info_row(text: String, size: int, actions: Array[Control], leading: Control = null, muted: bool = false) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	if leading:
 		row.add_child(leading)
-	row.add_child(_wrap_label(text, size))
+	row.add_child(_wrap_label(text, size, muted))
 	for a in actions:
 		row.add_child(a)
 	return row
@@ -542,7 +544,7 @@ func render() -> void:
 ## currencies, and "where am I" breadcrumb never scroll out of view.
 func _breadcrumb_for_screen() -> String:
 	match screen:
-		"rift_hall": return "Training Ground"
+		"rift_hall": return "Rift Hall"
 		"rift_map": return "Rift Map"
 		"party_assembly": return "Party Assembly"
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
@@ -2424,7 +2426,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			if err != "":
 				push_warning(err)
 			render()
-		)]))
+		)], null, true))
 
 	# Portrait + a live stat readout side by side, framed with the same
 	# PORTRAIT_FRAME_PATH art the paper-doll design has been carrying unused
