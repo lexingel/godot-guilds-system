@@ -1101,7 +1101,17 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(_label("Hardcore Mode active", 12))
 	if not GameState.active_incense.is_empty():
 		v.add_child(_label("%s active" % str(GameState.active_incense["name"]), 12, true))
-	_render_rift_map(v)
+
+	var kind := GameState.current_node_kind()
+	# The battle screen already shows every hero's HP twice over (arena
+	# nameplates + the action menu) and has its own Retreat button — repeating
+	# a third party-HP list and a second Retreat button above/below it just
+	# forced extra scrolling to reach the actual action buttons every round.
+	# The path map is hidden here too — it's one more thing to scroll past
+	# on a screen that's already the most cramped in the game.
+	var is_combat_kind := kind in ["combat", "boss", "elite"]
+	if not is_combat_kind:
+		_render_rift_map(v)
 
 	var sealed = GameState.run.get("sealed")
 	if sealed != null:
@@ -1131,13 +1141,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 				render()
 			))
 		return
-
-	var kind := GameState.current_node_kind()
-	# The battle screen already shows every hero's HP twice over (arena
-	# nameplates + the action menu) and has its own Retreat button — repeating
-	# a third party-HP list and a second Retreat button above/below it just
-	# forced extra scrolling to reach the actual action buttons every round.
-	var is_combat_kind := kind in ["combat", "boss", "elite"]
 
 	if not is_combat_kind:
 		v.add_child(_hsep())
