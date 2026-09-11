@@ -953,14 +953,16 @@ const SUBCLASS_PORTRAIT_PATH := {
 ## AI-generated combat animation frames (5 each: frame 0 is the static portrait,
 ## 1-4 are the motion). Only combos that actually produced usable motion exist —
 ## Warrior/hurt and Ranger/attack never did after 3 rounds of prompt iteration,
-## so those two intentionally have no frames; callers fall back to tweening the
-## static portrait instead of frame-swapping when this returns [].
+## and Ranger/skill didn't either on the first attempt despite using the
+## limb-specific wording that lesson taught — so those three intentionally
+## have no frames; callers fall back to tweening the static portrait instead
+## of frame-swapping when this returns [].
 const HERO_ANIM_COMBOS := {
-	"warrior": ["attack"],
+	"warrior": ["attack", "skill"],
 	"ranger": ["hurt"],
-	"mage": ["attack", "hurt"],
-	"cleric": ["attack", "hurt"],
-	"rogue": ["attack", "hurt"],
+	"mage": ["attack", "hurt", "skill"],
+	"cleric": ["attack", "hurt", "skill"],
+	"rogue": ["attack", "hurt", "skill"],
 }
 
 

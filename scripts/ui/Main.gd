@@ -1226,6 +1226,73 @@ func _flash_white(wrapper: Control) -> void:
 	await _await_or_timeout(tween.finished, 1.0)
 
 
+## Fallback for an Ability use when that role has no "skill" frames: a lunge
+## like a plain attack, but with an added bright color flash so it still
+## reads as "the special one" rather than an identical basic attack.
+func _tween_skill_flash(wrapper: Control) -> void:
+	var start_x: float = wrapper.position.x
+	var tween := create_tween()
+	tween.tween_property(wrapper, "modulate", Color(1.6, 1.4, 2.0), 0.1)
+	tween.parallel().tween_property(wrapper, "position:x", start_x + 12.0, 0.12)
+	tween.chain().tween_property(wrapper, "position:x", start_x, 0.12)
+	tween.parallel().tween_property(wrapper, "modulate", Color(1, 1, 1), 0.2)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
+## Defend has no frame-swap animation at any class — it's a brief, frequent
+## action every round rather than the fight's visual centerpiece, so a tween
+## on the existing static portrait is the right weight here (same "cheapest
+## thing that reads" treatment already used for the lunge/hurt fallbacks).
+func _tween_defend(wrapper: Control) -> void:
+	var start_y: float = wrapper.position.y
+	var tween := create_tween()
+	tween.tween_property(wrapper, "position:y", start_y + 5.0, 0.1)
+	tween.parallel().tween_property(wrapper, "modulate", Color(0.85, 0.9, 1.1), 0.1)
+	tween.tween_interval(0.15)
+	tween.tween_property(wrapper, "position:y", start_y, 0.12)
+	tween.parallel().tween_property(wrapper, "modulate", Color(1, 1, 1), 0.12)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
+## Played once a hero's hp crosses to 0 this round, right after their hurt
+## reaction — desaturates and settles into a slumped resting pose instead of
+## snapping back to the idle stance the way a non-lethal hit does. Left in
+## this end state deliberately (no return tween): render() builds a fresh,
+## un-tinted wrapper for this hero the next time they're actually alive.
+func _tween_collapse(wrapper: Control) -> void:
+	var start_y: float = wrapper.position.y
+	var tween := create_tween()
+	tween.tween_property(wrapper, "position:y", start_y + 10.0, 0.25)
+	tween.parallel().tween_property(wrapper, "modulate", Color(0.4, 0.4, 0.4, 0.75), 0.3)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
+## Played once, on every surviving hero, the instant a fight resolves as a
+## win — a small triumphant beat before render() replaces the arena with the
+## victory screen. Finite (not looping), since it only ever plays once.
+func _tween_victory_pose(wrapper: Control) -> void:
+	var start_y: float = wrapper.position.y
+	var tween := create_tween()
+	tween.tween_property(wrapper, "position:y", start_y - 10.0, 0.15)
+	tween.parallel().tween_property(wrapper, "modulate", Color(1.3, 1.3, 1.1), 0.15)
+	tween.tween_property(wrapper, "position:y", start_y, 0.15)
+	tween.parallel().tween_property(wrapper, "modulate", Color(1, 1, 1), 0.15)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
+## A finite (not endless) color pulse marking that a boss's mechanic will
+## visibly affect the *next* round — the same moment Combat.describe_incoming's
+## text telegraph line covers, just on the monster's own sprite too. 3 cycles
+## is enough to be noticed without still running by the time a player has
+## read the line and picked an action.
+func _start_mechanic_pulse(wrapper: Control, color: Color) -> void:
+	var tween := create_tween()
+	tween.bind_node(wrapper)
+	tween.set_loops(3)
+	tween.tween_property(wrapper, "modulate", color, 0.5)
+	tween.tween_property(wrapper, "modulate", Color(1, 1, 1), 0.5)
+
+
 ## A gentle, endless breathing/sway loop for a hero or monster wrapper so the
 ## arena doesn't look frozen between rounds — a small vertical bob rather than
 ## a scale pulse (scaling pixel art by fractional amounts shimmers/aliases
@@ -1283,12 +1350,20 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			continue
 		var act: Dictionary = pending.get(h.id, {})
 		var action: String = str(act.get("action", "attack"))
-		if action == "attack" or action == "ability":
+		if action == "attack":
 			var frames := GameData.hero_anim_frames(h.cls_id, "attack")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
 			else:
 				await _tween_lunge(hero_wrappers[h.id])
+		elif action == "ability":
+			var frames := GameData.hero_anim_frames(h.cls_id, "skill")
+			if not frames.is_empty() and hero_rects.has(h.id):
+				await _play_frames(hero_rects[h.id], frames)
+			else:
+				await _tween_skill_flash(hero_wrappers[h.id])
+		elif action == "defend":
+			await _tween_defend(hero_wrappers[h.id])
 
 	for i in monsters.size():
 		if not monster_wrappers.has(i):
@@ -1323,6 +1398,30 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			else:
 				await _tween_hurt(hero_wrappers[h.id])
 			await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
+			if before > 0 and h.hp <= 0:
+				await _tween_collapse(hero_wrappers[h.id])
+
+	# A won fight is only detectable by re-checking node_state — Combat.resolve_round's
+	# return value never reaches here directly, only GameState.resolve_round_now()'s
+	# side effect on run["node_state"]["result"] does. Plays once, before the caller's
+	# render() replaces the arena with the victory screen.
+	var ns_after: Dictionary = GameState.run.get("node_state", {})
+	if ns_after.has("result") and bool(ns_after["result"].get("won", false)):
+		for h in party:
+			if h.hp > 0 and hero_wrappers.has(h.id):
+				await _tween_victory_pose(hero_wrappers[h.id])
+
+
+## A quick step-back-and-fade on every living hero before the screen swaps to
+## the Terminal — Retreat previously had zero animation, an instant cut.
+func _play_retreat(heroes: Array[Hero], wrappers: Dictionary) -> void:
+	for h in heroes:
+		if h.hp > 0 and wrappers.has(h.id):
+			var w: Control = wrappers[h.id]
+			var tween := create_tween()
+			tween.tween_property(w, "position:x", w.position.x - 16.0, 0.2)
+			tween.parallel().tween_property(w, "modulate:a", 0.0, 0.2)
+	await _await_or_timeout(get_tree().create_timer(0.22).timeout, 1.0)
 
 
 ## One hero's tab in the battle screen's action-bar header: portrait + HP bar
@@ -1541,6 +1640,27 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				mech_badge.tooltip_text = str(badge_specs[bi]["tooltip"])
 				arena.add_child(mech_badge)
 
+			# A finite color-pulse tell on the monster's own sprite, matching
+			# whatever Combat.describe_incoming's text telegraph would say
+			# about this exact mechanic this round — previously that warning
+			# was text-only above the action bar, easy to miss.
+			if float(m["hp"]) > 0:
+				var next_round: int = int(state.get("round_num", 0)) + 1
+				for mech_check in [mechanic, mechanic2]:
+					if mech_check.is_empty():
+						continue
+					match mech_check.get("id"):
+						"warded":
+							if next_round <= 2:
+								_start_mechanic_pulse(m_wrapper, Palette.VIOLET_BRIGHT)
+						"enrage":
+							if next_round > GameData.BOSS_ENRAGE_ROUND:
+								_start_mechanic_pulse(m_wrapper, Palette.HAZARD)
+						"frenzied":
+							_start_mechanic_pulse(m_wrapper, Palette.HAZARD)
+						"regen":
+							_start_mechanic_pulse(m_wrapper, Palette.RANK_E)
+
 			# Elemental type badge (Elemental Weakness) — opposite side from the
 			# mechanic/ability badges above so the two never collide, reusing
 			# the same 5 relic-type gem icons already generated for Inventory.
@@ -1756,7 +1876,14 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# it, freeing the arena nodes its suspended awaits still reference.
 			if _combat_animating:
 				return
+			_combat_animating = true
+			if GameState.state_changed.is_connected(render):
+				GameState.state_changed.disconnect(render)
+			await _play_retreat(living_heroes, hero_wrappers)
 			GameState.combat_retreat()
+			if not GameState.state_changed.is_connected(render):
+				GameState.state_changed.connect(render)
+			_combat_animating = false
 			render()
 		))
 		menu.add_child(bottom_row)
