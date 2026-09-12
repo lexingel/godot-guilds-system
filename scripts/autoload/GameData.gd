@@ -946,6 +946,32 @@ const CURRENCY_ICON_PATH := {
 	"crystals": "res://assets/ui/icon_crystals.png",
 	"tokens": "res://assets/ui/icon_tokens.png",
 }
+## One-shot SFX, all CC0 (Kenney.nl — Interface Sounds/RPG Audio/Impact
+## Sounds packs, see assets/audio/sfx/KENNEY_LICENSE.txt). Every key here is
+## safe to reference from any call site regardless of whether the file
+## exists yet — AudioManager.play_sfx no-ops gracefully on a missing path,
+## the same contract GameData.monster_anim_frames uses for its own gaps.
+const SFX_PATH := {
+	"ui_click": "res://assets/audio/sfx/ui_click.ogg",
+	"ui_back": "res://assets/audio/sfx/ui_back.ogg",
+	"ui_confirm": "res://assets/audio/sfx/ui_confirm.ogg",
+	"ui_error": "res://assets/audio/sfx/ui_error.ogg",
+	"coin": "res://assets/audio/sfx/coin.ogg",
+	"attack": "res://assets/audio/sfx/attack.ogg",
+	"hit": "res://assets/audio/sfx/hit.ogg",
+	"hit_heavy": "res://assets/audio/sfx/hit_heavy.ogg",
+	"knockout": "res://assets/audio/sfx/knockout.ogg",
+	"victory": "res://assets/audio/sfx/victory.ogg",
+	"craft": "res://assets/audio/sfx/craft.ogg",
+}
+## Looping background music — none of these exist yet (a future session
+## generates them via Suno, per the plan doc), but every combat/camp screen
+## call site can reference these keys now; AudioManager.play_music no-ops
+## until a real file lands at the path.
+const MUSIC_PATH := {
+	"combat": "res://assets/audio/music/combat.ogg",
+	"camp": "res://assets/audio/music/camp.ogg",
+}
 ## The 4 new generic action icons Phase 14 needed on top of the existing
 ## assets/skills/ set (which already covered swords/shields/potions/gems/a
 ## star/a trophy/a heart/boots/rings/armor — enough for most button actions

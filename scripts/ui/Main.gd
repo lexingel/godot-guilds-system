@@ -494,10 +494,17 @@ func _info_row(text: String, size: int, actions: Array[Control], leading: Contro
 	return row
 
 
+## Every button in the game is built through here, so playing the click SFX
+## here once covers all of them for free — no per-call-site wiring needed,
+## and it costs nothing if assets/audio/sfx/ui_click.ogg doesn't exist yet
+## (AudioManager.play_sfx no-ops on a missing path).
 func _button(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.pressed.connect(cb)
+	b.pressed.connect(func():
+		AudioManager.play_sfx(GameData.SFX_PATH["ui_click"])
+		cb.call()
+	)
 	return b
 
 
@@ -584,6 +591,23 @@ func render() -> void:
 		"rift_run": _render_rift_run(v)
 		"crafting_hall": _render_crafting_hall(v)
 		"terminal": _render_terminal(v)
+	_update_screen_music()
+
+
+## Only 2 music tracks are planned for now (combat, camp — see the Suno plan
+## in the project doc), so this only ever switches between those two states
+## and otherwise leaves whatever's already playing alone, rather than
+## stopping/restarting on every screen that doesn't have a track assigned
+## yet. Both AudioManager.play_music calls are safe to make unconditionally
+## (they already no-op on a repeat of the same path, or a missing file).
+func _update_screen_music() -> void:
+	if screen == "terminal":
+		AudioManager.play_music(GameData.MUSIC_PATH["camp"])
+	elif screen == "rift_run":
+		var kind := GameState.current_node_kind()
+		var ns: Dictionary = GameState.run.get("node_state", {})
+		if kind in ["combat", "boss", "elite"] and ns.has("combat_state"):
+			AudioManager.play_music(GameData.MUSIC_PATH["combat"])
 
 
 ## Pinned HUD stays outside the ScrollContainer, so the guild identity,
@@ -1406,12 +1430,14 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 		var act: Dictionary = pending.get(h.id, {})
 		var action: String = str(act.get("action", "attack"))
 		if action == "attack":
+			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
 			var frames := GameData.hero_anim_frames(h.cls_id, "attack")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
 			else:
 				await _tween_lunge(hero_wrappers[h.id])
 		elif action == "ability":
+			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
 			var frames := GameData.hero_anim_frames(h.cls_id, "skill")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
@@ -1428,6 +1454,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			var heavy: bool = dmg >= float(monsters[i]["max_hp"]) * 0.25
 			var atk_type := str(attacker_type_by_monster.get(i, ""))
 			var burst_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(atk_type, Color(1, 1, 1))
+			AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy else "hit"])
 			_spawn_impact_particles(monster_wrappers[i], monster_wrappers[i].custom_minimum_size * 0.5, burst_color, heavy)
 			await _impact_beat(arena, heavy)
 			if monster_rects.has(i):
@@ -1467,6 +1494,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 		var dmg2: int = before - h.hp
 		if dmg2 > 0 and hero_wrappers.has(h.id):
 			var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
+			AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy2 else "hit"])
 			_spawn_impact_particles(hero_wrappers[h.id], hero_wrappers[h.id].custom_minimum_size * 0.5, retaliation_color, heavy2)
 			await _impact_beat(arena, heavy2)
 			var frames := GameData.hero_anim_frames(h.cls_id, "hurt")
@@ -1476,6 +1504,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 				await _tween_hurt(hero_wrappers[h.id])
 			await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
 			if before > 0 and h.hp <= 0:
+				AudioManager.play_sfx(GameData.SFX_PATH["knockout"])
 				await _tween_collapse(hero_wrappers[h.id])
 
 	# A won fight is only detectable by re-checking node_state — Combat.resolve_round's
@@ -1484,6 +1513,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 	# render() replaces the arena with the victory screen.
 	var ns_after: Dictionary = GameState.run.get("node_state", {})
 	if ns_after.has("result") and bool(ns_after["result"].get("won", false)):
+		AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 		for h in party:
 			if h.hp > 0 and hero_wrappers.has(h.id):
 				await _tween_victory_pose(hero_wrappers[h.id])
@@ -1492,6 +1522,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 ## A quick step-back-and-fade on every living hero before the screen swaps to
 ## the Terminal — Retreat previously had zero animation, an instant cut.
 func _play_retreat(heroes: Array[Hero], wrappers: Dictionary) -> void:
+	AudioManager.play_sfx(GameData.SFX_PATH["ui_back"])
 	for h in heroes:
 		if h.hp > 0 and wrappers.has(h.id):
 			var w: Control = wrappers[h.id]
@@ -2558,6 +2589,7 @@ var _crafting_animating: bool = false
 ## replaces the whole screen — scale up from tiny + a bright flash, not a
 ## looping effect since it only ever plays once per craft.
 func _play_craft_flourish(v: VBoxContainer, icon_path: String) -> void:
+	AudioManager.play_sfx(GameData.SFX_PATH["craft"])
 	var rect := _icon(icon_path, 40)
 	var wrap := _wrap_icon(rect)
 	wrap.scale = Vector2(0.2, 0.2)
