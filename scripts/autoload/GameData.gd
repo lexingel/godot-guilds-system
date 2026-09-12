@@ -330,6 +330,8 @@ const DUAL_WIELD_CLASSES := [
 	"scavenger", "runaway", "cutpurse", "skirmisher", "footpad", "shadowfoot",
 	"fleetblade", "nightblade", "wraithstep", "duskrunner",
 	"duelist", "blade-dancer", "zealot",
+	# Content-pass additions — both fit the dual-wield finisher/duelist flavor.
+	"the-unseen-hand", "glyphhand",
 ]
 
 const BOSS_MECHANICS := [
@@ -364,6 +366,14 @@ const MONSTER_ABILITIES := {
 	"Hollow Reaver": {"kind": "shielded", "name": "Bone Ward", "value": 0.3},
 	"Ember Whelp": {"kind": "frenzy", "name": "Death Frenzy", "value": 0.4},
 	"Cinder Moth": {"kind": "frenzy", "name": "Death Frenzy", "value": 0.4},
+	# Content pass: 2 new archetypes, 2 monsters each — the other 4 new
+	# monsters intentionally carry no ability entry at all (pure visual
+	# variety), the same already-supported "nothing special" case every
+	# monster not in this dict already falls into.
+	"Bog Wretch": {"kind": "drain", "name": "Leeching Mire", "value": 0.35},
+	"Silt Crawler": {"kind": "drain", "name": "Leeching Mire", "value": 0.35},
+	"Glass Wisp": {"kind": "reflect", "name": "Mirrored Edge", "value": 0.25},
+	"Mirror Fiend": {"kind": "reflect", "name": "Mirrored Edge", "value": 0.25},
 }
 
 ## Badge icons for MONSTER_ABILITIES — reuses BOSS_MECHANIC_ICON's picks where
@@ -374,6 +384,8 @@ const MONSTER_ABILITY_ICON := {
 	"healer": "res://assets/skills/potion_red.png",
 	"shielded": "res://assets/skills/shield_orange.png",
 	"frenzy": "res://assets/skills/wing.png",
+	"drain": "res://assets/skills/dagger_red.png",
+	"reflect": "res://assets/skills/shield_blue.png",
 }
 
 const HAZARD_TYPES := [
@@ -396,7 +408,7 @@ const HAZARD_BG := {
 }
 
 const FIRST_NAMES := ["Aldric", "Bryn", "Coren", "Dessa", "Elowen", "Fenwick", "Gara", "Hollis", "Ianthe", "Joric", "Kestrel", "Liora", "Maren", "Nyx", "Oren", "Petra", "Quill", "Roth", "Sable", "Tavin", "Ysolde", "Zeph"]
-const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth"]
+const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth", "Bog Wretch", "Silt Crawler", "Glass Wisp", "Mirror Fiend", "Frost Stalker", "Ashclad Ghoul", "Deep Anchorite", "Voidling Sprite"]
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]
 const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 
@@ -437,6 +449,15 @@ const SUBCLASS_ABILITIES := {
 	"runeblade": {"name": "Inscribed Strike", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.3},
 	"ashen-templar": {"name": "Undying Vow", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.5},
 	"rift-sovereign": {"name": "Sovereign's Wrath", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
+	# -- Warrior (content-pass additions) --
+	"fieldmender": {"name": "Battlefield Patch", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
+	"featherguard": {"name": "Light Feet", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.12},
+	"trailblazer": {"name": "First Through", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
+	"frostguard": {"name": "Unbothered", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"warbrand": {"name": "Growing Anger", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"aegis-bearer": {"name": "On Principle", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.35},
+	"stormguard": {"name": "Meet the Charge", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.1},
+	"rift-breaker": {"name": "First Crack", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
 	# -- Ranger --
 	"trapper": {"name": "Snare Volley", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.85},
 	"slinger": {"name": "Improvised Shot", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
@@ -448,6 +469,15 @@ const SUBCLASS_ABILITIES := {
 	"rift-ranger": {"name": "Read the Room", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.15},
 	"deadfall-hunter": {"name": "Reversed Trap", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.75},
 	"voidwalker": {"name": "Half-Step Out", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.22},
+	# -- Ranger (content-pass additions) --
+	"shadowtracker": {"name": "Scent in the Dark", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.85},
+	"fieldscout": {"name": "Exact Shot", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
+	"nightwarden": {"name": "Watching the Dark", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.2},
+	"sapling-keeper": {"name": "Field Dressing", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
+	"duskstalker": {"name": "Gone Before the Echo", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.15},
+	"gale-marksman": {"name": "True on the Wind", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.1},
+	"rift-piercer": {"name": "The One Seam", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
+	"wintertide-archer": {"name": "Colder Every Shot", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
 	# -- Mage --
 	"apprentice": {"name": "Unsteady Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
 	"cinderling": {"name": "First Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.85},
@@ -459,6 +489,15 @@ const SUBCLASS_ABILITIES := {
 	"pyromancer": {"name": "The Rift Leans Away", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.2},
 	"archon-of-storms": {"name": "Thunder's Door", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
 	"the-unbound": {"name": "No Name Holds It", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.6},
+	# -- Mage (content-pass additions) --
+	"thornweaver": {"name": "Grown of Will", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
+	"shade-adept": {"name": "The Quiet Spell", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
+	"stoneward-mystic": {"name": "Bark and Stone", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"grim-conjurer": {"name": "One More Round", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
+	"verdant-oracle": {"name": "Root and Leaf", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.45},
+	"duskglass-seer": {"name": "Sees It Land First", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.18},
+	"ashbound-theorist": {"name": "Ends in Fire", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"rift-warden-magus": {"name": "Warded Before It Forms", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.35},
 	# -- Cleric --
 	"peddler": {"name": "Quick Bandage", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
 	"acolyte": {"name": "Quiet Prayer", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
@@ -470,6 +509,15 @@ const SUBCLASS_ABILITIES := {
 	"dawnkeeper": {"name": "First Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.35},
 	"sanctified-shield": {"name": "Not Today", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.4},
 	"alchemist": {"name": "Faster Brew", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	# -- Cleric (content-pass additions) --
+	"emberblessed-acolyte": {"name": "Lit Candle", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
+	"frostward-sister": {"name": "Keeps the Chill Out", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"vanguard-chaplain": {"name": "Blessed Blade", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 1.0},
+	"hearth-warden": {"name": "Fire in the Cold", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
+	"ember-confessor": {"name": "Brief Absolution", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.95},
+	"frost-anchorite": {"name": "Fasting Vigil", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.5},
+	"radiant-vanguard": {"name": "Leads With Light", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 1.0},
+	"sainted-ember": {"name": "First Word", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.05},
 	# -- Rogue --
 	"scavenger": {"name": "Know the Puddles", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.08},
 	"runaway": {"name": "Never Fought Fair", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.1},
@@ -481,6 +529,15 @@ const SUBCLASS_ABILITIES := {
 	"nightblade": {"name": "Strikes From the Dark", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.2},
 	"wraithstep": {"name": "Two Footprints", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 1.0},
 	"duskrunner": {"name": "Between Heartbeats", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.4},
+	# -- Rogue (content-pass additions) --
+	"herbrunner": {"name": "Unpoisoned Plants", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
+	"arcane-pilferer": {"name": "Warded Vault", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.85},
+	"ironhide-footpad": {"name": "Tougher Than It Looks", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"glyphhand": {"name": "Reads the Seams", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.16},
+	"bramblefoot": {"name": "The Undergrowth Hides More", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.2},
+	"rift-slipper": {"name": "Half Out of Reality", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
+	"wraithblade-adept": {"name": "Thinner and Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"the-unseen-hand": {"name": "Already Struck", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
 }
 
 ## One icon per ability *effect* (13 shapes, not 50 abilities) reusing the
@@ -670,6 +727,16 @@ const CLASS_POOL := [
 	{"id": "runeblade", "name": "Runeblade", "role": "warrior", "rank": "B", "type": "Arcane", "hp_ratio": 1.0, "dmg_ratio": 1.2, "kind": "first_round_pct", "flavor": "Every strike is already inscribed."},
 	{"id": "ashen-templar", "name": "Ashen Templar", "role": "warrior", "rank": "A", "type": "Umbral", "hp_ratio": 1.3, "dmg_ratio": 1.0, "kind": "wipe_guard", "flavor": "Has died before. Didn't care for it."},
 	{"id": "rift-sovereign", "name": "Rift Sovereign", "role": "warrior", "rank": "S", "type": "Arcane", "hp_ratio": 1.1, "dmg_ratio": 1.4, "kind": "boss_alpha_strike", "flavor": "The Rift answers to almost nothing. Almost."},
+	# -- Warrior (content-pass additions — fills the role's missing mend_pct/
+	# dodge_pct kinds and Verdant/Frost types) --
+	{"id": "fieldmender", "name": "Fieldmender", "role": "warrior", "rank": "F", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 0.8, "kind": "mend_pct", "flavor": "Patches the party between swings."},
+	{"id": "featherguard", "name": "Featherguard", "role": "warrior", "rank": "E", "type": "Frost", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "dodge_pct", "flavor": "Heavy armor, light feet."},
+	{"id": "trailblazer", "name": "Trailblazer", "role": "warrior", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "dmg_pct", "flavor": "First through the door, first to swing."},
+	{"id": "frostguard", "name": "Frostguard", "role": "warrior", "rank": "E", "type": "Frost", "hp_ratio": 1.3, "dmg_ratio": 0.7, "kind": "hp_pct", "flavor": "The cold never bothered the plate much."},
+	{"id": "warbrand", "name": "Warbrand", "role": "warrior", "rank": "D", "type": "Ember", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "escalate_pct", "flavor": "Gets angrier, not slower."},
+	{"id": "aegis-bearer", "name": "Aegis-Bearer", "role": "warrior", "rank": "C", "type": "Frost", "hp_ratio": 1.3, "dmg_ratio": 0.8, "kind": "wipe_guard", "flavor": "The last thing standing, on principle."},
+	{"id": "stormguard", "name": "Stormguard", "role": "warrior", "rank": "B", "type": "Frost", "hp_ratio": 1.0, "dmg_ratio": 1.1, "kind": "first_round_pct", "flavor": "Meets the charge before it lands."},
+	{"id": "rift-breaker", "name": "Rift-Breaker", "role": "warrior", "rank": "A", "type": "Verdant", "hp_ratio": 1.2, "dmg_ratio": 1.1, "kind": "boss_alpha_strike", "flavor": "Puts the first crack in anything."},
 	# -- Ranger (precision & terrain reading) --
 	{"id": "trapper", "name": "Trapper", "role": "ranger", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 0.9, "kind": "hazard_guard_pct", "flavor": "Sets more snares than the Rift can spring."},
 	{"id": "slinger", "name": "Slinger", "role": "ranger", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "Improvises a weapon out of whatever's at hand."},
@@ -681,6 +748,16 @@ const CLASS_POOL := [
 	{"id": "rift-ranger", "name": "Rift Ranger", "role": "ranger", "rank": "C", "type": "Arcane", "hp_ratio": 1.0, "dmg_ratio": 1.1, "kind": "dodge_pct", "flavor": "Reads a hallway before it reads back."},
 	{"id": "deadfall-hunter", "name": "Deadfall Hunter", "role": "ranger", "rank": "C", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "hazard_guard_pct", "flavor": "Sets the trap the Rift walks into instead."},
 	{"id": "voidwalker", "name": "Voidwalker", "role": "ranger", "rank": "A", "type": "Arcane", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "dodge_pct", "flavor": "Half-stepped out of the fight before it began."},
+	# -- Ranger (content-pass additions — fills the role's missing mend_pct/
+	# wipe_guard/boss_alpha_strike kinds and Umbral type) --
+	{"id": "shadowtracker", "name": "Shadowtracker", "role": "ranger", "rank": "F", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 0.9, "kind": "hazard_guard_pct", "flavor": "Tracks by scent when the light gives out."},
+	{"id": "fieldscout", "name": "Fieldscout", "role": "ranger", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "Knows exactly where to put an arrow."},
+	{"id": "nightwarden", "name": "Nightwarden", "role": "ranger", "rank": "E", "type": "Umbral", "hp_ratio": 1.0, "dmg_ratio": 0.9, "kind": "wipe_guard", "flavor": "Watches the dark so the party doesn't have to."},
+	{"id": "sapling-keeper", "name": "Sapling-Keeper", "role": "ranger", "rank": "E", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 0.8, "kind": "mend_pct", "flavor": "Field dressings from whatever's growing nearby."},
+	{"id": "duskstalker", "name": "Duskstalker", "role": "ranger", "rank": "D", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "dodge_pct", "flavor": "Gone before the echo catches up."},
+	{"id": "gale-marksman", "name": "Gale-Marksman", "role": "ranger", "rank": "C", "type": "Frost", "hp_ratio": 0.8, "dmg_ratio": 1.2, "kind": "first_round_pct", "flavor": "The wind carries the first shot true."},
+	{"id": "rift-piercer", "name": "Rift-Piercer", "role": "ranger", "rank": "B", "type": "Arcane", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "boss_alpha_strike", "flavor": "Finds the one seam every ward has."},
+	{"id": "wintertide-archer", "name": "Wintertide Archer", "role": "ranger", "rank": "A", "type": "Frost", "hp_ratio": 1.0, "dmg_ratio": 1.2, "kind": "escalate_pct", "flavor": "Colder with every arrow loosed."},
 	# -- Mage (escalating & warding casters) --
 	{"id": "apprentice", "name": "Apprentice", "role": "mage", "rank": "F", "type": "Arcane", "hp_ratio": 0.8, "dmg_ratio": 0.9, "kind": "escalate_pct", "flavor": "Still learning to hold a spark steady."},
 	{"id": "cinderling", "name": "Cinderling", "role": "mage", "rank": "F", "type": "Ember", "hp_ratio": 0.8, "dmg_ratio": 0.9, "kind": "dmg_pct", "flavor": "Sparks first, thinks second."},
@@ -692,6 +769,16 @@ const CLASS_POOL := [
 	{"id": "pyromancer", "name": "Pyromancer", "role": "mage", "rank": "B", "type": "Ember", "hp_ratio": 0.8, "dmg_ratio": 1.2, "kind": "dodge_pct", "flavor": "The Rift itself seems to lean away."},
 	{"id": "archon-of-storms", "name": "Archon of Storms", "role": "mage", "rank": "A", "type": "Frost", "hp_ratio": 1.0, "dmg_ratio": 1.2, "kind": "boss_alpha_strike", "flavor": "Opens every Warden's door with thunder."},
 	{"id": "the-unbound", "name": "The Unbound", "role": "mage", "rank": "S", "type": "Arcane", "hp_ratio": 1.0, "dmg_ratio": 1.3, "kind": "escalate_pct", "flavor": "No name holds it. No floor stops it."},
+	# -- Mage (content-pass additions — fills the role's missing hp_pct/
+	# first_round_pct/mend_pct/wipe_guard kinds and Verdant/Umbral types) --
+	{"id": "thornweaver", "name": "Thornweaver", "role": "mage", "rank": "F", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 0.8, "kind": "mend_pct", "flavor": "Grows a ward out of nothing but will."},
+	{"id": "shade-adept", "name": "Shade-Adept", "role": "mage", "rank": "F", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 0.9, "kind": "first_round_pct", "flavor": "The first spell is always the quiet one."},
+	{"id": "stoneward-mystic", "name": "Stoneward Mystic", "role": "mage", "rank": "E", "type": "Verdant", "hp_ratio": 1.2, "dmg_ratio": 0.7, "kind": "hp_pct", "flavor": "Turns skin to something closer to bark."},
+	{"id": "grim-conjurer", "name": "Grim Conjurer", "role": "mage", "rank": "E", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "wipe_guard", "flavor": "Bargains with the dark for one more round."},
+	{"id": "verdant-oracle", "name": "Verdant Oracle", "role": "mage", "rank": "D", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 0.9, "kind": "mend_pct", "flavor": "Reads the future in root and leaf."},
+	{"id": "duskglass-seer", "name": "Duskglass Seer", "role": "mage", "rank": "C", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "dodge_pct", "flavor": "Sees the strike land before it's thrown."},
+	{"id": "ashbound-theorist", "name": "Ashbound Theorist", "role": "mage", "rank": "B", "type": "Ember", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "escalate_pct", "flavor": "Every equation ends in fire."},
+	{"id": "rift-warden-magus", "name": "Rift-Warden Magus", "role": "mage", "rank": "A", "type": "Arcane", "hp_ratio": 1.0, "dmg_ratio": 1.2, "kind": "hazard_guard_pct", "flavor": "Wards the floor before the Rift finishes forming it."},
 	# -- Cleric (sustain & support) --
 	{"id": "peddler", "name": "Peddler", "role": "cleric", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 0.8, "kind": "mend_pct", "flavor": "Sells bandages. Uses them too."},
 	{"id": "acolyte", "name": "Acolyte", "role": "cleric", "rank": "F", "type": "Arcane", "hp_ratio": 1.0, "dmg_ratio": 0.8, "kind": "mend_pct", "flavor": "Prays quietly, heals quietly."},
@@ -703,6 +790,16 @@ const CLASS_POOL := [
 	{"id": "dawnkeeper", "name": "Dawnkeeper", "role": "cleric", "rank": "B", "type": "Arcane", "hp_ratio": 1.1, "dmg_ratio": 0.9, "kind": "hazard_guard_pct", "flavor": "Carries first light into the deepest floor."},
 	{"id": "sanctified-shield", "name": "Sanctified Shield", "role": "cleric", "rank": "B", "type": "Arcane", "hp_ratio": 1.3, "dmg_ratio": 0.9, "kind": "wipe_guard", "flavor": "Swears the party will not fall today."},
 	{"id": "alchemist", "name": "Alchemist", "role": "cleric", "rank": "B", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 1.0, "kind": "escalate_pct", "flavor": "Brews faster than the Rift can wound."},
+	# -- Cleric (content-pass additions — fills the role's missing hp_pct/
+	# first_round_pct/boss_alpha_strike kinds and Ember/Frost types) --
+	{"id": "emberblessed-acolyte", "name": "Emberblessed Acolyte", "role": "cleric", "rank": "F", "type": "Ember", "hp_ratio": 1.0, "dmg_ratio": 0.8, "kind": "dmg_pct", "flavor": "Prays with a lit candle, not a cold one."},
+	{"id": "frostward-sister", "name": "Frostward Sister", "role": "cleric", "rank": "F", "type": "Frost", "hp_ratio": 1.1, "dmg_ratio": 0.7, "kind": "hp_pct", "flavor": "Keeps the chill out of everyone but herself."},
+	{"id": "vanguard-chaplain", "name": "Vanguard Chaplain", "role": "cleric", "rank": "E", "type": "Ember", "hp_ratio": 1.0, "dmg_ratio": 0.9, "kind": "first_round_pct", "flavor": "Blesses the blade before it's needed."},
+	{"id": "hearth-warden", "name": "Hearth Warden", "role": "cleric", "rank": "E", "type": "Frost", "hp_ratio": 1.1, "dmg_ratio": 0.8, "kind": "hp_pct", "flavor": "A fire that doesn't go out in the cold."},
+	{"id": "ember-confessor", "name": "Ember Confessor", "role": "cleric", "rank": "D", "type": "Ember", "hp_ratio": 0.9, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "Absolves the Rift of its sins, briefly."},
+	{"id": "frost-anchorite", "name": "Frost Anchorite", "role": "cleric", "rank": "C", "type": "Frost", "hp_ratio": 1.0, "dmg_ratio": 0.9, "kind": "mend_pct", "flavor": "Fasts, prays, and somehow still heals faster."},
+	{"id": "radiant-vanguard", "name": "Radiant Vanguard", "role": "cleric", "rank": "B", "type": "Ember", "hp_ratio": 1.1, "dmg_ratio": 1.0, "kind": "first_round_pct", "flavor": "Leads with light, not caution."},
+	{"id": "sainted-ember", "name": "Sainted Ember", "role": "cleric", "rank": "A", "type": "Ember", "hp_ratio": 1.1, "dmg_ratio": 1.0, "kind": "boss_alpha_strike", "flavor": "The Rift's worst still flinches from her first word."},
 	# -- Rogue (evasion & burst) --
 	{"id": "scavenger", "name": "Scavenger", "role": "rogue", "rank": "F", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 0.9, "kind": "hazard_guard_pct", "flavor": "Knows which puddles not to step in."},
 	{"id": "runaway", "name": "Runaway", "role": "rogue", "rank": "F", "type": "Umbral", "hp_ratio": 0.8, "dmg_ratio": 0.9, "kind": "dodge_pct", "flavor": "Has never once stood and fought fair."},
@@ -714,6 +811,16 @@ const CLASS_POOL := [
 	{"id": "nightblade", "name": "Nightblade", "role": "rogue", "rank": "C", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "dmg_pct", "flavor": "Strikes from the dark and returns to it."},
 	{"id": "wraithstep", "name": "Wraithstep", "role": "rogue", "rank": "C", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "first_round_pct", "flavor": "Leaves two footprints and no explanation."},
 	{"id": "duskrunner", "name": "Duskrunner", "role": "rogue", "rank": "B", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "first_round_pct", "flavor": "Moves like the space between two heartbeats."},
+	# -- Rogue (content-pass additions — fills the role's missing hp_pct/
+	# mend_pct/wipe_guard/boss_alpha_strike kinds and Verdant/Arcane types) --
+	{"id": "herbrunner", "name": "Herbrunner", "role": "rogue", "rank": "F", "type": "Verdant", "hp_ratio": 0.9, "dmg_ratio": 0.9, "kind": "mend_pct", "flavor": "Knows every plant the Rift hasn't poisoned yet."},
+	{"id": "arcane-pilferer", "name": "Arcane Pilferer", "role": "rogue", "rank": "F", "type": "Arcane", "hp_ratio": 0.8, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "Steals more than coin from a warded vault."},
+	{"id": "ironhide-footpad", "name": "Ironhide Footpad", "role": "rogue", "rank": "E", "type": "Verdant", "hp_ratio": 1.1, "dmg_ratio": 0.8, "kind": "hp_pct", "flavor": "Tougher than a rogue has any right to be."},
+	{"id": "glyphhand", "name": "Glyphhand", "role": "rogue", "rank": "E", "type": "Arcane", "hp_ratio": 0.8, "dmg_ratio": 1.0, "kind": "dodge_pct", "flavor": "Reads a ward's seams like a lockpick reads a door."},
+	{"id": "bramblefoot", "name": "Bramblefoot", "role": "rogue", "rank": "D", "type": "Verdant", "hp_ratio": 1.0, "dmg_ratio": 0.9, "kind": "hp_pct", "flavor": "The undergrowth hides more than it seems to."},
+	{"id": "rift-slipper", "name": "Rift-Slipper", "role": "rogue", "rank": "C", "type": "Arcane", "hp_ratio": 0.9, "dmg_ratio": 1.1, "kind": "wipe_guard", "flavor": "Steps half out of reality when it matters."},
+	{"id": "wraithblade-adept", "name": "Wraithblade Adept", "role": "rogue", "rank": "B", "type": "Umbral", "hp_ratio": 0.9, "dmg_ratio": 1.2, "kind": "escalate_pct", "flavor": "Every strike thinner than the last, and faster."},
+	{"id": "the-unseen-hand", "name": "The Unseen Hand", "role": "rogue", "rank": "A", "type": "Arcane", "hp_ratio": 0.9, "dmg_ratio": 1.3, "kind": "boss_alpha_strike", "flavor": "Already struck before the boss noticed it arrive."},
 ]
 
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
@@ -824,6 +931,15 @@ const BATTLE_BACKGROUNDS: Array[String] = [
 	"res://assets/battle/bg_cavern.png",
 	"res://assets/battle/bg_ruins.png",
 	"res://assets/battle/bg_volcanic.png",
+	"res://assets/battle/bg_swamp.png",
+	"res://assets/battle/bg_tundra.png",
+	"res://assets/battle/bg_skyfallen_ruins.png",
+	"res://assets/battle/bg_abyssal_chasm.png",
+	# bg_arcane_observatory.png is NOT here yet — PixelLab ran out of credits
+	# mid-batch before generating it. Add it back once it exists; referencing
+	# a missing file here would show a blank battle background in ~1/10 fights
+	# (BATTLE_BACKGROUNDS is randomly sampled), unlike a missing monster/hero
+	# animation which only affects that one specific fight.
 ]
 const CURRENCY_ICON_PATH := {
 	"coins": "res://assets/ui/icon_coins.png",
@@ -854,6 +970,7 @@ const BED_ICON := "res://assets/screens/bed_icon.png"
 const RIFTHALL_BG := "res://assets/screens/rifthall_bg.png"
 const RIFTMAP_BG := "res://assets/screens/riftmap_bg.png"
 const INVENTORY_BG := "res://assets/screens/inventory_bg.png"
+const CRAFTING_BG := "res://assets/screens/crafting_bg.png"
 const OPS_BANNER := "res://assets/screens/ops_banner.png"
 const INFRA_BANNER := "res://assets/screens/infra_banner.png"
 const LOGISTICS_BANNER := "res://assets/screens/logistics_banner.png"
@@ -870,6 +987,7 @@ const CAMP_HUB_ICON_PATH := {
 	"rift": "res://assets/camp/icon_rift.png",
 	"rift_map": "res://assets/camp/icon_rift_map.png",
 	"bestiary": "res://assets/camp/icon_bestiary.png",
+	"crafting": "res://assets/camp/icon_crafting.png",
 }
 ## Ornate slot-frame borders, one per rarity tier — reused everywhere a
 ## rarity needs to read at a glance: equip slots on the paper-doll Roster
@@ -982,11 +1100,43 @@ const MONSTER_SPRITE_PATH := {
 	"slime": "res://assets/monsters/slime.png",
 	"wraith": "res://assets/monsters/wraith.png",
 	"fire_skull": "res://assets/monsters/fire_skull.png",
+	# Content pass: 8 new regular monsters, plus dedicated art for every
+	# elite/boss name that previously fell through to a hash-picked sprite
+	# from the pool above (a boss used to be able to look identical to a
+	# common goblin).
+	"bog_wretch": "res://assets/monsters/bog_wretch.png",
+	"silt_crawler": "res://assets/monsters/silt_crawler.png",
+	"glass_wisp": "res://assets/monsters/glass_wisp.png",
+	"mirror_fiend": "res://assets/monsters/mirror_fiend.png",
+	"frost_stalker": "res://assets/monsters/frost_stalker.png",
+	"ashclad_ghoul": "res://assets/monsters/ashclad_ghoul.png",
+	"deep_anchorite": "res://assets/monsters/deep_anchorite.png",
+	"voidling_sprite": "res://assets/monsters/voidling_sprite.png",
+	"warbound_elite": "res://assets/monsters/warbound_elite.png",
+	"blightfang_elite": "res://assets/monsters/blightfang_elite.png",
+	"rift_touched_colossus": "res://assets/monsters/rift_touched_colossus.png",
+	"iron_revenant": "res://assets/monsters/iron_revenant.png",
+	"storm_called_elite": "res://assets/monsters/storm_called_elite.png",
+	"ashen_broodlord": "res://assets/monsters/ashen_broodlord.png",
+	"vaelith": "res://assets/monsters/vaelith.png",
+	"korrath": "res://assets/monsters/korrath.png",
+	"nyxara": "res://assets/monsters/nyxara.png",
+	"drevok": "res://assets/monsters/drevok.png",
+	"sythrane": "res://assets/monsters/sythrane.png",
 }
 const MONSTER_NAME_SPRITE := {
 	"Gloom Stalker": "wraith", "Rift Wisp": "fire_skull", "Husk Brute": "zombie",
 	"Sable Fang": "orc", "Ember Whelp": "goblin", "Marrow Crawler": "skelly",
 	"Hollow Reaver": "mummy", "Cinder Moth": "slime",
+	"Bog Wretch": "bog_wretch", "Silt Crawler": "silt_crawler",
+	"Glass Wisp": "glass_wisp", "Mirror Fiend": "mirror_fiend",
+	"Frost Stalker": "frost_stalker", "Ashclad Ghoul": "ashclad_ghoul",
+	"Deep Anchorite": "deep_anchorite", "Voidling Sprite": "voidling_sprite",
+	"Warbound Elite": "warbound_elite", "Blightfang Elite": "blightfang_elite",
+	"Rift-Touched Colossus": "rift_touched_colossus", "Iron Revenant": "iron_revenant",
+	"Storm-Called Elite": "storm_called_elite", "Ashen Broodlord": "ashen_broodlord",
+	"Vaelith": "vaelith", "Korrath": "korrath", "Nyxara": "nyxara",
+	"Drevok": "drevok", "Sythrane": "sythrane",
 }
 
 
@@ -1009,14 +1159,21 @@ static func sprite_for_monster(monster_name: String) -> String:
 
 
 ## Combat animation frames for a monster (5 each, same shape as
-## hero_anim_frames) — all 8 monster sprites got usable attack/hurt motion on
-## the first PixelLab pass (unlike heroes, no gaps here), so this always
-## returns a populated array for any of the 8 known sprite keys.
+## hero_anim_frames) — the original 8 monster sprites all got usable
+## attack/hurt motion on the first PixelLab pass. The content-pass batch of
+## 19 more (Phase 19) got their static sprites generated but ran out of
+## PixelLab credits before their animations — checking frame 0 actually
+## exists (rather than assuming every known sprite key has animations, like
+## this used to) means those 19 gracefully fall back to a tween instead of
+## erroring on a missing resource every time they're hit, the same contract
+## hero_anim_frames already has for its own gaps.
 static func monster_anim_frames(monster_name: String, action: String) -> Array[String]:
 	var key := monster_sprite_key(monster_name)
 	var frames: Array[String] = []
 	for i in 5:
 		frames.append("res://assets/monsters/anim/%s_%s_%d.png" % [key, action, i])
+	if not ResourceLoader.exists(frames[0]):
+		return []
 	return frames
 
 

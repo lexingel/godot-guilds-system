@@ -582,6 +582,7 @@ func render() -> void:
 		"rift_map": _render_rift_map_hub(v)
 		"party_assembly": _render_party_assembly(v)
 		"rift_run": _render_rift_run(v)
+		"crafting_hall": _render_crafting_hall(v)
 		"terminal": _render_terminal(v)
 
 
@@ -593,6 +594,7 @@ func _breadcrumb_for_screen() -> String:
 		"rift_map": return "Rift Map"
 		"party_assembly": return "Party Assembly"
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
+		"crafting_hall": return "Crafting Hall"
 		"terminal": return "Terminal" if term_tab == "camp" else "Terminal — %s" % term_tab.capitalize()
 		_: return ""
 
@@ -1280,6 +1282,49 @@ func _tween_victory_pose(wrapper: Control) -> void:
 	await _await_or_timeout(tween.finished, 1.0)
 
 
+## A short, fire-and-forget colored particle burst at an impact point — not
+## awaited by callers, so it plays out in the background without adding to
+## _play_round's own pacing. Reused for both a hero's attack landing on a
+## monster and a monster's retaliation landing on a hero; only the color and
+## `heavy` (a bigger, faster burst) differ per call site.
+func _spawn_impact_particles(parent: Control, pos: Vector2, color: Color, heavy: bool = false) -> void:
+	var p := CPUParticles2D.new()
+	p.position = pos
+	p.emitting = false
+	p.one_shot = true
+	p.amount = 14 if heavy else 8
+	p.lifetime = 0.4
+	p.explosiveness = 1.0
+	p.direction = Vector2(0, -1)
+	p.spread = 180.0
+	p.initial_velocity_min = 40.0 if heavy else 24.0
+	p.initial_velocity_max = 90.0 if heavy else 55.0
+	p.gravity = Vector2(0, 140)
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 4.0 if heavy else 3.0
+	p.color = color
+	parent.add_child(p)
+	p.emitting = true
+	get_tree().create_timer(p.lifetime + 0.1).timeout.connect(p.queue_free)
+
+
+## A quick jitter on the whole arena — reads as the impact "landing" and
+## doubles as a lightweight hit-stop (the brief stillness before it settles
+## back is the pause, not a real Engine.time_scale change, which would also
+## stall every other tween/await currently in flight). Heavier for a hit
+## that cleared 25% of the target's max HP — the same "heavy hit" threshold
+## Combat.gd's own retaliation math already uses for counter-attacks.
+func _impact_beat(arena: Control, heavy: bool = false) -> void:
+	var base: Vector2 = arena.position
+	var mag: float = 6.0 if heavy else 3.0
+	var tween := create_tween()
+	for i in 4:
+		var off := Vector2(randf_range(-mag, mag), randf_range(-mag, mag))
+		tween.tween_property(arena, "position", base + off, 0.03)
+	tween.tween_property(arena, "position", base, 0.03)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
 ## A finite (not endless) color pulse marking that a boss's mechanic will
 ## visibly affect the *next* round — the same moment Combat.describe_incoming's
 ## text telegraph line covers, just on the monster's own sprite too. 3 cycles
@@ -1332,7 +1377,7 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
 ## otherwise tear all of this down mid-animation. Diffs hp before/after
 ## GameState.resolve_round_now() to figure out who acted and who got hit,
 ## since Combat.resolve_round doesn't return that directly.
-func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary) -> void:
+func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control) -> void:
 	var party: Array[Hero] = state["party"]
 	var pending: Dictionary = state["pending_actions"].duplicate(true)
 	var hp_before: Dictionary = {}
@@ -1342,6 +1387,16 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 	var monster_hp_before: Array = []
 	for m in monsters:
 		monster_hp_before.append(float(m["hp"]))
+
+	# Which hero's elemental type tints the impact particles on a given
+	# monster index — pooled team damage means several heroes can contribute
+	# to the same hit, so this is "whoever the UI happened to record first
+	# targeting that monster," not a precise damage-attribution system.
+	var attacker_type_by_monster: Dictionary = {}
+	for h0 in party:
+		var act0: Dictionary = pending.get(h0.id, {})
+		if str(act0.get("action", "attack")) == "attack" and not attacker_type_by_monster.has(int(act0.get("target", 0))):
+			attacker_type_by_monster[int(act0.get("target", 0))] = h0.type
 
 	GameState.resolve_round_now()
 
@@ -1370,6 +1425,11 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			continue
 		var dmg: float = float(monster_hp_before[i]) - float(monsters[i]["hp"])
 		if dmg > 0:
+			var heavy: bool = dmg >= float(monsters[i]["max_hp"]) * 0.25
+			var atk_type := str(attacker_type_by_monster.get(i, ""))
+			var burst_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(atk_type, Color(1, 1, 1))
+			_spawn_impact_particles(monster_wrappers[i], monster_wrappers[i].custom_minimum_size * 0.5, burst_color, heavy)
+			await _impact_beat(arena, heavy)
 			if monster_rects.has(i):
 				await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "hurt"))
 			await _flash_white(monster_wrappers[i])
@@ -1388,10 +1448,27 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 		if float(monsters[i]["hp"]) > 0 and monster_rects.has(i):
 			await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "attack"))
 
+	# A single "encounter color" proxy for retaliation impacts — several
+	# monsters can retaliate in the same round with no per-hero attribution
+	# tracked, so this uses the main unit's type (or the first monster if
+	# none is flagged main) rather than trying to identify which monster
+	# actually hit which hero.
+	var main_monster_type := ""
+	for m0 in monsters:
+		if bool(m0.get("is_main", false)):
+			main_monster_type = str(m0.get("type", ""))
+			break
+	if main_monster_type == "" and not monsters.is_empty():
+		main_monster_type = str(monsters[0].get("type", ""))
+	var retaliation_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(main_monster_type, Color(1, 1, 1))
+
 	for h in party:
 		var before: int = int(hp_before.get(h.id, h.hp))
 		var dmg2: int = before - h.hp
 		if dmg2 > 0 and hero_wrappers.has(h.id):
+			var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
+			_spawn_impact_particles(hero_wrappers[h.id], hero_wrappers[h.id].custom_minimum_size * 0.5, retaliation_color, heavy2)
+			await _impact_beat(arena, heavy2)
 			var frames := GameData.hero_anim_frames(h.cls_id, "hurt")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
@@ -1863,7 +1940,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# for the duration and render once explicitly when it's done.
 			if GameState.state_changed.is_connected(render):
 				GameState.state_changed.disconnect(render)
-			await _play_round(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects)
+			await _play_round(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 			if not GameState.state_changed.is_connected(render):
 				GameState.state_changed.connect(render)
 			_combat_animating = false
@@ -2233,6 +2310,13 @@ func _render_camp(v: VBoxContainer) -> void:
 	bestiary_icon.position = Vector2(310, 270) - Vector2(28, 28)
 	camp.add_child(bestiary_icon)
 
+	# Crafting Hall — a new top-level destination, same free-floating-icon
+	# treatment as Rift Map/Bestiary above (no matching background prop to
+	# hand-place a hit_rect against).
+	var crafting_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["crafting"], 56.0, "Crafting Hall", func(): screen = "crafting_hall"; render())
+	crafting_icon.position = Vector2(390, 270) - Vector2(28, 28)
+	camp.add_child(crafting_icon)
+
 	v.add_child(camp)
 
 
@@ -2461,6 +2545,121 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 		v.add_child(_label("Recovering without a bed (slower):", 12, true))
 		for h in waiting:
 			v.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
+
+
+## True while a craft's brief reveal flourish is playing — guards against a
+## second click firing GameState.craft_items/craft_relics again before
+## render() rebuilds this screen, the same idea as combat's _combat_animating.
+var _crafting_animating: bool = false
+
+
+## Plays a short "pop into existence" reveal on a freshly-appended icon
+## (the item/relic Crafting Hall just produced) before the caller's render()
+## replaces the whole screen — scale up from tiny + a bright flash, not a
+## looping effect since it only ever plays once per craft.
+func _play_craft_flourish(v: VBoxContainer, icon_path: String) -> void:
+	var rect := _icon(icon_path, 40)
+	var wrap := _wrap_icon(rect)
+	wrap.scale = Vector2(0.2, 0.2)
+	wrap.modulate = Color(1.6, 1.5, 1.9)
+	v.add_child(wrap)
+	var tween := create_tween()
+	tween.tween_property(wrap, "scale", Vector2(1, 1), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(wrap, "modulate", Color(1, 1, 1), 0.4)
+	await _await_or_timeout(tween.finished, 1.0)
+
+
+## A workbench hub for turning excess common/rare loot into something better
+## instead of just selling it: feed 3 unequipped items (same category+rarity)
+## or 3 unequipped relics (same type+rarity) into one craft for 1 of the next
+## rarity up. Reuses Combat.gen_item/gen_relic entirely — no new loot tables.
+func _render_crafting_hall(v: VBoxContainer) -> void:
+	v.add_child(_label("Crafting Hall", 20))
+	v.add_child(_label("Combine 3 of the same kind and rarity into 1 of the next rarity up.", 12, true))
+
+	var scene_size := Vector2(700, 200)
+	var scene := Control.new()
+	scene.custom_minimum_size = scene_size
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.CRAFTING_BG)
+	bg.custom_minimum_size = scene_size
+	bg.size = scene_size
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+	v.add_child(scene)
+
+	var craft_icon: String = GameData.CAMP_HUB_ICON_PATH["crafting"]
+
+	v.add_child(_label("Items", 16))
+	var item_groups: Dictionary = {}
+	for it in GameState.items:
+		if it.equipped_to != "" or not GameState.CRAFT_RARITY_UP.has(it.rarity):
+			continue
+		var key := "%s|%s" % [it.category, it.rarity]
+		item_groups[key] = int(item_groups.get(key, 0)) + 1
+	if item_groups.is_empty():
+		v.add_child(_label("No craftable (unequipped Common/Rare) items.", 12))
+	for key in item_groups.keys():
+		var parts: PackedStringArray = key.split("|")
+		var category: String = parts[0]
+		var rarity: String = parts[1]
+		var count: int = item_groups[key]
+		var next_rarity: String = str(GameState.CRAFT_RARITY_UP[rarity])
+		var craft_btn := _icon_button(craft_icon, "Craft → %s" % GameData.find_rarity(next_rarity)["name"], func(c=category, r=rarity):
+			if _crafting_animating:
+				return
+			_crafting_animating = true
+			if GameState.state_changed.is_connected(render):
+				GameState.state_changed.disconnect(render)
+			GameState.craft_items(c, r)
+			await _play_craft_flourish(v, GameData.ITEM_CATEGORY_ICON_PATH[c])
+			if not GameState.state_changed.is_connected(render):
+				GameState.state_changed.connect(render)
+			_crafting_animating = false
+			render()
+		)
+		craft_btn.disabled = count < 3
+		v.add_child(_info_row("%s %s x%d" % [GameData.find_rarity(rarity)["name"], GameData.ITEM_CATEGORY_LABEL[category], count], 12, [craft_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[category], 20)))
+
+	v.add_child(_hsep())
+	v.add_child(_label("Relics", 16))
+	var relic_groups: Dictionary = {}
+	for r in GameState.relics:
+		if r.equipped or not GameState.CRAFT_RARITY_UP.has(r.rarity):
+			continue
+		var rkey := "%s|%s" % [r.type, r.rarity]
+		relic_groups[rkey] = int(relic_groups.get(rkey, 0)) + 1
+	if relic_groups.is_empty():
+		v.add_child(_label("No craftable (unequipped Common/Rare) relics.", 12))
+	for rkey in relic_groups.keys():
+		var rparts: PackedStringArray = rkey.split("|")
+		var rtype: String = rparts[0]
+		var rrarity: String = rparts[1]
+		var rcount: int = relic_groups[rkey]
+		var rnext_rarity: String = str(GameState.CRAFT_RARITY_UP[rrarity])
+		var rcraft_btn := _icon_button(craft_icon, "Craft → %s" % GameData.find_rarity(rnext_rarity)["name"], func(t=rtype, r2=rrarity):
+			if _crafting_animating:
+				return
+			_crafting_animating = true
+			if GameState.state_changed.is_connected(render):
+				GameState.state_changed.disconnect(render)
+			GameState.craft_relics(t, r2)
+			await _play_craft_flourish(v, GameData.RELIC_TYPE_ICON_PATH[t])
+			if not GameState.state_changed.is_connected(render):
+				GameState.state_changed.connect(render)
+			_crafting_animating = false
+			render()
+		)
+		rcraft_btn.disabled = rcount < 3
+		v.add_child(_info_row("%s %s x%d" % [GameData.find_rarity(rrarity)["name"], rtype, rcount], 12, [rcraft_btn], _icon(GameData.RELIC_TYPE_ICON_PATH[rtype], 20)))
+
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Camp", func():
+		screen = "terminal"
+		term_tab = "camp"
+		render()
+	))
 
 
 ## Pure checklist, no reward tied to completion — three sections (Monsters,

@@ -50,6 +50,19 @@ const RANK_SSS := Color(0.980, 0.980, 0.941, 1.0) # #fafaf0 (unchanged)
 const ELITE := Color(0.949, 0.573, 0.290, 1.0)    # #f2924a (was #e0954a, warmed toward the ember family)
 const HAZARD := EMBER_DANGER                       # alias — hazard/damage indicators reuse the danger-ember tone directly
 
+## Impact-particle tint per Elemental Weakness type (Combat.type_matchup_mult) —
+## every color here is an existing token reused for a new purpose, not a new
+## hex value: Frost reuses the cyan already established for Crystals, Verdant
+## reuses the general "healthy" green, Arcane reuses the violet already used
+## for its own "mystical fortune"/drop-rate flavor.
+const ELEMENT_PARTICLE_COLOR := {
+	"Ember": EMBER_BRIGHT,
+	"Frost": CRYSTALS,
+	"Verdant": RANK_E,
+	"Umbral": VIOLET_DEEP,
+	"Arcane": TOKENS,
+}
+
 static func rank_color(rank: String) -> Color:
 	match rank:
 		"F": return RANK_F

@@ -1396,6 +1396,46 @@ func sell_relic(relic_id: String) -> void:
 			return
 
 
+## Crafting Hall: combine 3 unequipped items/relics of the same category (or
+## relic type) and rarity into 1 of the next rarity up — a sink for excess
+## common/rare loot beyond selling it. Legendary is deliberately not on this
+## ladder (uniques are hand-authored fixed drops, not something Combat.gen_*
+## can roll toward), so epic is the ceiling a craft can produce.
+const CRAFT_RARITY_UP := {"common": "rare", "rare": "epic"}
+
+
+func craft_items(category: String, rarity: String) -> void:
+	if not CRAFT_RARITY_UP.has(rarity):
+		return
+	var matches: Array[Item] = []
+	for it in items:
+		if it.category == category and it.rarity == rarity and it.equipped_to == "":
+			matches.append(it)
+	if matches.size() < 3:
+		return
+	for i in 3:
+		items.erase(matches[i])
+	items.append(Combat.gen_item(str(CRAFT_RARITY_UP[rarity]), category))
+	save()
+	state_changed.emit()
+
+
+func craft_relics(type: String, rarity: String) -> void:
+	if not CRAFT_RARITY_UP.has(rarity):
+		return
+	var matches: Array[Relic] = []
+	for r in relics:
+		if r.type == type and r.rarity == rarity and not r.equipped:
+			matches.append(r)
+	if matches.size() < 3:
+		return
+	for i in 3:
+		relics.erase(matches[i])
+	relics.append(Combat.gen_relic(str(CRAFT_RARITY_UP[rarity]), type))
+	save()
+	state_changed.emit()
+
+
 func sell_item(item_id: String) -> void:
 	for it in items:
 		if it.id == item_id and it.equipped_to == "":

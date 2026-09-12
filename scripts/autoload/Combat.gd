@@ -260,10 +260,14 @@ func generate_champion() -> Hero:
 	return champ
 
 
-func gen_relic(rarity_id: String) -> Relic:
+## `type_override` lets Crafting Hall recipes preserve the fed-in relics'
+## elemental type on the crafted result instead of rolling a fresh random one
+## — a player feeding in 3 Ember commons reasonably expects an Ember rare
+## back, not a coin flip across all 5 types.
+func gen_relic(rarity_id: String, type_override: String = "") -> Relic:
 	if rarity_id == "legendary":
 		return gen_unique_relic()
-	var type: String = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
+	var type: String = type_override if type_override != "" else GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	var rarity := GameData.find_rarity(rarity_id)
 	var noun: String = RARITY_NOUNS[randi() % RARITY_NOUNS.size()]
 	var has_special := randf() < 0.4
@@ -314,11 +318,13 @@ func gen_unique_relic() -> Relic:
 	return r
 
 
-func gen_item(rarity_id: String) -> Item:
+## `category_override` — see gen_relic's type_override for why: Crafting Hall
+## recipes keep a player's chosen equip-slot category intact across a craft.
+func gen_item(rarity_id: String, category_override: String = "") -> Item:
 	if rarity_id == "legendary":
 		return gen_unique_item()
 	var rarity := GameData.find_rarity(rarity_id)
-	var category: String = GameData.ITEM_CATEGORIES[randi() % GameData.ITEM_CATEGORIES.size()]
+	var category: String = category_override if category_override != "" else GameData.ITEM_CATEGORIES[randi() % GameData.ITEM_CATEGORIES.size()]
 	var kinds: Array = GameData.ITEM_CATEGORY_KINDS[category]
 	var kind: String = kinds[randi() % kinds.size()]
 	var value: float = snappedf(GameData.ITEM_KIND_BASE[kind] * rarity["mult"], 0.001)
@@ -896,6 +902,11 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				log.append("%s's ward absorbs %d damage." % [monsters[target_idx]["name"], int(round(m_absorbed))])
 			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - round(dealt)
 			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
+			var target_ability: Dictionary = monsters[target_idx].get("ability", {})
+			if target_ability.get("kind") == "reflect" and dealt > 0.0:
+				var reflected: int = max(1, int(round(dealt * float(target_ability["value"]))))
+				h.hp = max(0, h.hp - reflected)
+				log.append("%s's surface reflects %d damage back at %s." % [monsters[target_idx]["name"], reflected, h.name])
 			if hero_has_unique_item(h, "bloodthirst_fang"):
 				var fang_def := GameData.find_unique_item("bloodthirst_fang")
 				var healed: int = max(1, int(round(dealt * float(fang_def["value"]))))
@@ -1143,6 +1154,10 @@ func resolve_round(state: Dictionary) -> Dictionary:
 				if ability.get("kind") == "poison" and target.hp > 0:
 					state["hero_poison"][target.id] = {"rounds": 2, "value": float(ability["value"])}
 					log.append("%s is poisoned!" % target.name)
+				if ability.get("kind") == "drain" and dealt_back > 0:
+					var drained: int = max(1, int(round(dealt_back * float(ability["value"]))))
+					m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + drained)
+					log.append("%s drains %d HP from the blow." % [m["name"], drained])
 				if target.hp <= 0:
 					log.append("%s is knocked out!" % target.name)
 
