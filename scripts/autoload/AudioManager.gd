@@ -34,10 +34,10 @@ func _ready() -> void:
 
 ## Crossfades to `path` over `fade_time` seconds; pass "" to just fade out
 ## whatever's playing. Repeat calls with the same path are a no-op (a screen
-## re-render shouldn't restart its own music). The imported stream needs its
-## own loop flag set (WAV: loop_mode in the .import; OGG Vorbis loops by
-## default unless the file's own metadata says otherwise) — not something
-## this script controls per-call.
+## re-render shouldn't restart its own music). Forces the loaded stream's own
+## `loop` flag on regardless of import defaults, rather than trusting the
+## format's default (AudioStreamOggVorbis/AudioStreamWAV both expose it),
+## so a track always loops here without needing a matching .import tweak.
 func play_music(path: String, fade_time: float = 1.0) -> void:
 	if path == _current_music_path:
 		return
@@ -54,7 +54,10 @@ func play_music(path: String, fade_time: float = 1.0) -> void:
 		fade_out.tween_callback(old_player.stop)
 	if path == "":
 		return
-	new_player.stream = load(path)
+	var stream: AudioStream = load(path)
+	if "loop" in stream:
+		stream.loop = true
+	new_player.stream = stream
 	new_player.volume_db = CROSSFADE_MIN_DB
 	new_player.play()
 	var fade_in := create_tween()
