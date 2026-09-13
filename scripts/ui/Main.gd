@@ -580,6 +580,11 @@ func _title_strip(text: String) -> PanelContainer:
 func render() -> void:
 	GameState.resolve_recovery()
 	GameState.resolve_rift_map()
+	GameState.resolve_guild_board()
+	var newly_claimed := GameState.check_milestones()
+	if not newly_claimed.is_empty():
+		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
+		_flavor_toast = "Milestone reached: %s" % str(m["label"])
 	if screen == "terminal" and GameState.run.is_empty() and not GameState.pending_riftbreak_ranks.is_empty():
 		GameState.start_riftbreak_encounter()
 		if not GameState.run.is_empty():
@@ -653,6 +658,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		[GameData.CURRENCY_ICON_PATH["coins"], GameState.coins],
 		[GameData.CURRENCY_ICON_PATH["crystals"], GameState.crystals],
 		[GameData.CURRENCY_ICON_PATH["tokens"], GameState.tokens],
+		[GameData.CURRENCY_ICON_PATH["reputation"], GameState.reputation],
 	]:
 		var stat_row := HBoxContainer.new()
 		stat_row.add_child(_icon(entry[0], 18))
@@ -830,6 +836,9 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 		var mm := remain_s / 60
 		var ss := remain_s % 60
 		var caption := "Rank %s — %02d:%02d" % [rank, mm, ss]
+		var bounty: Dictionary = slot.get("bounty", {})
+		if not bounty.is_empty():
+			caption += "\n+%dc, +%d Rep" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))]
 
 		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], icon_size, caption, func(idx=i, r=rank):
 			pending_party.clear()
@@ -1198,6 +1207,9 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
 		]))
 		v.add_child(sealed_row)
+		var bounty: Dictionary = sealed_dict.get("bounty", {})
+		if not bounty.is_empty():
+			v.add_child(_label("Bounty claimed: +%d Coins, +%d Reputation" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))
 		if str(sealed_dict.get("flavor", "")) != "":
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		if sealed_dict.get("continuing", false):
@@ -2103,6 +2115,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			crystal_text += " (+%d bonus)" % bonus_crystal
 		gains_row.add_child(_label(crystal_text, 14))
 		victory_col.add_child(gains_row)
+		if str(result.get("escort_saved", "")) != "":
+			victory_col.add_child(_label("%s made it through safely — +2 Reputation, +1 Token." % str(result["escort_saved"]), 12, true))
 		if kind == "boss" or kind == "elite":
 			victory_col.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
@@ -2316,6 +2330,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		"management": _render_management(v)
 		"bestiary": _render_bestiary(v)
 		"compendium": _render_compendium(v)
+		"quests": _render_quests(v)
 		_: _render_roster(v)
 
 
@@ -2402,6 +2417,12 @@ func _render_camp(v: VBoxContainer) -> void:
 	var compendium_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["compendium"], 56.0, "Compendium", func(): term_tab = "compendium"; render())
 	compendium_icon.position = Vector2(470, 270) - Vector2(28, 28)
 	camp.add_child(compendium_icon)
+
+	# Guild Board — Contracts/Dailies/Milestones, same free-floating-icon
+	# treatment as the other destinations above.
+	var quests_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["quests"], 56.0, "Guild Board", func(): term_tab = "quests"; render())
+	quests_icon.position = Vector2(550, 270) - Vector2(28, 28)
+	camp.add_child(quests_icon)
 
 	v.add_child(camp)
 
@@ -2887,11 +2908,41 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
 		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
+		["Guild Board & Milestones", "Contracts and Dailies are quick rotating objectives paying Coins/Crystals/Tokens/Reputation. Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
 		v.add_child(_wrap_label(str(entry[1]), 12, true))
 		v.add_child(_hsep())
+
+
+# ---------------- Quests: Guild Board & Milestones ----------------
+func _render_quests(v: VBoxContainer) -> void:
+	v.add_child(_label("Guild Board", 20))
+	v.add_child(_wrap_label("Contracts are quick and modest. Dailies are tougher with bigger rewards, including Reputation — every 20 Reputation arms a guaranteed Epic relic at your next Shop.", 12, true))
+	v.add_child(_hsep())
+	for q in GameState.guild_board:
+		var progress := GameState.quest_progress(q)
+		var target := int(q["target"])
+		var done := progress >= target
+		var text := "[%s] %s — %d/%d\nReward: %s" % [str(q["tier"]).capitalize(), GameState.quest_desc(q), progress, target, GameState.quest_reward_desc(q["reward"])]
+		var claim_btn := _icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Claim" if done else "In Progress", func(qid=str(q["id"])):
+			GameState.claim_quest(qid)
+			render()
+		)
+		claim_btn.disabled = not done
+		v.add_child(_info_row(text, 13, [claim_btn]))
+		v.add_child(_hsep())
+
+	v.add_child(_label("Milestones", 16))
+	for m in GameData.MILESTONES:
+		var mid := str(m["id"])
+		var claimed: bool = GameState.milestones_claimed.has(mid)
+		var mprogress := GameState.milestone_progress(m)
+		var mtarget := int(m["target"])
+		var status := "Claimed" if claimed else "%d/%d" % [min(mprogress, mtarget), mtarget]
+		v.add_child(_wrap_label("%s [%s]" % [str(m["label"]), status], 12, claimed))
+	v.add_child(_hsep())
 
 
 # ---------------- Settings ----------------

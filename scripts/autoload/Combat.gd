@@ -736,6 +736,22 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	for h in party:
 		pending_actions[h.id] = {"action": "attack", "target": 0}
 
+	# An escort NPC quest, folded onto an ordinary "combat" node rather than a
+	# whole new node kind — a chance for a fragile ally to tag along who
+	# monster retaliation can occasionally hit instead of a hero (see
+	# resolve_round's retaliation loop). {} = no escort this fight, the same
+	# "empty dict = not present" contract mechanic/mechanic2 already use.
+	var escort: Dictionary = {}
+	if kind == "combat" and not GameState.run.get("is_riftbreak", false) and randf() < 0.25:
+		var avg_hp := 0.0
+		for h in party:
+			avg_hp += max_hp(h)
+		avg_hp /= float(max(1, party.size()))
+		var ehp: int = max(15, int(round(avg_hp * 0.4)))
+		var ename: String = GameData.ESCORT_NAMES[randi() % GameData.ESCORT_NAMES.size()]
+		escort = {"name": ename, "hp": ehp, "max_hp": ehp}
+		log.append("A %s tags along, hoping to survive the crossing." % ename)
+
 	return {
 		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx, "hardcore": hardcore,
 		"is_boss": is_boss, "is_elite": is_elite,
@@ -744,7 +760,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
 		"cooldown_shave": cooldown_shave, "kill_shield": kill_shield, "hero_shields": {},
-		"monster_shields": monster_shields, "hero_poison": {},
+		"monster_shields": monster_shields, "hero_poison": {}, "escort": escort,
 		"round_num": 0, "log": log,
 		"pending_actions": pending_actions,
 	}
@@ -1096,6 +1112,14 @@ func resolve_round(state: Dictionary) -> Dictionary:
 
 	for m in monsters:
 		if float(m["hp"]) <= 0:
+			continue
+		var escort: Dictionary = state.get("escort", {})
+		if not escort.is_empty() and float(escort["hp"]) > 0.0 and randf() < 0.2:
+			var escort_dmg: int = max(1, int(round(float(m["dmg"]) * 0.6)))
+			escort["hp"] = max(0.0, float(escort["hp"]) - escort_dmg)
+			log.append("The %s strikes %s for %d!" % [m["name"], str(escort["name"]), escort_dmg])
+			if float(escort["hp"]) <= 0.0:
+				log.append("%s doesn't survive the fight." % str(escort["name"]))
 			continue
 		var alive_now: Array[Hero] = []
 		alive_now.assign(party.filter(func(h): return h.hp > 0))

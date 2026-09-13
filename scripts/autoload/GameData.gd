@@ -941,7 +941,38 @@ const CURRENCY_ICON_PATH := {
 	"coins": "res://assets/ui/icon_coins.png",
 	"crystals": "res://assets/ui/icon_crystals.png",
 	"tokens": "res://assets/ui/icon_tokens.png",
+	"reputation": "res://assets/skills/trophy.png",
 }
+## Escort quests: a fragile NPC that occasionally tags along on a "combat"
+## node (Combat.start_combat), which monster retaliation can hit instead of
+## a hero. Purely flavor text — reused across every escort roll, no per-name
+## mechanical difference.
+const ESCORT_NAMES := ["Wounded Survivor", "Lost Scout", "Stranded Merchant", "Frightened Pilgrim"]
+## Guild Board: a rotating pool of "contract" (small, quick) and "daily"
+## (bigger target, bigger reward including Reputation) quests. `type` is
+## looked up against GameState.quest_progress()'s match — kept here only as
+## the id/label pairing so a new type is a one-line add in both places.
+const QUEST_TYPE_LABEL := {
+	"kill_monster": "Defeat %d %s",
+	"seal_rift": "Seal %d Rift%s",
+	"win_elite": "Win %d Elite fight%s",
+	"win_boss": "Defeat a Boss",
+	"craft": "Craft %d item%s or relic%s",
+	"flawless_win": "Win %d fight%s without a hero going down",
+}
+## A static checklist, each auto-granted the moment its condition becomes
+## true (GameState.check_milestones, called once per render) — distinct from
+## Bestiary, which tracks encounters with no reward attached.
+const MILESTONES := [
+	{"id": "first_seal", "label": "First Blood — seal your first Rift", "type": "rifts_sealed", "target": 1, "reward": {"crystals": 10}},
+	{"id": "monster_hunter", "label": "Monster Hunter — defeat 25 monsters total", "type": "total_kills", "target": 25, "reward": {"coins": 50, "reputation": 5}},
+	{"id": "elite_slayer", "label": "Elite Slayer — win 3 Elite fights", "type": "elites_won", "target": 3, "reward": {"reputation": 3}},
+	{"id": "boss_breaker", "label": "Boss Breaker — defeat 3 Bosses", "type": "bosses_won", "target": 3, "reward": {"reputation": 5}},
+	{"id": "artisan", "label": "Artisan — craft 3 items or relics", "type": "crafts_performed", "target": 3, "reward": {"crystals": 30}},
+	{"id": "full_roster", "label": "Full Roster — fill every hero slot", "type": "full_roster", "target": 1, "reward": {"reputation": 10}},
+	{"id": "renowned", "label": "Renowned Guild — reach Renowned Guild tier", "type": "guild_tier_renowned", "target": 1, "reward": {"reputation": 15}},
+	{"id": "greater_threat", "label": "Greater Threat — unlock the Greater Rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
+]
 ## One-shot SFX, all CC0 (Kenney.nl — Interface Sounds/RPG Audio/Impact
 ## Sounds packs, see assets/audio/sfx/KENNEY_LICENSE.txt). Every key here is
 ## safe to reference from any call site regardless of whether the file
@@ -1012,6 +1043,7 @@ const CAMP_HUB_ICON_PATH := {
 	"crafting": "res://assets/camp/icon_crafting.png",
 	"settings": "res://assets/skills/gear.png",
 	"compendium": "res://assets/camp/icon_compendium.png",
+	"quests": "res://assets/camp/icon_quests.png",
 }
 ## Window sizes offered by the Settings screen — Godot's existing
 ## stretch/mode="canvas_items" + aspect="expand" (project.godot) already
