@@ -62,6 +62,10 @@ func _apply_resolution(idx: int) -> void:
 		return
 	var opts: Array = GameData.RESOLUTION_OPTIONS
 	var opt: Dictionary = opts[idx] if idx >= 0 and idx < opts.size() else opts[0]
+	# A maximized/fullscreen OS window silently ignores a `.size` assignment
+	# (Godot doesn't auto-restore it), which is why picking a resolution here
+	# previously had no visible effect once the window had been maximized.
+	get_window().mode = Window.MODE_WINDOWED
 	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
 
 
