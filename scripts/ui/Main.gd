@@ -50,7 +50,16 @@ func _ready() -> void:
 	render()
 
 
+## Desktop-only: on a Web export the browser/canvas already owns sizing (via
+## project.godot's stretch/mode="canvas_items" + aspect="expand", which fits
+## the canvas to its container correctly on its own) — forcing an internal
+## window resize there fights that and desyncs the visual layout from where
+## clicks actually land (confirmed: it's what caused the click-position bug
+## reported after this feature first shipped). Real OS window resizing only
+## makes sense where the game owns a real OS window, i.e. never on web.
 func _apply_resolution(idx: int) -> void:
+	if OS.has_feature("web"):
+		return
 	var opts: Array = GameData.RESOLUTION_OPTIONS
 	var opt: Dictionary = opts[idx] if idx >= 0 and idx < opts.size() else opts[0]
 	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
@@ -3006,15 +3015,20 @@ func _render_settings(v: VBoxContainer) -> void:
 
 	v.add_child(_hsep())
 	v.add_child(_label("Display", 15))
-	var res_opts: Array = GameData.RESOLUTION_OPTIONS
-	var res_idx := GameState.resolution_idx
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], "Resolution: %s" % str(res_opts[res_idx]["label"]), func():
-		var next_idx: int = (res_idx + 1) % res_opts.size()
-		GameState.resolution_idx = next_idx
-		GameState.save_settings()
-		_apply_resolution(next_idx)
-		render()
-	))
+	if OS.has_feature("web"):
+		# Resolution switching is a desktop-only concept — on Web the browser
+		# tab/window already sizes the canvas correctly on its own.
+		v.add_child(_wrap_label("The game fits your browser window automatically.", 12, true))
+	else:
+		var res_opts: Array = GameData.RESOLUTION_OPTIONS
+		var res_idx := GameState.resolution_idx
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], "Resolution: %s" % str(res_opts[res_idx]["label"]), func():
+			var next_idx: int = (res_idx + 1) % res_opts.size()
+			GameState.resolution_idx = next_idx
+			GameState.save_settings()
+			_apply_resolution(next_idx)
+			render()
+		))
 
 	v.add_child(_hsep())
 	v.add_child(_label("Save Slots", 15))
