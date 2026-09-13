@@ -29,9 +29,17 @@ var inv_category: String = ""      # "" = category hub, else "items" | "relics" 
 var combat_selected_hero_id: String = ""   # which hero's action bar is showing in combat; falls back to the first living hero
 var roster_sort: String = "power"          # "power" | "level" | "rank" — cycled via the Roster tab's Sort button
 var inv_sort: String = "rarity"            # "rarity" | "value" | "name" — cycled via the Inventory tab's Sort button
+var compendium_tab: String = "items"       # "items" | "relics" | "crafting" | "systems"
+var _pre_settings_screen: String = "onboard"   # where the Settings gear button returns to
+var confirm_delete_slot: int = -1              # which save slot's Delete button is armed, -1 = none
 
 
 func _ready() -> void:
+	GameState.load_settings()
+	GameState.load_active_slot()
+	AudioManager.set_music_volume(GameState.music_volume)
+	AudioManager.set_sfx_volume(GameState.sfx_volume)
+	_apply_resolution(GameState.resolution_idx)
 	if not GameState.load_save():
 		GameState.reset()
 	if GameState.guild_name != "":
@@ -40,6 +48,12 @@ func _ready() -> void:
 		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
 	GameState.state_changed.connect(render)
 	render()
+
+
+func _apply_resolution(idx: int) -> void:
+	var opts: Array = GameData.RESOLUTION_OPTIONS
+	var opt: Dictionary = opts[idx] if idx >= 0 and idx < opts.size() else opts[0]
+	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
 
 
 func _clear_root() -> void:
@@ -501,6 +515,11 @@ func _info_row(text: String, size: int, actions: Array[Control], leading: Contro
 func _button(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
+	# Floor every button at a real touch-target height (~40px) regardless of
+	# the theme's own padding, so the game is tappable on a touch/mobile
+	# viewport without a per-button size review — one choke point fixes it
+	# everywhere since every button in the game is built through here.
+	b.custom_minimum_size.y = 40
 	b.pressed.connect(func():
 		AudioManager.play_sfx(GameData.SFX_PATH["ui_click"])
 		cb.call()
@@ -590,6 +609,7 @@ func render() -> void:
 		"party_assembly": _render_party_assembly(v)
 		"rift_run": _render_rift_run(v)
 		"crafting_hall": _render_crafting_hall(v)
+		"settings": _render_settings(v)
 		"terminal": _render_terminal(v)
 	_update_screen_music()
 
@@ -619,6 +639,7 @@ func _breadcrumb_for_screen() -> String:
 		"party_assembly": return "Party Assembly"
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting Hall"
+		"settings": return "Settings"
 		"terminal": return "Terminal" if term_tab == "camp" else "Terminal — %s" % term_tab.capitalize()
 		_: return ""
 
@@ -640,6 +661,21 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		tile.theme_type_variation = &"StatTileEmber"
 		tile.add_child(stat_row)
 		row.add_child(tile)
+	var settings_btn := TextureButton.new()
+	settings_btn.texture_normal = load(GameData.CAMP_HUB_ICON_PATH["settings"])
+	settings_btn.ignore_texture_size = true
+	settings_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	settings_btn.custom_minimum_size = Vector2(32, 32)
+	settings_btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	settings_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	settings_btn.tooltip_text = "Settings"
+	settings_btn.pressed.connect(func():
+		AudioManager.play_sfx(GameData.SFX_PATH["ui_click"])
+		_pre_settings_screen = screen
+		screen = "settings"
+		render()
+	)
+	row.add_child(settings_btn)
 	container.add_child(row)
 	if breadcrumb != "":
 		container.add_child(_label(breadcrumb, 12, true))
@@ -648,6 +684,18 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 
 # ---------------- Onboard ----------------
 func _render_onboard(v: VBoxContainer) -> void:
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 8)
+	var slot_lbl := _label("Save Slot %d" % (GameState.active_slot + 1), 12, true)
+	slot_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_child(slot_lbl)
+	top_row.add_child(_icon_button(GameData.CAMP_HUB_ICON_PATH["settings"], "Settings", func():
+		_pre_settings_screen = "onboard"
+		screen = "settings"
+		render()
+	))
+	v.add_child(top_row)
+
 	v.add_child(_label("Name Your Guild", 22))
 	var edit := LineEdit.new()
 	edit.placeholder_text = "Guild name"
@@ -2267,6 +2315,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		"medical": _render_medical_bay(v)
 		"management": _render_management(v)
 		"bestiary": _render_bestiary(v)
+		"compendium": _render_compendium(v)
 		_: _render_roster(v)
 
 
@@ -2347,6 +2396,12 @@ func _render_camp(v: VBoxContainer) -> void:
 	var crafting_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["crafting"], 56.0, "Crafting Hall", func(): screen = "crafting_hall"; render())
 	crafting_icon.position = Vector2(390, 270) - Vector2(28, 28)
 	camp.add_child(crafting_icon)
+
+	# Compendium — a read-only reference tab (same shape as Bestiary), same
+	# free-floating-icon treatment as the other destinations above.
+	var compendium_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["compendium"], 56.0, "Compendium", func(): term_tab = "compendium"; render())
+	compendium_icon.position = Vector2(470, 270) - Vector2(28, 28)
+	camp.add_child(compendium_icon)
 
 	v.add_child(camp)
 
@@ -2743,6 +2798,213 @@ func _render_bestiary(v: VBoxContainer) -> void:
 		hwrap.tooltip_text = str(hz["name"]) if seen else "???"
 		hazard_row.add_child(hwrap)
 	v.add_child(hazard_row)
+
+
+# ---------------- Compendium ----------------
+const _KIND_LABEL := {
+	"dmg_pct": "Damage", "hp_pct": "HP", "first_round_pct": "First-Strike Damage",
+	"escalate_pct": "Escalating Damage", "mend_pct": "Mend (HP over time)",
+	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance",
+	"wipe_guard": "Wipe Guard (survive a wipe)", "boss_alpha_strike": "Boss Alpha Strike",
+	"loot_rarity_pct": "Loot Rarity", "counter_pct": "Counter-Attack Chance",
+	"cooldown_shave_pct": "Ability Cooldown Shave", "kill_shield_pct": "On-Kill Shield",
+}
+
+
+func _compendium_tab_row(v: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	for entry in [["items", "Items"], ["relics", "Relics"], ["crafting", "Crafting"], ["systems", "Systems"]]:
+		var tid: String = entry[0]
+		var tlabel: String = entry[1]
+		var btn := _icon_button("", tlabel, func(id=tid):
+			compendium_tab = id
+			render()
+		)
+		btn.disabled = compendium_tab == tid
+		row.add_child(btn)
+	v.add_child(row)
+	v.add_child(_hsep())
+
+
+func _render_compendium(v: VBoxContainer) -> void:
+	v.add_child(_label("Compendium", 20))
+	_compendium_tab_row(v)
+	match compendium_tab:
+		"items": _render_compendium_items(v)
+		"relics": _render_compendium_relics(v)
+		"crafting": _render_compendium_crafting(v)
+		_: _render_compendium_systems(v)
+
+
+func _render_compendium_items(v: VBoxContainer) -> void:
+	v.add_child(_wrap_label("Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one \"gear\" slot pool that grows with hero rank.", 12, true))
+	for category in GameData.ITEM_CATEGORIES:
+		v.add_child(_hsep())
+		var head := HBoxContainer.new()
+		head.add_theme_constant_override("separation", 8)
+		head.add_child(_icon(str(GameData.ITEM_CATEGORY_ICON_PATH.get(category, "")), 28))
+		head.add_child(_label(str(GameData.ITEM_CATEGORY_LABEL.get(category, category)), 16))
+		v.add_child(head)
+		for kind in GameData.ITEM_CATEGORY_KINDS.get(category, []):
+			v.add_child(_wrap_label("• %s" % str(_KIND_LABEL.get(kind, kind)), 12, true))
+
+
+func _render_compendium_relics(v: VBoxContainer) -> void:
+	v.add_child(_wrap_label("Relics are party-wide. Each relic has an elemental type; equipping 3+ of one type grants that type's synergy bonus. A relic's type also nudges (60% weight) which power domain its rolled special favors.", 12, true))
+	for rtype in GameData.RELIC_TYPES:
+		v.add_child(_hsep())
+		var head := HBoxContainer.new()
+		head.add_theme_constant_override("separation", 8)
+		head.add_child(_icon(str(GameData.RELIC_TYPE_ICON_PATH.get(rtype, "")), 28))
+		var domain := str(GameData.TYPE_DOMAIN.get(rtype, ""))
+		head.add_child(_label("%s — %s domain" % [rtype, domain.capitalize()], 15))
+		v.add_child(head)
+		var synergy: Dictionary = GameData.SYNERGY_BONUS.get(rtype, {})
+		if not synergy.is_empty():
+			v.add_child(_wrap_label("Synergy (3+ equipped): %s" % str(synergy.get("label", "")), 12, true))
+		var matchup: Dictionary = GameData.TYPE_MATCHUPS.get(rtype, {})
+		if not matchup.is_empty():
+			var strong: Array = matchup.get("strong_vs", [])
+			var weak: Array = matchup.get("weak_vs", [])
+			v.add_child(_wrap_label("Strong vs %s · Weak vs %s" % [", ".join(strong), ", ".join(weak)], 12, true))
+
+
+func _render_compendium_crafting(v: VBoxContainer) -> void:
+	v.add_child(_wrap_label("The Crafting Hall combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.", 12, true))
+	for rarity in GameState.CRAFT_RARITY_UP:
+		v.add_child(_wrap_label("• 3× %s → 1× %s" % [str(rarity).capitalize(), str(GameState.CRAFT_RARITY_UP[rarity]).capitalize()], 13))
+	v.add_child(_wrap_label("Legendary items/relics are fixed hand-authored drops — not craftable from Epics.", 12, true))
+
+
+func _render_compendium_systems(v: VBoxContainer) -> void:
+	var entries := [
+		["Guild Management", "Spend Crystals across 4 branches (Operations/Infrastructure/Logistics/Research) to raise hero-slot caps, relic-slot caps, recovery speed, fee reductions, and more. A Guild Tier banner tracks total levels purchased."],
+		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],
+		["Hero Bonds", "Certain subclass pairs (e.g. Duelist + Blade-Dancer) grant a bonus while both are alive in the active party — shown in Party Assembly when both halves are picked."],
+		["Elemental Weakness", "Every hero subclass and every monster carries one of 5 elemental types. Attacking a weak-matched type deals bonus damage; attacking a strong-matched type deals less."],
+		["Formation", "Heroes and monsters can sit front or back row. Retaliation is biased toward the front row; back-row monsters take reduced damage from hero attacks."],
+		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
+		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
+		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
+	]
+	for entry in entries:
+		v.add_child(_label(str(entry[0]), 15))
+		v.add_child(_wrap_label(str(entry[1]), 12, true))
+		v.add_child(_hsep())
+
+
+# ---------------- Settings ----------------
+func _volume_row(label_text: String, value: float, on_change: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var lbl := _label(label_text, 14)
+	lbl.custom_minimum_size = Vector2(120, 0)
+	row.add_child(lbl)
+	var slider := HSlider.new()
+	slider.min_value = 0
+	slider.max_value = 100
+	slider.step = 1
+	slider.value = round(value * 100)
+	slider.custom_minimum_size = Vector2(180, 0)
+	row.add_child(slider)
+	var pct := _label("%d%%" % int(round(value * 100)), 12, true)
+	pct.custom_minimum_size = Vector2(40, 0)
+	row.add_child(pct)
+	# Deliberately not wired through render() — rebuilding the whole tree on
+	# every drag tick would tear the slider out from under an in-progress
+	# drag. The percent label updates directly instead.
+	slider.value_changed.connect(func(new_value: float):
+		pct.text = "%d%%" % int(new_value)
+		on_change.call(new_value / 100.0)
+	)
+	return row
+
+
+func _switch_slot(slot: int) -> void:
+	GameState.set_active_slot(slot)
+	term_tab = "camp"
+	mgmt_branch = ""
+	inv_category = ""
+	confirm_reset = false
+	confirm_delete_slot = -1
+	if not GameState.load_save():
+		GameState.reset()
+	if GameState.guild_name != "":
+		screen = "terminal" if GameState.run.is_empty() else "rift_run"
+	else:
+		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
+		screen = "onboard"
+	render()
+
+
+func _render_settings(v: VBoxContainer) -> void:
+	v.add_child(_label("Settings", 20))
+
+	v.add_child(_label("Audio", 15))
+	v.add_child(_volume_row("Music", GameState.music_volume, func(val: float):
+		GameState.music_volume = val
+		AudioManager.set_music_volume(val)
+		GameState.save_settings()
+	))
+	v.add_child(_volume_row("SFX", GameState.sfx_volume, func(val: float):
+		GameState.sfx_volume = val
+		AudioManager.set_sfx_volume(val)
+		GameState.save_settings()
+	))
+
+	v.add_child(_hsep())
+	v.add_child(_label("Display", 15))
+	var res_opts: Array = GameData.RESOLUTION_OPTIONS
+	var res_idx := GameState.resolution_idx
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], "Resolution: %s" % str(res_opts[res_idx]["label"]), func():
+		var next_idx: int = (res_idx + 1) % res_opts.size()
+		GameState.resolution_idx = next_idx
+		GameState.save_settings()
+		_apply_resolution(next_idx)
+		render()
+	))
+
+	v.add_child(_hsep())
+	v.add_child(_label("Save Slots", 15))
+	for slot in GameState.SLOT_COUNT:
+		var summary := GameState.slot_summary(slot)
+		var is_active := slot == GameState.active_slot
+		var is_empty: bool = summary.get("empty", true)
+		var text := "Slot %d — Empty" % (slot + 1)
+		if not is_empty:
+			var sealed := int(summary.get("rifts_sealed", 0))
+			text = "Slot %d — %s (%d rift%s sealed)" % [slot + 1, str(summary.get("guild_name", "")), sealed, "" if sealed == 1 else "s"]
+		if is_active:
+			text += "  (Active)"
+		var actions: Array[Control] = []
+		if not is_active:
+			actions.append(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Play", func(s=slot):
+				_switch_slot(s)
+			))
+			if not is_empty:
+				actions.append(_icon_button("res://assets/skills/shard_green.png", "Click again to confirm delete" if confirm_delete_slot == slot else "Delete", func(s=slot):
+					if confirm_delete_slot != s:
+						confirm_delete_slot = s
+						render()
+						get_tree().create_timer(3.0).timeout.connect(func():
+							if confirm_delete_slot == s:
+								confirm_delete_slot = -1
+								if screen == "settings":
+									render()
+						)
+						return
+					GameState.delete_slot(s)
+					confirm_delete_slot = -1
+					render()
+				))
+		v.add_child(_info_row(text, 13, actions))
+
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
+		screen = _pre_settings_screen
+		render()
+	))
 
 
 func _render_management(v: VBoxContainer) -> void:

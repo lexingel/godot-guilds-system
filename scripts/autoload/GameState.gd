@@ -7,8 +7,17 @@ extends Node
 
 signal state_changed
 
-const SAVE_PATH := "user://save.json"
 const RELIC_MAX_LEVEL := 5
+const SLOT_COUNT := 3
+const ACTIVE_SLOT_PATH := "user://active_slot.cfg"
+const SETTINGS_PATH := "user://settings.json"
+
+var active_slot: int = 0
+# Player/device prefs — global across save slots, not part of any guild's
+# own save data, so they survive Reset Guild and switching slots.
+var music_volume: float = 1.0
+var sfx_volume: float = 1.0
+var resolution_idx: int = 0
 
 var guild_name: String = ""
 var guild_crest: int = 1   # 1-8, index into GameData.CREST_PATH
@@ -241,6 +250,66 @@ func _run_for_save() -> Dictionary:
 	}
 
 
+func _slot_path(slot: int) -> String:
+	return "user://save_slot_%d.json" % slot
+
+
+func load_active_slot() -> void:
+	active_slot = 0
+	if FileAccess.file_exists(ACTIVE_SLOT_PATH):
+		var f := FileAccess.open(ACTIVE_SLOT_PATH, FileAccess.READ)
+		active_slot = clampi(int(f.get_as_text().strip_edges()), 0, SLOT_COUNT - 1)
+
+
+func set_active_slot(slot: int) -> void:
+	active_slot = clampi(slot, 0, SLOT_COUNT - 1)
+	var f := FileAccess.open(ACTIVE_SLOT_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(str(active_slot))
+
+
+## Peeks at a slot's save file without touching live state — used by the
+## Settings screen's slot picker to show a summary before switching.
+func slot_summary(slot: int) -> Dictionary:
+	var path := _slot_path(slot)
+	if not FileAccess.file_exists(path):
+		return {"empty": true}
+	var f := FileAccess.open(path, FileAccess.READ)
+	var parsed = JSON.parse_string(f.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY or String(parsed.get("guild_name", "")) == "":
+		return {"empty": true}
+	return {
+		"empty": false,
+		"guild_name": parsed.get("guild_name", ""),
+		"rifts_sealed": parsed.get("rifts_sealed", 0),
+	}
+
+
+func delete_slot(slot: int) -> void:
+	var path := _slot_path(slot)
+	if FileAccess.file_exists(path):
+		DirAccess.open("user://").remove(path.trim_prefix("user://"))
+
+
+func save_settings() -> void:
+	var f := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({
+			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx,
+		}))
+
+
+func load_settings() -> void:
+	if not FileAccess.file_exists(SETTINGS_PATH):
+		return
+	var f := FileAccess.open(SETTINGS_PATH, FileAccess.READ)
+	var parsed = JSON.parse_string(f.get_as_text())
+	if typeof(parsed) == TYPE_DICTIONARY:
+		music_volume = parsed.get("music_volume", 1.0)
+		sfx_volume = parsed.get("sfx_volume", 1.0)
+		resolution_idx = parsed.get("resolution_idx", 0)
+
+
 func save() -> void:
 	var data := {
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
@@ -261,15 +330,15 @@ func save() -> void:
 		"rift_map": rift_map, "pending_riftbreak_ranks": pending_riftbreak_ranks,
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
 	}
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var f := FileAccess.open(_slot_path(active_slot), FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data))
 
 
 func load_save() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not FileAccess.file_exists(_slot_path(active_slot)):
 		return false
-	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var f := FileAccess.open(_slot_path(active_slot), FileAccess.READ)
 	var parsed = JSON.parse_string(f.get_as_text())
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false

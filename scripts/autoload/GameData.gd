@@ -1010,7 +1010,19 @@ const CAMP_HUB_ICON_PATH := {
 	"rift_map": "res://assets/camp/icon_rift_map.png",
 	"bestiary": "res://assets/camp/icon_bestiary.png",
 	"crafting": "res://assets/camp/icon_crafting.png",
+	"settings": "res://assets/skills/gear.png",
+	"compendium": "res://assets/camp/icon_compendium.png",
 }
+## Window sizes offered by the Settings screen — Godot's existing
+## stretch/mode="canvas_items" + aspect="expand" (project.godot) already
+## scales the UI to whatever size the window ends up, so switching entries
+## here is just get_window().size = Vector2i(w, h), no stretch-system change.
+const RESOLUTION_OPTIONS := [
+	{"label": "1280×800 (Default)", "w": 1280, "h": 800},
+	{"label": "1200×800", "w": 1200, "h": 800},
+	{"label": "1600×900", "w": 1600, "h": 900},
+	{"label": "1920×1080", "w": 1920, "h": 1080},
+]
 ## Ornate slot-frame borders, one per rarity tier — reused everywhere a
 ## rarity needs to read at a glance: equip slots on the paper-doll Roster
 ## screen and the battle screen's action-bar slots (which always use the
