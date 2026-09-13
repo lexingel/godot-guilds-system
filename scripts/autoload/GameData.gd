@@ -935,11 +935,7 @@ const BATTLE_BACKGROUNDS: Array[String] = [
 	"res://assets/battle/bg_tundra.png",
 	"res://assets/battle/bg_skyfallen_ruins.png",
 	"res://assets/battle/bg_abyssal_chasm.png",
-	# bg_arcane_observatory.png is NOT here yet — PixelLab ran out of credits
-	# mid-batch before generating it. Add it back once it exists; referencing
-	# a missing file here would show a blank battle background in ~1/10 fights
-	# (BATTLE_BACKGROUNDS is randomly sampled), unlike a missing monster/hero
-	# animation which only affects that one specific fight.
+	"res://assets/battle/bg_arcane_observatory.png",
 ]
 const CURRENCY_ICON_PATH := {
 	"coins": "res://assets/ui/icon_coins.png",

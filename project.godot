@@ -18,10 +18,6 @@ config/name="Guilds System"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
-[audio]
-
-buses/default_bus_layout="res://default_bus_layout.tres"
-
 [autoload]
 
 GameData="*res://scripts/autoload/GameData.gd"
