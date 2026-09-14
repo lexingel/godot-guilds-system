@@ -33,6 +33,8 @@ var inv_sort: String = "rarity"            # "rarity" | "value" | "name" — cyc
 var compendium_tab: String = "items"       # "items" | "relics" | "crafting" | "systems"
 var _pre_settings_screen: String = "onboard"   # where the Settings gear button returns to
 var confirm_delete_slot: int = -1              # which save slot's Delete button is armed, -1 = none
+var _last_render_key: String = ""              # screen+term_tab as of the last render() — scroll position is kept across a re-render only when this hasn't changed, so toggling Skills/gear/etc. doesn't jump back to the top but navigating to a different screen still starts scrolled to the top
+var _last_scroll_y: float = 0.0
 
 
 func _ready() -> void:
@@ -605,6 +607,22 @@ func render() -> void:
 		GameState.start_riftbreak_encounter()
 		if not GameState.run.is_empty():
 			screen = "rift_run"
+	# Toggling something in place (Skills, an equip slot, a Guild Management
+	# branch, ...) rebuilds the whole screen via _clear_root() below, which
+	# would otherwise silently snap the scroll position back to the top every
+	# time — jarring on a long screen. Carry it over whenever we're rebuilding
+	# the SAME screen/tab; only a real navigation resets to the top.
+	var render_key := "%s|%s" % [screen, term_tab]
+	if render_key == _last_render_key:
+		for c in root.get_children():
+			if c is VBoxContainer:
+				for cc in c.get_children():
+					if cc is ScrollContainer:
+						_last_scroll_y = cc.scroll_vertical
+	else:
+		_last_scroll_y = 0.0
+	_last_render_key = render_key
+
 	_clear_root()
 	var outer := _vbox(10)
 	root.add_child(outer)
@@ -616,6 +634,7 @@ func render() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	outer.add_child(scroll)
+	scroll.set_deferred("scroll_vertical", _last_scroll_y)
 	var v := _vbox(14)
 	# Rift Run gets extra width for the combat arena (background + positioned
 	# sprites) sitting alongside the log/action column — every other screen
@@ -2457,45 +2476,32 @@ func _render_camp(v: VBoxContainer) -> void:
 		hotspot.position = rect.position
 		camp.add_child(hotspot)
 
-	# Bottom-left, in the open ground below the small griffin banner-post and
-	# its nearby crates/barrels.
-	var rift_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], 56.0, "Rift Hall (Training Ground)", func(): screen = "rift_hall"; render())
-	rift_icon.position = Vector2(150, 270) - Vector2(28, 28)
-	camp.add_child(rift_icon)
-
-	# No matching background prop for this one either — placed a bit further
-	# right along the same open ground as the Rift Hall icon above.
-	var rift_map_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift_map"], 56.0, "Rift Map", func(): screen = "rift_map"; render())
-	rift_map_icon.position = Vector2(230, 270) - Vector2(28, 28)
-	camp.add_child(rift_map_icon)
-
-	# Bestiary is a Terminal sub-tab (like Roster/Inventory), not a separate
-	# screen, so its hotspot sets term_tab instead of screen — continuing the
-	# same free-floating-icon row as Rift Hall/Rift Map above.
-	var bestiary_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["bestiary"], 56.0, "Bestiary", func(): term_tab = "bestiary"; render())
-	bestiary_icon.position = Vector2(310, 270) - Vector2(28, 28)
-	camp.add_child(bestiary_icon)
-
-	# Crafting Hall — a new top-level destination, same free-floating-icon
-	# treatment as Rift Map/Bestiary above (no matching background prop to
-	# hand-place a hit_rect against).
-	var crafting_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["crafting"], 56.0, "Crafting Hall", func(): screen = "crafting_hall"; render())
-	crafting_icon.position = Vector2(390, 270) - Vector2(28, 28)
-	camp.add_child(crafting_icon)
-
-	# Compendium — a read-only reference tab (same shape as Bestiary), same
-	# free-floating-icon treatment as the other destinations above.
-	var compendium_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["compendium"], 56.0, "Compendium", func(): term_tab = "compendium"; render())
-	compendium_icon.position = Vector2(470, 270) - Vector2(28, 28)
-	camp.add_child(compendium_icon)
-
-	# Guild Board — Contracts/Dailies/Milestones, same free-floating-icon
-	# treatment as the other destinations above.
-	var quests_icon := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["quests"], 56.0, "Guild Board", func(): term_tab = "quests"; render())
-	quests_icon.position = Vector2(550, 270) - Vector2(28, 28)
-	camp.add_child(quests_icon)
-
 	v.add_child(camp)
+
+	# These 6 destinations have no matching background prop to hand-place a
+	# hit_rect against (unlike Medical Bay/Roster/Inventory/Recruits/
+	# Management above), so they used to sit as free-floating icons crammed
+	# into one row along the scene's open ground — with 6 icons + captions at
+	# an 80px pitch, that row ran out of room and started colliding with
+	# itself. A plain button grid below the scene has all the room it needs
+	# and grows to a 3rd row cleanly if a 7th destination is ever added.
+	var nav_grid := GridContainer.new()
+	nav_grid.columns = 3
+	nav_grid.add_theme_constant_override("h_separation", 8)
+	nav_grid.add_theme_constant_override("v_separation", 8)
+	var nav_entries := [
+		["Rift Hall", GameData.CAMP_HUB_ICON_PATH["rift"], func(): screen = "rift_hall"; render()],
+		["Rift Map", GameData.CAMP_HUB_ICON_PATH["rift_map"], func(): screen = "rift_map"; render()],
+		["Bestiary", GameData.CAMP_HUB_ICON_PATH["bestiary"], func(): term_tab = "bestiary"; render()],
+		["Crafting Hall", GameData.CAMP_HUB_ICON_PATH["crafting"], func(): screen = "crafting_hall"; render()],
+		["Compendium", GameData.CAMP_HUB_ICON_PATH["compendium"], func(): term_tab = "compendium"; render()],
+		["Guild Board", GameData.CAMP_HUB_ICON_PATH["quests"], func(): term_tab = "quests"; render()],
+	]
+	for entry in nav_entries:
+		var btn := _icon_button(entry[1], entry[0], entry[2])
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nav_grid.add_child(btn)
+	v.add_child(nav_grid)
 
 
 ## An invisible clickable region over a prop already drawn in the background
@@ -2618,7 +2624,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		_render_equip_picker(v, champ, "weapon", int(expanded_slot.split(":")[2]))
 	if expanded_slot.begins_with("%s:gear:" % champ.id):
 		_render_equip_picker(v, champ, "gear", int(expanded_slot.split(":")[2]))
-	v.add_child(_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
+	v.add_child(_wrap_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
 	v.add_child(_hsep())
 
 	v.add_child(_label("Hero Recruits — %d/%d roster slots" % [GameState.heroes.size(), GameState.hero_slot_cap()]))
@@ -3409,8 +3415,8 @@ func _render_roster(v: VBoxContainer) -> void:
 	for kind in GameData.BUILD_KINDS:
 		var total := Combat.hero_skill_total(h, kind)
 		if total != 0.0:
-			left_v.add_child(_label(Combat.describe_skill(kind, total), 11, true))
-	left_v.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+			left_v.add_child(_wrap_label(Combat.describe_skill(kind, total), 11, true))
+	left_v.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 	for scar_name in h.scars:
 		left_v.add_child(_info_row("Scar: %s" % scar_name, 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
