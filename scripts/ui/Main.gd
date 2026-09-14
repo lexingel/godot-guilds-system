@@ -2533,6 +2533,25 @@ func _camp_hotspot(icon_path: String, size: float, label_text: String, cb: Calla
 
 
 func _render_recruits(v: VBoxContainer) -> void:
+	var champ := GameState.ensure_champion()
+	var champ_row := HBoxContainer.new()
+	champ_row.add_theme_constant_override("separation", 10)
+	champ_row.add_child(_framed_portrait(champ.cls_id, champ.pool_id, 56.0))
+	var champ_mid := _vbox(2)
+	champ_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	champ_mid.add_child(_label("Champion: %s" % champ.name, 13))
+	champ_mid.add_child(_label("Rank %s · always joins free" % champ.rank, 11, true))
+	champ_row.add_child(champ_mid)
+	champ_row.add_child(_button("Reroll (%dc)" % GameData.CHAMPION_REROLL_COST, func():
+		var err := GameState.reroll_champion()
+		if err != "":
+			push_warning(err)
+		render()
+	))
+	v.add_child(champ_row)
+	v.add_child(_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
+	v.add_child(_hsep())
+
 	v.add_child(_label("Hero Recruits — %d/%d roster slots" % [GameState.heroes.size(), GameState.hero_slot_cap()]))
 	for h in GameState.recruit_pool:
 		var rank := GameData.find_rank(h.rank)
@@ -2561,6 +2580,12 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
 		row.add_child(mid)
+		row.add_child(_button("Reroll (%dc)" % GameData.RECRUIT_REROLL_COST, func(id=h.id):
+			var err := GameState.reroll_recruit_offer(id)
+			if err != "":
+				push_warning(err)
+			render()
+		))
 		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":

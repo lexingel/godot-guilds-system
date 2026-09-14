@@ -653,6 +653,25 @@ const RANKS := [
 	{"id": "S", "weight": 1, "mult": 2.6, "cost": 650},
 ]
 
+# Recruitment-screen reroll fees. Flat rather than rank-scaled, so a bad
+# opening pull is always cheap to retry (below even the F-rank recruit cost)
+# and a Champion reroll — free and automatic on every rift seal already —
+# just costs a mid-tier hero's worth of Coins to trigger on demand instead.
+const RECRUIT_REROLL_COST := 20
+const CHAMPION_REROLL_COST := 150
+
+## Compact "F 43% · E 26% · ..." odds line for the recruit/Champion rank
+## table, so the pull weights aren't just implicit in RANKS.
+static func rank_odds_text() -> String:
+	var total := 0
+	for r in RANKS:
+		total += int(r["weight"])
+	var parts: Array[String] = []
+	for r in RANKS:
+		var pct := 100.0 * float(r["weight"]) / float(total)
+		parts.append("%s %s" % [r["id"], (str(snappedf(pct, 0.1)) + "%") if pct < 1.0 else (str(int(round(pct))) + "%")])
+	return " · ".join(parts)
+
 ## Rift Map ranks — reuses the hero-rank vocabulary (F-S) extended with two
 ## rarer tiers (SS/SSS) for the map's random rift rolls. Weights preserve the
 ## exact same relative odds as hero RANKS for F-S (just rescaled ×10 for the

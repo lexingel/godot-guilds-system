@@ -508,6 +508,35 @@ func ensure_champion() -> Hero:
 	return current_champion
 
 
+func reroll_recruit_offer(offer_id: String) -> String:
+	var idx := -1
+	for i in recruit_pool.size():
+		if recruit_pool[i].id == offer_id:
+			idx = i
+			break
+	if idx < 0:
+		return ""
+	if coins < GameData.RECRUIT_REROLL_COST:
+		return "Not enough Coins."
+	coins -= GameData.RECRUIT_REROLL_COST
+	recruit_pool[idx] = gen_recruit_offer()
+	save()
+	state_changed.emit()
+	return ""
+
+
+## On-demand version of the free reroll seal_rift() already does every rift
+## cycle — same generator, just player-triggered and paid.
+func reroll_champion() -> String:
+	if coins < GameData.CHAMPION_REROLL_COST:
+		return "Not enough Coins."
+	coins -= GameData.CHAMPION_REROLL_COST
+	current_champion = Combat.generate_champion()
+	save()
+	state_changed.emit()
+	return ""
+
+
 func current_party() -> Array[Hero]:
 	var out: Array[Hero] = []
 	if current_champion:
