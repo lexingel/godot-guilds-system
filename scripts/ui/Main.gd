@@ -1504,14 +1504,14 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 		var action: String = str(act.get("action", "attack"))
 		if action == "attack":
 			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
-			var frames := GameData.hero_anim_frames(h.cls_id, "attack")
+			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "attack")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
 			else:
 				await _tween_lunge(hero_wrappers[h.id])
 		elif action == "ability":
 			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
-			var frames := GameData.hero_anim_frames(h.cls_id, "skill")
+			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "skill")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
 			else:
@@ -1570,7 +1570,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 			AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy2 else "hit"])
 			_spawn_impact_particles(hero_wrappers[h.id], hero_wrappers[h.id].custom_minimum_size * 0.5, retaliation_color, heavy2)
 			await _impact_beat(arena, heavy2)
-			var frames := GameData.hero_anim_frames(h.cls_id, "hurt")
+			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "hurt")
 			if not frames.is_empty() and hero_rects.has(h.id):
 				await _play_frames(hero_rects[h.id], frames)
 			else:

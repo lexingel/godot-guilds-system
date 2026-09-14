@@ -1157,6 +1157,35 @@ static func hero_anim_frames(role: String, action: String) -> Array[String]:
 	for i in 5:
 		frames.append("res://assets/heroes/anim/%s_%s_%d.png" % [role, action, i])
 	return frames
+
+
+## Subclass-specific combat frames (same 5-frame shape as hero_anim_frames,
+## generated the same way — frame 0 duplicates the static portrait). Checked
+## via ResourceLoader.exists rather than a static combo table since these were
+## generated per-subclass after the fact and coverage varies by role (see
+## hero_combat_frames).
+static func subclass_anim_frames(pool_id: String, action: String) -> Array[String]:
+	var frames: Array[String] = []
+	for i in 5:
+		frames.append("res://assets/heroes/subclass_anim/%s_%s_%d.png" % [pool_id, action, i])
+	if not ResourceLoader.exists(frames[1]):
+		return []
+	return frames
+
+
+## The single entry point _play_round should use to decide what to
+## frame-animate. A hero with a subclass-specific portrait (SUBCLASS_PORTRAIT_
+## PATH) must never play the generic role's frames — those are a different-
+## looking character and that mismatch is exactly what caused heroes to
+## visibly "change look" mid-hit. So subclassed heroes only ever get their own
+## subclass_anim_frames (or no frames at all, falling back to a tween on their
+## correct portrait); only Champions and other non-subclassed heroes fall back
+## to the generic role animation, since portrait_for_hero shows them that same
+## generic art at rest.
+static func hero_combat_frames(cls_id: String, pool_id: String, action: String) -> Array[String]:
+	if SUBCLASS_PORTRAIT_PATH.has(pool_id):
+		return subclass_anim_frames(pool_id, action)
+	return hero_anim_frames(cls_id, action)
 const MONSTER_SPRITE_PATH := {
 	"goblin": "res://assets/monsters/goblin.png",
 	"orc": "res://assets/monsters/orc.png",
