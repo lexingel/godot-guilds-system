@@ -10,15 +10,16 @@ extends Control
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
 
-var screen: String = "onboard"     # onboard | rift_hall | party_assembly | rift_run | terminal
-var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management
+var screen: String = "onboard"     # onboard | rift_hall | rift_map | party_assembly | rift_run | terminal | crafting_hall | settings
+var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests
 var pending_crest: int = 1
 var pending_party: Array[String] = []
 var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
-var expanded_skill_hero: String = ""
-var expanded_slot: String = ""     # "weapon:0"/"gear:2" — which equip slot's picker is open, scoped to the selected hero
+var skills_panel_open: bool = false   # whether the selected hero's skill tree is expanded — a plain toggle rather than per-hero, so it stays open switching between heroes
+var expanded_slot: String = ""     # "<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
+var rift_gear_open: bool = false   # "Gear Up" panel toggle on non-combat rift nodes (shop/hazard/fork) — lets the party re-equip between fights without retreating
 var confirm_reset: bool = false
 var _combat_animating: bool = false
 var _flavor_toast: String = ""     # one-shot narrative line (e.g. guild founding) — shown once at the top of the next Terminal render, then cleared
@@ -1245,6 +1246,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(_hsep())
 		for h in GameState.current_party():
 			v.add_child(_label("%s%s — %d/%d HP%s" % [h.name, " (Champion)" if h.is_champion else "", h.hp, Combat.max_hp(h), " (downed)" if h.is_downed() else ""]))
+		_render_mid_rift_gear(v)
 		v.add_child(_hsep())
 
 	# An unresolved fork (kind == "") is now chosen directly on the path map
@@ -2256,6 +2258,40 @@ func _run_summary_lines() -> Array[String]:
 	return lines
 
 
+## "Gear Up" toggle on non-combat rift nodes (shop/hazard/fork) — same
+## weapon/gear paper-doll widgets as the Roster tab, scoped to the current
+## party, so newly bought/found loot can go on before the next fight instead
+## of forcing a Retreat (which ends the run) to reach the Inventory tab.
+func _render_mid_rift_gear(v: VBoxContainer) -> void:
+	v.add_child(_icon_button("res://assets/skills/armor_chest.png", "Hide Gear" if rift_gear_open else "Gear Up", func():
+		rift_gear_open = not rift_gear_open
+		render()
+	))
+	if not rift_gear_open:
+		return
+	for h in GameState.current_party():
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelViolet"
+		var cv := _vbox(4)
+		cv.add_child(_label(h.name, 13))
+		var weapon_row := HBoxContainer.new()
+		weapon_row.add_theme_constant_override("separation", 8)
+		for i in GameData.weapon_slots(h.pool_id):
+			weapon_row.add_child(_equip_slot_frame(h, "weapon", i))
+		cv.add_child(weapon_row)
+		if expanded_slot.begins_with("%s:weapon:" % h.id):
+			_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
+		var gear_row := HBoxContainer.new()
+		gear_row.add_theme_constant_override("separation", 8)
+		for i in GameData.gear_slots(h.rank):
+			gear_row.add_child(_equip_slot_frame(h, "gear", i))
+		cv.add_child(gear_row)
+		if expanded_slot.begins_with("%s:gear:" % h.id):
+			_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
+		card.add_child(cv)
+		v.add_child(card)
+
+
 func _render_hazard_node(v: VBoxContainer) -> void:
 	GameState.ensure_hazard()
 	var ns: Dictionary = GameState.run["node_state"]
@@ -2549,6 +2585,17 @@ func _render_recruits(v: VBoxContainer) -> void:
 		render()
 	))
 	v.add_child(champ_row)
+	var champ_weapon_row := HBoxContainer.new()
+	champ_weapon_row.add_theme_constant_override("separation", 8)
+	for i in GameData.weapon_slots(champ.pool_id):
+		champ_weapon_row.add_child(_equip_slot_frame(champ, "weapon", i))
+	for i in GameData.gear_slots(champ.rank):
+		champ_weapon_row.add_child(_equip_slot_frame(champ, "gear", i))
+	v.add_child(champ_weapon_row)
+	if expanded_slot.begins_with("%s:weapon:" % champ.id):
+		_render_equip_picker(v, champ, "weapon", int(expanded_slot.split(":")[2]))
+	if expanded_slot.begins_with("%s:gear:" % champ.id):
+		_render_equip_picker(v, champ, "gear", int(expanded_slot.split(":")[2]))
 	v.add_child(_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
 	v.add_child(_hsep())
 
@@ -3328,8 +3375,8 @@ func _render_roster(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
-	actions.add_child(_icon_button("res://assets/skills/eye_gem.png", "Skills" if expanded_skill_hero != h.id else "Hide Skills", func(id=h.id):
-		expanded_skill_hero = "" if expanded_skill_hero == id else id
+	actions.add_child(_icon_button("res://assets/skills/eye_gem.png", "Hide Skills" if skills_panel_open else "Skills", func():
+		skills_panel_open = not skills_panel_open
 		render()
 	))
 	if h.level >= 10:
@@ -3347,7 +3394,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			))
 	cv.add_child(actions)
 
-	if expanded_skill_hero == h.id:
+	if skills_panel_open:
 		cv.add_child(_hsep())
 		if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
@@ -3389,8 +3436,8 @@ func _render_roster(v: VBoxContainer) -> void:
 	for i in GameData.weapon_slots(h.pool_id):
 		weapon_row.add_child(_equip_slot_frame(h, "weapon", i))
 	cv.add_child(weapon_row)
-	if expanded_slot.begins_with("weapon:"):
-		_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[1]))
+	if expanded_slot.begins_with("%s:weapon:" % h.id):
+		_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
 
 	cv.add_child(_label("Gear", 12, true))
 	var gear_row := HBoxContainer.new()
@@ -3398,8 +3445,8 @@ func _render_roster(v: VBoxContainer) -> void:
 	for i in GameData.gear_slots(h.rank):
 		gear_row.add_child(_equip_slot_frame(h, "gear", i))
 	cv.add_child(gear_row)
-	if expanded_slot.begins_with("gear:"):
-		_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[1]))
+	if expanded_slot.begins_with("%s:gear:" % h.id):
+		_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
 
 	card.add_child(cv)
 	v.add_child(card)
@@ -3539,6 +3586,23 @@ func _first_free_slot(h: Hero, slot_type: String) -> int:
 	return -1
 
 
+## Which slot a quick-equip from Inventory should target: the first free one,
+## or — once every slot is full, the normal late-game state — whichever
+## occupied slot holds the lowest-rarity item, so gearing up doesn't silently
+## stop working just because there's nothing empty left to fill.
+func _best_swap_slot(h: Hero, slot_type: String) -> int:
+	var free := _first_free_slot(h, slot_type)
+	if free >= 0:
+		return free
+	var worst_idx := -1
+	var worst_rank := 999
+	for it in GameState.items:
+		if it.equipped_to == h.id and it.slot_type() == slot_type and _rarity_rank(it.rarity) < worst_rank:
+			worst_rank = _rarity_rank(it.rarity)
+			worst_idx = it.equipped_idx
+	return worst_idx
+
+
 func _find_equipped_at(hero_id: String, slot_type: String, idx: int) -> Item:
 	for it in GameState.items:
 		if it.equipped_to == hero_id and it.slot_type() == slot_type and it.equipped_idx == idx:
@@ -3555,7 +3619,7 @@ func _find_equipped_at(hero_id: String, slot_type: String, idx: int) -> Item:
 ## the Skills button and Medical Bay's bed picker.
 func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0) -> Control:
 	var equipped := _find_equipped_at(h.id, slot_type, idx)
-	var slot_key := "%s:%d" % [slot_type, idx]
+	var slot_key := "%s:%s:%d" % [h.id, slot_type, idx]
 	var is_open := expanded_slot == slot_key
 	var label_text := equipped.name.split(" ")[0] if equipped else ("Weapon" if slot_type == "weapon" else "Gear")
 	var icon_path: String = GameData.ITEM_CATEGORY_ICON_PATH[equipped.category] if equipped else ""
@@ -3718,12 +3782,17 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 		var actions: Array[Control] = []
 		for h2 in GameState.heroes:
 			var slot := it.slot_type()
-			var free_idx := _first_free_slot(h2, slot)
-			if free_idx >= 0 and GameState.item_fits_hero(it, h2):
-				actions.append(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "Equip → %s" % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=free_idx):
-					GameState.equip_item(hid, s, idx, iid)
-					render()
-				))
+			if not GameState.item_fits_hero(it, h2):
+				continue
+			var target_idx := _best_swap_slot(h2, slot)
+			if target_idx < 0:
+				continue
+			var is_free := _first_free_slot(h2, slot) >= 0
+			var verb := "Equip → %s" if is_free else "Swap → %s"
+			actions.append(_icon_button(GameData.ITEM_CATEGORY_ICON_PATH[it.category], verb % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=target_idx):
+				GameState.equip_item(hid, s, idx, iid)
+				render()
+			))
 		actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
 			GameState.sell_item(id)
 			render()
