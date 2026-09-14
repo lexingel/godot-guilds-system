@@ -191,13 +191,13 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
 ## hub's clickable props. Selected state is a filled tint (not just a thin
 ## border) since the border alone was too easy to miss against the wooden
 ## shelf background.
-func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "") -> Control:
+func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "") -> Control:
 	var label_h := 14.0 if label_text != "" else 0.0
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(size, size + label_h)
 	wrap.size = Vector2(size, size + label_h)
 
-	var frame := _icon(GameData.RARITY_FRAME_PATH["common"], int(size))
+	var frame := _icon(frame_path if frame_path != "" else GameData.RARITY_FRAME_PATH["common"], int(size))
 	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	wrap.add_child(frame)
 
@@ -263,7 +263,9 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
 		btn.add_theme_stylebox_override(style_name, clear_style)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	if label_text != "":
+	if tooltip_override != "":
+		btn.tooltip_text = tooltip_override
+	elif label_text != "":
 		btn.tooltip_text = label_text
 	btn.pressed.connect(cb)
 	wrap.add_child(btn)
@@ -3334,32 +3336,51 @@ func _render_roster(v: VBoxContainer) -> void:
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
-	cv.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+
+	# Two-column dashboard — portrait/stats/trait on the left, the full
+	# weapon+gear paper-doll as a grid on the right — replaces what used to
+	# be five separate full-width rows (portrait, then a labeled Weapon row,
+	# then a labeled Gear row) stacked one under another.
+	var dash := HBoxContainer.new()
+	dash.add_theme_constant_override("separation", 14)
+
+	var left_v := _vbox(4)
+	left_v.custom_minimum_size.x = 180
+	left_v.add_child(_framed_portrait(h.cls_id, h.pool_id, 96.0))
+	left_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
+	left_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
+	for kind in GameData.BUILD_KINDS:
+		var total := Combat.hero_skill_total(h, kind)
+		if total != 0.0:
+			left_v.add_child(_label(Combat.describe_skill(kind, total), 11, true))
+	left_v.add_child(_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 	for scar_name in h.scars:
-		cv.add_child(_info_row("Scar: %s" % scar_name, 12, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
+		left_v.add_child(_info_row("Scar: %s" % scar_name, 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
 			if err != "":
 				push_warning(err)
 			render()
 		)], null, true))
+	dash.add_child(left_v)
 
-	# Portrait + a live stat readout side by side, framed with the same
-	# PORTRAIT_FRAME_PATH art the paper-doll design has been carrying unused
-	# since it was first generated — every number here is the real derived
-	# stat (Combat.power_of/max_hp/hero_skill_total), not a fantasy stat this
-	# game doesn't track.
-	var visual_row := HBoxContainer.new()
-	visual_row.add_theme_constant_override("separation", 14)
-	visual_row.add_child(_framed_portrait(h.cls_id, h.pool_id, 96.0))
-	var stats_v := _vbox(2)
-	stats_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
-	stats_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
-	for kind in GameData.BUILD_KINDS:
-		var total := Combat.hero_skill_total(h, kind)
-		if total != 0.0:
-			stats_v.add_child(_label(Combat.describe_skill(kind, total), 11, true))
-	visual_row.add_child(stats_v)
-	cv.add_child(visual_row)
+	var right_v := _vbox(4)
+	right_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_v.add_child(_label("Equipment", 12, true))
+	var equip_grid := GridContainer.new()
+	equip_grid.columns = 3
+	equip_grid.add_theme_constant_override("h_separation", 8)
+	equip_grid.add_theme_constant_override("v_separation", 8)
+	for i in GameData.weapon_slots(h.pool_id):
+		equip_grid.add_child(_equip_slot_frame(h, "weapon", i))
+	for i in GameData.gear_slots(h.rank):
+		equip_grid.add_child(_equip_slot_frame(h, "gear", i))
+	right_v.add_child(equip_grid)
+	if expanded_slot.begins_with("%s:weapon:" % h.id):
+		_render_equip_picker(right_v, h, "weapon", int(expanded_slot.split(":")[2]))
+	if expanded_slot.begins_with("%s:gear:" % h.id):
+		_render_equip_picker(right_v, h, "gear", int(expanded_slot.split(":")[2]))
+	dash.add_child(right_v)
+	cv.add_child(dash)
 
 	var actions := HBoxContainer.new()
 	actions.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (60c)", func(id=h.id):
@@ -3411,15 +3432,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			cv.add_child(ab_row)
 			cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
-		var tree: Array = GameData.subclass_skill_tree(h.pool_id)
-		var tier_label := {1: "Tier 1", 2: "Tier 2", 3: "Capstone"}
-		var cur_tier := -1
-		for n in tree:
-			var tier: int = int(n["tier"])
-			if tier != cur_tier:
-				cur_tier = tier
-				cv.add_child(_label(str(tier_label.get(tier, "")), 11, true))
-			cv.add_child(_skill_node_row(h, n))
+		_render_skill_tree_graph(cv, h, GameData.subclass_skill_tree(h.pool_id))
 		var spent: int = h.skills.values().count(true)
 		if spent > 0:
 			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
@@ -3429,94 +3442,84 @@ func _render_roster(v: VBoxContainer) -> void:
 				render()
 			))
 
-	cv.add_child(_hsep())
-	cv.add_child(_label("Weapon", 12, true))
-	var weapon_row := HBoxContainer.new()
-	weapon_row.add_theme_constant_override("separation", 8)
-	for i in GameData.weapon_slots(h.pool_id):
-		weapon_row.add_child(_equip_slot_frame(h, "weapon", i))
-	cv.add_child(weapon_row)
-	if expanded_slot.begins_with("%s:weapon:" % h.id):
-		_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
-
-	cv.add_child(_label("Gear", 12, true))
-	var gear_row := HBoxContainer.new()
-	gear_row.add_theme_constant_override("separation", 8)
-	for i in GameData.gear_slots(h.rank):
-		gear_row.add_child(_equip_slot_frame(h, "gear", i))
-	cv.add_child(gear_row)
-	if expanded_slot.begins_with("%s:gear:" % h.id):
-		_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
-
 	card.add_child(cv)
 	v.add_child(card)
 
 
-## One skill-tree node: icon + name/effect/requirement in a bordered row,
-## with a Learn button that disables itself (showing why) instead of only
-## failing after the click — level/prereq/SP gating mirrors learn_skill()'s
-## own checks exactly so the row never promises something a click can't do.
-func _skill_node_row(h: Hero, n: Dictionary) -> PanelContainer:
+## One skill node as a compact hex tile (icon + short name caption) instead
+## of a full-width text row — hover/long-press for the full effect text and
+## gating reason via tooltip. A ready-to-learn node glows (via _action_slot's
+## `selected`), a learned one gets a warm gold tint, anything else just dims.
+func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
 	var skill_id: String = n["id"]
 	var learned: bool = h.skills.get(skill_id, false)
-	var panel := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE2 if not learned else Palette.SURFACE3
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = Palette.VIOLET if learned else Palette.LINE
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_bottom_left = 6
-	style.content_margin_left = 6
-	style.content_margin_top = 4
-	style.content_margin_right = 6
-	style.content_margin_bottom = 4
-	panel.add_theme_stylebox_override("panel", style)
+	var missing_level: bool = h.level < int(n["req_level"])
+	var missing_prereq := false
+	for req in n["requires"]:
+		if not h.skills.get(req, false):
+			missing_prereq = true
+	var missing_sp: bool = h.skill_points < int(n["cost"])
+	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp
 
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	row.add_child(_icon(str(n["icon"]), 28))
-
-	var mid := _vbox(0)
-	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	mid.add_child(_label(str(n["name"]), 12))
-	mid.add_child(_wrap_label(Combat.describe_skill(str(n["kind"]), float(n["value"])), 11, true))
-	row.add_child(mid)
-
-	if learned:
-		row.add_child(_label("Learned", 11, true))
-	else:
-		var missing_level: bool = h.level < int(n["req_level"])
-		var missing_prereq := false
-		for req in n["requires"]:
-			if not h.skills.get(req, false):
-				missing_prereq = true
-		var missing_sp: bool = h.skill_points < int(n["cost"])
-		var reason := ""
+	var reason := "Learned"
+	if not learned:
 		if missing_level:
 			reason = "Requires Lv%d" % int(n["req_level"])
 		elif missing_prereq:
 			reason = "Needs prerequisite"
 		elif missing_sp:
 			reason = "Needs %d SP" % int(n["cost"])
-		if reason != "":
-			row.add_child(_label(reason, 11, true))
 		else:
-			var learn_btn := _icon_button(str(n.get("icon", "")), "Learn (%d SP)" % int(n["cost"]), func(hid=h.id, sid=skill_id):
-				var err := GameState.learn_skill(hid, sid)
-				if err != "":
-					push_warning(err)
-				render()
-			)
-			learn_btn.add_theme_font_size_override("font_size", 11)
-			row.add_child(learn_btn)
+			reason = "Learn (%d SP)" % int(n["cost"])
 
-	panel.add_child(row)
-	return panel
+	var tile := _action_slot(str(n["icon"]), "", can_learn, not can_learn and not learned, func(hid=h.id, sid=skill_id):
+		var err := GameState.learn_skill(hid, sid)
+		if err != "":
+			push_warning(err)
+		render()
+	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s" % [str(n["name"]), Combat.describe_skill(str(n["kind"]), float(n["value"])), reason])
+	if learned:
+		tile.modulate = Color(1.15, 1.02, 0.68)
+	return tile
+
+
+## The full tree as a 3-column grid (Tier 1 → Tier 2 → Capstone) instead of a
+## flat scrolling list — each Tier-2 node sits in the same row as the Tier-1
+## node its `requires` points at, so the branch reads via alignment; the one
+## Tier-2 node with no prerequisite gets its own row below both branches.
+func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, tree: Array) -> void:
+	var tier1: Array = tree.filter(func(n): return int(n["tier"]) == 1)
+	var tier2: Array = tree.filter(func(n): return int(n["tier"]) == 2)
+	var tier3: Array = tree.filter(func(n): return int(n["tier"]) == 3)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	for col_label in ["Tier 1", "Tier 2", "Capstone"]:
+		var lbl := _label(col_label, 11, true)
+		lbl.custom_minimum_size.x = 72
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.add_child(lbl)
+	cv.add_child(header)
+
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+
+	var free_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).is_empty())
+	var row_count: int = max(tier1.size(), 1) + free_tier2.size()
+	for row_i in row_count:
+		if row_i < tier1.size():
+			var t1: Dictionary = tier1[row_i]
+			grid.add_child(_skill_node_tile(h, t1))
+			var dep := tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
+			grid.add_child(_skill_node_tile(h, dep[0]) if not dep.is_empty() else Control.new())
+		else:
+			grid.add_child(Control.new())
+			grid.add_child(_skill_node_tile(h, free_tier2[row_i - tier1.size()]))
+		grid.add_child(_skill_node_tile(h, tier3[0]) if row_i == 0 and not tier3.is_empty() else Control.new())
+
+	cv.add_child(grid)
 
 
 ## One hero's clickable portrait for the Roster row — a PanelContainer

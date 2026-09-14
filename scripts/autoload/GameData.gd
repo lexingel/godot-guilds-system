@@ -1086,6 +1086,7 @@ const RARITY_FRAME_PATH := {
 	"epic": "res://assets/ui/frame_epic.png",
 	"legendary": "res://assets/ui/frame_legendary.png",
 }
+const SKILL_NODE_FRAME_PATH := "res://assets/ui/skill_node_hex.png"
 const STATUS_PLATE_PATH := "res://assets/ui/status_plate.png"
 const PORTRAIT_FRAME_PATH := "res://assets/ui/portrait_frame.png"
 const ABILITY_BAR_STRIP_PATH := "res://assets/ui/ability_bar_strip.png"
