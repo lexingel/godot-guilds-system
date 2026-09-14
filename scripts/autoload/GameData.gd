@@ -412,8 +412,9 @@ const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang"
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]
 const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 
-# Vertical slice: only Lesser Rift is active. Greater/Ascendant/Endless are
-# deferred — see the plan's "explicitly deferred" list.
+# Lesser and Greater Rift are the two selectable DIFFICULTIES tiers; Endless
+# (below, via ENDLESS_BASE) is a separate infinite-scaling mode. Ascendant
+# isn't its own selectable tier — ENDLESS_BASE just reuses its numbers.
 const DIFFICULTIES := [
 	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 38, "monster_dmg": 5, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 70},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
@@ -640,9 +641,9 @@ static func subclass_skill_tree(pool_id: String) -> Array:
 	var kind: String = cls.get("kind", "dmg_pct")
 	return SUBCLASS_TIER1 + KIND_SKILL_PACKAGE.get(kind, KIND_SKILL_PACKAGE["dmg_pct"])
 
-# Champion system (deferred beyond this slice, but the rank ladder is shared
-# with recruited heroes, so it's ported now). Rank sets weight (pull odds),
-# stat multiplier, and hero rank progression via evolution.
+# Rank ladder shared by recruited heroes and the Champion (see GameState's
+# recruit_hero/reroll_champion). Rank sets weight (pull odds), stat
+# multiplier, and hero rank progression via evolution.
 const RANKS := [
 	{"id": "F", "weight": 100, "mult": 0.9, "cost": 25},
 	{"id": "E", "weight": 60, "mult": 1.0, "cost": 45},

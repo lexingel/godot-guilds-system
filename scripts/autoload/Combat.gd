@@ -5,12 +5,10 @@ extends Node
 ## the shared `state` global, but every function here still takes its actual
 ## subject (hero/party) as a parameter rather than reaching for ambient state.
 ##
-## Vertical-slice simplification: every bonus that in the HTML version comes
-## from the Guild Management upgrade tree (tacticalBonus, Vanguard Order,
-## Crystal Amplifiers, Energy Extraction, Optimal Synergy's unlock gate,
-## Hardcore Mode) is dropped or treated as its zero/default value — that
-## whole system is explicitly deferred past this slice. Elite encounters and
-## the Champion system are also deferred, so `kind` is just "combat"/"boss".
+## Guild Management bonuses (tactical_bonus, crystal_yield_bonus, has_cap
+## gates, etc.) are read straight from GameState rather than duplicated here.
+## Elite encounters, Hardcore Mode, and the Champion system are all live —
+## `kind` is "combat"/"elite"/"boss".
 
 const RARITY_NOUNS := ["Sigil", "Charm", "Shard", "Idol", "Emblem"]
 
