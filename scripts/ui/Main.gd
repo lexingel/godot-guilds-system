@@ -2194,11 +2194,18 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		))
 
 
+## The 3 shop offers as an icon-forward card grid instead of stacked
+## full-width text rows — each card leads with a large item/relic icon
+## (matching a typical shop-stall layout) with name/desc/price underneath.
 func _render_shop_node(v: VBoxContainer) -> void:
 	GameState.ensure_shop_offers()
 	var ns: Dictionary = GameState.run["node_state"]
 	v.add_child(_label("Rift Hallway Shop"))
 	var offers: Array = ns["offers"]
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
 	for i in offers.size():
 		var off: Dictionary = offers[i]
 		var obj = off["obj"]
@@ -2206,13 +2213,26 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		var desc: String = _loot_desc(obj, is_relic)
 		var bought: bool = off.get("bought", false)
 		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
-		var actions: Array[Control] = []
-		if not bought:
-			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(idx=i):
+
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelViolet"
+		card.custom_minimum_size.x = 200
+		var cv := _vbox(4)
+		var icon_wrap := CenterContainer.new()
+		icon_wrap.add_child(_icon(icon_path, 40))
+		cv.add_child(icon_wrap)
+		cv.add_child(_label(_loot_display_name(obj), 12))
+		cv.add_child(_wrap_label(desc, 11, true))
+		if bought:
+			cv.add_child(_label("Bought", 12, true))
+		else:
+			cv.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy (%dc)" % int(off["price"]), func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
 			))
-		v.add_child(_info_row("%s — %s (%dc)%s" % [_loot_display_name(obj), desc, off["price"], " [bought]" if bought else ""], 14, actions, _icon(icon_path, 20)))
+		card.add_child(cv)
+		grid.add_child(card)
+	v.add_child(grid)
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 		GameState.advance_node()
 		render()
@@ -3162,8 +3182,13 @@ func _render_management(v: VBoxContainer) -> void:
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Branches", func(): mgmt_branch = ""; render()))
 	v.add_child(_banner(GameData.BRANCH_BANNER[mgmt_branch], 700, 150))
 	v.add_child(_label("%s — %s" % [branch["name"], branch["sub"]], 16))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
 	for n in branch["nodes"]:
-		_render_management_node(v, branch, n)
+		grid.add_child(_management_node_card(branch, n))
+	v.add_child(grid)
 
 
 ## The 4 Guild Management branches as clickable stations on a war-room scene
@@ -3231,29 +3256,61 @@ func _render_management_hub(v: VBoxContainer) -> void:
 	v.add_child(reset_btn)
 
 
-## One upgrade node's display line + Upgrade/capstone buttons.
-func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary) -> void:
+## One upgrade node as a card — icon/name header, a level progress bar
+## (replaces the old "(Lvl 2/5)" text-only readout), current + next-level
+## effect text, then the Upgrade/capstone action — instead of a single
+## full-width text row, so a branch's 4-5 nodes read as a grid of cards
+## rather than a stack of near-identical lines.
+func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var key := "%s.%s" % [branch["id"], n["id"]]
 	var cur := GameState.lvl(key)
-	var maxed := cur >= int(n["max"])
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	var node_max := int(n["max"])
+	var maxed := cur >= node_max
 	var icon_path: String = GameData.MANAGEMENT_NODE_ICON.get(key, "")
-	if icon_path != "":
-		row.add_child(_icon(icon_path, 28))
 
-	var col := _vbox(2)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelViolet"
+	card.custom_minimum_size.x = 330
+	var cv := _vbox(4)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	if icon_path != "":
+		header.add_child(_icon(icon_path, 28))
+	header.add_child(_label(str(n["name"]), 13))
+	cv.add_child(header)
+
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = node_max
+	bar.value = cur
+	bar.show_percentage = false
+	bar.custom_minimum_size.y = 10
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Palette.SURFACE
+	bar_bg.corner_radius_top_left = 4
+	bar_bg.corner_radius_top_right = 4
+	bar_bg.corner_radius_bottom_left = 4
+	bar_bg.corner_radius_bottom_right = 4
+	bar.add_theme_stylebox_override("background", bar_bg)
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = Palette.VIOLET_BRIGHT if maxed else Palette.VIOLET
+	bar_fill.corner_radius_top_left = 4
+	bar_fill.corner_radius_top_right = 4
+	bar_fill.corner_radius_bottom_left = 4
+	bar_fill.corner_radius_bottom_right = 4
+	bar.add_theme_stylebox_override("fill", bar_fill)
+	cv.add_child(bar)
+	cv.add_child(_label("Level %d/%d" % [cur, node_max], 11, true))
+
 	var cur_desc := Combat.describe_node_effect(n["id"], cur)
-	var line := "%s (Lvl %d/%d) — %s" % [n["name"], cur, n["max"], cur_desc]
+	cv.add_child(_wrap_label(cur_desc, 11))
 	if not maxed:
-		line += " → %s" % Combat.describe_node_effect(n["id"], cur + 1)
-	col.add_child(_label(line, 12))
-	var brow := HBoxContainer.new()
+		cv.add_child(_wrap_label("Next: %s" % Combat.describe_node_effect(n["id"], cur + 1), 11, true))
+
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
-		brow.add_child(_icon_button(icon_path, "Upgrade (%dcr)" % cost, func(k=key):
+		cv.add_child(_icon_button(icon_path, "Upgrade (%dcr)" % cost, func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
@@ -3261,17 +3318,17 @@ func _render_management_node(v: VBoxContainer, branch: Dictionary, n: Dictionary
 		))
 	var cap: Dictionary = n.get("cap", {})
 	if not cap.is_empty() and maxed and not GameState.has_cap(key):
-		brow.add_child(_icon_button(icon_path, "%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
+		cv.add_child(_icon_button(icon_path, "%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
 			var err := GameState.buy_cap(k)
 			if err != "":
 				push_warning(err)
 			render()
 		))
 	elif not cap.is_empty() and GameState.has_cap(key):
-		brow.add_child(_label("%s unlocked" % cap["name"], 12))
-	col.add_child(brow)
-	row.add_child(col)
-	v.add_child(row)
+		cv.add_child(_label("%s unlocked" % cap["name"], 12))
+
+	card.add_child(cv)
+	return card
 
 
 ## A small button that cycles through `options` (each {id, label}) and calls
