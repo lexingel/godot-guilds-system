@@ -1475,6 +1475,9 @@ func learn_skill(hero_id: String, skill_id: String) -> String:
 	for req in n["requires"]:
 		if not h.skills.get(req, false):
 			return "Learn the prerequisite skill(s) first"
+	for excl in n.get("excludes", []):
+		if h.skills.get(excl, false):
+			return "Locked out — you already chose the other path"
 	if h.skill_points < int(n["cost"]):
 		return "Not enough Skill Points"
 	h.skill_points -= int(n["cost"])

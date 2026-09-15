@@ -3600,12 +3600,18 @@ func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
 	for req in n["requires"]:
 		if not h.skills.get(req, false):
 			missing_prereq = true
+	var locked_out := false
+	for excl in n.get("excludes", []):
+		if h.skills.get(excl, false):
+			locked_out = true
 	var missing_sp: bool = h.skill_points < int(n["cost"])
-	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp
+	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out
 
 	var reason := "Learned"
 	if not learned:
-		if missing_level:
+		if locked_out:
+			reason = "Locked out by your other path"
+		elif missing_level:
 			reason = "Requires Lv%d" % int(n["req_level"])
 		elif missing_prereq:
 			reason = "Needs prerequisite"
@@ -3625,18 +3631,24 @@ func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
 	return tile
 
 
-## The full tree as a 3-column grid (Tier 1 → Tier 2 → Capstone) instead of a
-## flat scrolling list — each Tier-2 node sits in the same row as the Tier-1
-## node its `requires` points at, so the branch reads via alignment; the one
-## Tier-2 node with no prerequisite gets its own row below both branches.
+## The full tree as a 4-column grid (Tier 1 → Tier 2 → Path → Mastery)
+## instead of a flat scrolling list. Tier 1/Tier 2 alignment is unchanged —
+## each singly-gated Tier-2 node sits in the same row as the Tier-1 node its
+## `requires` points at; a Tier-2 node needing BOTH roots (or neither) gets
+## its own row below. Tier 3 is a hard-exclusive fork (two nodes that each
+## `excludes` the other), placed one per row so "Path" reads as two options
+## stacked rather than one column; Tier 4 holds each fork's own finisher,
+## found the same way — whichever Tier-4 node's `requires` points at that
+## row's Tier-3 node.
 func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, tree: Array) -> void:
 	var tier1: Array = tree.filter(func(n): return int(n["tier"]) == 1)
 	var tier2: Array = tree.filter(func(n): return int(n["tier"]) == 2)
 	var tier3: Array = tree.filter(func(n): return int(n["tier"]) == 3)
+	var tier4: Array = tree.filter(func(n): return int(n["tier"]) == 4)
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	for col_label in ["Tier 1", "Tier 2", "Capstone"]:
+	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery"]:
 		var lbl := _label(col_label, 11, true)
 		lbl.custom_minimum_size.x = 72
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3644,22 +3656,33 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, tree: Array) -> void:
 	cv.add_child(header)
 
 	var grid := GridContainer.new()
-	grid.columns = 3
+	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 
-	var free_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).is_empty())
-	var row_count: int = max(tier1.size(), 1) + free_tier2.size()
+	var singly_gated_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() == 1)
+	var other_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() != 1)
+	var row_count: int = max(tier1.size(), 1) + other_tier2.size()
+
 	for row_i in row_count:
 		if row_i < tier1.size():
 			var t1: Dictionary = tier1[row_i]
 			grid.add_child(_skill_node_tile(h, t1))
-			var dep := tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
+			var dep := singly_gated_tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
 			grid.add_child(_skill_node_tile(h, dep[0]) if not dep.is_empty() else Control.new())
+			if row_i < tier3.size():
+				var fork: Dictionary = tier3[row_i]
+				grid.add_child(_skill_node_tile(h, fork))
+				var finisher := tier4.filter(func(n): return (n["requires"] as Array).has(fork["id"]))
+				grid.add_child(_skill_node_tile(h, finisher[0]) if not finisher.is_empty() else Control.new())
+			else:
+				grid.add_child(Control.new())
+				grid.add_child(Control.new())
 		else:
 			grid.add_child(Control.new())
-			grid.add_child(_skill_node_tile(h, free_tier2[row_i - tier1.size()]))
-		grid.add_child(_skill_node_tile(h, tier3[0]) if row_i == 0 and not tier3.is_empty() else Control.new())
+			grid.add_child(_skill_node_tile(h, other_tier2[row_i - tier1.size()]))
+			grid.add_child(Control.new())
+			grid.add_child(Control.new())
 
 	cv.add_child(grid)
 
