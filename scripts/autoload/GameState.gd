@@ -1341,16 +1341,10 @@ func use_detector_for_shop_boost(detector_id: String) -> String:
 	return ""
 
 
-func evolution_target(cls: Dictionary) -> Dictionary:
-	var rank_idx := GameData.rank_index(cls["rank"])
-	for i in range(rank_idx + 1, GameData.RANKS.size()):
-		for c in GameData.CLASS_POOL:
-			if c["role"] == cls["role"] and c["rank"] == GameData.RANKS[i]["id"]:
-				return c
-	return {}
-
-
-func evolve_hero(hero_id: String) -> String:
+## `target_pool_id` must be one of GameData.evolution_choices(cur_cls) — the
+## caller (the UI) is expected to have offered exactly those, so an invalid
+## id here means a stale/tampered call, not a legitimate use.
+func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
@@ -1359,16 +1353,23 @@ func evolve_hero(hero_id: String) -> String:
 	var cur_cls := GameData.find_class(h.pool_id)
 	if cur_cls.is_empty():
 		return "This hero predates the evolution system"
-	var next := evolution_target(cur_cls)
+	var choices := GameData.evolution_choices(cur_cls)
+	var next: Dictionary = {}
+	for c in choices:
+		if c["id"] == target_pool_id:
+			next = c
 	if next.is_empty():
-		return "Already at the top of this path"
+		return "Not a valid evolution for this hero"
 	var next_rank := GameData.find_rank(next["rank"])
 	if crystals < int(next_rank["cost"]):
 		return "Not enough Crystals"
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
-	if not h.evolved_pool_ids.has(h.pool_id):
-		h.evolved_pool_ids.append(h.pool_id)
+	# Keeps exactly the one stage being left behind reachable — see the doc
+	# comment on Hero.prior_pool_id for why this isn't an unbounded history.
+	h.prior_pool_id = h.pool_id
+	h.prior_innate_kind = h.innate_kind
+	h.prior_innate_value = h.innate_value
 	var ratio_mult: float = (float(next["hp_ratio"]) / float(cur_cls["hp_ratio"])) * (float(next_rank["mult"]) / float(cur_rank["mult"]))
 	var dmg_ratio_mult: float = (float(next["dmg_ratio"]) / float(cur_cls["dmg_ratio"])) * (float(next_rank["mult"]) / float(cur_rank["mult"]))
 	h.base_hp = int(round(h.base_hp * ratio_mult))
@@ -1521,23 +1522,63 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	return ""
 
 
-func respec_cost(spent: int) -> int:
-	return int(round(float(20 + 10 * spent) * (1.0 - respec_fee_reduction())))
+## Real SP cost of a set of learned skill keys — sums each node's actual
+## `cost`, not just a count of learned nodes (those differ, since Tier-3/4
+## nodes cost more SP than Tier-1/2 ones — counting nodes instead of summing
+## cost under-refunded a hero who'd learned any higher-tier node).
+func _skill_keys_sp_cost(keys: Array) -> int:
+	var total := 0
+	for key in keys:
+		var key_str := str(key)
+		if key_str == "edge" or key_str == "hide":
+			total += int(GameData.find_skill_node("", key_str).get("cost", 0))
+		else:
+			var parts := key_str.split(":", true, 1)
+			if parts.size() == 2:
+				total += int(GameData.find_skill_node(parts[0], parts[1]).get("cost", 0))
+	return total
 
 
-func respec_hero(hero_id: String) -> String:
+func respec_cost(spent_sp: int) -> int:
+	return int(round(float(20 + 10 * spent_sp) * (1.0 - respec_fee_reduction())))
+
+
+## Coin cost to respec a hero's `kind` tree right now (or every tree, if
+## `kind` is empty) — same accounting respec_hero() itself uses, exposed so
+## the UI can show the real price on the button instead of guessing.
+func tree_respec_cost(h: Hero, kind: String = "") -> int:
+	var target_keys: Array = []
+	for key in h.skills.keys():
+		if h.skills[key] and (kind == "" or str(key).begins_with("%s:" % kind)):
+			target_keys.append(key)
+	return respec_cost(_skill_keys_sp_cost(target_keys))
+
+
+## `kind` empty respecs every tree at once (and the universal Tier-1 roots);
+## given, only that one tree's own nodes clear — the universal roots and any
+## other tree's progress are untouched. A hero holds at most 2 trees at once
+## (see Hero.prior_pool_id), so "just this one" is a real, much cheaper
+## option next to nuking everything to fix one fork choice.
+func respec_hero(hero_id: String, kind: String = "") -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
-	var spent := h.skills.values().count(true)
-	if spent == 0:
+	var target_keys: Array = []
+	for key in h.skills.keys():
+		if not h.skills[key]:
+			continue
+		if kind == "" or str(key).begins_with("%s:" % kind):
+			target_keys.append(key)
+	if target_keys.is_empty():
 		return ""
-	var cost := respec_cost(spent)
+	var spent_sp := _skill_keys_sp_cost(target_keys)
+	var cost := respec_cost(spent_sp)
 	if coins < cost:
 		return "Need %d Coins" % cost
 	coins -= cost
-	h.skill_points += spent
-	h.skills = {}
+	h.skill_points += spent_sp
+	for key in target_keys:
+		h.skills.erase(key)
 	save()
 	state_changed.emit()
 	return ""

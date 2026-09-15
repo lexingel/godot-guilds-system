@@ -17,7 +17,18 @@ var level: int = 1
 var xp: int = 0
 var skill_points: int = 0
 var skills: Dictionary = {}      # skill_id -> true. Keys are "<kind>:<node_id>" for KIND_SKILL_PACKAGE nodes (every kind package reuses the same node ids — "cap", "mastery", etc. — so this avoids collisions once a hero can hold more than one tree) or the bare id for the universal Tier-1 roots ("edge"/"hide"), which are shared/learned once across every tree.
-var evolved_pool_ids: Array[String] = []   # past pool_ids this hero has evolved through — evolving keeps the old tree's kind reachable (see GameData.hero_tree_summaries) instead of replacing it
+# Evolving keeps exactly the ONE most recent past stage reachable — not an
+# unbounded chain back to the hero's original class. A single field rather
+# than a growing list: an unlimited history would let one hero accumulate
+# a tree (and an innate bonus) per rank ever passed through, which turns
+# "evolve" into a strictly-better move than ever recruiting/pulling a hero
+# directly at that final rank, and rewards chain-evolving through every
+# intermediate rank in one sitting purely to stack breadth. Capping at one
+# prior stage keeps the "your last investment isn't wasted" promise intact
+# without that snowball.
+var prior_pool_id: String = ""            # "" = never evolved (or evolved once already superseded by a second evolution)
+var prior_innate_kind: String = ""        # the innate bonus from prior_pool_id's class — same one-stage cap as the tree above
+var prior_innate_value: float = 0.0
 var base_hp: int
 var base_dmg: int
 var trait_name: String = ""      # "" means no trait ("Steadfast")
@@ -42,7 +53,8 @@ func to_dict() -> Dictionary:
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name, "scars": scars,
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
-		"ability_cooldown": ability_cooldown, "formation": formation, "evolved_pool_ids": evolved_pool_ids,
+		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
+		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 	}
 
 
@@ -60,7 +72,19 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.level = d.get("level", 1)
 	h.xp = d.get("xp", 0)
 	h.skill_points = d.get("skill_points", 0)
-	h.evolved_pool_ids.assign(d.get("evolved_pool_ids", []))
+	if d.has("prior_pool_id"):
+		h.prior_pool_id = d.get("prior_pool_id", "")
+		h.prior_innate_kind = d.get("prior_innate_kind", "")
+		h.prior_innate_value = d.get("prior_innate_value", 0.0)
+	else:
+		# One-release-old format: an unbounded evolved_pool_ids list instead
+		# of a single prior_pool_id. Best-effort — take the most recent
+		# entry; the innate bonus for it can't be recovered (that field
+		# didn't exist yet), so it's lost for anyone on this exact save
+		# version. Self-correcting: the next evolution overwrites it anyway.
+		var old_list: Array = d.get("evolved_pool_ids", [])
+		if not old_list.is_empty():
+			h.prior_pool_id = str(old_list[-1])
 	# Raw pass-through — skill-key migration for saves predating the
 	# kind-namespaced format lives in GameState.migrate_hero_skill_keys()
 	# instead of here, since it needs GameData (Hero.gd stays a plain

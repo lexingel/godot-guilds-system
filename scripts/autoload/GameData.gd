@@ -687,14 +687,15 @@ static func skill_storage_key(kind: String, node_id: String) -> String:
 	return node_id if node_id in ["edge", "hide"] else "%s:%s" % [kind, node_id]
 
 
-## Every distinct tree a hero currently has access to: their current
-## class's kind plus every kind from a past evolution stage (evolved_pool_ids)
-## — de-duplicated by kind, since two evolution stages that happen to land
-## on the same kind would otherwise show as two identical trees. Each entry
+## Every distinct tree a hero currently has access to: their current class's
+## kind plus their one retained prior stage's kind (Hero.prior_pool_id) —
+## de-duplicated, since evolving into a same-kind class would otherwise show
+## the identical tree twice. Each entry
 ## is {"kind": kind, "label": the subclass name that tree came from}.
 static func hero_tree_summaries(h: Hero) -> Array:
-	var history: Array = h.evolved_pool_ids.duplicate()
-	history.append(h.pool_id)
+	var history: Array = [h.pool_id]
+	if h.prior_pool_id != "":
+		history.append(h.prior_pool_id)
 	var seen: Array = []
 	var out: Array = []
 	for pid in history:
@@ -707,6 +708,20 @@ static func hero_tree_summaries(h: Hero) -> Array:
 		seen.append(kind)
 		out.append({"kind": kind, "label": cls["name"]})
 	return out
+
+
+## Every subclass a hero at `cls`'s rank could evolve into — every CLASS_POOL
+## entry sharing `cls`'s role at the next rank up, not just the first match
+## (evolve_hero used to auto-pick that first match with no way to choose
+## otherwise, e.g. always Duelist over Bulwark for a Warrior leaving F-rank
+## purely because of CLASS_POOL's array order).
+static func evolution_choices(cls: Dictionary) -> Array:
+	var rank_idx := rank_index(cls["rank"])
+	for i in range(rank_idx + 1, RANKS.size()):
+		var matches: Array = CLASS_POOL.filter(func(c): return c["role"] == cls["role"] and c["rank"] == RANKS[i]["id"])
+		if not matches.is_empty():
+			return matches
+	return []
 
 # Rank ladder shared by recruited heroes and the Champion (see GameState's
 # recruit_hero/reroll_champion). Rank sets weight (pull odds), stat

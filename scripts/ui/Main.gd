@@ -3538,20 +3538,32 @@ func _render_roster(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
+	cv.add_child(actions)
+
+	# Evolution is a real fork now, not an auto-pick — every CLASS_POOL entry
+	# at the next rank for this role gets its own button (there's usually 2),
+	# so choosing "the tanky one" over "the duelist" is an actual choice
+	# instead of whichever happened to sit first in CLASS_POOL's array order.
+	var evolve_choices: Array = []
 	if h.level >= 10:
 		var cur_cls := GameData.find_class(h.pool_id)
-		if not cur_cls.is_empty() and not GameState.evolution_target(cur_cls).is_empty():
-			var next_cls := GameState.evolution_target(cur_cls)
-			var next_rank := GameData.find_rank(next_cls["rank"])
-			actions.add_child(_icon_button("res://assets/skills/star.png", "Evolve → %s (%dcr)" % [next_cls["name"], int(next_rank["cost"])], func(id=h.id):
-				var err := GameState.evolve_hero(id)
+		if not cur_cls.is_empty():
+			evolve_choices = GameData.evolution_choices(cur_cls)
+	if not evolve_choices.is_empty():
+		cv.add_child(_label("Evolve into:", 12, true))
+		var evolve_row := HBoxContainer.new()
+		evolve_row.add_theme_constant_override("separation", 8)
+		for choice in evolve_choices:
+			var choice_rank := GameData.find_rank(choice["rank"])
+			evolve_row.add_child(_icon_button("res://assets/skills/star.png", "%s (%dcr)" % [choice["name"], int(choice_rank["cost"])], func(id=h.id, target=choice["id"]):
+				var err := GameState.evolve_hero(id, target)
 				if err != "":
 					push_warning(err)
 				else:
 					_flavor_toast = GameData.narrative_line("hero_evolved")
 				render()
 			))
-	cv.add_child(actions)
+		cv.add_child(evolve_row)
 
 	if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
 		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
@@ -3566,6 +3578,8 @@ func _render_roster(v: VBoxContainer) -> void:
 		if h.level < 3:
 			ab_row.add_child(_label("Unlocks at Lv3", 11, true))
 		cv.add_child(ab_row)
+		if not evolve_choices.is_empty() or h.prior_pool_id != "":
+			cv.add_child(_label("Evolving replaces this Ability, but skill trees carry over.", 10, true))
 
 	# One pill per tree the hero has unlocked — evolving keeps every past
 	# stage's tree reachable instead of replacing it, so a heavily-evolved
@@ -3587,10 +3601,14 @@ func _render_roster(v: VBoxContainer) -> void:
 		cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
 		_render_skill_tree_graph(cv, h, expanded_skill_tree_kind)
-		var spent: int = h.skills.values().count(true)
-		if spent > 0:
-			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec — refunds every tree (%dc)" % GameState.respec_cost(spent), func(id=h.id):
-				var err := GameState.respec_hero(id)
+		# Per-tree, not "respec everything" — a hero holds at most 2 trees
+		# (current + one prior evolution stage), so undoing just the one
+		# fork choice you regret no longer means nuking the other tree too.
+		var tree_prefix := "%s:" % expanded_skill_tree_kind
+		var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
+		if tree_spent:
+			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec this tree (%dc)" % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
+				var err := GameState.respec_hero(id, k)
 				if err != "":
 					push_warning(err)
 				render()

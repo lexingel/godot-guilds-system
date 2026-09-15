@@ -25,6 +25,10 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 				s += n["value"]
 	if h.innate_kind == kind:
 		s += h.innate_value
+	# Same one-stage-back retention as the tree above — the innate bonus
+	# from the class a hero just evolved out of doesn't just vanish either.
+	if h.prior_innate_kind == kind:
+		s += h.prior_innate_value
 	s += hero_item_total(h, kind)
 	if GameData.TRAIT_TABLE.has(h.trait_name):
 		s += GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)
