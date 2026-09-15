@@ -365,6 +365,28 @@ func save() -> void:
 		f.store_string(JSON.stringify(data))
 
 
+## One-time migration for saves from before skill ids were namespaced by
+## kind (see Hero.skills' doc comment): a bare key ("cap", "mastery", ...)
+## always meant "the hero's one active tree" back then, which was always
+## their current class's kind — so it's unambiguous to prefix it now. A
+## hero who'd already evolved through several different kinds under the old
+## flat-key system is the one case this can misattribute (no way to recover
+## which historical kind a bare id belonged to) — self-healing via Respec
+## if it ever shows. No-ops instantly once a hero's keys are already namespaced.
+func migrate_hero_skill_keys(h: Hero) -> void:
+	var cur_kind: String = GameData.find_class(h.pool_id).get("kind", "dmg_pct")
+	var migrated := {}
+	var changed := false
+	for key in h.skills.keys():
+		if str(key).contains(":") or key == "edge" or key == "hide":
+			migrated[key] = h.skills[key]
+		else:
+			migrated[GameData.skill_storage_key(cur_kind, str(key))] = h.skills[key]
+			changed = true
+	if changed:
+		h.skills = migrated
+
+
 func load_save() -> bool:
 	if not FileAccess.file_exists(_slot_path(active_slot)):
 		return false
@@ -381,6 +403,10 @@ func load_save() -> bool:
 	tokens = data.get("tokens", 0)
 	heroes.assign(data.get("heroes", []).map(func(d): return Hero.from_dict(d)))
 	recruit_pool.assign(data.get("recruit_pool", []).map(func(d): return Hero.from_dict(d)))
+	for h in heroes:
+		migrate_hero_skill_keys(h)
+	for h in recruit_pool:
+		migrate_hero_skill_keys(h)
 	if recruit_pool.is_empty() and guild_name != "":
 		# Saves from before recruit_pool was persisted (or an old save with no
 		# key at all) would otherwise show an empty Hero Recruits screen until
@@ -417,6 +443,8 @@ func load_save() -> bool:
 	caps = data.get("caps", {})
 	var champ_data = data.get("current_champion")
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
+	if current_champion:
+		migrate_hero_skill_keys(current_champion)
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	rifts_sealed = data.get("rifts_sealed", 0)
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
@@ -1339,6 +1367,8 @@ func evolve_hero(hero_id: String) -> String:
 		return "Not enough Crystals"
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
+	if not h.evolved_pool_ids.has(h.pool_id):
+		h.evolved_pool_ids.append(h.pool_id)
 	var ratio_mult: float = (float(next["hp_ratio"]) / float(cur_cls["hp_ratio"])) * (float(next_rank["mult"]) / float(cur_rank["mult"]))
 	var dmg_ratio_mult: float = (float(next["dmg_ratio"]) / float(cur_cls["dmg_ratio"])) * (float(next_rank["mult"]) / float(cur_rank["mult"]))
 	h.base_hp = int(round(h.base_hp * ratio_mult))
@@ -1463,25 +1493,29 @@ func socket_runestone(runestone_consumable_id: String, item_id: String) -> Strin
 	return ""
 
 
-func learn_skill(hero_id: String, skill_id: String) -> String:
+## `kind` identifies which of the hero's unlocked trees `skill_id` belongs
+## to (a bare node id — "cap", "mastery", ...) — ignored for the universal
+## Tier-1 roots ("edge"/"hide"), which are shared across every tree.
+func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
-	var n := GameData.find_skill_node(h.pool_id, skill_id)
-	if n.is_empty() or h.skills.get(skill_id, false):
+	var n := GameData.find_skill_node(kind, skill_id)
+	var key := GameData.skill_storage_key(kind, skill_id)
+	if n.is_empty() or h.skills.get(key, false):
 		return ""
 	if h.level < int(n["req_level"]):
 		return "Requires Level %d" % n["req_level"]
 	for req in n["requires"]:
-		if not h.skills.get(req, false):
+		if not h.skills.get(GameData.skill_storage_key(kind, req), false):
 			return "Learn the prerequisite skill(s) first"
 	for excl in n.get("excludes", []):
-		if h.skills.get(excl, false):
+		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			return "Locked out — you already chose the other path"
 	if h.skill_points < int(n["cost"]):
 		return "Not enough Skill Points"
 	h.skill_points -= int(n["cost"])
-	h.skills[skill_id] = true
+	h.skills[key] = true
 	save()
 	state_changed.emit()
 	return ""

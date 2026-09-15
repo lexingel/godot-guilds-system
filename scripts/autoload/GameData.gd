@@ -676,14 +676,37 @@ const KIND_SKILL_PACKAGE := {
 }
 
 
-## A subclass's full skill tree: the 2 universal Tier-1 nodes plus the
-## 4-node package matching its own CLASS_POOL `kind` (falls back to the
-## dmg_pct package for anything not in CLASS_POOL, e.g. a Champion's
-## non-subclass pool_id — harmless since Champions never learn skills).
-static func subclass_skill_tree(pool_id: String) -> Array:
-	var cls := find_class(pool_id)
-	var kind: String = cls.get("kind", "dmg_pct")
-	return SUBCLASS_TIER1 + KIND_SKILL_PACKAGE.get(kind, KIND_SKILL_PACKAGE["dmg_pct"])
+## The storage key a skill uses in Hero.skills. Every KIND_SKILL_PACKAGE
+## reuses the same node ids ("cap", "mastery", ...), which was harmless when
+## a hero only ever had one active tree — evolving keeping the old tree
+## reachable (see hero_tree_summaries) means two of a hero's trees can now
+## both have a node called "cap", so anything but the universal Tier-1
+## roots ("edge"/"hide" — shared, learned once, apply to every tree) needs
+## its owning kind folded into the key.
+static func skill_storage_key(kind: String, node_id: String) -> String:
+	return node_id if node_id in ["edge", "hide"] else "%s:%s" % [kind, node_id]
+
+
+## Every distinct tree a hero currently has access to: their current
+## class's kind plus every kind from a past evolution stage (evolved_pool_ids)
+## — de-duplicated by kind, since two evolution stages that happen to land
+## on the same kind would otherwise show as two identical trees. Each entry
+## is {"kind": kind, "label": the subclass name that tree came from}.
+static func hero_tree_summaries(h: Hero) -> Array:
+	var history: Array = h.evolved_pool_ids.duplicate()
+	history.append(h.pool_id)
+	var seen: Array = []
+	var out: Array = []
+	for pid in history:
+		var cls := find_class(pid)
+		if cls.is_empty():
+			continue
+		var kind: String = cls.get("kind", "dmg_pct")
+		if seen.has(kind):
+			continue
+		seen.append(kind)
+		out.append({"kind": kind, "label": cls["name"]})
+	return out
 
 # Rank ladder shared by recruited heroes and the Champion (see GameState's
 # recruit_hero/reroll_champion). Rank sets weight (pull odds), stat
@@ -776,9 +799,10 @@ const CHAMP_KIND_BASE := {
 }
 
 # 50 classes across the 5 roles, 10 per role. `role` picks the Ability/anim
-# assets; `kind` picks the skill-tree package (subclass_skill_tree) and the
-# id itself picks the unique Ability (SUBCLASS_ABILITIES); rank/flavor are the
-# same F-S vocabulary the Champion pool uses.
+# assets; `kind` picks the skill-tree package (KIND_SKILL_PACKAGE, reached via
+# hero_tree_summaries) and the id itself picks the unique Ability
+# (SUBCLASS_ABILITIES); rank/flavor are the same F-S vocabulary the Champion
+# pool uses.
 const CLASS_POOL := [
 	# -- Warrior (melee bruisers & tanks) --
 	{"id": "squire", "name": "Squire", "role": "warrior", "rank": "F", "type": "Ember", "hp_ratio": 1.0, "dmg_ratio": 1.0, "kind": "dmg_pct", "flavor": "A guild recruit swinging a borrowed blade."},
@@ -1399,8 +1423,16 @@ static func find_branch_node(key: String) -> Dictionary:
 	return {}
 
 
-static func find_skill_node(pool_id: String, skill_id: String) -> Dictionary:
-	for n in subclass_skill_tree(pool_id):
+## Looks up a bare node id within a specific kind's package (or the
+## universal Tier-1 roots, for "edge"/"hide" — `kind` is ignored then, since
+## those are shared across every tree).
+static func find_skill_node(kind: String, skill_id: String) -> Dictionary:
+	if skill_id == "edge" or skill_id == "hide":
+		for n in SUBCLASS_TIER1:
+			if n["id"] == skill_id:
+				return n
+		return {}
+	for n in KIND_SKILL_PACKAGE.get(kind, []):
 		if n["id"] == skill_id:
 			return n
 	return {}

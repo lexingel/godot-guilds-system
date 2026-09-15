@@ -15,10 +15,14 @@ const RARITY_NOUNS := ["Sigil", "Charm", "Shard", "Idol", "Emblem"]
 
 func hero_skill_total(h: Hero, kind: String) -> float:
 	var s := 0.0
-	var tree: Array = GameData.subclass_skill_tree(h.pool_id)
-	for n in tree:
+	for n in GameData.SUBCLASS_TIER1:
 		if n["kind"] == kind and h.skills.get(n["id"], false):
 			s += n["value"]
+	for summary in GameData.hero_tree_summaries(h):
+		var tree_kind: String = summary["kind"]
+		for n in GameData.KIND_SKILL_PACKAGE.get(tree_kind, []):
+			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
+				s += n["value"]
 	if h.innate_kind == kind:
 		s += h.innate_value
 	s += hero_item_total(h, kind)

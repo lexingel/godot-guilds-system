@@ -17,7 +17,7 @@ var pending_party: Array[String] = []
 var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
-var skills_panel_open: bool = false   # whether the selected hero's skill tree is expanded — a plain toggle rather than per-hero, so it stays open switching between heroes
+var expanded_skill_tree_kind: String = ""   # "" = no tree section expanded, else which kind's tree is showing — a plain toggle rather than per-hero, so it stays put switching between heroes. A hero can hold several trees (one per evolution stage); only one is expanded at a time.
 var expanded_slot: String = ""     # "<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
 var rift_gear_open: bool = false   # "Gear Up" panel toggle on non-combat rift nodes (shop/hazard/fork) — lets the party re-equip between fights without retreating
 var confirm_reset: bool = false
@@ -3538,10 +3538,6 @@ func _render_roster(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
-	actions.add_child(_icon_button("res://assets/skills/eye_gem.png", "Hide Skills" if skills_panel_open else "Skills", func():
-		skills_panel_open = not skills_panel_open
-		render()
-	))
 	if h.level >= 10:
 		var cur_cls := GameData.find_class(h.pool_id)
 		if not cur_cls.is_empty() and not GameState.evolution_target(cur_cls).is_empty():
@@ -3557,27 +3553,43 @@ func _render_roster(v: VBoxContainer) -> void:
 			))
 	cv.add_child(actions)
 
-	if skills_panel_open:
+	if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
+		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
+		var ab_row := HBoxContainer.new()
+		ab_row.add_theme_constant_override("separation", 8)
+		ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
+		var ab_mid := _vbox(0)
+		ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
+		ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
+		ab_row.add_child(ab_mid)
+		if h.level < 3:
+			ab_row.add_child(_label("Unlocks at Lv3", 11, true))
+		cv.add_child(ab_row)
+
+	# One pill per tree the hero has unlocked — evolving keeps every past
+	# stage's tree reachable instead of replacing it, so a heavily-evolved
+	# hero can have several; only one tree's grid shows at a time (accordion
+	# style) to avoid stacking multiple full grids on screen at once.
+	var tree_summaries: Array = GameData.hero_tree_summaries(h)
+	var pills := HBoxContainer.new()
+	pills.add_theme_constant_override("separation", 6)
+	for summary in tree_summaries:
+		var kind: String = summary["kind"]
+		var is_open: bool = expanded_skill_tree_kind == kind
+		pills.add_child(_icon_button("res://assets/skills/eye_gem.png", "Hide %s" % str(summary["label"]) if is_open else str(summary["label"]), func(k=kind):
+			expanded_skill_tree_kind = "" if expanded_skill_tree_kind == k else k
+			render()
+		))
+	cv.add_child(pills)
+
+	if not expanded_skill_tree_kind.is_empty() and tree_summaries.any(func(s): return s["kind"] == expanded_skill_tree_kind):
 		cv.add_child(_hsep())
-		if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
-			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
-			var ab_row := HBoxContainer.new()
-			ab_row.add_theme_constant_override("separation", 8)
-			ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
-			var ab_mid := _vbox(0)
-			ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
-			ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
-			ab_row.add_child(ab_mid)
-			if h.level < 3:
-				ab_row.add_child(_label("Unlocks at Lv3", 11, true))
-			cv.add_child(ab_row)
-			cv.add_child(_hsep())
 		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
-		_render_skill_tree_graph(cv, h, GameData.subclass_skill_tree(h.pool_id))
+		_render_skill_tree_graph(cv, h, expanded_skill_tree_kind)
 		var spent: int = h.skills.values().count(true)
 		if spent > 0:
-			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec (%dc)" % GameState.respec_cost(spent), func(id=h.id):
+			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec — refunds every tree (%dc)" % GameState.respec_cost(spent), func(id=h.id):
 				var err := GameState.respec_hero(id)
 				if err != "":
 					push_warning(err)
@@ -3592,17 +3604,21 @@ func _render_roster(v: VBoxContainer) -> void:
 ## of a full-width text row — hover/long-press for the full effect text and
 ## gating reason via tooltip. A ready-to-learn node glows (via _action_slot's
 ## `selected`), a learned one gets a warm gold tint, anything else just dims.
-func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
+## `kind` identifies which of the hero's unlocked trees `n` belongs to (used
+## to compute Hero.skills's namespaced storage key) — irrelevant for the
+## universal Tier-1 roots, which GameData.skill_storage_key leaves bare.
+func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	var skill_id: String = n["id"]
-	var learned: bool = h.skills.get(skill_id, false)
+	var key := GameData.skill_storage_key(kind, skill_id)
+	var learned: bool = h.skills.get(key, false)
 	var missing_level: bool = h.level < int(n["req_level"])
 	var missing_prereq := false
 	for req in n["requires"]:
-		if not h.skills.get(req, false):
+		if not h.skills.get(GameData.skill_storage_key(kind, req), false):
 			missing_prereq = true
 	var locked_out := false
 	for excl in n.get("excludes", []):
-		if h.skills.get(excl, false):
+		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			locked_out = true
 	var missing_sp: bool = h.skill_points < int(n["cost"])
 	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out
@@ -3620,8 +3636,8 @@ func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
 		else:
 			reason = "Learn (%d SP)" % int(n["cost"])
 
-	var tile := _action_slot(str(n["icon"]), "", can_learn, not can_learn and not learned, func(hid=h.id, sid=skill_id):
-		var err := GameState.learn_skill(hid, sid)
+	var tile := _action_slot(str(n["icon"]), "", can_learn, not can_learn and not learned, func(hid=h.id, k=kind, sid=skill_id):
+		var err := GameState.learn_skill(hid, k, sid)
 		if err != "":
 			push_warning(err)
 		render()
@@ -3631,16 +3647,17 @@ func _skill_node_tile(h: Hero, n: Dictionary) -> Control:
 	return tile
 
 
-## The full tree as a 4-column grid (Tier 1 → Tier 2 → Path → Mastery)
-## instead of a flat scrolling list. Tier 1/Tier 2 alignment is unchanged —
-## each singly-gated Tier-2 node sits in the same row as the Tier-1 node its
+## One tree, as a 4-column grid (Tier 1 → Tier 2 → Path → Mastery) instead
+## of a flat scrolling list. Tier 1/Tier 2 alignment is unchanged — each
+## singly-gated Tier-2 node sits in the same row as the Tier-1 node its
 ## `requires` points at; a Tier-2 node needing BOTH roots (or neither) gets
 ## its own row below. Tier 3 is a hard-exclusive fork (two nodes that each
 ## `excludes` the other), placed one per row so "Path" reads as two options
 ## stacked rather than one column; Tier 4 holds each fork's own finisher,
 ## found the same way — whichever Tier-4 node's `requires` points at that
 ## row's Tier-3 node.
-func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, tree: Array) -> void:
+func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
+	var tree: Array = GameData.SUBCLASS_TIER1 + GameData.KIND_SKILL_PACKAGE.get(kind, [])
 	var tier1: Array = tree.filter(func(n): return int(n["tier"]) == 1)
 	var tier2: Array = tree.filter(func(n): return int(n["tier"]) == 2)
 	var tier3: Array = tree.filter(func(n): return int(n["tier"]) == 3)
@@ -3667,20 +3684,20 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, tree: Array) -> void:
 	for row_i in row_count:
 		if row_i < tier1.size():
 			var t1: Dictionary = tier1[row_i]
-			grid.add_child(_skill_node_tile(h, t1))
+			grid.add_child(_skill_node_tile(h, kind, t1))
 			var dep := singly_gated_tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
-			grid.add_child(_skill_node_tile(h, dep[0]) if not dep.is_empty() else Control.new())
+			grid.add_child(_skill_node_tile(h, kind, dep[0]) if not dep.is_empty() else Control.new())
 			if row_i < tier3.size():
 				var fork: Dictionary = tier3[row_i]
-				grid.add_child(_skill_node_tile(h, fork))
+				grid.add_child(_skill_node_tile(h, kind, fork))
 				var finisher := tier4.filter(func(n): return (n["requires"] as Array).has(fork["id"]))
-				grid.add_child(_skill_node_tile(h, finisher[0]) if not finisher.is_empty() else Control.new())
+				grid.add_child(_skill_node_tile(h, kind, finisher[0]) if not finisher.is_empty() else Control.new())
 			else:
 				grid.add_child(Control.new())
 				grid.add_child(Control.new())
 		else:
 			grid.add_child(Control.new())
-			grid.add_child(_skill_node_tile(h, other_tier2[row_i - tier1.size()]))
+			grid.add_child(_skill_node_tile(h, kind, other_tier2[row_i - tier1.size()]))
 			grid.add_child(Control.new())
 			grid.add_child(Control.new())
 

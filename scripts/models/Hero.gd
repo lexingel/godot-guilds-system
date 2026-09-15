@@ -16,7 +16,8 @@ var innate_value: float
 var level: int = 1
 var xp: int = 0
 var skill_points: int = 0
-var skills: Dictionary = {}      # skill_id -> true
+var skills: Dictionary = {}      # skill_id -> true. Keys are "<kind>:<node_id>" for KIND_SKILL_PACKAGE nodes (every kind package reuses the same node ids — "cap", "mastery", etc. — so this avoids collisions once a hero can hold more than one tree) or the bare id for the universal Tier-1 roots ("edge"/"hide"), which are shared/learned once across every tree.
+var evolved_pool_ids: Array[String] = []   # past pool_ids this hero has evolved through — evolving keeps the old tree's kind reachable (see GameData.hero_tree_summaries) instead of replacing it
 var base_hp: int
 var base_dmg: int
 var trait_name: String = ""      # "" means no trait ("Steadfast")
@@ -41,7 +42,7 @@ func to_dict() -> Dictionary:
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name, "scars": scars,
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
-		"ability_cooldown": ability_cooldown, "formation": formation,
+		"ability_cooldown": ability_cooldown, "formation": formation, "evolved_pool_ids": evolved_pool_ids,
 	}
 
 
@@ -59,6 +60,11 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.level = d.get("level", 1)
 	h.xp = d.get("xp", 0)
 	h.skill_points = d.get("skill_points", 0)
+	h.evolved_pool_ids.assign(d.get("evolved_pool_ids", []))
+	# Raw pass-through — skill-key migration for saves predating the
+	# kind-namespaced format lives in GameState.migrate_hero_skill_keys()
+	# instead of here, since it needs GameData (Hero.gd stays a plain
+	# RefCounted model with no autoload dependencies).
 	h.skills = d.get("skills", {})
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
