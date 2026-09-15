@@ -23,6 +23,7 @@ var rift_gear_open: bool = false   # "Gear Up" panel toggle on non-combat rift n
 var confirm_reset: bool = false
 var _combat_animating: bool = false
 var _flavor_toast: String = ""     # one-shot narrative line (e.g. guild founding) — shown once at the top of the next Terminal render, then cleared
+var _s_rank_celebration: Dictionary = {}   # {} = not showing; else GameState.pending_s_rank_reveal's data, held here for the celebration's full on-screen duration (render() fires often — the flag itself is one-shot, this is the "still displaying it" latch)
 var _last_guild_tier_name: String = ""   # tracks Guild Tier across renders to detect "just reached a new tier" (tier itself is derived, not stored)
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
@@ -607,6 +608,14 @@ func render() -> void:
 		GameState.start_riftbreak_encounter()
 		if not GameState.run.is_empty():
 			screen = "rift_run"
+	if not GameState.pending_s_rank_reveal.is_empty() and _s_rank_celebration.is_empty():
+		_s_rank_celebration = GameState.pending_s_rank_reveal
+		GameState.pending_s_rank_reveal = {}
+		AudioManager.play_sfx(GameData.SFX_PATH["victory"])
+		get_tree().create_timer(2.5).timeout.connect(func():
+			_s_rank_celebration = {}
+			render()
+		)
 	# Toggling something in place (Skills, an equip slot, a Guild Management
 	# branch, ...) rebuilds the whole screen via _clear_root() below, which
 	# would otherwise silently snap the scroll position back to the top every
@@ -628,6 +637,8 @@ func render() -> void:
 	root.add_child(outer)
 	if screen != "onboard":
 		_topbar(outer, _breadcrumb_for_screen())
+	if not _s_rank_celebration.is_empty():
+		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -682,6 +693,74 @@ func _breadcrumb_for_screen() -> String:
 		"settings": return "Settings"
 		"terminal": return "Terminal" if term_tab == "camp" else "Terminal — %s" % term_tab.capitalize()
 		_: return ""
+
+
+## The Rank-S celebration banner shown pinned above the scroll area (outside
+## the ScrollContainer, like the HUD) for the ~2.5s render() holds it. A
+## pop-in scale/fade plus a looping glow pulse on the portrait ring — no
+## full-viewport flash, since this Container-based layout isn't built for
+## free-floating overlays and a contained "the banner itself glows" reads
+## just as celebratory without fighting that. Tweens are bound to `banner`
+## itself so they're auto-killed the moment the next render() frees it,
+## rather than lingering bound to Main (which never gets freed).
+func _render_s_rank_celebration(data: Dictionary) -> Control:
+	var banner := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(Palette.RANK_S.r, Palette.RANK_S.g, Palette.RANK_S.b, 0.18)
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
+	style.border_color = Palette.RANK_S
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_right = 10
+	style.corner_radius_bottom_left = 10
+	style.content_margin_left = 14
+	style.content_margin_top = 10
+	style.content_margin_right = 14
+	style.content_margin_bottom = 10
+	banner.add_theme_stylebox_override("panel", style)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var portrait_wrap := PanelContainer.new()
+	var glow_style := StyleBoxFlat.new()
+	glow_style.bg_color = Color(Palette.RANK_S.r, Palette.RANK_S.g, Palette.RANK_S.b, 0.4)
+	glow_style.corner_radius_top_left = 30
+	glow_style.corner_radius_top_right = 30
+	glow_style.corner_radius_bottom_right = 30
+	glow_style.corner_radius_bottom_left = 30
+	glow_style.shadow_color = Color(Palette.RANK_S.r, Palette.RANK_S.g, Palette.RANK_S.b, 0.8)
+	glow_style.shadow_size = 16
+	portrait_wrap.add_theme_stylebox_override("panel", glow_style)
+	portrait_wrap.add_child(_framed_portrait(str(data["cls_id"]), str(data["pool_id"]), 56.0))
+	row.add_child(portrait_wrap)
+
+	var mid := _vbox(2)
+	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var headline := _label("★ RANK S ★", 18)
+	headline.add_theme_color_override("font_color", Palette.RANK_S)
+	mid.add_child(headline)
+	var source_text := "joins as Champion!" if str(data["source"]) == "champion" else "is available to recruit!"
+	mid.add_child(_label("%s %s" % [str(data["name"]), source_text], 13))
+	row.add_child(mid)
+
+	banner.add_child(row)
+
+	banner.scale = Vector2(0.85, 0.85)
+	banner.modulate.a = 0.0
+	var pop_tw := banner.create_tween()
+	pop_tw.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	pop_tw.tween_property(banner, "scale", Vector2.ONE, 0.25)
+	pop_tw.parallel().tween_property(banner, "modulate:a", 1.0, 0.2)
+
+	var glow_tw := banner.create_tween()
+	glow_tw.set_loops()
+	glow_tw.tween_property(portrait_wrap, "modulate", Color(1.3, 1.3, 1.0), 0.5)
+	glow_tw.tween_property(portrait_wrap, "modulate", Color(1.0, 1.0, 1.0), 0.5)
+
+	return banner
 
 
 func _topbar(container: Control, breadcrumb: String = "") -> void:

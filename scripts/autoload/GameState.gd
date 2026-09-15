@@ -40,6 +40,12 @@ var best_endless_cycle: int = 0
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
+## One-shot flag for a hero/Champion that just rolled Rank S from any of the
+## blind-reroll sources (recruit-offer reroll, Champion reroll, or the free
+## automatic refresh on rift seal) — {} = none. Consumed by Main.render() the
+## same way _flavor_toast is, so the celebration fires wherever the player
+## happens to be, not just on the Recruits screen.
+var pending_s_rank_reveal: Dictionary = {}
 var run: Dictionary = {}   # {} = no active run
 var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String,"expires_at":int}] or [{}] (empty, refilled lazily)
 var pending_riftbreak_ranks: Array[String] = []   # ranks that broke since the last Terminal visit, merged into one encounter
@@ -456,6 +462,15 @@ func gen_recruit_offer(force_rank: String = "") -> Hero:
 	return Combat.gen_hero(force_rank if force_rank != "" else Combat.weighted_rank(), 1)
 
 
+## Flags pending_s_rank_reveal whenever a blind roll (recruit offer, Champion
+## reroll/init) lands Rank S — Main.render() consumes it once, the same way
+## it already consumes _flavor_toast, so the celebration shows up wherever
+## the player is instead of only on the Recruits screen.
+func _maybe_flag_s_rank(h: Hero, source: String) -> void:
+	if h.rank == "S":
+		pending_s_rank_reveal = {"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "source": source}
+
+
 func refresh_recruit_pool() -> void:
 	recruit_pool = [gen_recruit_offer(), gen_recruit_offer(), gen_recruit_offer(), gen_recruit_offer()]
 	if headhunter_guarantee():
@@ -466,6 +481,8 @@ func refresh_recruit_pool() -> void:
 		if not has_good:
 			var good_ranks := ["C", "B", "A", "S"]
 			recruit_pool[0] = gen_recruit_offer(good_ranks[randi() % good_ranks.size()])
+	for h in recruit_pool:
+		_maybe_flag_s_rank(h, "recruit")
 
 
 func recruit_hero(offer_id: String) -> String:
@@ -503,6 +520,7 @@ func recruit_hero(offer_id: String) -> String:
 func ensure_champion() -> Hero:
 	if not current_champion:
 		current_champion = Combat.generate_champion()
+		_maybe_flag_s_rank(current_champion, "champion")
 	current_champion.hp = Combat.max_hp(current_champion)
 	current_champion.downed_until = 0
 	return current_champion
@@ -520,6 +538,7 @@ func reroll_recruit_offer(offer_id: String) -> String:
 		return "Not enough Coins."
 	coins -= GameData.RECRUIT_REROLL_COST
 	recruit_pool[idx] = gen_recruit_offer()
+	_maybe_flag_s_rank(recruit_pool[idx], "recruit")
 	save()
 	state_changed.emit()
 	return ""
@@ -532,6 +551,7 @@ func reroll_champion() -> String:
 		return "Not enough Coins."
 	coins -= GameData.CHAMPION_REROLL_COST
 	current_champion = Combat.generate_champion()
+	_maybe_flag_s_rank(current_champion, "champion")
 	save()
 	state_changed.emit()
 	return ""
@@ -1035,6 +1055,7 @@ func seal_rift() -> void:
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
 	current_champion = Combat.generate_champion()
+	_maybe_flag_s_rank(current_champion, "champion")
 	# A Rift Map bounty (see resolve_rift_map/start_map_rift) — {} for any
 	# rift not entered from the map, or a mapped rift that didn't roll one.
 	var bounty: Dictionary = run.get("bounty", {})
