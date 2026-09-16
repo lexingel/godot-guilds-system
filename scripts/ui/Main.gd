@@ -1315,10 +1315,12 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var sealed_dict: Dictionary = sealed
 		var sealed_row := HBoxContainer.new()
 		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 28))
-		sealed_row.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s" % [
+		var stone_tier: String = str(sealed_dict.get("got_stone", ""))
+		sealed_row.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s%s" % [
 			int(sealed_dict["tokens"]),
 			" (fast clear)" if sealed_dict.get("fast_clear", false) else "",
 			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
+			" · %s-Rank Evolution Stone found!" % stone_tier if stone_tier != "" else "",
 		]))
 		v.add_child(sealed_row)
 		var bounty: Dictionary = sealed_dict.get("bounty", {})
@@ -3462,6 +3464,10 @@ func _render_roster(v: VBoxContainer) -> void:
 		{"id": "rank", "label": "Rank"},
 	], func(new_id): roster_sort = new_id))
 
+	var stones_text := GameData.evolution_stones_text(GameState.evolution_stones)
+	if stones_text != "":
+		v.add_child(_label("Evolution Stones: %s" % stones_text, 11, true))
+
 	var portrait_row := HBoxContainer.new()
 	portrait_row.add_theme_constant_override("separation", 12)
 	for h in _sorted_heroes():
@@ -3540,30 +3546,40 @@ func _render_roster(v: VBoxContainer) -> void:
 		))
 	cv.add_child(actions)
 
-	# Evolution is a real fork now, not an auto-pick — every CLASS_POOL entry
-	# at the next rank for this role gets its own button (there's usually 2),
-	# so choosing "the tanky one" over "the duelist" is an actual choice
-	# instead of whichever happened to sit first in CLASS_POOL's array order.
+	# Evolution now runs on Evolution Stones for the B/A/S jump (dropped by
+	# Rift Map clears — see GameState.seal_rift/evolve_hero) and picks the
+	# resulting subclass itself, aptitude-weighted toward the hero's element
+	# but never guaranteed — a held stone always carries "next try..." odds
+	# rather than a player-chosen fork.
 	var evolve_choices: Array = []
 	if h.level >= 10:
 		var cur_cls := GameData.find_class(h.pool_id)
 		if not cur_cls.is_empty():
 			evolve_choices = GameData.evolution_choices(cur_cls)
 	if not evolve_choices.is_empty():
-		cv.add_child(_label("Evolve into:", 12, true))
-		var evolve_row := HBoxContainer.new()
-		evolve_row.add_theme_constant_override("separation", 8)
-		for choice in evolve_choices:
-			var choice_rank := GameData.find_rank(choice["rank"])
-			evolve_row.add_child(_icon_button("res://assets/skills/star.png", "%s (%dcr)" % [choice["name"], int(choice_rank["cost"])], func(id=h.id, target=choice["id"]):
-				var err := GameState.evolve_hero(id, target)
-				if err != "":
-					push_warning(err)
-				else:
-					_flavor_toast = GameData.narrative_line("hero_evolved")
-				render()
-			))
-		cv.add_child(evolve_row)
+		var next_rank_id: String = evolve_choices[0]["rank"]
+		var next_rank := GameData.find_rank(next_rank_id)
+		var needs_stone: bool = next_rank_id in ["B", "A", "S"]
+		var stone_count: int = int(GameState.evolution_stones.get(next_rank_id, 0))
+		var evolve_label := "Evolve (%dcr, %d %s-Stone)" % [int(next_rank["cost"]), stone_count, next_rank_id] if needs_stone else "Evolve (%dcr)" % int(next_rank["cost"])
+		cv.add_child(_icon_button("res://assets/skills/star.png", evolve_label, func(id=h.id):
+			var err := GameState.evolve_hero(id)
+			if err != "":
+				push_warning(err)
+			else:
+				_flavor_toast = GameData.narrative_line("hero_evolved")
+			render()
+		))
+
+	var reinforce_count: int = int(GameState.evolution_stones.get(h.rank, 0))
+	var reinforce_used: int = int(h.stone_bonus_used.get(h.pool_id, 0))
+	if reinforce_count > 0 and reinforce_used < GameData.EVOLUTION_STONE_BONUS_SP_CAP:
+		cv.add_child(_icon_button("res://assets/skills/gem_red.png", "Reinforce (+1 SP, %d/%d used)" % [reinforce_used, GameData.EVOLUTION_STONE_BONUS_SP_CAP], func(id=h.id):
+			var err := GameState.reinforce_hero(id)
+			if err != "":
+				push_warning(err)
+			render()
+		))
 
 	if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
 		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]

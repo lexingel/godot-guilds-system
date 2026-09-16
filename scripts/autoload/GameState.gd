@@ -29,6 +29,7 @@ var heroes: Array[Hero] = []
 var relics: Array[Relic] = []
 var items: Array[Item] = []
 var detectors: Array[Dictionary] = []   # [{"id":..., "tier": "lesser"|"greater"|"ascendant"}]
+var evolution_stones: Dictionary = {}   # rank_id ("E".."S") -> count, dropped by seal_rift() on a ranked Rift Map clear
 var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
 var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
 var runestones: Array[Dictionary] = []    # owned, unsocketed: [{"id":..., "runestone_id": "impact"|"aegis"}]
@@ -344,7 +345,7 @@ func save() -> void:
 		"recruit_pool": recruit_pool.map(func(h): return h.to_dict()),
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
-		"detectors": detectors,
+		"detectors": detectors, "evolution_stones": evolution_stones,
 		"consumables": consumables, "active_incense": active_incense, "runestones": runestones,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
@@ -417,6 +418,7 @@ func load_save() -> bool:
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
 	detectors.assign(data.get("detectors", []))
+	evolution_stones = data.get("evolution_stones", {})
 	consumables.assign(data.get("consumables", []))
 	active_incense = data.get("active_incense", {})
 	runestones.assign(data.get("runestones", []))
@@ -1074,6 +1076,15 @@ func seal_rift() -> void:
 		detectors.append({"id": "d" + str(next_id), "tier": tier})
 		next_id += 1
 		got_detector = true
+	# Only a Rift Map rift carries a rank at all (run["rift_rank"], set by
+	# start_map_rift) — a Lesser/Greater/Endless Riftbreak never drops one.
+	var got_stone := ""
+	var mapped_rank: String = str(run.get("rift_rank", ""))
+	if mapped_rank != "":
+		var stone_tier := GameData.stone_tier_for_rift_rank(mapped_rank)
+		if stone_tier != "" and randf() < GameData.EVOLUTION_STONE_DROP_CHANCE:
+			evolution_stones[stone_tier] = int(evolution_stones.get(stone_tier, 0)) + 1
+			got_stone = stone_tier
 	tokens += earned_tokens
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
@@ -1104,11 +1115,11 @@ func seal_rift() -> void:
 		run["node_state"] = {}
 		run["boss_rounds"] = 0
 		auto_resolve_single_option()
-		run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "continuing": true, "cycle": new_cycle, "flavor": flavor, "bounty": bounty}
+		run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "continuing": true, "cycle": new_cycle, "flavor": flavor, "bounty": bounty}
 		save()
 		state_changed.emit()
 		return
-	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "flavor": flavor, "bounty": bounty}
+	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "flavor": flavor, "bounty": bounty}
 	save()
 	state_changed.emit()
 
@@ -1341,10 +1352,25 @@ func use_detector_for_shop_boost(detector_id: String) -> String:
 	return ""
 
 
-## `target_pool_id` must be one of GameData.evolution_choices(cur_cls) — the
-## caller (the UI) is expected to have offered exactly those, so an invalid
-## id here means a stale/tampered call, not a legitimate use.
-func evolve_hero(hero_id: String, target_pool_id: String) -> String:
+## Aptitude-weighted random pick among evolution candidates — a same-element
+## match is 3x as likely as a mismatch, but never guaranteed, so a stockpiled
+## Evolution Stone always carries "next try I'll get this one" odds instead
+## of a deterministic outcome.
+func _weighted_evolution_pick(choices: Array, cur_cls: Dictionary) -> Dictionary:
+	var weighted: Array = []
+	for c in choices:
+		var w := 3 if c["type"] == cur_cls["type"] else 1
+		for i in w:
+			weighted.append(c)
+	return weighted[randi() % weighted.size()]
+
+
+## The B/A/S jump (a real named subclass forking off — see the CLASS_POOL doc
+## comment) additionally consumes one same-tier Evolution Stone; the earlier
+## F-E-D-C climb (still the same un-named identity throughout) doesn't need
+## one, same as before this system existed. Which specific candidate a hero
+## lands on is no longer a player choice — see _weighted_evolution_pick.
+func evolve_hero(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
@@ -1354,17 +1380,20 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	if cur_cls.is_empty():
 		return "This hero predates the evolution system"
 	var choices := GameData.evolution_choices(cur_cls)
-	var next: Dictionary = {}
-	for c in choices:
-		if c["id"] == target_pool_id:
-			next = c
-	if next.is_empty():
-		return "Not a valid evolution for this hero"
-	var next_rank := GameData.find_rank(next["rank"])
+	if choices.is_empty():
+		return "No further evolution available"
+	var next_rank_id: String = choices[0]["rank"]
+	var next_rank := GameData.find_rank(next_rank_id)
 	if crystals < int(next_rank["cost"]):
 		return "Not enough Crystals"
+	var needs_stone: bool = next_rank_id in ["B", "A", "S"]
+	if needs_stone and int(evolution_stones.get(next_rank_id, 0)) <= 0:
+		return "Need a %s-Rank Evolution Stone" % next_rank_id
+	var next := _weighted_evolution_pick(choices, cur_cls)
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
+	if needs_stone:
+		evolution_stones[next_rank_id] = int(evolution_stones.get(next_rank_id, 0)) - 1
 	# Keeps exactly the one stage being left behind reachable — see the doc
 	# comment on Hero.prior_pool_id for why this isn't an unbounded history.
 	h.prior_pool_id = h.pool_id
@@ -1383,6 +1412,30 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	h.innate_value = Combat.hero_innate_value(next, rank_idx)
 	h.name = "%s the %s" % [h.name.split(" the ")[0], next["name"]]
 	h.hp = Combat.max_hp(h)
+	save()
+	state_changed.emit()
+	return ""
+
+
+## An Evolution Stone whose tier matches a hero's CURRENT rank (not the rank
+## above) can't evolve them further — they're not sitting one rank below
+## anymore — so it converts into a bonus skill point toward whatever tree
+## they just unlocked instead, capped per subclass (GameData's
+## EVOLUTION_STONE_BONUS_SP_CAP) so a stone stockpile can't become an
+## unbounded SP faucet on one hero.
+func reinforce_hero(hero_id: String) -> String:
+	var h := find_hero(hero_id)
+	if not h:
+		return ""
+	var tier := h.rank
+	if int(evolution_stones.get(tier, 0)) <= 0:
+		return "Need a %s-Rank Evolution Stone" % tier
+	var used := int(h.stone_bonus_used.get(h.pool_id, 0))
+	if used >= GameData.EVOLUTION_STONE_BONUS_SP_CAP:
+		return "Already reinforced this subclass to the max"
+	evolution_stones[tier] = int(evolution_stones.get(tier, 0)) - 1
+	h.stone_bonus_used[h.pool_id] = used + 1
+	h.skill_points += 1
 	save()
 	state_changed.emit()
 	return ""

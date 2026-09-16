@@ -29,6 +29,7 @@ var skills: Dictionary = {}      # skill_id -> true. Keys are "<kind>:<node_id>"
 var prior_pool_id: String = ""            # "" = never evolved (or evolved once already superseded by a second evolution)
 var prior_innate_kind: String = ""        # the innate bonus from prior_pool_id's class — same one-stage cap as the tree above
 var prior_innate_value: float = 0.0
+var stone_bonus_used: Dictionary = {}     # pool_id -> count of bonus SP already granted via GameState.reinforce_hero() at that subclass, capped at GameData.EVOLUTION_STONE_BONUS_SP_CAP
 var base_hp: int
 var base_dmg: int
 var trait_name: String = ""      # "" means no trait ("Steadfast")
@@ -55,6 +56,7 @@ func to_dict() -> Dictionary:
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
+		"stone_bonus_used": stone_bonus_used,
 	}
 
 
@@ -90,6 +92,7 @@ static func from_dict(d: Dictionary) -> Hero:
 	# instead of here, since it needs GameData (Hero.gd stays a plain
 	# RefCounted model with no autoload dependencies).
 	h.skills = d.get("skills", {})
+	h.stone_bonus_used = d.get("stone_bonus_used", {})
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
 	h.trait_name = d.get("trait_name", "")
