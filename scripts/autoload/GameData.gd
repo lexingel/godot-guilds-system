@@ -479,6 +479,7 @@ const SUBCLASS_ABILITIES := {
 	"gale-marksman": {"name": "True on the Wind", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.1},
 	"rift-piercer": {"name": "The One Seam", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
 	"wintertide-archer": {"name": "Colder Every Shot", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"rift-eclipsed-warden": {"name": "Eclipse Volley", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.15},
 	# -- Mage --
 	"apprentice": {"name": "Unsteady Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
 	"cinderling": {"name": "First Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.85},
@@ -510,6 +511,7 @@ const SUBCLASS_ABILITIES := {
 	"dawnkeeper": {"name": "First Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.35},
 	"sanctified-shield": {"name": "Not Today", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.4},
 	"alchemist": {"name": "Faster Brew", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"last-light-martyr": {"name": "Last Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.6},
 	# -- Cleric (content-pass additions) --
 	"emberblessed-acolyte": {"name": "Lit Candle", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
 	"frostward-sister": {"name": "Keeps the Chill Out", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
@@ -539,6 +541,7 @@ const SUBCLASS_ABILITIES := {
 	"rift-slipper": {"name": "Half Out of Reality", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
 	"wraithblade-adept": {"name": "Thinner and Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
 	"the-unseen-hand": {"name": "Already Struck", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
+	"the-final-cut": {"name": "Uncatchable", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.28},
 }
 
 ## One icon per ability *effect* (13 shapes, not 50 abilities) reusing the
