@@ -15,7 +15,7 @@ const RARITY_NOUNS := ["Sigil", "Charm", "Shard", "Idol", "Emblem"]
 
 func hero_skill_total(h: Hero, kind: String) -> float:
 	var s := 0.0
-	for n in GameData.SUBCLASS_TIER1:
+	for n in GameData.tier1_for_role(h.cls_id):
 		if n["kind"] == kind and h.skills.get(n["id"], false):
 			s += n["value"]
 	for summary in GameData.hero_tree_summaries(h):
@@ -23,6 +23,10 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 		for n in GameData.KIND_SKILL_PACKAGE.get(tree_kind, []):
 			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
 				s += n["value"]
+				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
+					s += float(n.get("combo_bonus", 0.0))
+	s += GameState.party_resonance_bonus(kind)
+	s += GameState.party_eclectic_bonus()
 	if h.innate_kind == kind:
 		s += h.innate_value
 	# Same one-stage-back retention as the tree above — the innate bonus
@@ -937,11 +941,14 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		elif action == "defend":
 			defending[h.id] = true
 		elif action == "ability" and h.ability_cooldown == 0:
-			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
+			# Awakening (GameState.awaken_ability) shortens the cooldown, not
+			# the effect — a different lever than the skill tree's ever-bigger
+			# numbers, see GameData's Ability Awakening doc comment.
+			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS - (GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION if h.ability_awakened else 0)
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 			var eff: String = ab["effect"]
 			var val: float = float(ab["value"])
-			log.append("%s uses %s!" % [h.name, ab["name"]])
+			log.append("%s uses %s%s!" % [h.name, ab["name"], " (Awakened)" if h.ability_awakened else ""])
 			match eff:
 				"mend_burst":
 					for h2 in party:

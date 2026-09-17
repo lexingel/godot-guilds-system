@@ -428,16 +428,21 @@ const DIFFICULTIES := [
 # whether Ascendant itself is a selectable tier in this port).
 const ENDLESS_BASE := {"monster_hp": 125, "monster_dmg": 14, "coin": [85, 140], "crystal": [20, 36], "token_base": 36, "detector_chance": 0.22, "rec_power": 280}
 
-## Per-subclass identity, not per-role: each of the 50 CLASS_POOL entries gets
-## its own active ability and its own skill-tree specialization instead of the
-## 5 shared role abilities/trees this used to be. Abilities are data-driven —
+## Per-subclass identity, not per-role: each CLASS_POOL entry gets its own
+## active ability and its own skill-tree specialization instead of the 5
+## shared role abilities/trees this used to be. Abilities are data-driven —
 ## one generic effect dispatcher in Combat.resolve_round reads {effect,value}
 ## from SUBCLASS_ABILITIES, so adding/tuning an ability never touches game
-## logic. Skill trees stay 2 universal Tier-1 nodes (SUBCLASS_TIER1, unchanged
-## from the old per-role trees) + a 4-node "signature package" keyed by the
-## subclass's own CLASS_POOL `kind` (KIND_SKILL_PACKAGE) — subclasses sharing
-## a kind already play similarly (same innate stat), so their trees
-## reinforcing that same kind is a feature, not a shortcut.
+## logic. Skill trees are 2 Tier-1 roots (role-flavored — see TIER1_BY_ROLE;
+## the id is always "edge"/"hide" so every KIND_SKILL_PACKAGE's `requires`
+## keeps working regardless of which role's flavor a hero actually has) + a
+## "signature package" keyed by the subclass's own CLASS_POOL `kind`
+## (KIND_SKILL_PACKAGE) — subclasses sharing a kind already play similarly
+## (same innate stat), so their trees reinforcing that same kind is a
+## feature, not a shortcut. Most packages are 4 Tier-2 nodes + a 2-way Tier-3
+## fork + 2 Tier-4 finishers, but that shape isn't load-bearing — see
+## `boss_alpha_strike` (a single linear capstone, no fork) and `dodge_pct` (a
+## 3-way fork) for the deliberately asymmetric ones.
 const SUBCLASS_ABILITIES := {
 	# -- Warrior --
 	"squire": {"name": "Reckless Swing", "desc": "An all-in burst against the weakest foe.", "effect": "burst_lowest", "value": 0.8},
@@ -570,12 +575,45 @@ static func ability_icon(pool_id: String) -> String:
 
 ## Every node's "icon" points at a bespoke pixel-art icon under
 ## assets/skills/ (extracted from a free CraftPix icon sheet) — 38 distinct
-## icons across the 2 universal Tier-1 nodes + 9 packages x 4 nodes, no two
-## nodes sharing an icon.
-const SUBCLASS_TIER1 := [
-	{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": [], "icon": "res://assets/skills/sword_a.png"},
-	{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": [], "icon": "res://assets/skills/heart.png"},
-]
+## icons across the 2 Tier-1 slots + 9 packages x 4-10 nodes, no two nodes
+## sharing an icon.
+##
+## Tier 1 is 2 slots ("edge" = offense root, "hide" = defense root), but
+## which concrete node fills each slot is role-flavored instead of one
+## universal pair — every hero in the game no longer starts on the literal
+## same two nodes. `cost`/`req_level`/`tier` stay identical across every
+## role's variant (so anything that doesn't care which flavor a hero has,
+## e.g. SP-cost math, stays correct without needing role context) — only
+## `name`/`icon`/`kind`/`value` vary, and `value` is pinned to the same 0.08
+## everywhere too, so this is pure re-flavoring, not a rebalance. The id
+## stays "edge"/"hide" regardless of role so every KIND_SKILL_PACKAGE's
+## `requires: ["edge"]`/`["hide"]` keeps resolving no matter which flavor is
+## actually learned. See tier1_for_role().
+const TIER1_BY_ROLE := {
+	"warrior": [
+		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Honed Edge", "requires": [], "icon": "res://assets/skills/sword_a.png"},
+		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hp_pct", "value": 0.08, "name": "Thick Hide", "requires": [], "icon": "res://assets/skills/heart.png"},
+	],
+	"ranger": [
+		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "first_round_pct", "value": 0.08, "name": "Trueshot Aim", "requires": [], "icon": "res://assets/skills/eye_gem.png"},
+		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Woodland Step", "requires": [], "icon": "res://assets/skills/boots_brown.png"},
+	],
+	"mage": [
+		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "escalate_pct", "value": 0.08, "name": "Arcane Focus", "requires": [], "icon": "res://assets/skills/gem_red.png"},
+		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "hazard_guard_pct", "value": 0.08, "name": "Warding Sigil", "requires": [], "icon": "res://assets/skills/shield_orange.png"},
+	],
+	"cleric": [
+		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "mend_pct", "value": 0.08, "name": "Devotion", "requires": [], "icon": "res://assets/skills/potion_blue.png"},
+		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "wipe_guard", "value": 0.08, "name": "Sanctuary", "requires": [], "icon": "res://assets/skills/shield_split.png"},
+	],
+	"rogue": [
+		{"id": "edge", "tier": 1, "req_level": 2, "cost": 1, "kind": "first_round_pct", "value": 0.08, "name": "Opening Strike", "requires": [], "icon": "res://assets/skills/dagger_blue.png"},
+		{"id": "hide", "tier": 1, "req_level": 2, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Shadow Step", "requires": [], "icon": "res://assets/skills/face_hood.png"},
+	],
+}
+
+static func tier1_for_role(role: String) -> Array:
+	return TIER1_BY_ROLE.get(role, TIER1_BY_ROLE["warrior"])
 
 ## Each package's shape: the original 3 Tier-2 nodes (2 gated by a Tier-1
 ## root, 1 free) are unchanged, plus a 4th Tier-2 node requiring BOTH roots.
@@ -585,6 +623,13 @@ const SUBCLASS_TIER1 := [
 ## the other, so learning one permanently locks out the other regardless of
 ## level/SP. Tier 4 is a single finisher per fork, only reachable through
 ## that fork's own capstone — the "how far does this path go" payoff.
+##
+## A handful of finishers also carry `combo_kind`/`combo_bonus` — a cross-kind
+## party synergy (Combat.hero_skill_total): that finisher's owner gets the
+## extra `combo_bonus` only while another CURRENT-RUN party member (not
+## themselves) has reached `combo_kind`'s own Tier-3 capstone (cap or
+## cap_alt). It's about who you bring together, not just how you build one
+## hero — see GameState.party_has_other_kind_capstone().
 const KIND_SKILL_PACKAGE := {
 	"dmg_pct": [
 		{"id": "mastery", "tier": 2, "req_level": 4, "cost": 1, "kind": "dmg_pct", "value": 0.10, "name": "Weapon Mastery", "requires": ["edge"], "icon": "res://assets/skills/sword_silver.png"},
@@ -593,7 +638,7 @@ const KIND_SKILL_PACKAGE := {
 		{"id": "battle_fury", "tier": 2, "req_level": 5, "cost": 1, "kind": "dmg_pct", "value": 0.06, "name": "Battle Fury", "requires": ["edge", "hide"], "icon": "res://assets/skills/sword_dual.png"},
 		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "dmg_pct", "value": 0.22, "name": "Executioner's Edge", "requires": ["mastery", "killer_instinct"], "excludes": ["cap_alt"], "icon": "res://assets/skills/sword_big.png"},
 		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "escalate_pct", "value": 0.05, "name": "Bloodletter's Patience", "requires": ["mastery", "killer_instinct"], "excludes": ["cap"], "icon": "res://assets/skills/shard_blue.png"},
-		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dmg_pct", "value": 0.15, "name": "Killing Blow", "requires": ["cap"], "icon": "res://assets/skills/sword_big.png"},
+		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dmg_pct", "value": 0.15, "name": "Killing Blow", "requires": ["cap"], "icon": "res://assets/skills/sword_big.png", "combo_kind": "wipe_guard", "combo_bonus": 0.08},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "escalate_pct", "value": 0.04, "name": "Endless Fury", "requires": ["cap_alt"], "icon": "res://assets/skills/leaf_big.png"},
 	],
 	"hp_pct": [
@@ -603,7 +648,7 @@ const KIND_SKILL_PACKAGE := {
 		{"id": "fortified_stance", "tier": 2, "req_level": 5, "cost": 1, "kind": "hp_pct", "value": 0.06, "name": "Fortified Stance", "requires": ["edge", "hide"], "icon": "res://assets/skills/armor_chest.png"},
 		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "hp_pct", "value": 0.25, "name": "Unbreakable", "requires": ["iron_skin", "steady_guard"], "excludes": ["cap_alt"], "icon": "res://assets/skills/shield_split.png"},
 		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "hazard_guard_pct", "value": 0.18, "name": "Stone Sentinel", "requires": ["iron_skin", "steady_guard"], "excludes": ["cap"], "icon": "res://assets/skills/shield_orange.png"},
-		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "hp_pct", "value": 0.15, "name": "Immovable", "requires": ["cap"], "icon": "res://assets/skills/shield_split.png"},
+		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "hp_pct", "value": 0.15, "name": "Immovable", "requires": ["cap"], "icon": "res://assets/skills/shield_split.png", "combo_kind": "mend_pct", "combo_bonus": 0.10},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "hazard_guard_pct", "value": 0.12, "name": "Bulwark's Ward", "requires": ["cap_alt"], "icon": "res://assets/skills/armor_shoulder.png"},
 	],
 	"first_round_pct": [
@@ -623,7 +668,7 @@ const KIND_SKILL_PACKAGE := {
 		{"id": "rising_tide", "tier": 2, "req_level": 5, "cost": 1, "kind": "escalate_pct", "value": 0.02, "name": "Rising Tide", "requires": ["edge", "hide"], "icon": "res://assets/skills/gear.png"},
 		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "escalate_pct", "value": 0.06, "name": "Unstoppable Momentum", "requires": ["buildup", "adrenaline"], "excludes": ["cap_alt"], "icon": "res://assets/skills/leaf_big.png"},
 		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "dmg_pct", "value": 0.20, "name": "Berserker's Peak", "requires": ["buildup", "adrenaline"], "excludes": ["cap"], "icon": "res://assets/skills/star.png"},
-		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "escalate_pct", "value": 0.04, "name": "Boundless Fury", "requires": ["cap"], "icon": "res://assets/skills/leaf_big.png"},
+		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "escalate_pct", "value": 0.04, "name": "Boundless Fury", "requires": ["cap"], "icon": "res://assets/skills/leaf_big.png", "combo_kind": "dmg_pct", "combo_bonus": 0.03},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dmg_pct", "value": 0.15, "name": "Overwhelming Force", "requires": ["cap_alt"], "icon": "res://assets/skills/sword_big.png"},
 	],
 	"mend_pct": [
@@ -646,15 +691,22 @@ const KIND_SKILL_PACKAGE := {
 		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "hazard_guard_pct", "value": 0.15, "name": "Untouchable", "requires": ["cap"], "icon": "res://assets/skills/armor_chest.png"},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "first_round_pct", "value": 0.18, "name": "Perfect Riposte", "requires": ["cap_alt"], "icon": "res://assets/skills/sword_slash.png"},
 	],
+	# dodge_pct is deliberately asymmetric — a 3-way Tier-3 fork instead of
+	# the usual 2 (see the topology-variety doc comment above
+	# KIND_SKILL_PACKAGE), so a rogue-flavored kind gets a real third
+	# philosophy (offense / pure evasion / counter-punish) instead of a
+	# binary choice.
 	"dodge_pct": [
 		{"id": "evasion", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.12, "name": "Evasive Training", "requires": ["hide"], "icon": "res://assets/skills/face_hood.png"},
 		{"id": "momentum", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Fleeting Strike", "requires": ["edge"], "icon": "res://assets/skills/wing.png"},
 		{"id": "gambit", "tier": 2, "req_level": 5, "cost": 1, "kind": "first_round_pct", "value": 0.10, "name": "Opening Gambit", "requires": [], "icon": "res://assets/skills/gem_blue_b.png"},
 		{"id": "phantom_step", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.06, "name": "Phantom Step", "requires": ["edge", "hide"], "icon": "res://assets/skills/wing.png"},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["evasion", "momentum"], "excludes": ["cap_alt"], "icon": "res://assets/skills/shard_blue.png"},
-		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "dodge_pct", "value": 0.16, "name": "Untouchable Form", "requires": ["evasion", "momentum"], "excludes": ["cap"], "icon": "res://assets/skills/face_hood.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "dmg_pct", "value": 0.20, "name": "Shadow Strike", "requires": ["evasion", "momentum"], "excludes": ["cap_alt", "cap_third"], "icon": "res://assets/skills/shard_blue.png"},
+		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "dodge_pct", "value": 0.16, "name": "Untouchable Form", "requires": ["evasion", "momentum"], "excludes": ["cap", "cap_third"], "icon": "res://assets/skills/face_hood.png"},
+		{"id": "cap_third", "tier": 3, "req_level": 7, "cost": 2, "kind": "first_round_pct", "value": 0.18, "name": "Riposte Flow", "requires": ["evasion", "momentum"], "excludes": ["cap", "cap_alt"], "icon": "res://assets/skills/gem_blue_b.png"},
 		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dmg_pct", "value": 0.15, "name": "Killer's Shadow", "requires": ["cap"], "icon": "res://assets/skills/shard_blue.png"},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dodge_pct", "value": 0.14, "name": "Ghost Step", "requires": ["cap_alt"], "icon": "res://assets/skills/boots.png"},
+		{"id": "cap_third_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "first_round_pct", "value": 0.12, "name": "Counterflow Mastery", "requires": ["cap_third"], "icon": "res://assets/skills/gem_blue_b.png"},
 	],
 	"wipe_guard": [
 		{"id": "shieldwall", "tier": 2, "req_level": 4, "cost": 1, "kind": "dodge_pct", "value": 0.10, "name": "Shield Wall", "requires": ["hide"], "icon": "res://assets/skills/armor_shoulder.png"},
@@ -663,18 +715,22 @@ const KIND_SKILL_PACKAGE := {
 		{"id": "guardians_resolve", "tier": 2, "req_level": 5, "cost": 1, "kind": "hazard_guard_pct", "value": 0.06, "name": "Guardian's Resolve", "requires": ["edge", "hide"], "icon": "res://assets/skills/cloak_a.png"},
 		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "wipe_guard", "value": 0.25, "name": "Last Stand", "requires": ["shieldwall", "vanguard"], "excludes": ["cap_alt"], "icon": "res://assets/skills/trophy.png"},
 		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "hp_pct", "value": 0.20, "name": "Undying Vanguard", "requires": ["shieldwall", "vanguard"], "excludes": ["cap"], "icon": "res://assets/skills/shield_split.png"},
-		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "wipe_guard", "value": 0.15, "name": "Defiant to the End", "requires": ["cap"], "icon": "res://assets/skills/trophy.png"},
+		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "wipe_guard", "value": 0.15, "name": "Defiant to the End", "requires": ["cap"], "icon": "res://assets/skills/trophy.png", "combo_kind": "hazard_guard_pct", "combo_bonus": 0.10},
 		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "hp_pct", "value": 0.15, "name": "Iron Will", "requires": ["cap_alt"], "icon": "res://assets/skills/armor_shoulder.png"},
 	],
+	# boss_alpha_strike is deliberately asymmetric the other direction — a
+	# single linear capstone, no fork at all (see the topology-variety doc
+	# comment above KIND_SKILL_PACKAGE). It's the rarest kind (every carrier
+	# is B rank or higher already), so "total commitment, one undivided
+	# payoff" fits better than a branching choice: the capstone requires ALL
+	# FOUR Tier-2 nodes instead of the usual 2.
 	"boss_alpha_strike": [
 		{"id": "buildup2", "tier": 2, "req_level": 4, "cost": 1, "kind": "escalate_pct", "value": 0.03, "name": "Arcane Buildup", "requires": ["edge"], "icon": "res://assets/skills/star.png"},
 		{"id": "ward", "tier": 2, "req_level": 4, "cost": 1, "kind": "hazard_guard_pct", "value": 0.10, "name": "Ward Sigil", "requires": ["hide"], "icon": "res://assets/skills/gem_blue_big.png"},
 		{"id": "slip", "tier": 2, "req_level": 5, "cost": 1, "kind": "dodge_pct", "value": 0.08, "name": "Arcane Slip", "requires": [], "icon": "res://assets/skills/shard_green.png"},
 		{"id": "arcane_convergence", "tier": 2, "req_level": 5, "cost": 1, "kind": "dmg_pct", "value": 0.08, "name": "Arcane Convergence", "requires": ["edge", "hide"], "icon": "res://assets/skills/gem_blue_big.png"},
-		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "boss_alpha_strike", "value": 1.0, "name": "Cataclysm", "requires": ["buildup2", "ward"], "excludes": ["cap_alt"], "icon": "res://assets/skills/ingot_gold.png"},
-		{"id": "cap_alt", "tier": 3, "req_level": 7, "cost": 2, "kind": "escalate_pct", "value": 0.05, "name": "Sustained Onslaught", "requires": ["buildup2", "ward"], "excludes": ["cap"], "icon": "res://assets/skills/star.png"},
+		{"id": "cap", "tier": 3, "req_level": 7, "cost": 2, "kind": "boss_alpha_strike", "value": 1.15, "name": "Cataclysm", "requires": ["buildup2", "ward", "slip", "arcane_convergence"], "icon": "res://assets/skills/ingot_gold.png"},
 		{"id": "cap_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "dmg_pct", "value": 0.25, "name": "World Ender", "requires": ["cap"], "icon": "res://assets/skills/ingot_gold.png"},
-		{"id": "cap_alt_finisher", "tier": 4, "req_level": 9, "cost": 2, "kind": "escalate_pct", "value": 0.04, "name": "Relentless Tide", "requires": ["cap_alt"], "icon": "res://assets/skills/leaf_big.png"},
 	],
 }
 
@@ -765,6 +821,25 @@ static func evolution_stones_text(stones: Dictionary) -> String:
 		if n > 0:
 			parts.append("%s×%d" % [r["id"], n])
 	return " · ".join(parts)
+
+# Ability Awakening — a second SP sink (GameState.awaken_ability) alongside
+# the skill tree: spend SP once to make a hero's existing Active Ability
+# trigger more often, instead of only ever making the tree's numbers bigger.
+# Flat and effect-agnostic (works identically for all 13 SUBCLASS_ABILITIES
+# effect types) rather than 13 bespoke bonus effects, on purpose — it's a
+# genuinely different lever (frequency, not magnitude) without needing a
+# hand-tuned rider for every ability.
+const ABILITY_AWAKENING_COST := 3
+const ABILITY_AWAKENING_COOLDOWN_REDUCTION := 1
+
+# Party-kind synergy (GameState.party_resonance_bonus/party_eclectic_bonus,
+# read by Combat.hero_skill_total) — computed live from the active run's
+# roster, never cached, so it can't go stale if the party ever changes.
+# Resonance rewards bringing 2+ heroes who currently share a kind (their
+# builds reinforce each other); Eclectic rewards the opposite, a genuinely
+# varied 3+ party with no repeats. Never both at once for the same party.
+const PARTY_RESONANCE_BONUS := 0.05
+const PARTY_ECLECTIC_BONUS := 0.03
 
 # Recruitment-screen reroll fees. Flat rather than rank-scaled, so a bad
 # opening pull is always cheap to retry (below even the F-rank recruit cost)
@@ -1478,12 +1553,14 @@ static func find_branch_node(key: String) -> Dictionary:
 	return {}
 
 
-## Looks up a bare node id within a specific kind's package (or the
-## universal Tier-1 roots, for "edge"/"hide" — `kind` is ignored then, since
-## those are shared across every tree).
-static func find_skill_node(kind: String, skill_id: String) -> Dictionary:
+## Looks up a bare node id within a specific kind's package (or a Tier-1
+## root, for "edge"/"hide" — `kind` is ignored then, since those are shared
+## across every tree). `role` picks which role's Tier-1 flavor to resolve
+## against; callers that don't have a hero in scope (pure SP-cost math) can
+## omit it since cost/req_level/tier are identical across every role's variant.
+static func find_skill_node(kind: String, skill_id: String, role: String = "warrior") -> Dictionary:
 	if skill_id == "edge" or skill_id == "hide":
-		for n in SUBCLASS_TIER1:
+		for n in tier1_for_role(role):
 			if n["id"] == skill_id:
 				return n
 		return {}

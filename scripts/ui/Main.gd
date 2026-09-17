@@ -1049,6 +1049,29 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if not active_bonds.is_empty():
 		v.add_child(_label("Bond active: %s" % ", ".join(active_bonds), 12, true))
 
+	# Party-kind synergy preview (Resonance/Eclectic) — computed here from
+	# pending_party rather than GameState.party_resonance_bonus(), since that
+	# reads the already-started run and this screen runs BEFORE the run
+	# exists. Same rule, just previewed off the picks-in-progress.
+	var picked_kind_counts := {}
+	for h2 in GameState.heroes:
+		if pending_party.has(h2.id):
+			var cls2 := GameData.find_class(h2.pool_id)
+			if not cls2.is_empty():
+				var k2: String = cls2.get("kind", "")
+				picked_kind_counts[k2] = int(picked_kind_counts.get(k2, 0)) + 1
+	var resonant_kinds: Array[String] = []
+	for k2 in picked_kind_counts:
+		if int(picked_kind_counts[k2]) >= 2:
+			resonant_kinds.append(k2)
+	if not resonant_kinds.is_empty():
+		var kind_bonuses: Array[String] = []
+		for rk in resonant_kinds:
+			kind_bonuses.append(Combat.describe_skill(rk, GameData.PARTY_RESONANCE_BONUS))
+		v.add_child(_label("Resonance active - shared builds reinforce each other (%s)" % ", ".join(kind_bonuses), 12, true))
+	elif picked_kind_counts.size() >= 3:
+		v.add_child(_label("Eclectic active - a fully varied party (+%s to everything)" % Combat.describe_skill("dmg_pct", GameData.PARTY_ECLECTIC_BONUS), 12, true))
+
 	v.add_child(_hsep())
 	var choice_count := GameState.relic_choice_count()
 	if choice_count > 0:
@@ -3097,6 +3120,8 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Guild Management", "Spend Crystals across 4 branches (Operations/Infrastructure/Logistics/Research) to raise hero-slot caps, relic-slot caps, recovery speed, fee reductions, and more. A Guild Tier banner tracks total levels purchased."],
 		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],
 		["Hero Bonds", "Certain subclass pairs (e.g. Duelist + Blade-Dancer) grant a bonus while both are alive in the active party — shown in Party Assembly when both halves are picked."],
+		["Party Synergy", "Resonance: 2+ party members currently building the same skill kind reinforce each other. Eclectic: a 3+ party with no kind repeated gets a small universal bonus instead. Never both at once — shown in Party Assembly."],
+		["Ability Awakening", "Spend Skill Points once to shorten a hero's Active Ability cooldown instead of only ever growing the skill tree's numbers."],
 		["Elemental Weakness", "Every hero subclass and every monster carries one of 5 elemental types. Attacking a weak-matched type deals bonus damage; attacking a strong-matched type deals less."],
 		["Formation", "Heroes and monsters can sit front or back row. Retaliation is biased toward the front row; back-row monsters take reduced damage from hero attacks."],
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
@@ -3593,6 +3618,15 @@ func _render_roster(v: VBoxContainer) -> void:
 		ab_row.add_child(ab_mid)
 		if h.level < 3:
 			ab_row.add_child(_label("Unlocks at Lv3", 11, true))
+		elif h.ability_awakened:
+			ab_row.add_child(_label("Awakened (-%d rd cooldown)" % GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION, 11, true))
+		else:
+			ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", "Awaken (%d SP)" % GameData.ABILITY_AWAKENING_COST, func(id=h.id):
+				var err := GameState.awaken_ability(id)
+				if err != "":
+					push_warning(err)
+				render()
+			))
 		cv.add_child(ab_row)
 		if not evolve_choices.is_empty() or h.prior_pool_id != "":
 			cv.add_child(_label("Evolving replaces this Ability, but skill trees carry over.", 10, true))
@@ -3670,12 +3704,20 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		else:
 			reason = "Learn (%d SP)" % int(n["cost"])
 
+	var combo_line := ""
+	if n.has("combo_kind"):
+		var combo_active := learned and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"]))
+		combo_line = "\n%s+%s if a party ally has reached %s's capstone" % [
+			"(Active) " if combo_active else "",
+			Combat.describe_skill(str(n["kind"]), float(n.get("combo_bonus", 0.0))),
+			str(n["combo_kind"]),
+		]
 	var tile := _action_slot(str(n["icon"]), "", can_learn, not can_learn and not learned, func(hid=h.id, k=kind, sid=skill_id):
 		var err := GameState.learn_skill(hid, k, sid)
 		if err != "":
 			push_warning(err)
 		render()
-	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s" % [str(n["name"]), Combat.describe_skill(str(n["kind"]), float(n["value"])), reason])
+	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), Combat.describe_skill(str(n["kind"]), float(n["value"])), reason, combo_line])
 	if learned:
 		tile.modulate = Color(1.15, 1.02, 0.68)
 	return tile
@@ -3685,13 +3727,16 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 ## of a flat scrolling list. Tier 1/Tier 2 alignment is unchanged — each
 ## singly-gated Tier-2 node sits in the same row as the Tier-1 node its
 ## `requires` points at; a Tier-2 node needing BOTH roots (or neither) gets
-## its own row below. Tier 3 is a hard-exclusive fork (two nodes that each
-## `excludes` the other), placed one per row so "Path" reads as two options
-## stacked rather than one column; Tier 4 holds each fork's own finisher,
-## found the same way — whichever Tier-4 node's `requires` points at that
-## row's Tier-3 node.
+## its own row below. Tier 3 is normally a hard-exclusive fork (nodes that
+## each `excludes` the others), placed one per row so "Path" reads as
+## options stacked rather than one column; Tier 4 holds each fork's own
+## finisher, found the same way — whichever Tier-4 node's `requires` points
+## at that row's Tier-3 node. Fork rows are sized off `max(tier1, tier3)`,
+## not tier1 alone, so a kind with more forks than the usual 2 (dodge_pct's
+## 3-way fork) still gets a row for its extra fork+finisher pair instead of
+## that pair silently never rendering.
 func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
-	var tree: Array = GameData.SUBCLASS_TIER1 + GameData.KIND_SKILL_PACKAGE.get(kind, [])
+	var tree: Array = GameData.tier1_for_role(h.cls_id) + GameData.KIND_SKILL_PACKAGE.get(kind, [])
 	var tier1: Array = tree.filter(func(n): return int(n["tier"]) == 1)
 	var tier2: Array = tree.filter(func(n): return int(n["tier"]) == 2)
 	var tier3: Array = tree.filter(func(n): return int(n["tier"]) == 3)
@@ -3713,14 +3758,19 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 
 	var singly_gated_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() == 1)
 	var other_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() != 1)
-	var row_count: int = max(tier1.size(), 1) + other_tier2.size()
+	var fork_rows: int = max(tier1.size(), tier3.size())
+	var row_count: int = max(fork_rows, 1) + other_tier2.size()
 
 	for row_i in row_count:
-		if row_i < tier1.size():
-			var t1: Dictionary = tier1[row_i]
-			grid.add_child(_skill_node_tile(h, kind, t1))
-			var dep := singly_gated_tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
-			grid.add_child(_skill_node_tile(h, kind, dep[0]) if not dep.is_empty() else Control.new())
+		if row_i < fork_rows:
+			if row_i < tier1.size():
+				var t1: Dictionary = tier1[row_i]
+				grid.add_child(_skill_node_tile(h, kind, t1))
+				var dep := singly_gated_tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
+				grid.add_child(_skill_node_tile(h, kind, dep[0]) if not dep.is_empty() else Control.new())
+			else:
+				grid.add_child(Control.new())
+				grid.add_child(Control.new())
 			if row_i < tier3.size():
 				var fork: Dictionary = tier3[row_i]
 				grid.add_child(_skill_node_tile(h, kind, fork))
@@ -3731,7 +3781,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 				grid.add_child(Control.new())
 		else:
 			grid.add_child(Control.new())
-			grid.add_child(_skill_node_tile(h, kind, other_tier2[row_i - tier1.size()]))
+			grid.add_child(_skill_node_tile(h, kind, other_tier2[row_i - fork_rows]))
 			grid.add_child(Control.new())
 			grid.add_child(Control.new())
 

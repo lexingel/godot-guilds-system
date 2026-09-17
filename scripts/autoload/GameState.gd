@@ -1554,7 +1554,7 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
-	var n := GameData.find_skill_node(kind, skill_id)
+	var n := GameData.find_skill_node(kind, skill_id, h.cls_id)
 	var key := GameData.skill_storage_key(kind, skill_id)
 	if n.is_empty() or h.skills.get(key, false):
 		return ""
@@ -1573,6 +1573,81 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	save()
 	state_changed.emit()
 	return ""
+
+
+## Spends SP once to make a hero's existing Active Ability trigger more
+## often (see GameData's Ability Awakening doc comment) — a second SP sink
+## next to the skill tree, not a replacement for it. One-time per hero:
+## already-awakened is a no-op refusal, not a stacking cooldown reduction.
+func awaken_ability(hero_id: String) -> String:
+	var h := find_hero(hero_id)
+	if not h:
+		return ""
+	if not Combat.qualifies_for_ability(h):
+		return "This hero has no Active Ability yet"
+	if h.ability_awakened:
+		return "Already awakened"
+	if h.skill_points < GameData.ABILITY_AWAKENING_COST:
+		return "Not enough Skill Points"
+	h.skill_points -= GameData.ABILITY_AWAKENING_COST
+	h.ability_awakened = true
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Kind -> hero-count across the CURRENT run's party — {} outside a run, so
+## every synergy helper below naturally returns 0/false with no active run.
+func _party_kind_counts() -> Dictionary:
+	var counts := {}
+	for hid in run.get("hero_ids", []):
+		var h2 := find_hero(str(hid))
+		if not h2:
+			continue
+		var cls := GameData.find_class(h2.pool_id)
+		if cls.is_empty():
+			continue
+		var k: String = cls.get("kind", "")
+		counts[k] = int(counts.get(k, 0)) + 1
+	return counts
+
+
+## Resonance — this run's party has 2+ heroes CURRENTLY building the same
+## kind. Computed live off run["hero_ids"], never cached, so it can't drift
+## if the party or a hero's tree ever changes mid-assembly.
+func party_resonance_bonus(kind: String) -> float:
+	if run.is_empty():
+		return 0.0
+	return GameData.PARTY_RESONANCE_BONUS if int(_party_kind_counts().get(kind, 0)) >= 2 else 0.0
+
+
+## Eclectic — the opposite of Resonance: 3+ party members, no kind repeated.
+func party_eclectic_bonus() -> float:
+	if run.is_empty():
+		return 0.0
+	var counts := _party_kind_counts()
+	for k in counts:
+		if int(counts[k]) >= 2:
+			return 0.0
+	return GameData.PARTY_ECLECTIC_BONUS if counts.size() >= 3 else 0.0
+
+
+## For a KIND_SKILL_PACKAGE finisher's `combo_kind` field (GameData doc
+## comment above KIND_SKILL_PACKAGE) — true if some OTHER current-run party
+## member has reached `kind`'s own Tier-3 capstone (cap or cap_alt; the
+## asymmetric kinds' cap_third/no-fork shapes still resolve through "cap").
+func party_has_other_kind_capstone(exclude_hero_id: String, kind: String) -> bool:
+	if run.is_empty():
+		return false
+	for hid in run.get("hero_ids", []):
+		if str(hid) == exclude_hero_id:
+			continue
+		var h2 := find_hero(str(hid))
+		if not h2:
+			continue
+		if h2.skills.get(GameData.skill_storage_key(kind, "cap"), false) or h2.skills.get(GameData.skill_storage_key(kind, "cap_alt"), false):
+			return true
+	return false
 
 
 ## Real SP cost of a set of learned skill keys — sums each node's actual
