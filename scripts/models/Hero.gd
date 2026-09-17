@@ -41,7 +41,7 @@ var hp: int = 0
 var is_champion: bool = false
 var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
-var ability_awakened: bool = false  # GameState.awaken_ability() — shortens Ability cooldown, see GameData.ABILITY_AWAKENING_*
+var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
 
 
 func is_downed() -> bool:

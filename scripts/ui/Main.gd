@@ -3121,7 +3121,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],
 		["Hero Bonds", "Certain subclass pairs (e.g. Duelist + Blade-Dancer) grant a bonus while both are alive in the active party — shown in Party Assembly when both halves are picked."],
 		["Party Synergy", "Resonance: 2+ party members currently building the same skill kind reinforce each other. Eclectic: a 3+ party with no kind repeated gets a small universal bonus instead. Never both at once — shown in Party Assembly."],
-		["Ability Awakening", "Spend Skill Points once to shorten a hero's Active Ability cooldown instead of only ever growing the skill tree's numbers."],
+		["Ability Awakening", "Spend Skill Points once to grant a hero's Active Ability a secondary effect (varies by ability — a shorter cooldown, a lingering debuff, a party dodge boost, a self-shield, or a small permanent damage stack) instead of only ever growing the skill tree's numbers."],
 		["Elemental Weakness", "Every hero subclass and every monster carries one of 5 elemental types. Attacking a weak-matched type deals bonus damage; attacking a strong-matched type deals less."],
 		["Formation", "Heroes and monsters can sit front or back row. Retaliation is biased toward the front row; back-row monsters take reduced damage from hero attacks."],
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
@@ -3619,9 +3619,9 @@ func _render_roster(v: VBoxContainer) -> void:
 		if h.level < 3:
 			ab_row.add_child(_label("Unlocks at Lv3", 11, true))
 		elif h.ability_awakened:
-			ab_row.add_child(_label("Awakened (-%d rd cooldown)" % GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION, 11, true))
+			ab_row.add_child(_label("Awakened (%s)" % GameData.awakening_bonus_text(h.pool_id), 11, true))
 		else:
-			ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", "Awaken (%d SP)" % GameData.ABILITY_AWAKENING_COST, func(id=h.id):
+			ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", "Awaken (%d SP, %s)" % [GameData.ABILITY_AWAKENING_COST, GameData.awakening_bonus_text(h.pool_id)], func(id=h.id):
 				var err := GameState.awaken_ability(id)
 				if err != "":
 					push_warning(err)

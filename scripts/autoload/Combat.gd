@@ -941,10 +941,7 @@ func resolve_round(state: Dictionary) -> Dictionary:
 		elif action == "defend":
 			defending[h.id] = true
 		elif action == "ability" and h.ability_cooldown == 0:
-			# Awakening (GameState.awaken_ability) shortens the cooldown, not
-			# the effect — a different lever than the skill tree's ever-bigger
-			# numbers, see GameData's Ability Awakening doc comment.
-			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS - (GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION if h.ability_awakened else 0)
+			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 			var eff: String = ab["effect"]
 			var val: float = float(ab["value"])
@@ -1015,6 +1012,65 @@ func resolve_round(state: Dictionary) -> Dictionary:
 						var burst2: float = team_dmg_base * escalate_mult * val
 						monsters[idx3]["hp"] = float(monsters[idx3]["hp"]) - round(burst2)
 						log.append("%s sacrifices %d HP for a burst on %s for %d!" % [h.name, self_cost, monsters[idx3]["name"], round(burst2)])
+				"debuff_lowest":
+					var idx4 := _lowest_hp_living_monster_idx(monsters)
+					if idx4 >= 0:
+						monsters[idx4]["dmg"] = float(monsters[idx4]["dmg"]) * val
+						log.append("%s is crippled, dealing far less damage." % monsters[idx4]["name"])
+				"team_shield_burst":
+					var alive_for_burst: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
+					var shields2: Dictionary = state["hero_shields"]
+					for hh3 in alive_for_burst:
+						shields2[hh3.id] = float(shields2.get(hh3.id, 0.0)) + max_hp(hh3) * val
+					log.append("The whole party is shielded.")
+				"execute_all_low":
+					for m2 in monsters:
+						if float(m2["hp"]) > 0:
+							var missing_frac2: float = 1.0 - float(m2["hp"]) / float(m2["max_hp"])
+							if missing_frac2 >= 0.5:
+								var dealt4: float = team_dmg_base * val * (1.0 + missing_frac2)
+								m2["hp"] = float(m2["hp"]) - round(dealt4)
+					log.append("Every wounded foe is finished off.")
+				"hp_drain_burst":
+					var idx5 := _lowest_hp_living_monster_idx(monsters)
+					if idx5 >= 0:
+						var burst3: float = team_dmg_base * escalate_mult * val
+						monsters[idx5]["hp"] = float(monsters[idx5]["hp"]) - round(burst3)
+						var drained: int = max(1, int(round(burst3 * 0.4)))
+						h.hp = min(max_hp(h), h.hp + drained)
+						log.append("%s drains %d from %s, healing %d!" % [h.name, round(burst3), monsters[idx5]["name"], drained])
+				"mend_shield_hybrid":
+					var alive_for_hybrid: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
+					if not alive_for_hybrid.is_empty():
+						var lowest2: Hero = alive_for_hybrid[0]
+						for hh4 in alive_for_hybrid:
+							if hh4.hp < lowest2.hp:
+								lowest2 = hh4
+						lowest2.hp = min(max_hp(lowest2), lowest2.hp + int(round(max_hp(lowest2) * val)))
+						var shields3: Dictionary = state["hero_shields"]
+						var amt2: float = max_hp(lowest2) * val * 0.6
+						shields3[lowest2.id] = float(shields3.get(lowest2.id, 0.0)) + amt2
+						log.append("%s is mended and shielded." % lowest2.name)
+
+			# Awakening (GameState.awaken_ability) grants a bucketed rider on
+			# top of the primary effect above, keyed by GameData's
+			# ABILITY_AWAKENING_BUCKET — see its doc comment for why buckets
+			# instead of one flat number or 18 fully bespoke riders.
+			if h.ability_awakened:
+				var bucket: String = GameData.ABILITY_AWAKENING_BUCKET.get(eff, "buff")
+				match bucket:
+					"buff":
+						h.ability_cooldown = max(0, h.ability_cooldown - GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION)
+					"single_dmg":
+						for m3 in monsters:
+							m3["dmg"] = float(m3["dmg"]) * 0.97
+					"aoe_dmg":
+						state["dodge"] = min(0.6, float(state["dodge"]) + 0.08)
+					"support":
+						var shields4: Dictionary = state["hero_shields"]
+						shields4[h.id] = float(shields4.get(h.id, 0.0)) + max_hp(h) * 0.15
+					"utility":
+						state["escalate"] = float(state["escalate"]) + 0.02
 
 	if float(state["kill_shield"]) > 0.0:
 		var got_kill := false
