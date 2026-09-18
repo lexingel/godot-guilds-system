@@ -2175,7 +2175,14 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			if not GameState.state_changed.is_connected(render):
 				GameState.state_changed.connect(render)
 			_combat_animating = false
-			render()
+			# The player may have navigated away (e.g. opened Settings) while
+			# this was still animating — render() rebuilds whatever `screen`
+			# currently is via _clear_root(), which would tear down that other
+			# screen's controls out from under an in-flight click (the "Back"
+			# button in Settings eating its own click). Only rebuild if we're
+			# still looking at the combat screen this animation belongs to.
+			if screen == "rift_run":
+				render()
 		))
 		bottom_row.add_child(_icon_button("res://assets/skills/wing.png", "Retreat", func():
 			# Same guard as Resolve Round: retreating while a round's animation
@@ -2192,7 +2199,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			if not GameState.state_changed.is_connected(render):
 				GameState.state_changed.connect(render)
 			_combat_animating = false
-			render()
+			# Same reasoning as Resolve Round above: don't stomp a screen the
+			# player has since navigated to.
+			if screen == "rift_run":
+				render()
 		))
 		menu.add_child(bottom_row)
 		battle_col.add_child(menu_panel)
