@@ -714,6 +714,18 @@ func current_node_kind() -> String:
 	return chosen.get(int(run.get("pos", 0)), "")
 
 
+## Rolls the battle backdrop the moment a fresh combat node is stood on
+## (called from the pre-engage screen), rather than leaving it to
+## Combat.start_combat() at Engage time — so the "encounter awaits" screen
+## and the arena you fight in are the same room instead of a jarring swap.
+func ensure_combat_bg() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	if ns.has("bg_idx") or ns.has("combat_state"):
+		return
+	ns["bg_idx"] = randi() % GameData.BATTLE_BACKGROUNDS.size()
+	run["node_state"] = ns
+
+
 func engage_node() -> void:
 	var diff := _diff()
 	var party: Array[Hero] = []
@@ -722,6 +734,9 @@ func engage_node() -> void:
 		return
 	var kind := current_node_kind()
 	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
+	var prior_bg_idx := int(run["node_state"].get("bg_idx", -1))
+	if prior_bg_idx >= 0:
+		state["background_idx"] = prior_bg_idx
 	for m in state["monsters"]:
 		# Boss names are generated as "Vaelith, Lesser Warden" — split off the
 		# difficulty suffix so the same boss counts as seen regardless of tier.

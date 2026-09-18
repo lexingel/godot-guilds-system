@@ -1820,6 +1820,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var is_boss := kind == "boss"
 
 	if not ns.has("combat_state") and not ns.has("result"):
+		GameState.ensure_combat_bg()
+		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
+		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], 700, 220))
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
 		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", "Engage", func():
@@ -2333,6 +2336,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 func _render_shop_node(v: VBoxContainer) -> void:
 	GameState.ensure_shop_offers()
 	var ns: Dictionary = GameState.run["node_state"]
+	v.add_child(_banner(GameData.SHOP_BG, 700, 190))
 	v.add_child(_label("Rift Hallway Shop"))
 	var offers: Array = ns["offers"]
 	var grid := GridContainer.new()
@@ -2538,15 +2542,16 @@ func _render_terminal(v: VBoxContainer) -> void:
 		_: _render_roster(v)
 
 
-## The guild hub: a camp scene with one clickable icon-button per section,
-## replacing the old plain row of tab buttons. Buttons are placed with
-## explicit positions over the background the same way the battle arena
-## places its sprites (a plain Control, not a layout Container).
+## The guild hub: a camp scene with one clickable hotspot per section, all
+## 11 destinations placed on props drawn directly in the background art —
+## no separate button grid. Hotspots are placed with explicit positions over
+## the background the same way the battle arena places its sprites (a plain
+## Control, not a layout Container).
 func _render_camp(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Name", 12, true))
 	v.add_child(_label(GameState.guild_name, 20))
 
-	var camp_size := Vector2(700, 340)
+	var camp_size := Vector2(760, 480)
 	var camp := Control.new()
 	camp.custom_minimum_size = camp_size
 
@@ -2558,64 +2563,43 @@ func _render_camp(v: VBoxContainer) -> void:
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	camp.add_child(bg)
 
-	# 5 of the 6 sections click on a prop already drawn in the background art
-	# itself (no separate icon layered on top) — rect positions hand-picked
-	# against camp_bg.png: the angled green tent lower-left (Medical Bay),
-	# the pointy green tent above it (Roster), the crossed swords near the
-	# banners (Inventory), the campfire (Hero Recruits), and the lighter tan
-	# tent on the right (Guild Management). Rift Hall has no matching prop in
-	# the scene, so it keeps its own generated portal icon.
-	# hit_rect is the generous, easy-to-click area; native_rect is the prop's
-	# own tight bounds *in the source 320x200 camp_bg.png* — used only to
-	# place the hover glow over the object's actual silhouette rather than
-	# the whole padded hitbox.
+	# Every destination clicks on a prop drawn in the background art itself —
+	# rect positions hand-picked against camp_bg.png's native 360x228 canvas:
+	# medic tent (Medical Bay), barracks tent (Roster), notice board (Guild
+	# Board), map table (Rift Map), crates (Inventory), portal arch (Rift
+	# Hall), command tent (Guild Management), campfire (Hero Recruits),
+	# book stand (Bestiary), skull shrine (Compendium), forge brazier
+	# (Crafting Hall). Rects are in that native space; camp_scale below blows
+	# them up to the display size for both the hitbox and the hover glow —
+	# unlike the old 5-prop version there's no separate tighter native_rect,
+	# since these were eyeballed directly against the new art at native size.
 	var area_entries := [
-		["Medical Bay", Rect2(14, 132, 171, 98), Rect2(18, 80, 72, 46), func(): term_tab = "medical"; render()],
-		["Roster", Rect2(182, 99, 132, 60), Rect2(83, 58, 61, 36), func(): term_tab = "roster"; render()],
-		["Inventory", Rect2(376, 111, 62, 42), Rect2(160, 58, 35, 32), func(): term_tab = "inventory"; render()],
-		["Hero Recruits", Rect2(314, 193, 94, 79), Rect2(143, 113, 45, 48), func(): term_tab = "recruits"; render()],
-		["Guild Management", Rect2(459, 105, 117, 76), Rect2(210, 62, 54, 45), func(): term_tab = "management"; render()],
+		["Roster", Rect2(35, 15, 130, 80), func(): term_tab = "roster"; render()],
+		["Medical Bay", Rect2(0, 70, 165, 95), func(): term_tab = "medical"; render()],
+		["Guild Board", Rect2(150, 5, 45, 95), func(): term_tab = "quests"; render()],
+		["Inventory", Rect2(195, 35, 30, 50), func(): term_tab = "inventory"; render()],
+		["Rift Hall", Rect2(225, 5, 65, 90), func(): screen = "rift_hall"; render()],
+		["Guild Management", Rect2(270, 90, 90, 110), func(): term_tab = "management"; render()],
+		["Hero Recruits", Rect2(160, 95, 55, 70), func(): term_tab = "recruits"; render()],
+		["Bestiary", Rect2(95, 155, 70, 50), func(): term_tab = "bestiary"; render()],
+		["Compendium", Rect2(165, 148, 40, 70), func(): term_tab = "compendium"; render()],
+		["Crafting Hall", Rect2(225, 143, 45, 72), func(): screen = "crafting_hall"; render()],
+		["Rift Map", Rect2(280, 155, 30, 60), func(): screen = "rift_map"; render()],
 	]
-	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	var camp_scale := camp_size / Vector2(360, 228)
 	for entry in area_entries:
 		var label_text: String = entry[0]
-		var rect: Rect2 = entry[1]
-		var native_rect: Rect2 = entry[2]
-		var cb: Callable = entry[3]
-		var glow_rect := Rect2(
+		var native_rect: Rect2 = entry[1]
+		var cb: Callable = entry[2]
+		var rect := Rect2(
 			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
 			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
 		)
-		var hotspot := _camp_area_hotspot(rect, glow_rect, label_text, cb)
+		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb)
 		hotspot.position = rect.position
 		camp.add_child(hotspot)
 
 	v.add_child(camp)
-
-	# These 6 destinations have no matching background prop to hand-place a
-	# hit_rect against (unlike Medical Bay/Roster/Inventory/Recruits/
-	# Management above), so they used to sit as free-floating icons crammed
-	# into one row along the scene's open ground — with 6 icons + captions at
-	# an 80px pitch, that row ran out of room and started colliding with
-	# itself. A plain button grid below the scene has all the room it needs
-	# and grows to a 3rd row cleanly if a 7th destination is ever added.
-	var nav_grid := GridContainer.new()
-	nav_grid.columns = 3
-	nav_grid.add_theme_constant_override("h_separation", 8)
-	nav_grid.add_theme_constant_override("v_separation", 8)
-	var nav_entries := [
-		["Rift Hall", GameData.CAMP_HUB_ICON_PATH["rift"], func(): screen = "rift_hall"; render()],
-		["Rift Map", GameData.CAMP_HUB_ICON_PATH["rift_map"], func(): screen = "rift_map"; render()],
-		["Bestiary", GameData.CAMP_HUB_ICON_PATH["bestiary"], func(): term_tab = "bestiary"; render()],
-		["Crafting Hall", GameData.CAMP_HUB_ICON_PATH["crafting"], func(): screen = "crafting_hall"; render()],
-		["Compendium", GameData.CAMP_HUB_ICON_PATH["compendium"], func(): term_tab = "compendium"; render()],
-		["Guild Board", GameData.CAMP_HUB_ICON_PATH["quests"], func(): term_tab = "quests"; render()],
-	]
-	for entry in nav_entries:
-		var btn := _icon_button(entry[1], entry[0], entry[2])
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		nav_grid.add_child(btn)
-	v.add_child(nav_grid)
 
 
 ## An invisible clickable region over a prop already drawn in the background
