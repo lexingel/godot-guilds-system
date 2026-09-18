@@ -1386,6 +1386,9 @@ const SUBCLASS_PORTRAIT_PATH := {
 	"nightblade": "res://assets/heroes/subclass/nightblade.png",
 	"wraithstep": "res://assets/heroes/subclass/wraithstep.png",
 	"duskrunner": "res://assets/heroes/subclass/duskrunner.png",
+	"rift-eclipsed-warden": "res://assets/heroes/subclass/rift-eclipsed-warden.png",
+	"last-light-martyr": "res://assets/heroes/subclass/last-light-martyr.png",
+	"the-final-cut": "res://assets/heroes/subclass/the-final-cut.png",
 }
 ## AI-generated combat animation frames (5 each: frame 0 is the static portrait,
 ## 1-4 are the motion). Only combos that actually produced usable motion exist —
