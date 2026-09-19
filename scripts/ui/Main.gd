@@ -10,7 +10,7 @@ extends Control
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
 
-var screen: String = "onboard"     # onboard | rift_hall | rift_map | party_assembly | rift_run | terminal | crafting_hall | settings
+var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | rift_map | party_assembly | rift_run | terminal | crafting_hall | settings
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests
 var pending_crest: int = 1
 var pending_party: Array[String] = []
@@ -44,12 +44,12 @@ func _ready() -> void:
 	AudioManager.set_music_volume(GameState.music_volume)
 	AudioManager.set_sfx_volume(GameState.sfx_volume)
 	_apply_resolution(GameState.resolution_idx)
-	if not GameState.load_save():
-		GameState.reset()
-	if GameState.guild_name != "":
-		screen = "terminal" if GameState.run.is_empty() else "rift_run"
-	else:
-		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
+	# Deliberately doesn't load_save()/reset() or route past "title" here —
+	# every boot lands on the title screen now (New Game/Load Game/Credits/
+	# Quit) regardless of whether the active slot has a guild in it, matching
+	# the reference title screen rather than auto-resuming. New Game and Load
+	# Game both route through _switch_slot(), which is what actually loads
+	# (or resets) a slot's state once the player picks one.
 	GameState.state_changed.connect(render)
 	render()
 
@@ -652,7 +652,7 @@ func render() -> void:
 	_clear_root()
 	var outer := _vbox(10)
 	root.add_child(outer)
-	if screen != "onboard":
+	if screen not in ["title", "load_game", "credits", "onboard"]:
 		_topbar(outer, _breadcrumb_for_screen())
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
@@ -671,6 +671,9 @@ func render() -> void:
 	scroll.add_child(v)
 
 	match screen:
+		"title": _render_title(v)
+		"load_game": _render_load_game(v)
+		"credits": _render_credits(v)
 		"onboard": _render_onboard(v)
 		"rift_hall": _render_rift_hall(v)
 		"rift_map": _render_rift_map_hub(v)
@@ -826,6 +829,76 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	if breadcrumb != "":
 		container.add_child(_label(breadcrumb, 12, true))
 	container.add_child(_hsep())
+
+
+# ---------------- Title ----------------
+## The very first thing every boot shows now (see _ready()) — New Game finds
+## the first empty save slot and jumps straight into founding a guild there,
+## or falls back to the slot list if all 3 are full so the player picks one
+## to overwrite. Load Game and Credits are their own screens; Quit is hidden
+## on Web (a browser tab can't close itself, and Godot's own quit() there
+## just does nothing visible — see _apply_resolution's identical OS.has_feature
+## gate for the same "web owns this, not us" reasoning).
+func _render_title(v: VBoxContainer) -> void:
+	v.add_child(_banner(GameData.TITLE_BG, 760, 320))
+
+	var title_lbl := _label("Guild System", 30)
+	title_lbl.add_theme_font_override("font", DISPLAY_FONT)
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(title_lbl)
+	v.add_child(_hsep())
+
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var menu := _vbox(8)
+	menu.custom_minimum_size.x = 280
+	menu.add_child(_icon_domain_button("violet", "", "New Game", func():
+		for i in GameState.SLOT_COUNT:
+			if GameState.slot_summary(i).get("empty", true):
+				_switch_slot(i)
+				return
+		screen = "load_game"
+		render()
+	))
+	menu.add_child(_button("Load Game", func():
+		screen = "load_game"
+		render()
+	))
+	menu.add_child(_button("Credits", func():
+		screen = "credits"
+		render()
+	))
+	if not OS.has_feature("web"):
+		menu.add_child(_button("Quit", func():
+			get_tree().quit()
+		))
+	center.add_child(menu)
+	v.add_child(center)
+
+
+func _render_load_game(v: VBoxContainer) -> void:
+	v.add_child(_label("Load Game", 20))
+	_render_slot_list(v)
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
+		screen = "title"
+		render()
+	))
+
+
+func _render_credits(v: VBoxContainer) -> void:
+	v.add_child(_label("Credits", 20))
+	v.add_child(_label("Guild System", 18))
+	v.add_child(_wrap_label("A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.", 13, true))
+	v.add_child(_hsep())
+	v.add_child(_label("Built with Godot Engine 4.7", 13))
+	v.add_child(_label("Pixel art generated with PixelLab", 13))
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
+		screen = "title"
+		render()
+	))
 
 
 # ---------------- Onboard ----------------
@@ -3325,6 +3398,20 @@ func _render_settings(v: VBoxContainer) -> void:
 
 	v.add_child(_hsep())
 	v.add_child(_label("Save Slots", 15))
+	_render_slot_list(v)
+
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
+		screen = _pre_settings_screen
+		render()
+	))
+
+
+## Shared by Settings' "Save Slots" section and the title screen's Load Game
+## list — same slot rows (Play/Delete), just embedded in two different
+## screens, so the delayed delete-confirm timeout's render() gate has to
+## check "whichever of them is still showing", not one hardcoded screen name.
+func _render_slot_list(v: VBoxContainer) -> void:
 	for slot in GameState.SLOT_COUNT:
 		var summary := GameState.slot_summary(slot)
 		var is_active := slot == GameState.active_slot
@@ -3348,7 +3435,7 @@ func _render_settings(v: VBoxContainer) -> void:
 						get_tree().create_timer(3.0).timeout.connect(func():
 							if confirm_delete_slot == s:
 								confirm_delete_slot = -1
-								if screen == "settings":
+								if screen == "settings" or screen == "load_game":
 									render()
 						)
 						return
@@ -3357,12 +3444,6 @@ func _render_settings(v: VBoxContainer) -> void:
 					render()
 				))
 		v.add_child(_info_row(text, 13, actions))
-
-	v.add_child(_hsep())
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
-		screen = _pre_settings_screen
-		render()
-	))
 
 
 func _render_management(v: VBoxContainer) -> void:
