@@ -596,6 +596,22 @@ func _title_strip(text: String) -> PanelContainer:
 	return p
 
 
+## A brief violet flash over the whole screen the instant a rift run begins —
+## echoes the Rift Hall's own portal color, so "stepping through" reads as
+## one deliberate beat instead of the screen just quietly changing under you.
+## Called right after render() has already built the new rift_run screen, so
+## it fades out ON TOP of the arrival rather than covering a blank frame.
+func _play_rift_entry_flash() -> void:
+	var flash := ColorRect.new()
+	flash.color = Color(0.56, 0.24, 0.86, 1.0)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(flash)
+	var flash_tw := create_tween()
+	flash_tw.tween_property(flash, "color:a", 0.0, 0.45).set_ease(Tween.EASE_OUT)
+	flash_tw.tween_callback(flash.queue_free)
+
+
 func render() -> void:
 	GameState.resolve_recovery()
 	GameState.resolve_rift_map()
@@ -622,7 +638,8 @@ func render() -> void:
 	# time — jarring on a long screen. Carry it over whenever we're rebuilding
 	# the SAME screen/tab; only a real navigation resets to the top.
 	var render_key := "%s|%s" % [screen, term_tab]
-	if render_key == _last_render_key:
+	var is_navigation := render_key != _last_render_key
+	if not is_navigation:
 		for c in root.get_children():
 			if c is VBoxContainer:
 				for cc in c.get_children():
@@ -663,6 +680,15 @@ func render() -> void:
 		"settings": _render_settings(v)
 		"terminal": _render_terminal(v)
 	_update_screen_music()
+
+	# A real navigation (not an in-place data refresh — see is_navigation
+	# above) fades the new screen in from transparent instead of just
+	# snapping into place, so moving between hubs reads as one continuous
+	# world instead of a slideshow of unrelated pages.
+	if is_navigation:
+		root.modulate = Color(1, 1, 1, 0)
+		var fade_tw := create_tween()
+		fade_tw.tween_property(root, "modulate:a", 1.0, 0.18).set_ease(Tween.EASE_OUT)
 
 
 ## Only 2 music tracks are planned for now (combat, camp — see the Suno plan
@@ -1144,6 +1170,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		_pending_map_slot_idx = -1
 		screen = "rift_run"
 		render()
+		_play_rift_entry_flash()
 	))
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
 		screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
