@@ -2592,64 +2592,103 @@ func _render_terminal(v: VBoxContainer) -> void:
 		_: _render_roster(v)
 
 
-## The guild hub: a camp scene with one clickable hotspot per section, all
-## 11 destinations placed on props drawn directly in the background art —
-## no separate button grid. Hotspots are placed with explicit positions over
-## the background the same way the battle arena places its sprites (a plain
-## Control, not a layout Container).
+## The guild hub: a purely atmospheric campfire banner (looping ember
+## particles, no clickable content on it) sitting above one consistent grid
+## of icon cards — one per destination. Replaces the painted-scene-of-
+## hotspots version: that approach forced 2 of the 11 props into roles their
+## art didn't actually read as (a candle standing in for "Rift Map", a small
+## brazier for "Crafting Hall"), and busy always-on captions scattered across
+## one image looked cluttered rather than inviting. Every card here reuses
+## the same already-established, already-good icon art (CAMP_HUB_ICON_PATH),
+## so nothing about this screen depends on prop art matching its label.
 func _render_camp(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Name", 12, true))
 	v.add_child(_label(GameState.guild_name, 20))
 
-	var camp_size := Vector2(760, 480)
-	var camp := Control.new()
-	camp.custom_minimum_size = camp_size
+	const BANNER_SIZE := Vector2(700, 200)
+	var banner := _banner(GameData.CAMP_BG, BANNER_SIZE.x, BANNER_SIZE.y)
+	v.add_child(banner)
+	_start_ember_loop(banner, BANNER_SIZE)
 
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.CAMP_BG)
-	bg.custom_minimum_size = camp_size
-	bg.size = camp_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	camp.add_child(bg)
-
-	# Every destination clicks on a prop drawn in the background art itself —
-	# rect positions hand-picked against camp_bg.png's native 360x228 canvas:
-	# medic tent (Medical Bay), barracks tent (Roster), notice board (Guild
-	# Board), map table (Rift Map), crates (Inventory), portal arch (Rift
-	# Hall), command tent (Guild Management), campfire (Hero Recruits),
-	# book stand (Bestiary), skull shrine (Compendium), forge brazier
-	# (Crafting Hall). Rects are in that native space; camp_scale below blows
-	# them up to the display size for both the hitbox and the hover glow —
-	# unlike the old 5-prop version there's no separate tighter native_rect,
-	# since these were eyeballed directly against the new art at native size.
-	var area_entries := [
-		["Roster", Rect2(35, 15, 130, 80), func(): term_tab = "roster"; render()],
-		["Medical Bay", Rect2(0, 70, 165, 95), func(): term_tab = "medical"; render()],
-		["Guild Board", Rect2(150, 5, 45, 95), func(): term_tab = "quests"; render()],
-		["Inventory", Rect2(195, 35, 30, 50), func(): term_tab = "inventory"; render()],
-		["Rift Hall", Rect2(225, 5, 65, 90), func(): screen = "rift_hall"; render()],
-		["Guild Management", Rect2(270, 90, 90, 110), func(): term_tab = "management"; render()],
-		["Hero Recruits", Rect2(160, 95, 55, 70), func(): term_tab = "recruits"; render()],
-		["Bestiary", Rect2(95, 155, 70, 50), func(): term_tab = "bestiary"; render()],
-		["Compendium", Rect2(165, 148, 40, 70), func(): term_tab = "compendium"; render()],
-		["Crafting Hall", Rect2(225, 143, 45, 72), func(): screen = "crafting_hall"; render()],
-		["Rift Map", Rect2(280, 155, 30, 60), func(): screen = "rift_map"; render()],
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	var hub_entries := [
+		["Roster", GameData.CAMP_HUB_ICON_PATH["roster"], func(): term_tab = "roster"; render()],
+		["Medical Bay", GameData.CAMP_HUB_ICON_PATH["medical"], func(): term_tab = "medical"; render()],
+		["Inventory", GameData.CAMP_HUB_ICON_PATH["inventory"], func(): term_tab = "inventory"; render()],
+		["Hero Recruits", GameData.CAMP_HUB_ICON_PATH["recruits"], func(): term_tab = "recruits"; render()],
+		["Guild Management", GameData.CAMP_HUB_ICON_PATH["management"], func(): term_tab = "management"; render()],
+		["Rift Hall", GameData.CAMP_HUB_ICON_PATH["rift"], func(): screen = "rift_hall"; render()],
+		["Rift Map", GameData.CAMP_HUB_ICON_PATH["rift_map"], func(): screen = "rift_map"; render()],
+		["Bestiary", GameData.CAMP_HUB_ICON_PATH["bestiary"], func(): term_tab = "bestiary"; render()],
+		["Crafting Hall", GameData.CAMP_HUB_ICON_PATH["crafting"], func(): screen = "crafting_hall"; render()],
+		["Compendium", GameData.CAMP_HUB_ICON_PATH["compendium"], func(): term_tab = "compendium"; render()],
+		["Guild Board", GameData.CAMP_HUB_ICON_PATH["quests"], func(): term_tab = "quests"; render()],
 	]
-	var camp_scale := camp_size / Vector2(360, 228)
-	for entry in area_entries:
-		var label_text: String = entry[0]
-		var native_rect: Rect2 = entry[1]
-		var cb: Callable = entry[2]
-		var rect := Rect2(
-			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
-			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
-		)
-		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb)
-		hotspot.position = rect.position
-		camp.add_child(hotspot)
+	for entry in hub_entries:
+		grid.add_child(_hub_card(entry[1], entry[0], entry[2]))
+	v.add_child(grid)
 
-	v.add_child(camp)
+
+## An icon-on-top/label-below card, styled with the game's existing
+## parchment-and-ember panel art (the same CardPanelEmber texture the shop
+## and victory screens already use) rather than a plain row button — same
+## layered visual+click-catcher composition as _camp_area_hotspot (a Panel
+## for looks, a flat Button on top for the actual click).
+func _hub_card(icon_path: String, label_text: String, cb: Callable) -> Control:
+	const CARD_SIZE := Vector2(164, 104)
+	var wrap := Control.new()
+	wrap.custom_minimum_size = CARD_SIZE
+
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelEmber"
+	panel.size = CARD_SIZE
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cv := _vbox(6)
+	cv.alignment = BoxContainer.ALIGNMENT_CENTER
+	var icon_wrap := CenterContainer.new()
+	icon_wrap.add_child(_icon(icon_path, 44))
+	cv.add_child(icon_wrap)
+	var lbl := _label(label_text, 13)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	cv.add_child(lbl)
+	panel.add_child(cv)
+	wrap.add_child(panel)
+
+	var btn := _button("", cb)
+	btn.flat = true
+	btn.size = CARD_SIZE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	wrap.add_child(btn)
+	return wrap
+
+
+## A continuous rising-ember loop over the camp banner — the bit of ambient
+## motion the earlier static painted scene didn't have. Unlike
+## _spawn_impact_particles (one-shot, self-cleaning after combat), this
+## keeps emitting for as long as the banner exists; render()'s _clear_root()
+## frees it along with everything else the next time the screen rebuilds, so
+## there's nothing to stop manually. `preprocess` seeds it already mid-flight
+## on first render instead of every ember popping in from the bottom at once.
+func _start_ember_loop(parent: Control, area_size: Vector2) -> void:
+	var p := CPUParticles2D.new()
+	p.position = Vector2(area_size.x * 0.5, area_size.y * 0.88)
+	p.emitting = true
+	p.amount = 18
+	p.lifetime = 2.4
+	p.preprocess = 2.4
+	p.direction = Vector2(0, -1)
+	p.spread = 20.0
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 20.0
+	p.gravity = Vector2(0, -4)
+	p.scale_amount_min = 1.2
+	p.scale_amount_max = 2.4
+	p.color = Palette.EMBER_BRIGHT
+	parent.add_child(p)
 
 
 ## An invisible clickable region over a prop already drawn in the background
