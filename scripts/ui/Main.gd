@@ -1622,6 +1622,28 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
 	l.queue_free()
 
 
+## A colored particle burst on the caster keyed to their Active Ability's
+## Awakening bucket (buff/single_dmg/aoe_dmg/support/utility — the same
+## grouping GameData.ABILITY_AWAKENING_BUCKET already sorts all 18 effect ids
+## into). Gives the 18 different Active Abilities some visual distinction
+## beyond the one shared generic "skill" attack/flash animation, without
+## needing 18 bespoke sprite frames — every color here is an existing
+## Palette token reused for a new purpose, matching ELEMENT_PARTICLE_COLOR's
+## own convention.
+const ABILITY_BUCKET_COLOR := {
+	"buff": Palette.COINS,
+	"single_dmg": Palette.EMBER_DANGER,
+	"aoe_dmg": Palette.ELITE,
+	"support": Palette.RANK_E,
+	"utility": Palette.TOKENS,
+}
+func _spawn_ability_bucket_burst(pool_id: String, wrapper: Control) -> void:
+	var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(pool_id, {})
+	var bucket: String = GameData.ABILITY_AWAKENING_BUCKET.get(str(ab.get("effect", "")), "buff")
+	var color: Color = ABILITY_BUCKET_COLOR.get(bucket, Color(1, 1, 1))
+	_spawn_impact_particles(wrapper, wrapper.custom_minimum_size * 0.5, color, bucket in ["aoe_dmg", "single_dmg"])
+
+
 ## Plays out one round's visible consequences on the *live* nodes from the
 ## current render() pass (portraits/wrappers built moments ago in
 ## _render_combat_node) before the caller calls render() again, which would
@@ -1670,6 +1692,7 @@ func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dicti
 				await _play_frames(hero_rects[h.id], frames)
 			else:
 				await _tween_skill_flash(hero_wrappers[h.id])
+			_spawn_ability_bucket_burst(h.pool_id, hero_wrappers[h.id])
 		elif action == "defend":
 			await _tween_defend(hero_wrappers[h.id])
 
