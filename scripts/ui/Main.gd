@@ -12,6 +12,7 @@ const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
 
 var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | rift_map | party_assembly | rift_run | terminal | crafting_hall | settings
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests
+var hub_cluster: String = ""       # "" = camp scene shown; else one of the multi-destination buildings' picker is showing (see _render_hub_cluster)
 var pending_crest: int = 1
 var pending_party: Array[String] = []
 var pending_relic_options: Array = []
@@ -665,9 +666,11 @@ func render() -> void:
 	scroll.set_deferred("scroll_vertical", _last_scroll_y)
 	var v := _vbox(14)
 	# Rift Run gets extra width for the combat arena (background + positioned
-	# sprites) sitting alongside the log/action column — every other screen
-	# stays at the original column width.
-	v.custom_minimum_size = Vector2(940 if screen == "rift_run" else 760, 0)
+	# sprites) sitting alongside the log/action column, and the camp hub
+	# needs room for its 6-building scene — every other screen stays at the
+	# original column width.
+	var is_camp_scene := screen == "terminal" and term_tab == "camp" and hub_cluster == ""
+	v.custom_minimum_size = Vector2(940 if screen == "rift_run" else (800 if is_camp_scene else 760), 0)
 	scroll.add_child(v)
 
 	match screen:
@@ -2665,44 +2668,110 @@ func _render_terminal(v: VBoxContainer) -> void:
 		_: _render_roster(v)
 
 
-## The guild hub: a purely atmospheric campfire banner (looping ember
-## particles, no clickable content on it) sitting above one consistent grid
-## of icon cards — one per destination. Replaces the painted-scene-of-
-## hotspots version: that approach forced 2 of the 11 props into roles their
-## art didn't actually read as (a candle standing in for "Rift Map", a small
-## brazier for "Crafting Hall"), and busy always-on captions scattered across
-## one image looked cluttered rather than inviting. Every card here reuses
-## the same already-established, already-good icon art (CAMP_HUB_ICON_PATH),
-## so nothing about this screen depends on prop art matching its label.
+## The guild hub: 6 large, distinct painted buildings (Darkest-Dungeon-style
+## reference) instead of either the earlier 11-tiny-prop scene (2 props got
+## stuck standing in for destinations their art didn't read as) or the
+## card-grid that replaced it (functional, but flat/impersonal). Fewer,
+## bigger objects fixes what the first attempt got wrong: every building
+## here is large enough to render with a real distinct silhouette. A
+## building that covers more than one destination (Command Tent, Rift Gate,
+## Trading Post, Scholar's Lodge) opens a small in-place picker
+## (_render_hub_cluster) instead of needing precise sub-hotspots on the
+## painted art — sidesteps the exact coordinate-precision problem that
+## caused the mismatched props last time.
 func _render_camp(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Name", 12, true))
 	v.add_child(_label(GameState.guild_name, 20))
 
-	const BANNER_SIZE := Vector2(700, 200)
-	var banner := _banner(GameData.CAMP_BG, BANNER_SIZE.x, BANNER_SIZE.y)
-	v.add_child(banner)
-	_start_ember_loop(banner, BANNER_SIZE)
+	if hub_cluster != "":
+		_render_hub_cluster(v)
+		return
 
-	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
-	var hub_entries := [
-		["Roster", GameData.CAMP_HUB_ICON_PATH["roster"], func(): term_tab = "roster"; render()],
-		["Medical Bay", GameData.CAMP_HUB_ICON_PATH["medical"], func(): term_tab = "medical"; render()],
-		["Inventory", GameData.CAMP_HUB_ICON_PATH["inventory"], func(): term_tab = "inventory"; render()],
-		["Hero Recruits", GameData.CAMP_HUB_ICON_PATH["recruits"], func(): term_tab = "recruits"; render()],
-		["Guild Management", GameData.CAMP_HUB_ICON_PATH["management"], func(): term_tab = "management"; render()],
-		["Rift Hall", GameData.CAMP_HUB_ICON_PATH["rift"], func(): screen = "rift_hall"; render()],
-		["Rift Map", GameData.CAMP_HUB_ICON_PATH["rift_map"], func(): screen = "rift_map"; render()],
-		["Bestiary", GameData.CAMP_HUB_ICON_PATH["bestiary"], func(): term_tab = "bestiary"; render()],
-		["Crafting Hall", GameData.CAMP_HUB_ICON_PATH["crafting"], func(): screen = "crafting_hall"; render()],
-		["Compendium", GameData.CAMP_HUB_ICON_PATH["compendium"], func(): term_tab = "compendium"; render()],
-		["Guild Board", GameData.CAMP_HUB_ICON_PATH["quests"], func(): term_tab = "quests"; render()],
+	const SCENE_SIZE := Vector2(800, 368)
+	var scene := Control.new()
+	scene.custom_minimum_size = SCENE_SIZE
+
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.CAMP_BG)
+	bg.custom_minimum_size = SCENE_SIZE
+	bg.size = SCENE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+
+	# Rect positions hand-picked against camp_bg.png's native 400x184 canvas,
+	# scaled up to SCENE_SIZE below. Command Tent/Rift Gate/Trading
+	# Post/Scholar's Lodge each cover several destinations and set
+	# hub_cluster instead of navigating directly.
+	var area_entries := [
+		["Scholar's Lodge", Rect2(0, 95, 90, 60), func(): hub_cluster = "scholars_lodge"; render()],
+		["Medical Tent", Rect2(90, 90, 105, 65), func(): term_tab = "medical"; render()],
+		["Hero Recruits", Rect2(185, 95, 55, 73), func(): term_tab = "recruits"; render()],
+		["Rift Gate", Rect2(235, 75, 63, 87), func(): hub_cluster = "rift_gate"; render()],
+		["Trading Post", Rect2(298, 95, 60, 60), func(): hub_cluster = "trading_post"; render()],
+		["Command Tent", Rect2(358, 75, 42, 80), func(): hub_cluster = "command"; render()],
 	]
-	for entry in hub_entries:
-		grid.add_child(_hub_card(entry[1], entry[0], entry[2]))
-	v.add_child(grid)
+	var scene_scale := SCENE_SIZE / Vector2(400, 184)
+	for entry in area_entries:
+		var label_text: String = entry[0]
+		var native_rect: Rect2 = entry[1]
+		var cb: Callable = entry[2]
+		var rect := Rect2(
+			native_rect.position.x * scene_scale.x, native_rect.position.y * scene_scale.y,
+			native_rect.size.x * scene_scale.x, native_rect.size.y * scene_scale.y
+		)
+		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb)
+		hotspot.position = rect.position
+		scene.add_child(hotspot)
+
+	var fire_native_pos := Vector2(185 + 55 * 0.5, 95 + 73 * 0.85)
+	_start_ember_loop(scene, fire_native_pos * scene_scale)
+	v.add_child(scene)
+
+
+## The small in-place picker a multi-destination building opens instead of
+## navigating straight away — reuses _hub_card for visual consistency with
+## anything else card-styled in the game.
+func _render_hub_cluster(v: VBoxContainer) -> void:
+	var title := ""
+	var entries: Array = []
+	match hub_cluster:
+		"command":
+			title = "Command Tent"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["roster"], "Roster", func(): hub_cluster = ""; term_tab = "roster"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
+			]
+		"rift_gate":
+			title = "Rift Gate"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["rift"], "Rift Hall", func(): hub_cluster = ""; screen = "rift_hall"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["rift_map"], "Rift Map", func(): hub_cluster = ""; screen = "rift_map"; render()],
+			]
+		"trading_post":
+			title = "Trading Post"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["inventory"], "Inventory", func(): hub_cluster = ""; term_tab = "inventory"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting Hall", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
+			]
+		"scholars_lodge":
+			title = "Scholar's Lodge"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["bestiary"], "Bestiary", func(): hub_cluster = ""; term_tab = "bestiary"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Compendium", func(): hub_cluster = ""; term_tab = "compendium"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["quests"], "Guild Board", func(): hub_cluster = ""; term_tab = "quests"; render()],
+			]
+	v.add_child(_label(title, 18))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	for entry in entries:
+		row.add_child(_hub_card(entry[0], entry[1], entry[2]))
+	v.add_child(row)
+	v.add_child(_hsep())
+	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
+		hub_cluster = ""
+		render()
+	))
 
 
 ## An icon-on-top/label-below card, styled with the game's existing
@@ -2739,16 +2808,17 @@ func _hub_card(icon_path: String, label_text: String, cb: Callable) -> Control:
 	return wrap
 
 
-## A continuous rising-ember loop over the camp banner — the bit of ambient
-## motion the earlier static painted scene didn't have. Unlike
-## _spawn_impact_particles (one-shot, self-cleaning after combat), this
-## keeps emitting for as long as the banner exists; render()'s _clear_root()
-## frees it along with everything else the next time the screen rebuilds, so
-## there's nothing to stop manually. `preprocess` seeds it already mid-flight
-## on first render instead of every ember popping in from the bottom at once.
-func _start_ember_loop(parent: Control, area_size: Vector2) -> void:
+## A continuous rising-ember loop at a fixed point (the camp scene's
+## campfire) — the bit of ambient motion a static painted scene doesn't have.
+## Unlike _spawn_impact_particles (one-shot, self-cleaning after combat),
+## this keeps emitting for as long as its parent exists; render()'s
+## _clear_root() frees it along with everything else the next time the
+## screen rebuilds, so there's nothing to stop manually. `preprocess` seeds
+## it already mid-flight on first render instead of every ember popping in
+## from the bottom at once.
+func _start_ember_loop(parent: Control, pos: Vector2) -> void:
 	var p := CPUParticles2D.new()
-	p.position = Vector2(area_size.x * 0.5, area_size.y * 0.88)
+	p.position = pos
 	p.emitting = true
 	p.amount = 18
 	p.lifetime = 2.4
