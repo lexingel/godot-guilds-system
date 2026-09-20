@@ -396,6 +396,16 @@ func load_save() -> bool:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false
 	var data: Dictionary = parsed
+	# A save file can exist on disk for a slot that was never actually
+	# founded (e.g. a stray write while "Name Your Guild" was still open) —
+	# slot_summary() already treats a blank guild_name as "empty" for slot
+	# selection, so this has to agree: otherwise _switch_slot()'s "if not
+	# load_save(): reset()" skips reset() for a slot that looks reusable,
+	# and every field reset() seeds (rift_map among them) is left at its
+	# bare class default — an empty array here, permanently, since nothing
+	# else ever grows it back to size.
+	if String(data.get("guild_name", "")) == "":
+		return false
 	guild_name = data.get("guild_name", "")
 	guild_crest = data.get("guild_crest", 1)
 	next_id = data.get("next_id", 1)
