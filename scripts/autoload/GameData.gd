@@ -6,11 +6,11 @@ extends Node
 ## helps cross-reference the source.
 
 const CLASSES := [
-	{"id": "warrior", "name": "Warrior", "base_hp": 36, "base_dmg": 6, "badge": "W"},
-	{"id": "ranger", "name": "Ranger", "base_hp": 27, "base_dmg": 8, "badge": "R"},
-	{"id": "mage", "name": "Mage", "base_hp": 19, "base_dmg": 11, "badge": "M"},
-	{"id": "cleric", "name": "Cleric", "base_hp": 31, "base_dmg": 5, "badge": "C"},
-	{"id": "rogue", "name": "Rogue", "base_hp": 23, "base_dmg": 9, "badge": "G"},
+	{"id": "warrior", "name": "Warrior", "base_hp": 36, "base_dmg": 6, "base_spd": 8, "badge": "W"},
+	{"id": "ranger", "name": "Ranger", "base_hp": 27, "base_dmg": 8, "base_spd": 12, "badge": "R"},
+	{"id": "mage", "name": "Mage", "base_hp": 19, "base_dmg": 11, "base_spd": 10, "badge": "M"},
+	{"id": "cleric", "name": "Cleric", "base_hp": 31, "base_dmg": 5, "base_spd": 7, "badge": "C"},
+	{"id": "rogue", "name": "Rogue", "base_hp": 23, "base_dmg": 9, "base_spd": 14, "badge": "G"},
 ]
 
 # Item/relic rarity only — heroes and Champions use RANKS below.
@@ -32,11 +32,11 @@ const NEG_TRAITS := ["Frail", "Reckless", "Slothful"]
 # so they flow through Combat.hero_skill_total for free.
 const TRAIT_TABLE := {
 	"Battle-Hardened": {"dmg_pct": 0.1},
-	"Swift": {"dmg_pct": 0.05},
+	"Swift": {"dmg_pct": 0.05, "speed_pct": 0.12},
 	"Iron Skin": {"hp_pct": 0.15},
 	"Frail": {"hp_pct": -0.15},
 	"Reckless": {"dmg_pct": -0.05, "hp_pct": -0.05},
-	"Slothful": {"dmg_pct": -0.1},
+	"Slothful": {"dmg_pct": -0.1, "speed_pct": -0.12},
 	# Role-exclusive double-edged traits (see ROLE_TRAITS below).
 	"Juggernaut": {"hazard_guard_pct": 0.10, "dodge_pct": -0.08},
 	"Deadeye": {"first_round_pct": 0.15, "hp_pct": -0.08},
@@ -208,7 +208,7 @@ const ITEM_CATEGORY_LABEL := {"weapon": "Weapon", "armor": "Armor", "focus": "Fo
 const ITEM_CATEGORY_KINDS := {
 	"weapon": ["dmg_pct", "first_round_pct", "escalate_pct"],
 	"armor": ["hp_pct", "hazard_guard_pct", "mend_pct"],
-	"focus": ["dodge_pct"],
+	"focus": ["dodge_pct", "speed_pct"],
 }
 const ITEM_NOUNS := {
 	"weapon": ["Blade", "Bow", "Staff", "Mace", "Dagger"],
@@ -217,7 +217,7 @@ const ITEM_NOUNS := {
 }
 const ITEM_KIND_BASE := {
 	"dmg_pct": 0.12, "hp_pct": 0.12, "first_round_pct": 0.15, "escalate_pct": 0.04,
-	"mend_pct": 0.06, "hazard_guard_pct": 0.12, "dodge_pct": 0.10,
+	"mend_pct": 0.06, "hazard_guard_pct": 0.12, "dodge_pct": 0.10, "speed_pct": 0.12,
 }
 
 ## Field Incense: a one-shot consumable bought with Coins (not looted, not
@@ -1076,7 +1076,7 @@ const CLASS_POOL := [
 ]
 
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
-const BUILD_KINDS := ["dmg_pct", "hp_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "wipe_guard", "boss_alpha_strike"]
+const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "wipe_guard", "boss_alpha_strike"]
 
 # Guild Management: 4 branches x 4-5 nodes each. Each node's display effect
 # string is computed by Combat.describe_node_effect(node_id, level) — a

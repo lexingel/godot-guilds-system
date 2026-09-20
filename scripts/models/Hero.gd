@@ -32,6 +32,7 @@ var prior_innate_value: float = 0.0
 var stone_bonus_used: Dictionary = {}     # pool_id -> count of bonus SP already granted via GameState.reinforce_hero() at that subclass, capped at GameData.EVOLUTION_STONE_BONUS_SP_CAP
 var base_hp: int
 var base_dmg: int
+var base_spd: int = 10   # turn-order speed — role-based at generation, not level-scaled; see Combat.spd_of
 var trait_name: String = ""      # "" means no trait ("Steadfast")
 var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
 var downed_until: int = 0        # msec timestamp, 0 = not downed
@@ -53,7 +54,7 @@ func to_dict() -> Dictionary:
 		"id": id, "name": name, "cls_id": cls_id, "pool_id": pool_id, "type": type,
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
-		"base_hp": base_hp, "base_dmg": base_dmg, "trait_name": trait_name, "scars": scars,
+		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
 		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
@@ -97,6 +98,7 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.ability_awakened = d.get("ability_awakened", false)
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
+	h.base_spd = d.get("base_spd", 10)
 	h.trait_name = d.get("trait_name", "")
 	h.scars.assign(d.get("scars", []))
 	h.downed_until = d.get("downed_until", 0)

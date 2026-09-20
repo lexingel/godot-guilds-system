@@ -29,7 +29,6 @@ var _last_guild_tier_name: String = ""   # tracks Guild Tier across renders to d
 var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
-var combat_selected_hero_id: String = ""   # which hero's action bar is showing in combat; falls back to the first living hero
 var roster_sort: String = "power"          # "power" | "level" | "rank" — cycled via the Roster tab's Sort button
 var inv_sort: String = "rarity"            # "rarity" | "value" | "name" — cycled via the Inventory tab's Sort button
 var compendium_tab: String = "items"       # "items" | "relics" | "crafting" | "systems"
@@ -1595,7 +1594,7 @@ func _await_or_timeout(sig: Signal, timeout_sec: float) -> void:
 
 ## Frame-swaps `rect.texture` through `frames` once, a short delay between each.
 ## No explicit reset to the resting pose needed — the render() call right after
-## _play_round always rebuilds portraits from the static portrait path anyway.
+## _run_combat_turns always rebuilds portraits from the static portrait path anyway.
 func _play_frames(rect: TextureRect, frames: Array[String], frame_time: float = 0.08) -> void:
 	for path in frames:
 		rect.texture = load(path)
@@ -1688,7 +1687,7 @@ func _tween_victory_pose(wrapper: Control) -> void:
 
 ## A short, fire-and-forget colored particle burst at an impact point — not
 ## awaited by callers, so it plays out in the background without adding to
-## _play_round's own pacing. Reused for both a hero's attack landing on a
+## _play_turn's own pacing. Reused for both a hero's attack landing on a
 ## monster and a monster's retaliation landing on a hero; only the color and
 ## `heavy` (a bigger, faster burst) differ per call site.
 func _spawn_impact_particles(parent: Control, pos: Vector2, color: Color, heavy: bool = false) -> void:
@@ -1797,129 +1796,235 @@ func _spawn_ability_bucket_burst(pool_id: String, wrapper: Control) -> void:
 	_spawn_impact_particles(wrapper, wrapper.custom_minimum_size * 0.5, color, bucket in ["aoe_dmg", "single_dmg"])
 
 
-## Plays out one round's visible consequences on the *live* nodes from the
-## current render() pass (portraits/wrappers built moments ago in
-## _render_combat_node) before the caller calls render() again, which would
-## otherwise tear all of this down mid-animation. Diffs hp before/after
-## GameState.resolve_round_now() to figure out who acted and who got hit,
-## since Combat.resolve_round doesn't return that directly.
-func _play_round(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control) -> void:
+func _hero_by_id(party: Array[Hero], hero_id: String) -> Hero:
+	for h in party:
+		if h.id == hero_id:
+			return h
+	return null
+
+
+## A compact row of icons for the current round's turn order (see
+## Combat._compute_turn_order) — hero portraits and monster sprites in the
+## order they'll act, glowing on the current turn, dimmed once already
+## spent, so "whose turn is it" reads at a glance above the action bar.
+func _turn_order_strip(state: Dictionary) -> Control:
+	var turn_order: Array = state.get("turn_order", [])
+	var turn_idx: int = int(state.get("turn_idx", 0))
 	var party: Array[Hero] = state["party"]
-	var pending: Dictionary = state["pending_actions"].duplicate(true)
+	var monsters: Array = state["monsters"]
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	for i in turn_order.size():
+		var entry: Dictionary = turn_order[i]
+		var is_hero: bool = str(entry["type"]) == "hero"
+		var icon_path := ""
+		if is_hero:
+			var h := _hero_by_id(party, str(entry["id"]))
+			if h:
+				icon_path = GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		else:
+			var mi: int = int(entry["id"])
+			if mi < monsters.size():
+				icon_path = GameData.sprite_for_monster(str(monsters[mi]["name"]))
+		if icon_path == "":
+			continue
+		var is_current := i == turn_idx
+		var tile := PanelContainer.new()
+		var style := StyleBoxFlat.new()
+		style.bg_color = Palette.SURFACE3 if is_current else Palette.SURFACE2
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Palette.EMBER_BRIGHT if is_current else Palette.LINE
+		style.corner_radius_top_left = 5
+		style.corner_radius_top_right = 5
+		style.corner_radius_bottom_left = 5
+		style.corner_radius_bottom_right = 5
+		style.content_margin_left = 2
+		style.content_margin_top = 2
+		style.content_margin_right = 2
+		style.content_margin_bottom = 2
+		tile.add_theme_stylebox_override("panel", style)
+		var icon := _icon_trimmed(icon_path, 28) if is_hero else _icon(icon_path, 28)
+		if i < turn_idx:
+			icon.modulate = Color(1, 1, 1, 0.35)
+		tile.add_child(icon)
+		row.add_child(tile)
+	return row
+
+
+## Plays out one turn's visible consequences (see Combat.resolve_turn) on the
+## *live* nodes from the current render() pass (portraits/wrappers built
+## moments ago in _render_combat_node) before the caller calls render()
+## again, which would otherwise tear all of this down mid-animation. Diffs hp
+## before/after GameState.resolve_turn_now() to figure out what happened,
+## since Combat.resolve_turn doesn't return that directly. Combat.peek_next_turn
+## decides which actor this is (rolling a fresh round first if the previous
+## one just ran out — that's why this can't be a plain parameter the caller
+## peeked earlier: at the moment a round rolls over there's nothing valid to
+## peek until this call itself makes it happen).
+func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control) -> void:
+	var turn: Dictionary = Combat.peek_next_turn(state)
+	var party: Array[Hero] = state["party"]
+	var monsters: Array = state["monsters"]
 	var hp_before: Dictionary = {}
 	for h in party:
 		hp_before[h.id] = h.hp
-	var monsters: Array = state["monsters"]
 	var monster_hp_before: Array = []
 	for m in monsters:
 		monster_hp_before.append(float(m["hp"]))
 
-	# Which hero's elemental type tints the impact particles on a given
-	# monster index — pooled team damage means several heroes can contribute
-	# to the same hit, so this is "whoever the UI happened to record first
-	# targeting that monster," not a precise damage-attribution system.
-	var attacker_type_by_monster: Dictionary = {}
-	for h0 in party:
-		var act0: Dictionary = pending.get(h0.id, {})
-		if str(act0.get("action", "attack")) == "attack" and not attacker_type_by_monster.has(int(act0.get("target", 0))):
-			attacker_type_by_monster[int(act0.get("target", 0))] = h0.type
+	if str(turn.get("type", "")) == "hero":
+		var h := _hero_by_id(party, str(turn["id"]))
+		var pending: Dictionary = state["pending_actions"]
+		var action: String = str(pending.get(str(turn["id"]), {}).get("action", "attack"))
 
-	GameState.resolve_round_now()
+		GameState.resolve_turn_now()
 
-	for h in party:
-		if h.hp <= 0 or not hero_wrappers.has(h.id):
-			continue
-		var act: Dictionary = pending.get(h.id, {})
-		var action: String = str(act.get("action", "attack"))
-		if action == "attack":
-			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
-			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "attack")
-			if not frames.is_empty() and hero_rects.has(h.id):
-				await _play_frames(hero_rects[h.id], frames)
-			else:
-				await _tween_lunge(hero_wrappers[h.id])
-		elif action == "ability":
-			AudioManager.play_sfx(GameData.SFX_PATH["attack"])
-			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "skill")
-			if not frames.is_empty() and hero_rects.has(h.id):
-				await _play_frames(hero_rects[h.id], frames)
-			else:
-				await _tween_skill_flash(hero_wrappers[h.id])
-			_spawn_ability_bucket_burst(h.pool_id, hero_wrappers[h.id])
-		elif action == "defend":
-			await _tween_defend(hero_wrappers[h.id])
+		if h == null or h.hp <= 0:
+			return   # died earlier this round (e.g. a monster's turn) — the turn was just skipped, nothing to animate
 
-	for i in monsters.size():
-		if not monster_wrappers.has(i):
-			continue
-		var dmg: float = float(monster_hp_before[i]) - float(monsters[i]["hp"])
-		if dmg > 0:
-			var heavy: bool = dmg >= float(monsters[i]["max_hp"]) * 0.25
-			var atk_type := str(attacker_type_by_monster.get(i, ""))
-			var burst_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(atk_type, Color(1, 1, 1))
-			AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy else "hit"])
-			_spawn_impact_particles(monster_wrappers[i], monster_wrappers[i].custom_minimum_size * 0.5, burst_color, heavy)
-			await _impact_beat(arena, heavy)
-			if monster_rects.has(i):
-				await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "hurt"))
-			await _flash_white(monster_wrappers[i])
-			await _spawn_damage_number(monster_wrappers[i], "-%d" % int(round(dmg)), Palette.HAZARD)
+		if hero_wrappers.has(h.id):
+			if action == "attack":
+				AudioManager.play_sfx(GameData.SFX_PATH["attack"])
+				var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "attack")
+				if not frames.is_empty() and hero_rects.has(h.id):
+					await _play_frames(hero_rects[h.id], frames)
+				else:
+					await _tween_lunge(hero_wrappers[h.id])
+			elif action == "ability":
+				AudioManager.play_sfx(GameData.SFX_PATH["attack"])
+				var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "skill")
+				if not frames.is_empty() and hero_rects.has(h.id):
+					await _play_frames(hero_rects[h.id], frames)
+				else:
+					await _tween_skill_flash(hero_wrappers[h.id])
+				_spawn_ability_bucket_burst(h.pool_id, hero_wrappers[h.id])
+			elif action == "defend":
+				await _tween_defend(hero_wrappers[h.id])
 
-	await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
+		for i in monsters.size():
+			if not monster_wrappers.has(i):
+				continue
+			var dmg: float = float(monster_hp_before[i]) - float(monsters[i]["hp"])
+			if dmg > 0:
+				var heavy: bool = dmg >= float(monsters[i]["max_hp"]) * 0.25
+				var burst_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(h.type, Color(1, 1, 1))
+				AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy else "hit"])
+				_spawn_impact_particles(monster_wrappers[i], monster_wrappers[i].custom_minimum_size * 0.5, burst_color, heavy)
+				await _impact_beat(arena, heavy)
+				if monster_rects.has(i):
+					await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "hurt"))
+				await _flash_white(monster_wrappers[i])
+				await _spawn_damage_number(monster_wrappers[i], "-%d" % int(round(dmg)), Palette.HAZARD)
 
-	# Every monster still alive after the heroes' attack phase takes its
-	# retaliation swing now. Whether a given swing actually landed or was
-	# dodged is a per-hero log detail, not tracked per-attacking-monster here
-	# — a deliberate simplification, since Combat.resolve_round doesn't return
-	# which monster hit which hero. Every surviving monster just animates its
-	# attack, and separately whichever hero(es) actually lost HP show their
-	# own hurt reaction right after.
-	for i in monsters.size():
-		if float(monsters[i]["hp"]) > 0 and monster_rects.has(i):
+	else:
+		var i: int = int(turn["id"])
+
+		GameState.resolve_turn_now()
+
+		if i >= monsters.size():
+			return
+
+		if monster_rects.has(i):
 			await _play_frames(monster_rects[i], GameData.monster_anim_frames(str(monsters[i]["name"]), "attack"))
 
-	# A single "encounter color" proxy for retaliation impacts — several
-	# monsters can retaliate in the same round with no per-hero attribution
-	# tracked, so this uses the main unit's type (or the first monster if
-	# none is flagged main) rather than trying to identify which monster
-	# actually hit which hero.
-	var main_monster_type := ""
-	for m0 in monsters:
-		if bool(m0.get("is_main", false)):
-			main_monster_type = str(m0.get("type", ""))
-			break
-	if main_monster_type == "" and not monsters.is_empty():
-		main_monster_type = str(monsters[0].get("type", ""))
-	var retaliation_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(main_monster_type, Color(1, 1, 1))
+		var atk_type := str(monsters[i].get("type", ""))
+		var retaliation_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(atk_type, Color(1, 1, 1))
+		for h in party:
+			var before: int = int(hp_before.get(h.id, h.hp))
+			var dmg2: int = before - h.hp
+			if dmg2 > 0 and hero_wrappers.has(h.id):
+				var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
+				AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy2 else "hit"])
+				_spawn_impact_particles(hero_wrappers[h.id], hero_wrappers[h.id].custom_minimum_size * 0.5, retaliation_color, heavy2)
+				await _impact_beat(arena, heavy2)
+				var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "hurt")
+				if not frames.is_empty() and hero_rects.has(h.id):
+					await _play_frames(hero_rects[h.id], frames)
+				else:
+					await _tween_hurt(hero_wrappers[h.id])
+				await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
+				if before > 0 and h.hp <= 0:
+					AudioManager.play_sfx(GameData.SFX_PATH["knockout"])
+					await _tween_collapse(hero_wrappers[h.id])
 
-	for h in party:
-		var before: int = int(hp_before.get(h.id, h.hp))
-		var dmg2: int = before - h.hp
-		if dmg2 > 0 and hero_wrappers.has(h.id):
-			var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
-			AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy2 else "hit"])
-			_spawn_impact_particles(hero_wrappers[h.id], hero_wrappers[h.id].custom_minimum_size * 0.5, retaliation_color, heavy2)
-			await _impact_beat(arena, heavy2)
-			var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "hurt")
-			if not frames.is_empty() and hero_rects.has(h.id):
-				await _play_frames(hero_rects[h.id], frames)
-			else:
-				await _tween_hurt(hero_wrappers[h.id])
-			await _spawn_damage_number(hero_wrappers[h.id], "-%d" % dmg2, Palette.HAZARD)
-			if before > 0 and h.hp <= 0:
-				AudioManager.play_sfx(GameData.SFX_PATH["knockout"])
-				await _tween_collapse(hero_wrappers[h.id])
-
-	# A won fight is only detectable by re-checking node_state — Combat.resolve_round's
-	# return value never reaches here directly, only GameState.resolve_round_now()'s
-	# side effect on run["node_state"]["result"] does. Plays once, before the caller's
-	# render() replaces the arena with the victory screen.
+	# A won fight is only detectable by re-checking node_state — Combat.resolve_turn's
+	# return value never reaches here directly, only GameState.resolve_turn_now()'s
+	# side effect on run["node_state"]["result"] does. Plays once, right after the
+	# turn that actually finished the fight, before the caller's render() replaces
+	# the arena with the victory screen.
 	var ns_after: Dictionary = GameState.run.get("node_state", {})
 	if ns_after.has("result") and bool(ns_after["result"].get("won", false)):
 		AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 		for h in party:
 			if h.hp > 0 and hero_wrappers.has(h.id):
 				await _tween_victory_pose(hero_wrappers[h.id])
+
+
+## Drives turns automatically: resolves+animates the current turn (even a
+## living hero's, when `force_first` is set — used right after the player
+## picks that hero's action from the action bar) then keeps resolving+
+## animating turns for as long as the next one doesn't need player input (a
+## monster's turn, a hero who died earlier this round being skipped, or a
+## round boundary with nothing yet to show), stopping at the next living
+## hero's turn or once the fight ends. No-ops if already running, so a
+## redundant render() firing mid-animation can't start a second overlapping
+## run.
+##
+## The stop-check only peeks state["turn_order"][turn_idx] when that index is
+## still in range. When it isn't (this round's order is fully spent), there
+## is nothing valid to inspect yet — Combat.peek_next_turn/_start_round is
+## what rolls the next one, and only _play_turn (inside the loop body) is
+## allowed to trigger that (see its doc comment). Treating an out-of-range
+## index as "stop" here — instead of "fall through and resolve" — used to
+## make render() and this function call each other forever: render() shows no
+## current hero, fires this function, which would immediately break without
+## making progress, call render() again, which fires this function again...
+##
+## `pre_action`, if given, runs after the disconnect above but before the
+## loop — this is how an action-bar click gets its GameState.set_hero_action
+## in: calling it from the button's own callback would fire state_changed
+## (set_hero_action always emits it) *before* this function has a chance to
+## disconnect render, re-entering render() mid-click with hero_wrappers/arena
+## about to be replaced out from under the very call that's still holding
+## references to them.
+func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control, force_first: bool = false, pre_action: Callable = Callable()) -> void:
+	if _combat_animating:
+		return
+	_combat_animating = true
+	if GameState.state_changed.is_connected(render):
+		GameState.state_changed.disconnect(render)
+	if pre_action.is_valid():
+		pre_action.call()
+	var force := force_first
+	while true:
+		if not force:
+			var turn_order: Array = state.get("turn_order", [])
+			var turn_idx: int = int(state.get("turn_idx", 0))
+			if turn_idx < turn_order.size():
+				var current: Dictionary = turn_order[turn_idx]
+				if str(current.get("type", "")) == "hero":
+					var h := _hero_by_id(state["party"], str(current["id"]))
+					if h and h.hp > 0:
+						break
+		force = false
+		await _play_turn(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
+		if GameState.run.get("node_state", {}).has("result"):
+			break
+		await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
+	if not GameState.state_changed.is_connected(render):
+		GameState.state_changed.connect(render)
+	_combat_animating = false
+	# The player may have navigated away (e.g. opened Settings) while this was
+	# still animating — render() rebuilds whatever `screen` currently is via
+	# _clear_root(), which would tear down that other screen's controls out
+	# from under an in-flight click. Only rebuild if we're still looking at
+	# the combat screen this animation belongs to.
+	if screen == "rift_run":
+		render()
 
 
 ## A quick step-back-and-fade on every living hero before the screen swaps to
@@ -1935,86 +2040,6 @@ func _play_retreat(heroes: Array[Hero], wrappers: Dictionary) -> void:
 	await _await_or_timeout(get_tree().create_timer(0.22).timeout, 1.0)
 
 
-## One hero's tab in the battle screen's action-bar header: portrait + HP bar
-## + a small badge for whatever action they're currently set to (a monster's
-## own sprite for Attack, the class ability icon for Ability, a shield for
-## Defend) so the whole party's plan reads at a glance without switching
-## tabs. Clicking a tab makes that hero's full action bar show below —
-## reused from the reference battle screens' turn-order strip, but repurposed
-## honestly: this game resolves every hero's action in the same round rather
-## than one at a time, so the strip picks "whose bar am I editing," not
-## "whose turn is it."
-func _hero_action_tab(h: Hero, monsters: Array, pending: Dictionary, selected: bool) -> Control:
-	var w := 64.0
-	var ht := 84.0
-	var wrap := Control.new()
-	wrap.custom_minimum_size = Vector2(w, ht)
-	wrap.size = Vector2(w, ht)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(w, ht)
-	panel.size = Vector2(w, ht)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE3 if selected else Palette.SURFACE2
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Palette.VIOLET if selected else Palette.LINE
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	style.content_margin_top = 4
-	panel.add_theme_stylebox_override("panel", style)
-
-	var downed := h.hp <= 0
-	var pv := _vbox(2)
-	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-	if portrait_path != "":
-		var icon_wrap := CenterContainer.new()
-		var pic := _icon_trimmed(portrait_path, 36)
-		if downed:
-			pic.modulate = Color(0.4, 0.4, 0.4, 0.7)
-		icon_wrap.add_child(pic)
-		pv.add_child(icon_wrap)
-	pv.add_child(_label(h.name.split(" the ")[0], 9))
-	if downed:
-		pv.add_child(_label("Down", 8, true))
-	else:
-		var bar_wrap := CenterContainer.new()
-		bar_wrap.add_child(_hp_bar(h.hp, Combat.max_hp(h), w - 12.0))
-		pv.add_child(bar_wrap)
-		var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
-		var action: String = str(act.get("action", "attack"))
-		var badge_icon := "res://assets/skills/shield_basic.png"
-		if action == "attack":
-			var ti := int(act.get("target", 0))
-			if ti >= 0 and ti < monsters.size():
-				badge_icon = GameData.sprite_for_monster(str(monsters[ti]["name"]))
-		elif action == "ability":
-			badge_icon = GameData.ability_icon(h.pool_id)
-		var badge_wrap := CenterContainer.new()
-		badge_wrap.add_child(_icon(badge_icon, 16))
-		pv.add_child(badge_wrap)
-	panel.add_child(pv)
-	wrap.add_child(panel)
-
-	if not downed:
-		var btn := Button.new()
-		btn.flat = true
-		btn.custom_minimum_size = wrap.custom_minimum_size
-		btn.size = wrap.size
-		var clear_style := StyleBoxEmpty.new()
-		for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
-			btn.add_theme_stylebox_override(style_name, clear_style)
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.pressed.connect(func(hid=h.id):
-			combat_selected_hero_id = hid
-			render()
-		)
-		wrap.add_child(btn)
-	return wrap
 
 
 func _render_combat_node(v: VBoxContainer) -> void:
@@ -2159,7 +2184,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# about this exact mechanic this round — previously that warning
 			# was text-only above the action bar, easy to miss.
 			if float(m["hp"]) > 0:
-				var next_round: int = int(state.get("round_num", 0)) + 1
+				# round_num already names the round in progress — see the
+				# Round-label comment below for why there's no +1 anymore.
+				var next_round: int = int(state.get("round_num", 0))
 				for mech_check in [mechanic, mechanic2]:
 					if mech_check.is_empty():
 						continue
@@ -2251,8 +2278,12 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		# battle screens announce "Round N" at the start of each round; ours
 		# stays up the whole round instead of flashing in and fading, since
 		# animating it would mean threading another tween through the already
-		# carefully-sequenced _play_round animation chain for a cosmetic touch.
-		var round_label := _label("Round %d" % (int(state.get("round_num", 0)) + 1), 16)
+		# carefully-sequenced _run_combat_turns animation chain for a cosmetic
+		# touch. round_num is prepared by Combat._start_round before the
+		# round's first turn ever runs, so it already names the round in
+		# progress — no +1 needed (see Combat.describe_incoming for the same
+		# fix).
+		var round_label := _label("Round %d" % int(state.get("round_num", 0)), 16)
 		round_label.size = Vector2(ARENA_SIZE.x, 22)
 		round_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		round_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
@@ -2279,8 +2310,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if incoming != "":
 			battle_col.add_child(_label(incoming, 12, true))
 
-		if combat_selected_hero_id == "" or not living_heroes.any(func(h): return h.id == combat_selected_hero_id):
-			combat_selected_hero_id = living_heroes[0].id if not living_heroes.is_empty() else ""
+		# Turn order strip — heroes and monsters genuinely interleaved by
+		# speed (Combat._compute_turn_order), not a "whose bar am I editing"
+		# tab row anymore.
+		battle_col.add_child(_turn_order_strip(state))
 
 		# The action controls live in their own bordered panel below the
 		# arena (reusing the same flat style the old side menu used — the
@@ -2306,94 +2339,60 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var menu := _vbox(6)
 		menu_panel.add_child(menu)
 
-		var pending: Dictionary = state["pending_actions"]
+		var turn_order: Array = state.get("turn_order", [])
+		var turn_idx: int = int(state.get("turn_idx", 0))
+		var current_turn: Dictionary = turn_order[turn_idx] if turn_idx < turn_order.size() else {}
+		var current_hero: Hero = null
+		if str(current_turn.get("type", "")) == "hero":
+			var candidate := _hero_by_id(party, str(current_turn["id"]))
+			if candidate and candidate.hp > 0:
+				current_hero = candidate
 
-		# Hero tab row: click a tab to make that hero's full action bar show
-		# below — every tab's badge icon reflects whatever action that hero
-		# is currently set to, so the whole party's plan for this round is
-		# visible without switching tabs (reused/repurposed from the
-		# reference battle screens' turn-order strip — see _hero_action_tab).
-		var tab_row := HBoxContainer.new()
-		tab_row.add_theme_constant_override("separation", 8)
-		for h in party:
-			tab_row.add_child(_hero_action_tab(h, monsters, pending, h.id == combat_selected_hero_id))
-		menu.add_child(tab_row)
-		menu.add_child(_hsep())
-
-		var sel_hero: Hero = null
-		for h in living_heroes:
-			if h.id == combat_selected_hero_id:
-				sel_hero = h
-		if sel_hero:
-			var act: Dictionary = pending.get(sel_hero.id, {"action": "attack", "target": 0})
+		if current_hero:
+			var pending: Dictionary = state["pending_actions"]
+			var act: Dictionary = pending.get(current_hero.id, {"action": "attack", "target": 0})
 			var current_action: String = str(act.get("action", "attack"))
 			var current_target: int = int(act.get("target", 0))
+
+			menu.add_child(_label("%s's turn" % current_hero.name.split(" the ")[0], 13, true))
 
 			var slots: Array = []
 			for i in monsters.size():
 				if float(monsters[i]["hp"]) <= 0:
 					continue
 				var target_name: String = str(monsters[i]["name"]).split(" ")[0]
-				var attack_cb := func(hid=sel_hero.id, ti=i):
-					GameState.set_hero_action(hid, "attack", ti)
-					render()
+				var attack_cb := func(hid=current_hero.id, ti=i):
+					_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "attack", ti))
 				slots.append(_action_slot(GameData.sprite_for_monster(str(monsters[i]["name"])), "",
 					current_action == "attack" and current_target == i, false,
 					attack_cb, 64.0, "Atk %s" % target_name
 				))
-			if Combat.qualifies_for_ability(sel_hero):
-				var cd: int = sel_hero.ability_cooldown
-				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(sel_hero.pool_id, {}).get("name", "Ability")).split(" ")[0]
-				var ability_cb := func(hid=sel_hero.id):
-					GameState.set_hero_action(hid, "ability")
-					render()
-				slots.append(_action_slot(GameData.ability_icon(sel_hero.pool_id), str(cd) if cd > 0 else "",
+			if Combat.qualifies_for_ability(current_hero):
+				var cd: int = current_hero.ability_cooldown
+				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(current_hero.pool_id, {}).get("name", "Ability")).split(" ")[0]
+				var ability_cb := func(hid=current_hero.id):
+					_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "ability"))
+				slots.append(_action_slot(GameData.ability_icon(current_hero.pool_id), str(cd) if cd > 0 else "",
 					current_action == "ability", cd > 0,
 					ability_cb, 64.0, ability_name
 				))
-			var defend_cb := func(hid=sel_hero.id):
-				GameState.set_hero_action(hid, "defend")
-				render()
+			var defend_cb := func(hid=current_hero.id):
+				_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "defend"))
 			slots.append(_action_slot("res://assets/skills/shield_basic.png", "",
 				current_action == "defend", false,
 				defend_cb, 64.0, "Defend"
 			))
 			menu.add_child(_slot_row(slots))
-		else:
+		elif living_heroes.is_empty():
 			menu.add_child(_label("The party is down.", 12, true))
+		else:
+			menu.add_child(_label("...", 12, true))
 
 		var bottom_row := HBoxContainer.new()
-		bottom_row.add_child(_icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Resolve Round", func():
-			# Guard against a second click firing while the first is still
-			# mid-animation — that would start a second _play_round on the same
-			# state, and whichever finishes first would render() (destroying
-			# the portrait nodes) out from under the other's suspended awaits.
-			if _combat_animating:
-				return
-			_combat_animating = true
-			# resolve_round_now() emits state_changed partway through, which is
-			# normally connected straight to render() — that would tear down
-			# the very portrait nodes _play_round is mid-animation on. Disconnect
-			# for the duration and render once explicitly when it's done.
-			if GameState.state_changed.is_connected(render):
-				GameState.state_changed.disconnect(render)
-			await _play_round(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
-			if not GameState.state_changed.is_connected(render):
-				GameState.state_changed.connect(render)
-			_combat_animating = false
-			# The player may have navigated away (e.g. opened Settings) while
-			# this was still animating — render() rebuilds whatever `screen`
-			# currently is via _clear_root(), which would tear down that other
-			# screen's controls out from under an in-flight click (the "Back"
-			# button in Settings eating its own click). Only rebuild if we're
-			# still looking at the combat screen this animation belongs to.
-			if screen == "rift_run":
-				render()
-		))
 		bottom_row.add_child(_icon_button("res://assets/skills/wing.png", "Retreat", func():
-			# Same guard as Resolve Round: retreating while a round's animation
-			# is genuinely still in-flight would mutate the same `state` dict
-			# _play_round is reading and immediately render() out from under
+			# Guard against a second click firing while a turn's animation is
+			# still mid-flight — that would mutate the same `state` dict
+			# _play_turn is reading and immediately render() out from under
 			# it, freeing the arena nodes its suspended awaits still reference.
 			if _combat_animating:
 				return
@@ -2405,13 +2404,21 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			if not GameState.state_changed.is_connected(render):
 				GameState.state_changed.connect(render)
 			_combat_animating = false
-			# Same reasoning as Resolve Round above: don't stomp a screen the
+			# Same reasoning as _run_combat_turns: don't stomp a screen the
 			# player has since navigated to.
 			if screen == "rift_run":
 				render()
 		))
 		menu.add_child(bottom_row)
 		battle_col.add_child(menu_panel)
+
+		# Auto-play any turn that doesn't need player input — a monster's
+		# turn, or a hero who died earlier this round being skipped —
+		# fire-and-forget from render() itself. _run_combat_turns no-ops if
+		# already animating or if it's already a living hero's turn, so this
+		# is safe to call on every render without duplicating work.
+		if current_hero == null and not living_heroes.is_empty():
+			_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 
 		# The round log stays available but demoted — a strip below the action
 		# bar rather than sharing equal billing with the arena, since none of

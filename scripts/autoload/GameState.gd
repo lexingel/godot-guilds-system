@@ -861,17 +861,17 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 	state_changed.emit()
 
 
-## Resolves every living hero's pending action for one round (see
-## Combat.resolve_round). Once it reports the fight done, applies the same
-## roster-level bookkeeping engage_node used to do in one shot (coin/crystal
-## gain, boss_rounds tracking, hardcore hero removal on a real loss — not a
-## retreat).
-func resolve_round_now() -> void:
+## Resolves whichever actor's turn is next (see Combat.resolve_turn — a
+## living hero's pending action, or a living monster's retaliation). Once it
+## reports the fight done, applies the same roster-level bookkeeping
+## engage_node used to do in one shot (coin/crystal gain, boss_rounds
+## tracking, hardcore hero removal on a real loss — not a retreat).
+func resolve_turn_now() -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
 	if state.is_empty():
 		return
-	_apply_combat_outcome(Combat.resolve_round(state))
+	_apply_combat_outcome(Combat.resolve_turn(state))
 
 
 ## Ends the current fight by player choice, forfeiting rewards — heroes keep
