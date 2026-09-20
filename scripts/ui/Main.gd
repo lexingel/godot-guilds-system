@@ -795,11 +795,34 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 	return banner
 
 
+## The header bar — previously just a bare HBoxContainer floating directly on
+## the screen background with a plain hairline under it, so the currency
+## tiles' own borders were the only bordered thing up there. Wrapped in one
+## bordered bar so the whole header reads as a single designed piece instead
+## of loose elements, matching the bordered-card language the rest of the UI
+## already uses (CardPanelEmber/StatTileEmber).
 func _topbar(container: Control, breadcrumb: String = "") -> void:
+	var bar_style := StyleBoxFlat.new()
+	bar_style.bg_color = Palette.SURFACE2
+	bar_style.border_width_bottom = 2
+	bar_style.border_color = Palette.EMBER_DEEP
+	bar_style.content_margin_left = 12.0
+	bar_style.content_margin_right = 12.0
+	bar_style.content_margin_top = 8.0
+	bar_style.content_margin_bottom = 8.0
+	var bar := PanelContainer.new()
+	bar.add_theme_stylebox_override("panel", bar_style)
+	var bar_v := _vbox(4)
+
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
-	row.add_child(_label("%s —" % GameState.guild_name, 16))
+	var name_lbl := _label(GameState.guild_name, 16)
+	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
+	row.add_child(name_lbl)
+	var stat_spacer := Control.new()
+	stat_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(stat_spacer)
 	for entry in [
 		[GameData.CURRENCY_ICON_PATH["coins"], GameState.coins],
 		[GameData.CURRENCY_ICON_PATH["crystals"], GameState.crystals],
@@ -828,10 +851,11 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		render()
 	)
 	row.add_child(settings_btn)
-	container.add_child(row)
+	bar_v.add_child(row)
 	if breadcrumb != "":
-		container.add_child(_label(breadcrumb, 12, true))
-	container.add_child(_hsep())
+		bar_v.add_child(_label(breadcrumb, 12, true))
+	bar.add_child(bar_v)
+	container.add_child(bar)
 
 
 # ---------------- Title ----------------
@@ -2687,7 +2711,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		_render_hub_cluster(v)
 		return
 
-	const SCENE_SIZE := Vector2(800, 368)
+	const SCENE_SIZE := Vector2(800, 314)
 	var scene := Control.new()
 	scene.custom_minimum_size = SCENE_SIZE
 
@@ -2698,20 +2722,25 @@ func _render_camp(v: VBoxContainer) -> void:
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	scene.add_child(bg)
+	_start_daynight_cycle(bg)
 
-	# Rect positions hand-picked against camp_bg.png's native 400x184 canvas,
-	# scaled up to SCENE_SIZE below. Command Tent/Rift Gate/Trading
-	# Post/Scholar's Lodge each cover several destinations and set
-	# hub_cluster instead of navigating directly.
+	# Rect positions hand-picked against camp_bg.png's native 400x157 canvas
+	# (cropped from the original 400x184 generation, which had a literal
+	# cinematic letterbox band baked into the top/bottom ~15px — an artifact
+	# of asking PixelLab for a "cinematic" shot; cropping it out is what fixed
+	# the flame and buildings reading as cut off along the top edge), scaled
+	# up to SCENE_SIZE below. Command Tent/Rift Gate/Trading Post/Scholar's
+	# Lodge each cover several destinations and set hub_cluster instead of
+	# navigating directly.
 	var area_entries := [
-		["Scholar's Lodge", Rect2(0, 95, 90, 60), func(): hub_cluster = "scholars_lodge"; render()],
-		["Medical Tent", Rect2(90, 90, 105, 65), func(): term_tab = "medical"; render()],
-		["Hero Recruits", Rect2(185, 95, 55, 73), func(): term_tab = "recruits"; render()],
-		["Rift Gate", Rect2(235, 75, 63, 87), func(): hub_cluster = "rift_gate"; render()],
-		["Trading Post", Rect2(298, 95, 60, 60), func(): hub_cluster = "trading_post"; render()],
-		["Command Tent", Rect2(358, 75, 42, 80), func(): hub_cluster = "command"; render()],
+		["Scholar's Lodge", Rect2(0, 80, 90, 60), func(): hub_cluster = "scholars_lodge"; render()],
+		["Medical Tent", Rect2(90, 75, 105, 65), func(): term_tab = "medical"; render()],
+		["Hero Recruits", Rect2(185, 80, 55, 73), func(): term_tab = "recruits"; render()],
+		["Rift Gate", Rect2(235, 60, 63, 87), func(): hub_cluster = "rift_gate"; render()],
+		["Trading Post", Rect2(298, 80, 60, 60), func(): hub_cluster = "trading_post"; render()],
+		["Command Tent", Rect2(358, 60, 42, 80), func(): hub_cluster = "command"; render()],
 	]
-	var scene_scale := SCENE_SIZE / Vector2(400, 184)
+	var scene_scale := SCENE_SIZE / Vector2(400, 157)
 	for entry in area_entries:
 		var label_text: String = entry[0]
 		var native_rect: Rect2 = entry[1]
@@ -2724,7 +2753,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
 
-	var fire_native_pos := Vector2(185 + 55 * 0.5, 95 + 73 * 0.85)
+	var fire_native_pos := Vector2(185 + 55 * 0.5, 80 + 73 * 0.85)
 	_start_ember_loop(scene, fire_native_pos * scene_scale)
 	v.add_child(scene)
 
@@ -2832,6 +2861,23 @@ func _start_ember_loop(parent: Control, pos: Vector2) -> void:
 	p.scale_amount_max = 2.4
 	p.color = Palette.EMBER_BRIGHT
 	parent.add_child(p)
+
+
+## A slow, subtle ambient light drift on the hub background — cool night
+## tint breathing toward a warm dawn tint and back, continuously. Deliberately
+## gentle (not a literal sun-position simulation): the painted scene is fixed
+## as a night composition with visible stars, so this isn't a real day cycle,
+## just enough slow color movement that the screen doesn't sit as one
+## completely static image. bind_node() ties the tween's lifetime to the
+## background node, so render()'s _clear_root() cleans it up automatically
+## next time the screen rebuilds — same self-cleanup as _start_idle_sway.
+func _start_daynight_cycle(bg: CanvasItem) -> void:
+	var tween := create_tween()
+	tween.bind_node(bg)
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.tween_property(bg, "modulate", Color(1.1, 0.97, 0.85), 40.0)
+	tween.tween_property(bg, "modulate", Color(0.9, 0.95, 1.1), 40.0)
 
 
 ## An invisible clickable region over a prop already drawn in the background
