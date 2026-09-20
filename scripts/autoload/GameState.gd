@@ -1869,6 +1869,13 @@ func sell_item(item_id: String) -> void:
 			return
 
 
+func find_item(item_id: String) -> Item:
+	for it in items:
+		if it.id == item_id:
+			return it
+	return null
+
+
 func item_slot_type_of(it: Item) -> String:
 	return it.slot_type()
 

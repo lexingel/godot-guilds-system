@@ -195,7 +195,7 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
 ## hub's clickable props. Selected state is a filled tint (not just a thin
 ## border) since the border alone was too easy to miss against the wooden
 ## shelf background.
-func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "") -> Control:
+func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "", drop_target: Dictionary = {}) -> Control:
 	var label_h := 14.0 if label_text != "" else 0.0
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(size, size + label_h)
@@ -258,7 +258,14 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 		lbl.position = Vector2(0, size)
 		wrap.add_child(lbl)
 
-	var btn := Button.new()
+	var btn: Button
+	if drop_target.is_empty():
+		btn = Button.new()
+	else:
+		var drop_btn := DropButton.new()
+		drop_btn.can_accept = drop_target.get("can_accept", Callable())
+		drop_btn.on_drop = drop_target.get("on_drop", Callable())
+		btn = drop_btn
 	btn.flat = true
 	btn.custom_minimum_size = wrap.custom_minimum_size
 	btn.size = wrap.size
@@ -384,6 +391,23 @@ func _icon(path: String, size: int = 24) -> TextureRect:
 	t.size = Vector2(size, size)
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	return t
+
+
+## Same visual as _icon(), but for an unequipped Item on the Roster's "drag to
+## equip" strip: a DragIcon carrying {"kind": "inventory_item", "item_id",
+## "slot_type"} so a matching _equip_slot_frame's drop_target can accept it.
+func _draggable_item_icon(it: Item, size: int = 32) -> DragIcon:
+	var t := DragIcon.new()
+	t.texture = load(GameData.ITEM_CATEGORY_ICON_PATH[it.category])
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.custom_minimum_size = Vector2(size, size)
+	t.size = Vector2(size, size)
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.tooltip_text = "%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)]
+	t.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	t.drag_payload = {"kind": "inventory_item", "item_id": it.id, "slot_type": it.slot_type()}
 	return t
 
 
@@ -3861,6 +3885,17 @@ func _render_roster(v: VBoxContainer) -> void:
 		_render_equip_picker(right_v, h, "weapon", int(expanded_slot.split(":")[2]))
 	if expanded_slot.begins_with("%s:gear:" % h.id):
 		_render_equip_picker(right_v, h, "gear", int(expanded_slot.split(":")[2]))
+
+	var fitting_items: Array[Item] = []
+	fitting_items.assign(GameState.items.filter(func(it): return it.equipped_to == "" and GameState.item_fits_hero(it, h)))
+	if not fitting_items.is_empty():
+		right_v.add_child(_label("Inventory — drag onto a slot to equip", 11, true))
+		var inv_flow := HFlowContainer.new()
+		inv_flow.add_theme_constant_override("h_separation", 6)
+		inv_flow.add_theme_constant_override("v_separation", 6)
+		for it in fitting_items:
+			inv_flow.add_child(_draggable_item_icon(it))
+		right_v.add_child(inv_flow)
 	dash.add_child(right_v)
 	cv.add_child(dash)
 
@@ -4204,7 +4239,18 @@ func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0)
 	var cb := func():
 		expanded_slot = "" if is_open else slot_key
 		render()
-	return _action_slot(icon_path, "", is_open, false, cb, size, label_text)
+	var can_accept := func(data):
+		if typeof(data) != TYPE_DICTIONARY or data.get("kind", "") != "inventory_item":
+			return false
+		if data.get("slot_type", "") != slot_type:
+			return false
+		var candidate := GameState.find_item(str(data.get("item_id", "")))
+		return candidate != null and GameState.item_fits_hero(candidate, h)
+	var on_drop := func(data):
+		GameState.equip_item(h.id, slot_type, idx, str(data.get("item_id", "")))
+		render()
+	var drop_target := {"can_accept": can_accept, "on_drop": on_drop}
+	return _action_slot(icon_path, "", is_open, false, cb, size, label_text, "", "", drop_target)
 
 
 ## The picker for whichever equip slot is currently expanded: shows the
