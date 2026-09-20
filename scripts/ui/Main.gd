@@ -177,7 +177,7 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
 	var portrait_path := GameData.portrait_for_hero(cls_id, pool_id)
 	if portrait_path == "":
 		return frame_wrap
-	var pf_icon := _icon(portrait_path, int(size * 0.82))
+	var pf_icon := _icon_trimmed(portrait_path, int(size * 0.82))
 	pf_icon.position = Vector2(size * 0.09, size * 0.09)
 	frame_wrap.add_child(pf_icon)
 	var pf_frame := _icon(GameData.PORTRAIT_FRAME_PATH, int(size))
@@ -381,6 +381,35 @@ func _icon(path: String, size: int = 24) -> TextureRect:
 	# plain Control parent (the combat arena's freely-positioned sprites) does
 	# not — without this the TextureRect renders at its native texture
 	# resolution instead of the intended icon size.
+	t.size = Vector2(size, size)
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	return t
+
+
+## Same as _icon(), but for hero portrait art specifically: crops the texture
+## to its opaque pixel bounding box (Image.get_used_rect()) before fitting it
+## into the size x size box. The ~100 hero/subclass portraits were generated
+## across several batches with wildly inconsistent transparent padding (some
+## canvases are cropped tight to the character, others carry 20%+ empty
+## margin at fixed heights like 200px) — fitting the raw canvas made
+## characters render at very different apparent sizes at the same box size.
+## Trimming first makes the visible silhouette itself fill the box
+## consistently, regardless of the source canvas's own padding.
+func _icon_trimmed(path: String, size: int = 24) -> TextureRect:
+	var tex: Texture2D = load(path)
+	var img := tex.get_image()
+	if img != null:
+		var used := img.get_used_rect()
+		if used.size.x > 0 and used.size.y > 0:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = tex
+			atlas.region = Rect2(used)
+			tex = atlas
+	var t := TextureRect.new()
+	t.texture = tex
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.custom_minimum_size = Vector2(size, size)
 	t.size = Vector2(size, size)
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -1150,7 +1179,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		row.add_child(cb)
 		var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 		if portrait_path != "":
-			row.add_child(_icon(portrait_path, 40))
+			row.add_child(_icon_trimmed(portrait_path, 40))
 		var status := " (downed)" if h.is_downed() else ""
 		row.add_child(_label("%s — Lv%d %s · %d/%d HP%s" % [h.name, h.level, h.cls_id.capitalize(), h.hp, Combat.max_hp(h), status]))
 		row.add_child(_icon_button("res://assets/skills/shield_orange.png" if h.formation != "back" else "res://assets/skills/shield_basic.png", "Back" if h.formation != "back" else "Front", func(id=h.id, f=h.formation):
@@ -1920,7 +1949,7 @@ func _hero_action_tab(h: Hero, monsters: Array, pending: Dictionary, selected: b
 	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 	if portrait_path != "":
 		var icon_wrap := CenterContainer.new()
-		var pic := _icon(portrait_path, 36)
+		var pic := _icon_trimmed(portrait_path, 36)
 		if downed:
 			pic.modulate = Color(0.4, 0.4, 0.4, 0.7)
 		icon_wrap.add_child(pic)
@@ -2163,7 +2192,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var h_depth_i := row_i % DEPTH_STAGGER.size()
 			var h_ground: float = ground_y + DEPTH_STAGGER[h_depth_i]
 			var hero_size: float = hero_base_size * DEPTH_SCALE[h_depth_i]
-			var h_rect := _icon(portrait_path, int(hero_size))
+			var h_rect := _icon_trimmed(portrait_path, int(hero_size))
 			var h_wrapper := _wrap_icon(h_rect)
 			h_wrapper.position = Vector2(h_x, h_ground - hero_size)
 			_add_ground_shadow(arena, h_wrapper.position, hero_size)
@@ -4099,7 +4128,7 @@ func _roster_portrait_button(h: Hero) -> Control:
 	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 	if portrait_path != "":
 		var icon_wrap := CenterContainer.new()
-		icon_wrap.add_child(_icon(portrait_path, 48))
+		icon_wrap.add_child(_icon_trimmed(portrait_path, 48))
 		pv.add_child(icon_wrap)
 	pv.add_child(_label(h.name.split(" the ")[0], 10))
 	pv.add_child(_label("%d/%d HP" % [h.hp, Combat.max_hp(h)], 9, true))
