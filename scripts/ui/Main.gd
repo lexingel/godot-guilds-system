@@ -493,7 +493,12 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	var it: Item = obj
 	if it.unique_id != "":
 		return str(GameData.find_unique_item(it.unique_id).get("desc", ""))
-	return Combat.describe_skill(it.kind, it.value)
+	var parts: Array[String] = [Combat.describe_skill(it.kind, it.value)]
+	if it.secondary_kind != "":
+		parts.append(Combat.describe_skill(it.secondary_kind, it.secondary_value))
+	if it.tertiary_kind != "":
+		parts.append(Combat.describe_skill(it.tertiary_kind, it.tertiary_value))
+	return ", ".join(parts)
 
 
 func _loot_display_name(obj) -> String:

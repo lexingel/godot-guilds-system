@@ -202,13 +202,16 @@ const NARRATIVE_LINES := {
 
 # Items: hero-bound gear distinct from party-wide Relics. 3 category umbrellas:
 # Weapon (offense), Armor (survival), Focus (utility). Weapon items fill a
-# hero's weapon slots; Armor/Focus items share one "gear" slot pool.
+# hero's weapon slots; Armor/Focus items share one "gear" slot pool. Each
+# category's pool is widened to 4 kinds (beyond its "home" stats) specifically
+# so a multi-affix roll (see ITEM_AFFIX_COUNT_BY_RARITY) has real room to vary
+# instead of just guaranteeing every stat in that category at Epic.
 const ITEM_CATEGORIES := ["weapon", "armor", "focus"]
 const ITEM_CATEGORY_LABEL := {"weapon": "Weapon", "armor": "Armor", "focus": "Focus"}
 const ITEM_CATEGORY_KINDS := {
-	"weapon": ["dmg_pct", "first_round_pct", "escalate_pct"],
-	"armor": ["hp_pct", "hazard_guard_pct", "mend_pct"],
-	"focus": ["dodge_pct", "speed_pct"],
+	"weapon": ["dmg_pct", "first_round_pct", "escalate_pct", "speed_pct"],
+	"armor": ["hp_pct", "hazard_guard_pct", "mend_pct", "dodge_pct"],
+	"focus": ["dodge_pct", "speed_pct", "mend_pct", "hp_pct"],
 }
 const ITEM_NOUNS := {
 	"weapon": ["Blade", "Bow", "Staff", "Mace", "Dagger"],
@@ -218,6 +221,39 @@ const ITEM_NOUNS := {
 const ITEM_KIND_BASE := {
 	"dmg_pct": 0.12, "hp_pct": 0.12, "first_round_pct": 0.15, "escalate_pct": 0.04,
 	"mend_pct": 0.06, "hazard_guard_pct": 0.12, "dodge_pct": 0.10, "speed_pct": 0.12,
+}
+## How many distinct stats a generated (non-Legendary) item rolls — the actual
+## "build-around" lever: a Common is a single clean number, an Epic is a real
+## multi-stat piece worth building toward, same shape as a hero's rank ladder.
+const ITEM_AFFIX_COUNT_BY_RARITY := {"common": 1, "rare": 2, "epic": 3}
+## Each slot past the first rolls at a reduced share of ITEM_KIND_BASE so the
+## primary stat stays the item's clear identity instead of 3 equally-loud
+## numbers — 100% / 55% / 35% for primary/secondary/tertiary.
+const ITEM_AFFIX_VALUE_SHARE := [1.0, 0.55, 0.35]
+## Flavor vocabulary for generated item names — a prefix (from the primary
+## stat) and, when there's a secondary stat, a suffix phrase, e.g. "Swift
+## Blade of Ruin". A tertiary stat (Epic) is never named, only described —
+## three affixes baked into a name reads as noise, not identity. Two words
+## per kind/slot just for pick variety, not meant to be exhaustive.
+const ITEM_AFFIX_PREFIX := {
+	"dmg_pct": ["Brutal", "Savage"],
+	"first_round_pct": ["Ambushing", "Sudden"],
+	"escalate_pct": ["Relentless", "Rising"],
+	"hp_pct": ["Stalwart", "Hardy"],
+	"hazard_guard_pct": ["Warded", "Bulwark"],
+	"mend_pct": ["Mending", "Restorative"],
+	"dodge_pct": ["Evasive", "Nimble"],
+	"speed_pct": ["Swift", "Fleet"],
+}
+const ITEM_AFFIX_SUFFIX := {
+	"dmg_pct": ["of Ruin", "of Slaughter"],
+	"first_round_pct": ["of First Blood", "of the Ambush"],
+	"escalate_pct": ["of Escalation", "of the Storm"],
+	"hp_pct": ["of Vitality", "of Fortitude"],
+	"hazard_guard_pct": ["of Warding", "of the Bulwark"],
+	"mend_pct": ["of Mending", "of Renewal"],
+	"dodge_pct": ["of Evasion", "of Shadows"],
+	"speed_pct": ["of Haste", "of the Wind"],
 }
 
 ## Field Incense: a one-shot consumable bought with Coins (not looted, not

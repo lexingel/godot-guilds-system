@@ -348,19 +348,39 @@ func gen_item(rarity_id: String, category_override: String = "") -> Item:
 		return gen_unique_item()
 	var rarity := GameData.find_rarity(rarity_id)
 	var category: String = category_override if category_override != "" else GameData.ITEM_CATEGORIES[randi() % GameData.ITEM_CATEGORIES.size()]
-	var kinds: Array = GameData.ITEM_CATEGORY_KINDS[category]
-	var kind: String = kinds[randi() % kinds.size()]
-	var value: float = snappedf(GameData.ITEM_KIND_BASE[kind] * rarity["mult"], 0.001)
 	var nouns: Array = GameData.ITEM_NOUNS[category]
 	var noun: String = nouns[randi() % nouns.size()]
+
+	# Roll N distinct kinds (1/2/3 by rarity) from this category's pool —
+	# shuffled-and-take-first rather than reject-sampling, so it's exact and
+	# can't loop. Each slot past the first is worth less of ITEM_KIND_BASE
+	# (see ITEM_AFFIX_VALUE_SHARE) so the primary stat stays the item's clear
+	# identity.
+	var affix_count: int = GameData.ITEM_AFFIX_COUNT_BY_RARITY.get(rarity_id, 1)
+	var pool: Array = GameData.ITEM_CATEGORY_KINDS[category].duplicate()
+	pool.shuffle()
+	var rolled_kinds: Array = pool.slice(0, affix_count)
+
 	var it := Item.new()
 	it.id = "it" + str(GameState.next_id)
 	GameState.next_id += 1
-	it.name = "%s %s" % [rarity["name"], noun]
 	it.category = category
 	it.rarity = rarity["id"]
-	it.kind = kind
-	it.value = value
+	it.kind = str(rolled_kinds[0])
+	it.value = snappedf(GameData.ITEM_KIND_BASE[it.kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[0], 0.001)
+	if rolled_kinds.size() > 1:
+		it.secondary_kind = str(rolled_kinds[1])
+		it.secondary_value = snappedf(GameData.ITEM_KIND_BASE[it.secondary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[1], 0.001)
+	if rolled_kinds.size() > 2:
+		it.tertiary_kind = str(rolled_kinds[2])
+		it.tertiary_value = snappedf(GameData.ITEM_KIND_BASE[it.tertiary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[2], 0.001)
+
+	var prefixes: Array = GameData.ITEM_AFFIX_PREFIX[it.kind]
+	var name := "%s %s" % [str(prefixes[randi() % prefixes.size()]), noun]
+	if it.secondary_kind != "":
+		var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[it.secondary_kind]
+		name += " %s" % str(suffixes[randi() % suffixes.size()])
+	it.name = name
 	return it
 
 
@@ -629,6 +649,10 @@ func hero_item_total(h: Hero, kind: String) -> float:
 		if it.equipped_to == h.id:
 			if it.kind == kind:
 				s += it.value
+			if it.secondary_kind == kind:
+				s += it.secondary_value
+			if it.tertiary_kind == kind:
+				s += it.tertiary_value
 			if it.socketed_kind == kind:
 				s += it.socketed_value
 			if it.drawback_kind == kind:

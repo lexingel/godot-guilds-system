@@ -6,8 +6,16 @@ var id: String
 var name: String
 var category: String      # weapon/armor/focus
 var rarity: String        # common/rare/epic/legendary
-var kind: String          # dmg_pct/hp_pct/... (BUILD_KINDS)
+var kind: String          # dmg_pct/hp_pct/... (BUILD_KINDS) — the item's primary/only stat
 var value: float
+# A rolled item's 2nd and 3rd stats (Rare rolls secondary, Epic rolls both) —
+# "" kind means that slot is unused. Same flat accumulator shape as
+# socketed_kind/drawback_kind below rather than an array, so every existing
+# kind->value summing site only needs one more `if` instead of a rewrite.
+var secondary_kind: String = ""
+var secondary_value: float = 0.0
+var tertiary_kind: String = ""
+var tertiary_value: float = 0.0
 var equipped_to: String = ""    # hero id, "" = unequipped
 var equipped_idx: int = -1      # index within that hero's weapon/gear slots
 var socketed_kind: String = ""     # "" = no runestone socketed
@@ -26,7 +34,9 @@ func slot_type() -> String:
 func to_dict() -> Dictionary:
 	return {
 		"id": id, "name": name, "category": category, "rarity": rarity, "kind": kind,
-		"value": value, "equipped_to": equipped_to, "equipped_idx": equipped_idx,
+		"value": value, "secondary_kind": secondary_kind, "secondary_value": secondary_value,
+		"tertiary_kind": tertiary_kind, "tertiary_value": tertiary_value,
+		"equipped_to": equipped_to, "equipped_idx": equipped_idx,
 		"socketed_kind": socketed_kind, "socketed_value": socketed_value,
 		"unique_id": unique_id, "drawback_kind": drawback_kind, "drawback_value": drawback_value,
 		"locked_role": locked_role, "locked_subclasses": locked_subclasses,
@@ -41,6 +51,10 @@ static func from_dict(d: Dictionary) -> Item:
 	it.rarity = d.get("rarity", "common")
 	it.kind = d.get("kind", "")
 	it.value = d.get("value", 0.0)
+	it.secondary_kind = d.get("secondary_kind", "")
+	it.secondary_value = d.get("secondary_value", 0.0)
+	it.tertiary_kind = d.get("tertiary_kind", "")
+	it.tertiary_value = d.get("tertiary_value", 0.0)
 	it.equipped_to = d.get("equipped_to", "")
 	it.equipped_idx = d.get("equipped_idx", -1)
 	it.socketed_kind = d.get("socketed_kind", "")
