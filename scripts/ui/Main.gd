@@ -14,6 +14,7 @@ var screen: String = "title"     # title | load_game | credits | onboard | rift_
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests
 var hub_cluster: String = ""       # "" = camp scene shown; else one of the multi-destination buildings' picker is showing (see _render_hub_cluster)
 var pending_crest: int = 1
+var pending_guild_name: String = ""
 var pending_party: Array[String] = []
 var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
@@ -997,6 +998,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 	v.add_child(_label("Name Your Guild", 22))
 	var edit := LineEdit.new()
 	edit.placeholder_text = "Guild name"
+	edit.text = pending_guild_name
+	edit.text_changed.connect(func(t: String): pending_guild_name = t)
 	v.add_child(edit)
 
 	v.add_child(_label("Choose a Crest", 16))
@@ -1017,6 +1020,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 		GameState.guild_crest = pending_crest
 		GameState.refresh_recruit_pool()
 		GameState.save()
+		pending_guild_name = ""
+		pending_crest = 1
 		_flavor_toast = GameData.narrative_line("guild_founded")
 		screen = "terminal"
 		render()
@@ -1570,26 +1575,35 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		))
 
 
+## A one-shot helper purely so two unrelated signals (an animation's own
+## finish signal and a timeout) can be awaited as a race — whichever fires
+## first resumes `_await_or_timeout` below.
+class _SignalRace:
+	extends RefCounted
+	signal fired
+
+
 ## Bounds an animation wait to `timeout_sec` of real engine time instead of
-## trusting `sig` alone. Reproduced twice: Resolve Round's animation chain
-## (tween.finished / SceneTreeTimer.timeout) can simply never fire — once
-## even on a foregrounded, unthrottled tab — which used to wedge
+## trusting `sig` alone — `sig` (a Tween.finished or SceneTreeTimer.timeout)
+## has been observed to simply never fire, which used to wedge
 ## _combat_animating forever behind the early-return guard on the button,
 ## making every further click a silent no-op until the page was reloaded.
-## Polls via process_frame rather than racing a second timer against the
-## first, since process_frame is the one signal that must still fire for
-## anything on screen to ever change — timing out against it can't get stuck
-## the same way a stalled Tween or SceneTreeTimer can.
+## A prior version of this guarded by polling get_tree().process_frame in a
+## loop, on the theory that process_frame is the one signal that must still
+## fire for anything on screen to ever change — but that polling loop itself
+## was later caught not resuming (traced via targeted print instrumentation
+## live in the web build), stalling every one of its own awaits forever.
+## Awaiting a genuine race between `sig` and a SceneTreeTimer via a shared
+## one-shot signal sidesteps that: it needs no repeated wakeups of its own,
+## just one of the two real signals to ever fire once.
 func _await_or_timeout(sig: Signal, timeout_sec: float) -> void:
-	var fired := [false]
-	var mark_fired := func(): fired[0] = true
-	sig.connect(mark_fired, CONNECT_ONE_SHOT)
-	var elapsed := 0.0
-	while not fired[0] and elapsed < timeout_sec:
-		await get_tree().process_frame
-		elapsed += get_process_delta_time()
-	if sig.is_connected(mark_fired):
-		sig.disconnect(mark_fired)
+	var racer := _SignalRace.new()
+	var settle := func(): racer.fired.emit()
+	sig.connect(settle, CONNECT_ONE_SHOT)
+	get_tree().create_timer(timeout_sec).timeout.connect(settle, CONNECT_ONE_SHOT)
+	await racer.fired
+	if sig.is_connected(settle):
+		sig.disconnect(settle)
 
 
 ## Frame-swaps `rect.texture` through `frames` once, a short delay between each.
@@ -1597,6 +1611,11 @@ func _await_or_timeout(sig: Signal, timeout_sec: float) -> void:
 ## _run_combat_turns always rebuilds portraits from the static portrait path anyway.
 func _play_frames(rect: TextureRect, frames: Array[String], frame_time: float = 0.08) -> void:
 	for path in frames:
+		# A screen navigation (e.g. opening Settings mid-animation) can free
+		# `rect` out from under this still-awaiting coroutine — bail instead
+		# of writing to a freed node.
+		if not is_instance_valid(rect):
+			return
 		rect.texture = load(path)
 		await _await_or_timeout(get_tree().create_timer(frame_time).timeout, frame_time + 1.0)
 
@@ -1865,6 +1884,31 @@ func _turn_order_strip(state: Dictionary) -> Control:
 ## one just ran out — that's why this can't be a plain parameter the caller
 ## peeked earlier: at the moment a round rolls over there's nothing valid to
 ## peek until this call itself makes it happen).
+## Wraps _play_turn with a hard ceiling on the whole turn's animation chain —
+## on top of every individual step already being bounded via
+## _await_or_timeout, a still-unexplained WASM coroutine-resumption stall was
+## observed (live, via targeted print instrumentation) spanning a *whole*
+## animation chain rather than any single step within it, well past the sum
+## of every step's own bound. The turn's game math is already fully applied
+## by the time this is reached (_play_turn calls GameState.resolve_turn_now()
+## before any animation), so giving up on the animation here costs the player
+## nothing but visual polish for that one turn — it's strictly better than
+## leaving _combat_animating (and every action button behind it) stuck true
+## forever.
+func _play_turn_bounded(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control, timeout_sec: float = 6.0) -> void:
+	var racer := _SignalRace.new()
+	var run_it := func():
+		await _play_turn(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
+		if is_instance_valid(racer):
+			racer.fired.emit()
+	run_it.call()
+	get_tree().create_timer(timeout_sec).timeout.connect(func():
+		if is_instance_valid(racer):
+			racer.fired.emit()
+	, CONNECT_ONE_SHOT)
+	await racer.fired
+
+
 func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictionary, monster_wrappers: Dictionary, monster_rects: Dictionary, arena: Control) -> void:
 	var turn: Dictionary = Combat.peek_next_turn(state)
 	var party: Array[Hero] = state["party"]
@@ -2011,7 +2055,7 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 					if h and h.hp > 0:
 						break
 		force = false
-		await _play_turn(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
+		await _play_turn_bounded(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 		if GameState.run.get("node_state", {}).has("result"):
 			break
 		await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
@@ -2054,8 +2098,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label))
 		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", "Engage", func():
+			# engage_node() already emits state_changed, which render() is
+			# connected to — an explicit render() call here on top of that
+			# double-renders: the first (nested, from the emit) already
+			# kicks off the fight's opening auto-advance turn against this
+			# render's arena nodes, and the second frees those nodes out
+			# from under that still-animating coroutine.
 			GameState.engage_node()
-			render()
 		))
 		return
 
@@ -2813,7 +2862,12 @@ func _render_camp(v: VBoxContainer) -> void:
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
 
-	var fire_native_pos := Vector2(185 + 55 * 0.5, 80 + 73 * 0.85)
+	# Pixel-scanned against camp_bg.png directly (flame-colored pixels cluster
+	# at x:189-223, y:106-130 on the native 400x157 canvas) — previously
+	# reused the Hero Recruits hotspot rect, which happens to overlap the
+	# fire horizontally but put the emitter ~15px below the flame's own
+	# bottom edge, in the log pile instead of the fire.
+	var fire_native_pos := Vector2(206, 112)
 	_start_ember_loop(scene, fire_native_pos * scene_scale)
 	v.add_child(scene)
 
