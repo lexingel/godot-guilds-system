@@ -256,6 +256,69 @@ const ITEM_AFFIX_SUFFIX := {
 	"speed_pct": ["of Haste", "of the Wind"],
 }
 
+## Build archetypes — the shared vocabulary that ties a hero's innate kind,
+## subclass passive, skill keystones, item affixes and Legendaries together
+## into one visible "build". Purely a display/grouping layer: combat never
+## reads it, only the Roster's build summary and item/passive tags do.
+const ARCHETYPES := {
+	"opener": "Opener", "attrition": "Attrition", "guardian": "Guardian",
+	"evasion": "Evasion", "sustain": "Sustain", "executioner": "Executioner",
+}
+const KIND_ARCHETYPE := {
+	"first_round_pct": "opener", "speed_pct": "opener",
+	"escalate_pct": "attrition",
+	"hp_pct": "guardian", "hazard_guard_pct": "guardian", "wipe_guard": "guardian",
+	"dodge_pct": "evasion",
+	"mend_pct": "sustain",
+	"dmg_pct": "executioner", "boss_alpha_strike": "executioner",
+}
+
+## A generated item's base (the noun) grants a small fixed stat — so a Dagger
+## and a Mace of the same rarity and affixes still pull a build in different
+## directions. Scaled by item rank (ITEM_RANK_MULT), never by the affix roll.
+const ITEM_BASE_IMPLICIT := {
+	"Blade": {"kind": "dmg_pct", "value": 0.05},
+	"Bow": {"kind": "first_round_pct", "value": 0.08},
+	"Staff": {"kind": "mend_pct", "value": 0.02},
+	"Mace": {"kind": "escalate_pct", "value": 0.015},
+	"Dagger": {"kind": "speed_pct", "value": 0.06},
+	"Plate": {"kind": "hp_pct", "value": 0.06},
+	"Guard": {"kind": "hazard_guard_pct", "value": 0.06},
+	"Bracer": {"kind": "dodge_pct", "value": 0.04},
+	"Greaves": {"kind": "speed_pct", "value": 0.05},
+	"Mail": {"kind": "wipe_guard", "value": 0.05},
+	"Ring": {"kind": "escalate_pct", "value": 0.015},
+	"Amulet": {"kind": "mend_pct", "value": 0.02},
+	"Charm": {"kind": "dodge_pct", "value": 0.04},
+	"Band": {"kind": "first_round_pct", "value": 0.06},
+	"Talisman": {"kind": "hazard_guard_pct", "value": 0.06},
+}
+
+## Item rank = the rank of the rift it dropped in (GameState.loot_rank), and
+## scales every rolled number on it — so higher-rank rifts are worth the risk
+## and early gear eventually gets replaced. Indexed like RIFT_RANKS (F..SSS).
+const ITEM_RANK_MULT := [1.0, 1.08, 1.16, 1.25, 1.35, 1.47, 1.6, 1.75, 1.9]
+## Each rolled affix lands somewhere in this band of its base value.
+const ITEM_ROLL_RANGE := [0.8, 1.2]
+
+## An Epic's extra, situational affix — the Combat.hero_effects entry shape
+## (see its doc comment), rolled once and stored on the Item. "arch" is the
+## build archetype it belongs to (ARCHETYPES). Values here are Rank-F, pre-roll.
+const ITEM_COND_AFFIXES := [
+	{"arch": "opener", "kind": "dmg_pct", "value": 0.25, "cond": {"round_max": 1}},
+	{"arch": "opener", "kind": "dmg_pct", "value": 0.15, "cond": {"acting_first": true}},
+	{"arch": "attrition", "kind": "dmg_pct", "value": 0.18, "cond": {"round_min": 4}},
+	{"arch": "evasion", "kind": "dodge_pct", "value": 0.12, "cond": {"hp_above": 0.75}},
+	{"arch": "evasion", "trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.20},
+	{"arch": "guardian", "trigger": "ally_targeted", "effect": "intercept", "value": 0.20},
+	{"arch": "sustain", "trigger": "party_mend", "effect": "shield_lowest", "value": 0.06},
+	{"arch": "sustain", "trigger": "after_hit", "effect": "lifesteal", "value": 0.10},
+	{"arch": "executioner", "kind": "dmg_pct", "value": 0.30, "cond": {"target_below": 0.35}},
+	{"arch": "executioner", "kind": "dmg_pct", "value": 0.15, "cond": {"vs_boss": true}},
+	{"arch": "executioner", "kind": "dmg_pct", "value": 0.25, "cond": {"hp_below": 0.4}},
+	{"arch": "guardian", "kind": "dmg_pct", "value": 0.15, "cond": {"ally_below": 0.5}},
+]
+
 ## Field Incense: a one-shot consumable bought with Coins (not looted, not
 ## hero-bound) and used at Party Assembly — its bonus applies party-wide for
 ## every fight in the run about to start, cleared when that run ends. Reuses
@@ -295,26 +358,68 @@ static func find_runestone(runestone_id: String) -> Dictionary:
 ## through hero_item_total/hero_skill_total for free. "locked_role"/
 ## "locked_subclasses" restrict who can equip it - "" / [] means no restriction.
 const UNIQUE_ITEMS := [
-	{"id": "bloodthirst_fang", "name": "Bloodthirst Fang", "category": "weapon",
+	{"id": "bloodthirst_fang", "name": "Bloodthirst Fang", "category": "weapon", "arch": "sustain",
 	 "effects": [{"trigger": "after_hit", "effect": "lifesteal", "value": 0.25}],
 	 "drawback_kind": "hazard_guard_pct", "drawback_value": -0.15,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "Heals the wielder for 25% of the damage they deal each round they attack. -15% hazard severity guard."},
-	{"id": "widows_edge", "name": "Widow's Edge", "category": "weapon",
+	{"id": "widows_edge", "name": "Widow's Edge", "category": "weapon", "arch": "executioner",
 	 "effects": [{"trigger": "before_hit", "effect": "execute_below", "value": 0.15}],
 	 "drawback_kind": "dmg_pct", "drawback_value": -0.10,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "Instantly finishes a foe this hero's attack would drop below 15% HP. -10% damage otherwise."},
-	{"id": "last_stand_plate", "name": "Last Stand Plate", "category": "armor",
+	{"id": "last_stand_plate", "name": "Last Stand Plate", "category": "armor", "arch": "evasion",
 	 "effects": [{"kind": "dodge_pct", "value": 0.30, "scale": "missing_hp"}],
 	 "drawback_kind": "dodge_pct", "drawback_value": -0.10,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "The lower this hero's HP, up to +30% dodge chance near death. -10% dodge chance at full HP."},
-	{"id": "oathbound_talisman", "name": "Oathbound Talisman", "category": "focus",
+	{"id": "oathbound_talisman", "name": "Oathbound Talisman", "category": "focus", "arch": "sustain",
 	 "effects": [{"trigger": "party_mend", "effect": "shield_lowest", "value": 0.15}],
 	 "drawback_kind": "dmg_pct", "drawback_value": -0.15,
 	 "locked_role": "cleric", "locked_subclasses": [],
 	 "desc": "Whenever the party mends, also shields the lowest-HP ally for 15% of their max HP. -15% damage. Cleric only."},
+	# -- Build-defining additions, one or more per archetype, several built
+	# around the speed/turn-order system specifically. --
+	{"id": "reapers_due", "name": "Reaper's Due", "category": "weapon", "arch": "executioner",
+	 "effects": [{"trigger": "on_kill", "effect": "extra_turn", "value": 1.0}],
+	 "drawback_kind": "hp_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "On a kill, this hero immediately acts again (once per round). -10% HP."},
+	{"id": "quickening_band", "name": "Quickening Band", "category": "focus", "arch": "opener",
+	 "effects": [{"kind": "dmg_pct", "value": 0.02, "scale": "speed_above_10"}],
+	 "drawback_kind": "hp_pct", "drawback_value": -0.08,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "+2% damage for every point of Speed above 10. -8% HP."},
+	{"id": "millstone_maul", "name": "Millstone Maul", "category": "weapon", "arch": "attrition",
+	 "effects": [{"kind": "dmg_pct", "value": 0.50, "cond": {"acting_last": true}}],
+	 "drawback_kind": "speed_pct", "drawback_value": -0.40,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "+50% damage when this hero is the last in the round to act. -40% Speed."},
+	{"id": "hourglass_of_first_light", "name": "Hourglass of First Light", "category": "focus", "arch": "opener",
+	 "effects": [{"kind": "dmg_pct", "value": 0.40, "cond": {"acting_first": true}}],
+	 "drawback_kind": "escalate_pct", "drawback_value": -0.02,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "+40% damage when this hero acts first in the round. -2% damage per round (stacking)."},
+	{"id": "wardens_oath", "name": "Warden's Oath", "category": "armor", "arch": "guardian",
+	 "effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.60}],
+	 "drawback_kind": "dodge_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "60% chance to step in front of a blow aimed at an ally below half HP. -10% dodge chance."},
+	{"id": "ember_of_the_last_hour", "name": "Ember of the Last Hour", "category": "focus", "arch": "executioner",
+	 "effects": [{"kind": "dmg_pct", "value": 0.45, "cond": {"hp_below": 0.35}}],
+	 "drawback_kind": "hp_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "+45% damage while this hero is below 35% HP. -10% HP."},
+	{"id": "chronoblade", "name": "Chronoblade", "category": "weapon", "arch": "evasion",
+	 "effects": [{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": 0.60}],
+	 "drawback_kind": "dmg_pct", "drawback_value": -0.08,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "60% chance to cool every Ability by 1 round when this hero dodges or takes a heavy hit. -8% damage."},
+	{"id": "bossbane_spear", "name": "Bossbane Spear", "category": "weapon", "arch": "executioner",
+	 "effects": [{"kind": "dmg_pct", "value": 0.40, "cond": {"vs_boss": true}}],
+	 "drawback_kind": "first_round_pct", "drawback_value": -0.10,
+	 "locked_role": "", "locked_subclasses": [],
+	 "desc": "+40% damage in Boss fights. -10% first-strike damage."},
 ]
 
 ## Legendary relics: same idea as UNIQUE_ITEMS but party-wide. `effect`/`value`

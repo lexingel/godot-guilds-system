@@ -668,6 +668,22 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 	state_changed.emit()
 
 
+## The rift rank newly generated items drop at (GameData.ITEM_RANK_MULT): a
+## Rift Map rift's own rank; Greater Rift reads as D; Endless climbs one rank
+## per cycle from D; Lesser and anything outside a run (shop restock etc.) is F.
+func loot_rank() -> String:
+	if run.is_empty():
+		return "F"
+	var mapped: String = str(run.get("rift_rank", ""))
+	if mapped != "":
+		return mapped
+	if run.get("endless", false):
+		return str(GameData.RIFT_RANKS[min(GameData.RIFT_RANKS.size() - 1, 2 + int(run.get("cycle", 0)))]["id"])
+	if run.get("diff_id", "") == "greater":
+		return "D"
+	return "F"
+
+
 func _diff() -> Dictionary:
 	var diff: Dictionary
 	if run.get("endless", false):
@@ -1841,9 +1857,13 @@ func craft_items(category: String, rarity: String) -> void:
 			matches.append(it)
 	if matches.size() < 3:
 		return
+	# The crafted item keeps the best rank among the three fed in — feeding
+	# high-rank commons shouldn't hand back a Rank-F rare.
+	var best_rank_idx := 0
 	for i in 3:
+		best_rank_idx = max(best_rank_idx, GameData.rift_rank_index(matches[i].item_rank))
 		items.erase(matches[i])
-	items.append(Combat.gen_item(str(CRAFT_RARITY_UP[rarity]), category))
+	items.append(Combat.gen_item(str(CRAFT_RARITY_UP[rarity]), category, str(GameData.RIFT_RANKS[best_rank_idx]["id"])))
 	crafts_performed += 1
 	save()
 	state_changed.emit()

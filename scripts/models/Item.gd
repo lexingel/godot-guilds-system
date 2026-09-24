@@ -16,6 +16,10 @@ var secondary_kind: String = ""
 var secondary_value: float = 0.0
 var tertiary_kind: String = ""
 var tertiary_value: float = 0.0
+var implicit_kind: String = ""   # fixed stat from the item's base noun (GameData.ITEM_BASE_IMPLICIT)
+var implicit_value: float = 0.0
+var item_rank: String = ""       # rift rank it dropped at (GameData.RIFT_RANKS id); "" = pre-rank legacy item
+var effects: Array = []          # rolled conditional/trigger affixes — Combat.hero_effects entry shape
 var equipped_to: String = ""    # hero id, "" = unequipped
 var equipped_idx: int = -1      # index within that hero's weapon/gear slots
 var socketed_kind: String = ""     # "" = no runestone socketed
@@ -36,6 +40,8 @@ func to_dict() -> Dictionary:
 		"id": id, "name": name, "category": category, "rarity": rarity, "kind": kind,
 		"value": value, "secondary_kind": secondary_kind, "secondary_value": secondary_value,
 		"tertiary_kind": tertiary_kind, "tertiary_value": tertiary_value,
+		"implicit_kind": implicit_kind, "implicit_value": implicit_value,
+		"item_rank": item_rank, "effects": effects,
 		"equipped_to": equipped_to, "equipped_idx": equipped_idx,
 		"socketed_kind": socketed_kind, "socketed_value": socketed_value,
 		"unique_id": unique_id, "drawback_kind": drawback_kind, "drawback_value": drawback_value,
@@ -55,6 +61,10 @@ static func from_dict(d: Dictionary) -> Item:
 	it.secondary_value = d.get("secondary_value", 0.0)
 	it.tertiary_kind = d.get("tertiary_kind", "")
 	it.tertiary_value = d.get("tertiary_value", 0.0)
+	it.implicit_kind = d.get("implicit_kind", "")
+	it.implicit_value = d.get("implicit_value", 0.0)
+	it.item_rank = d.get("item_rank", "")
+	it.effects = d.get("effects", [])
 	it.equipped_to = d.get("equipped_to", "")
 	it.equipped_idx = d.get("equipped_idx", -1)
 	it.socketed_kind = d.get("socketed_kind", "")

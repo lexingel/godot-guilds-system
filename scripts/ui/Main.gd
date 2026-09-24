@@ -397,7 +397,7 @@ func _icon(path: String, size: int = 24) -> TextureRect:
 ## Same visual as _icon(), but for an unequipped Item on the Roster's "drag to
 ## equip" strip: a DragIcon carrying {"kind": "inventory_item", "item_id",
 ## "slot_type"} so a matching _equip_slot_frame's drop_target can accept it.
-func _draggable_item_icon(it: Item, size: int = 32) -> DragIcon:
+func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) -> DragIcon:
 	var t := DragIcon.new()
 	t.texture = load(GameData.ITEM_CATEGORY_ICON_PATH[it.category])
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -406,6 +406,10 @@ func _draggable_item_icon(it: Item, size: int = 32) -> DragIcon:
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	t.tooltip_text = "%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)]
+	if compare_for:
+		var cmp := _item_compare_text(it, compare_for)
+		if cmp != "":
+			t.tooltip_text += "\n\n" + cmp
 	t.mouse_default_cursor_shape = Control.CURSOR_MOVE
 	t.drag_payload = {"kind": "inventory_item", "item_id": it.id, "slot_type": it.slot_type()}
 	return t
@@ -492,13 +496,65 @@ func _loot_desc(obj, is_relic: bool) -> String:
 		return r.desc()
 	var it: Item = obj
 	if it.unique_id != "":
-		return str(GameData.find_unique_item(it.unique_id).get("desc", ""))
+		var udef := GameData.find_unique_item(it.unique_id)
+		return "%s [%s]" % [str(udef.get("desc", "")), GameData.ARCHETYPES.get(str(udef.get("arch", "")), "Unique")]
 	var parts: Array[String] = [Combat.describe_skill(it.kind, it.value)]
 	if it.secondary_kind != "":
 		parts.append(Combat.describe_skill(it.secondary_kind, it.secondary_value))
 	if it.tertiary_kind != "":
 		parts.append(Combat.describe_skill(it.tertiary_kind, it.tertiary_value))
-	return ", ".join(parts)
+	for e in it.effects:
+		parts.append("%s [%s]" % [Combat.describe_effect(e), GameData.ARCHETYPES.get(str(e.get("arch", "")), "")])
+	var text := ", ".join(parts)
+	if it.implicit_kind != "":
+		text = "Base: %s · %s" % [Combat.describe_skill(it.implicit_kind, it.implicit_value), text]
+	if it.item_rank != "":
+		text = "Rank %s · %s" % [it.item_rank, text]
+	return text
+
+
+## Every flat kind->value an item contributes (exactly what
+## Combat.hero_item_total sums for it), for side-by-side comparison.
+func _item_stat_map(it: Item) -> Dictionary:
+	var m := {}
+	if it == null:
+		return m
+	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
+			[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
+		if str(pair[0]) != "":
+			m[pair[0]] = float(m.get(pair[0], 0.0)) + float(pair[1])
+	return m
+
+
+## "vs Swift Blade: +5% turn speed, -12% damage" — how equipping `it` into
+## the slot a quick-equip would pick (_best_swap_slot) changes `h`'s flat
+## stats. Situational effects can't be netted as numbers, so they're listed
+## as gained/lost instead.
+func _item_compare_text(it: Item, h: Hero, slot: int = -2) -> String:
+	if slot == -2:
+		slot = _best_swap_slot(h, it.slot_type())
+	var current: Item = _find_equipped_at(h.id, it.slot_type(), slot) if slot >= 0 else null
+	var a := _item_stat_map(it)
+	var b := _item_stat_map(current)
+	var lines: Array[String] = []
+	for kind in GameData.BUILD_KINDS:
+		var d: float = float(a.get(kind, 0.0)) - float(b.get(kind, 0.0))
+		if absf(d) >= 0.001:
+			var s := Combat.describe_skill(kind, absf(d))
+			if s.begins_with("+"):
+				lines.append(s if d > 0 else "-" + s.substr(1))
+			else:
+				lines.append(("more: " if d > 0 else "less: ") + s)
+	var gained: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
+	for e in gained:
+		lines.append("gains: " + Combat.describe_effect(e))
+	if current:
+		var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
+		for e in lost:
+			lines.append("loses: " + Combat.describe_effect(e))
+	if lines.is_empty():
+		return ""
+	return "%s:\n%s" % ["vs " + current.name if current else "Into an empty slot", "\n".join(lines)]
 
 
 func _loot_display_name(obj) -> String:
@@ -3960,7 +4016,7 @@ func _render_roster(v: VBoxContainer) -> void:
 		inv_flow.add_theme_constant_override("h_separation", 6)
 		inv_flow.add_theme_constant_override("v_separation", 6)
 		for it in fitting_items:
-			inv_flow.add_child(_draggable_item_icon(it))
+			inv_flow.add_child(_draggable_item_icon(it, 32, h))
 		right_v.add_child(inv_flow)
 	dash.add_child(right_v)
 	cv.add_child(dash)
@@ -4379,6 +4435,9 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 			render()
 		)
 		pv.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, [equip_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18)))
+		var cmp := _item_compare_text(it, h, idx)
+		if cmp != "":
+			pv.add_child(_wrap_label(cmp.replace(":\n", ": ").replace("\n", " · "), 10, true))
 
 	pv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", func():
 		expanded_slot = ""

@@ -343,13 +343,19 @@ func gen_unique_relic() -> Relic:
 
 ## `category_override` — see gen_relic's type_override for why: Crafting Hall
 ## recipes keep a player's chosen equip-slot category intact across a craft.
-func gen_item(rarity_id: String, category_override: String = "") -> Item:
+## `rank` is the item's rift rank (see GameData.ITEM_RANK_MULT); "" means
+## "wherever the party is right now" (GameState.loot_rank).
+func gen_item(rarity_id: String, category_override: String = "", rank: String = "") -> Item:
 	if rarity_id == "legendary":
 		return gen_unique_item()
+	if rank == "":
+		rank = GameState.loot_rank()
+	var rank_mult: float = GameData.ITEM_RANK_MULT[GameData.rift_rank_index(rank)]
 	var rarity := GameData.find_rarity(rarity_id)
 	var category: String = category_override if category_override != "" else GameData.ITEM_CATEGORIES[randi() % GameData.ITEM_CATEGORIES.size()]
 	var nouns: Array = GameData.ITEM_NOUNS[category]
 	var noun: String = nouns[randi() % nouns.size()]
+	var roll := func() -> float: return randf_range(GameData.ITEM_ROLL_RANGE[0], GameData.ITEM_ROLL_RANGE[1]) * rank_mult
 
 	# Roll N distinct kinds (1/2/3 by rarity) from this category's pool —
 	# shuffled-and-take-first rather than reject-sampling, so it's exact and
@@ -366,14 +372,22 @@ func gen_item(rarity_id: String, category_override: String = "") -> Item:
 	GameState.next_id += 1
 	it.category = category
 	it.rarity = rarity["id"]
+	it.item_rank = rank
 	it.kind = str(rolled_kinds[0])
-	it.value = snappedf(GameData.ITEM_KIND_BASE[it.kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[0], 0.001)
+	it.value = snappedf(GameData.ITEM_KIND_BASE[it.kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[0] * roll.call(), 0.001)
 	if rolled_kinds.size() > 1:
 		it.secondary_kind = str(rolled_kinds[1])
-		it.secondary_value = snappedf(GameData.ITEM_KIND_BASE[it.secondary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[1], 0.001)
+		it.secondary_value = snappedf(GameData.ITEM_KIND_BASE[it.secondary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[1] * roll.call(), 0.001)
 	if rolled_kinds.size() > 2:
 		it.tertiary_kind = str(rolled_kinds[2])
-		it.tertiary_value = snappedf(GameData.ITEM_KIND_BASE[it.tertiary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[2], 0.001)
+		it.tertiary_value = snappedf(GameData.ITEM_KIND_BASE[it.tertiary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[2] * roll.call(), 0.001)
+	var implicit: Dictionary = GameData.ITEM_BASE_IMPLICIT[noun]
+	it.implicit_kind = str(implicit["kind"])
+	it.implicit_value = snappedf(float(implicit["value"]) * rank_mult, 0.001)
+	if rarity_id == "epic":
+		var affix: Dictionary = GameData.ITEM_COND_AFFIXES[randi() % GameData.ITEM_COND_AFFIXES.size()].duplicate(true)
+		affix["value"] = snappedf(float(affix["value"]) * roll.call(), 0.001)
+		it.effects = [affix]
 
 	var prefixes: Array = GameData.ITEM_AFFIX_PREFIX[it.kind]
 	var name := "%s %s" % [str(prefixes[randi() % prefixes.size()]), noun]
@@ -653,6 +667,8 @@ func hero_item_total(h: Hero, kind: String) -> float:
 				s += it.secondary_value
 			if it.tertiary_kind == kind:
 				s += it.tertiary_value
+			if it.implicit_kind == kind:
+				s += it.implicit_value
 			if it.socketed_kind == kind:
 				s += it.socketed_value
 			if it.drawback_kind == kind:
@@ -674,12 +690,18 @@ func hero_item_total(h: Hero, kind: String) -> float:
 func hero_effects(h: Hero) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for it in GameState.items:
-		if it.equipped_to == h.id and it.unique_id != "":
-			for e in GameData.find_unique_item(it.unique_id).get("effects", []):
-				var tagged: Dictionary = e.duplicate()
-				tagged["source"] = it.name
-				out.append(tagged)
+		if it.equipped_to != h.id:
+			continue
+		var item_effects: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
+		for e in item_effects:
+			out.append(_tagged(e, it.name))
 	return out
+
+
+func _tagged(e: Dictionary, source: String) -> Dictionary:
+	var tagged: Dictionary = e.duplicate()
+	tagged["source"] = source
+	return tagged
 
 
 ## Sum of `h`'s conditional stat effects of `kind` whose condition holds right
@@ -690,8 +712,9 @@ func hero_cond_stat(h: Hero, kind: String, state: Dictionary, ctx: Dictionary = 
 	for e in hero_effects(h):
 		if e.get("kind", "") == kind and _cond_ok(e.get("cond", {}), h, state, ctx):
 			var v := float(e["value"])
-			if e.get("scale", "") == "missing_hp":
-				v *= 1.0 - float(h.hp) / float(max_hp(h))
+			match e.get("scale", ""):
+				"missing_hp": v *= 1.0 - float(h.hp) / float(max_hp(h))
+				"speed_above_10": v *= max(0.0, spd_of(h) - 10.0)
 			s += v
 	return s
 
@@ -721,6 +744,9 @@ func _cond_ok(cond: Dictionary, h: Hero, state: Dictionary, ctx: Dictionary) -> 
 			"acting_first":
 				var order: Array = state.get("turn_order", [])
 				ok = (not order.is_empty() and order[0]["type"] == "hero" and str(order[0]["id"]) == h.id) == bool(v)
+			"acting_last":
+				var order2: Array = state.get("turn_order", [])
+				ok = (not order2.is_empty() and order2[-1]["type"] == "hero" and str(order2[-1]["id"]) == h.id) == bool(v)
 			_:
 				push_error("Unknown effect condition '%s'" % key)
 		if not ok:
@@ -742,7 +768,9 @@ func _party_effects(state: Dictionary) -> Array[Dictionary]:
 ## Fires trigger point `trigger` for hero `h`: their own effects first, then the
 ## party-wide ones. Points: before_hit (ctx: target, dealt — may rewrite dealt),
 ## after_hit (ctx: target, dealt), on_kill, evade_or_heavy (ctx: attacker),
-## party_mend. Add a point with one _fire call where content first needs it.
+## party_mend, ally_targeted (fired on each OTHER living hero when a monster
+## picks a target; ctx: target, attacker — may rewrite target). Add a point
+## with one _fire call where content first needs it.
 func _fire(trigger: String, state: Dictionary, h: Hero, ctx: Dictionary = {}) -> void:
 	for e in hero_effects(h) + _party_effects(state):
 		if e.get("trigger", "") == trigger and float(e["value"]) > 0.0 and _cond_ok(e.get("cond", {}), h, state, ctx):
@@ -778,8 +806,79 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 					if h2.ability_cooldown > 0:
 						h2.ability_cooldown -= 1
 				log.append("The %s hums — abilities cool faster!" % source)
+		"extra_turn":
+			var used: Dictionary = state.get("_extra_turned", {})
+			if not used.has(h.id) and h.hp > 0:
+				used[h.id] = true
+				state["_extra_turned"] = used
+				state["turn_order"].insert(int(state["turn_idx"]), {"type": "hero", "id": h.id, "_spd": 0.0})
+				log.append("%s's %s — they act again!" % [h.name, source])
+		"intercept":
+			var aimed: Hero = ctx["target"]
+			if aimed != h and float(aimed.hp) / float(max_hp(aimed)) < 0.5 and randf() < value:
+				ctx["target"] = h
+				log.append("%s steps in front of the blow meant for %s!" % [h.name, aimed.name])
+		"weaken_attacker":
+			var m2: Dictionary = ctx["attacker"]
+			m2["dmg"] = float(m2["dmg"]) * (1.0 - value)
+			log.append("%s's %s blunts %s's strength." % [h.name, source, m2["name"]])
+		"mend_party":
+			for a in state["party"]:
+				if a.hp > 0:
+					a.hp = min(max_hp(a), a.hp + max(1, int(round(max_hp(a) * value))))
+			log.append("%s's %s mends the party." % [h.name, source])
 		_:
 			push_error("Unknown effect '%s'" % effect)
+
+
+## One effect entry (hero_effects shape) as a player-facing sentence, e.g.
+## "+25% damage in round 1" or "On a kill: act again (once per round)".
+func describe_effect(e: Dictionary) -> String:
+	var pct := func(x) -> String: return "%d%%" % int(round(float(x) * 100.0))
+	var v: float = float(e.get("value", 0.0))
+	var text := ""
+	if e.has("kind"):
+		text = describe_skill(str(e["kind"]), v)
+		match e.get("scale", ""):
+			"missing_hp": text = "Up to %s as HP drops" % text.trim_prefix("+")
+			"speed_above_10": text = "%s per Speed above 10" % text
+	else:
+		var what := ""
+		match str(e.get("effect", "")):
+			"execute_below": what = "finish foes left below %s HP" % pct.call(v)
+			"lifesteal": what = "heal for %s of damage dealt" % pct.call(v)
+			"shield_lowest": what = "shield the lowest-HP ally for %s of their max HP" % pct.call(v)
+			"counter_attack": what = "%s chance to counter-attack" % pct.call(v)
+			"shave_cooldowns": what = "%s chance to cool every Ability by 1 round" % pct.call(v)
+			"extra_turn": what = "act again (once per round)"
+			"intercept": what = "%s chance to take the hit for an ally below half HP" % pct.call(v)
+			"weaken_attacker": what = "cut the attacker's damage by %s" % pct.call(v)
+			"mend_party": what = "mend every ally for %s of their max HP" % pct.call(v)
+		var when := ""
+		match str(e.get("trigger", "")):
+			"after_hit", "before_hit": when = "On hit"
+			"on_kill": when = "On a kill"
+			"evade_or_heavy": when = "When dodging or hit hard"
+			"party_mend": when = "Whenever the party mends"
+			"ally_targeted": when = "When an ally is attacked"
+		text = "%s: %s" % [when, what]
+	var conds: Array[String] = []
+	for key in e.get("cond", {}):
+		var c = e["cond"][key]
+		match key:
+			"round_max": conds.append("in round 1" if int(c) == 1 else "in the first %d rounds" % int(c))
+			"round_min": conds.append("from round %d on" % int(c))
+			"hp_above": conds.append("while above %s HP" % pct.call(c))
+			"hp_below": conds.append("while below %s HP" % pct.call(c))
+			"vs_boss": conds.append("against bosses" if bool(c) else "outside boss fights")
+			"formation": conds.append("in the %s row" % str(c))
+			"target_below": conds.append("vs foes below %s HP" % pct.call(c))
+			"ally_below": conds.append("while an ally is below %s HP" % pct.call(c))
+			"acting_first": conds.append("when acting first in the round")
+			"acting_last": conds.append("when acting last in the round")
+	if not conds.is_empty():
+		text += " " + ", ".join(conds)
+	return text
 
 
 ## Shields the lowest-HP living hero for `frac` of their max HP. Returns
@@ -1088,6 +1187,7 @@ func _start_round(state: Dictionary) -> void:
 	state["_attack_mult"] = attack_mult
 	state["_escalate_mult"] = escalate_mult
 	state["_defending"] = {}
+	state["_extra_turned"] = {}
 
 	for h in party:
 		if h.ability_cooldown > 0:
@@ -1313,6 +1413,13 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	if alive_now.is_empty():
 		return
 	var target: Hero = weighted_formation_target(alive_now)
+	var aim := {"target": target, "attacker": m}
+	for ally in alive_now:
+		if ally != target:
+			_fire("ally_targeted", state, ally, aim)
+			if aim["target"] != target:
+				break
+	target = aim["target"]
 	var mech: Dictionary = m.get("mechanic", {})
 	var mech2: Dictionary = m.get("mechanic2", {})
 	var ability: Dictionary = m.get("ability", {})
