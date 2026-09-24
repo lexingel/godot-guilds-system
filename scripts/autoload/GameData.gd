@@ -288,30 +288,30 @@ static func find_runestone(runestone_id: String) -> Dictionary:
 			return r
 	return {}
 
-## Legendary items: fixed (never rolled) hero-bound gear, each with one
-## effect outside the normal BUILD_KINDS vocabulary (dispatched by `effect` in
-## Combat.resolve_round via Combat.hero_has_unique_item) plus, on most, a real
-## drawback in the *existing* kind vocabulary so it still flows through
-## hero_item_total/hero_skill_total for free. "locked_role"/"locked_subclasses"
-## restrict who can equip it - "" / [] means no restriction.
+## Legendary items: fixed (never rolled) hero-bound gear. Their mechanic is
+## plain data in "effects" — the shared EFFECT vocabulary Combat.hero_effects
+## reads (see the doc comment above Combat.hero_effects for the entry shape) —
+## plus, on most, a real drawback in the flat kind vocabulary so it still flows
+## through hero_item_total/hero_skill_total for free. "locked_role"/
+## "locked_subclasses" restrict who can equip it - "" / [] means no restriction.
 const UNIQUE_ITEMS := [
 	{"id": "bloodthirst_fang", "name": "Bloodthirst Fang", "category": "weapon",
-	 "effect": "lifesteal_pct", "value": 0.25,
+	 "effects": [{"trigger": "after_hit", "effect": "lifesteal", "value": 0.25}],
 	 "drawback_kind": "hazard_guard_pct", "drawback_value": -0.15,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "Heals the wielder for 25% of the damage they deal each round they attack. -15% hazard severity guard."},
 	{"id": "widows_edge", "name": "Widow's Edge", "category": "weapon",
-	 "effect": "execute_below_pct", "value": 0.15,
+	 "effects": [{"trigger": "before_hit", "effect": "execute_below", "value": 0.15}],
 	 "drawback_kind": "dmg_pct", "drawback_value": -0.10,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "Instantly finishes a foe this hero's attack would drop below 15% HP. -10% damage otherwise."},
 	{"id": "last_stand_plate", "name": "Last Stand Plate", "category": "armor",
-	 "effect": "desperate_dodge", "value": 0.30,
+	 "effects": [{"kind": "dodge_pct", "value": 0.30, "scale": "missing_hp"}],
 	 "drawback_kind": "dodge_pct", "drawback_value": -0.10,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "The lower this hero's HP, up to +30% dodge chance near death. -10% dodge chance at full HP."},
 	{"id": "oathbound_talisman", "name": "Oathbound Talisman", "category": "focus",
-	 "effect": "mend_shield_proc", "value": 0.15,
+	 "effects": [{"trigger": "party_mend", "effect": "shield_lowest", "value": 0.15}],
 	 "drawback_kind": "dmg_pct", "drawback_value": -0.15,
 	 "locked_role": "cleric", "locked_subclasses": [],
 	 "desc": "Whenever the party mends, also shields the lowest-HP ally for 15% of their max HP. -15% damage. Cleric only."},

@@ -660,12 +660,141 @@ func hero_item_total(h: Hero, kind: String) -> float:
 	return s
 
 
-## True if `h` has the named Legendary item (by unique_id) equipped.
-func hero_has_unique_item(h: Hero, unique_id: String) -> bool:
+## Every conditional-stat and trigger effect `h` carries, from any source.
+## Flat always-on stats never live here — they stay in hero_skill_total. This
+## is the one function new sources (subclass passives, keystones, earned
+## traits, rolled item affixes) append to; combat never asks "does this hero
+## own item X" again. Two entry shapes, both optionally gated by "cond" (see
+## _cond_ok for the vocabulary):
+##   stat:    {"kind": "dmg_pct"|"dodge_pct", "value": f, "scale"?: "missing_hp"}
+##            — read per action by hero_cond_stat. Only those two kinds are read
+##            anywhere yet (attack damage, dodge when targeted).
+##   trigger: {"trigger": <_fire point>, "effect": <_apply_effect name>, "value": f}
+## Each returned entry is tagged with "source" (a display name for log lines).
+func hero_effects(h: Hero) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	for it in GameState.items:
-		if it.equipped_to == h.id and it.unique_id == unique_id:
-			return true
-	return false
+		if it.equipped_to == h.id and it.unique_id != "":
+			for e in GameData.find_unique_item(it.unique_id).get("effects", []):
+				var tagged: Dictionary = e.duplicate()
+				tagged["source"] = it.name
+				out.append(tagged)
+	return out
+
+
+## Sum of `h`'s conditional stat effects of `kind` whose condition holds right
+## now — layered on top of the flat hero_skill_total value at the moment of an
+## action (attack/being targeted), never folded into max_hp/dmg_of/spd_of.
+func hero_cond_stat(h: Hero, kind: String, state: Dictionary, ctx: Dictionary = {}) -> float:
+	var s := 0.0
+	for e in hero_effects(h):
+		if e.get("kind", "") == kind and _cond_ok(e.get("cond", {}), h, state, ctx):
+			var v := float(e["value"])
+			if e.get("scale", "") == "missing_hp":
+				v *= 1.0 - float(h.hp) / float(max_hp(h))
+			s += v
+	return s
+
+
+## Every key in `cond` must hold. An unknown key fails closed (and errors) so a
+## typo'd condition in data can't silently turn into an always-on bonus.
+func _cond_ok(cond: Dictionary, h: Hero, state: Dictionary, ctx: Dictionary) -> bool:
+	var round_num := int(state.get("round_num", 0))
+	var hp_frac := float(h.hp) / float(max(1, max_hp(h)))
+	for key in cond:
+		var v = cond[key]
+		var ok := false
+		match key:
+			"round_max": ok = round_num <= int(v)
+			"round_min": ok = round_num >= int(v)
+			"hp_above": ok = hp_frac > float(v)
+			"hp_below": ok = hp_frac < float(v)
+			"vs_boss": ok = bool(state.get("is_boss", false)) == bool(v)
+			"formation": ok = h.formation == str(v)
+			"target_below":
+				var t: Dictionary = ctx.get("target", {})
+				ok = not t.is_empty() and float(t["hp"]) / float(t["max_hp"]) < float(v)
+			"ally_below":
+				for a in state.get("party", []):
+					if a != h and a.hp > 0 and float(a.hp) / float(max_hp(a)) < float(v):
+						ok = true
+			"acting_first":
+				var order: Array = state.get("turn_order", [])
+				ok = (not order.is_empty() and order[0]["type"] == "hero" and str(order[0]["id"]) == h.id) == bool(v)
+			_:
+				push_error("Unknown effect condition '%s'" % key)
+		if not ok:
+			return false
+	return true
+
+
+## Party-wide trigger effects whose strength lives on combat state (relic
+## specials, surged mid-fight by abilities like counter_surge) — fired through
+## the same _fire points as a hero's own effects, just with no condition.
+func _party_effects(state: Dictionary) -> Array[Dictionary]:
+	return [
+		{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": float(state["counter"]), "source": "counter"},
+		{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": float(state["cooldown_shave"]), "source": "Chronometer"},
+		{"trigger": "on_kill", "effect": "shield_lowest", "value": float(state["kill_shield"]), "source": "Lantern"},
+	]
+
+
+## Fires trigger point `trigger` for hero `h`: their own effects first, then the
+## party-wide ones. Points: before_hit (ctx: target, dealt — may rewrite dealt),
+## after_hit (ctx: target, dealt), on_kill, evade_or_heavy (ctx: attacker),
+## party_mend. Add a point with one _fire call where content first needs it.
+func _fire(trigger: String, state: Dictionary, h: Hero, ctx: Dictionary = {}) -> void:
+	for e in hero_effects(h) + _party_effects(state):
+		if e.get("trigger", "") == trigger and float(e["value"]) > 0.0 and _cond_ok(e.get("cond", {}), h, state, ctx):
+			_apply_effect(str(e["effect"]), float(e["value"]), str(e["source"]), state, h, ctx)
+
+
+func _apply_effect(effect: String, value: float, source: String, state: Dictionary, h: Hero, ctx: Dictionary) -> void:
+	var log: Array[String] = state["log"]
+	match effect:
+		"execute_below":
+			var t: Dictionary = ctx["target"]
+			var after_hp: float = float(t["hp"]) - float(ctx["dealt"])
+			if after_hp > 0.0 and float(t["max_hp"]) > 0.0 and after_hp / float(t["max_hp"]) < value:
+				ctx["dealt"] = float(t["hp"])
+				log.append("%s's %s finds the killing blow!" % [h.name, source])
+		"lifesteal":
+			var healed: int = max(1, int(round(float(ctx["dealt"]) * value)))
+			h.hp = min(max_hp(h), h.hp + healed)
+			log.append("%s drains %d HP from the strike." % [h.name, healed])
+		"shield_lowest":
+			var shielded := _shield_lowest(state, value)
+			if not shielded.is_empty():
+				log.append("The %s shields %s for %d." % [source, shielded[0].name, int(round(shielded[1]))])
+		"counter_attack":
+			if randf() < value:
+				var m: Dictionary = ctx["attacker"]
+				var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
+				m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
+				log.append("%s counters, striking %s for %d!" % [h.name, m["name"], counter_dmg])
+		"shave_cooldowns":
+			if randf() < value:
+				for h2 in state["party"]:
+					if h2.ability_cooldown > 0:
+						h2.ability_cooldown -= 1
+				log.append("The %s hums — abilities cool faster!" % source)
+		_:
+			push_error("Unknown effect '%s'" % effect)
+
+
+## Shields the lowest-HP living hero for `frac` of their max HP. Returns
+## [hero, amount], or [] if nobody is standing.
+func _shield_lowest(state: Dictionary, frac: float) -> Array:
+	var lowest: Hero = null
+	for hh in state["party"]:
+		if hh.hp > 0 and (lowest == null or hh.hp < lowest.hp):
+			lowest = hh
+	if lowest == null:
+		return []
+	var shields: Dictionary = state["hero_shields"]
+	var amt: float = max_hp(lowest) * frac
+	shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
+	return [lowest, amt]
 
 
 func synergy_bonus() -> Dictionary:
@@ -1002,14 +1131,10 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			var team_dmg_base: float = float(state["team_dmg_base"])
 			var type_mult := type_matchup_mult(h.type, str(monsters[target_idx].get("type", "")))
 			var formation_mult := 1.0 if bool(monsters[target_idx].get("is_main", true)) else 0.75
-			var dealt: float = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * type_mult * formation_mult
-			if hero_has_unique_item(h, "widows_edge"):
-				var edge_def := GameData.find_unique_item("widows_edge")
-				var after_hp: float = float(monsters[target_idx]["hp"]) - dealt
-				var target_max: float = float(monsters[target_idx]["max_hp"])
-				if after_hp > 0.0 and target_max > 0.0 and after_hp / target_max < float(edge_def["value"]):
-					dealt = float(monsters[target_idx]["hp"])
-					log.append("%s's Widow's Edge finds the killing blow!" % h.name)
+			var hit := {"target": monsters[target_idx]}
+			hit["dealt"] = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * type_mult * formation_mult * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
+			_fire("before_hit", state, h, hit)
+			var dealt: float = hit["dealt"]
 			var m_shields: Dictionary = state["monster_shields"]
 			if dealt > 0.0 and float(m_shields.get(target_idx, 0.0)) > 0.0:
 				var m_have: float = float(m_shields[target_idx])
@@ -1024,11 +1149,8 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 				var reflected: int = max(1, int(round(dealt * float(target_ability["value"]))))
 				h.hp = max(0, h.hp - reflected)
 				log.append("%s's surface reflects %d damage back at %s." % [monsters[target_idx]["name"], reflected, h.name])
-			if hero_has_unique_item(h, "bloodthirst_fang"):
-				var fang_def := GameData.find_unique_item("bloodthirst_fang")
-				var healed: int = max(1, int(round(dealt * float(fang_def["value"]))))
-				h.hp = min(max_hp(h), h.hp + healed)
-				log.append("%s drains %d HP from the strike." % [h.name, healed])
+			hit["dealt"] = dealt
+			_fire("after_hit", state, h, hit)
 	elif action == "defend":
 		state["_defending"][h.id] = true
 	elif action == "ability" and h.ability_cooldown == 0:
@@ -1072,15 +1194,9 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 					monsters[idx2]["hp"] = float(monsters[idx2]["hp"]) - round(dealt3)
 					log.append("A finishing blow strikes %s for %d!" % [monsters[idx2]["name"], round(dealt3)])
 			"shield_lowest":
-				if not living.is_empty():
-					var lowest: Hero = living[0]
-					for hh2 in living:
-						if hh2.hp < lowest.hp:
-							lowest = hh2
-					var shields: Dictionary = state["hero_shields"]
-					var amt: float = max_hp(lowest) * val
-					shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
-					log.append("%s is shielded for %d." % [lowest.name, int(round(amt))])
+				var shielded := _shield_lowest(state, val)
+				if not shielded.is_empty():
+					log.append("%s is shielded for %d." % [shielded[0].name, int(round(shielded[1]))])
 			"reset_cooldowns":
 				for h2 in party:
 					h2.ability_cooldown = 0
@@ -1163,26 +1279,13 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 				"utility":
 					state["escalate"] = float(state["escalate"]) + 0.02
 
-	# The Lantern's on-kill shield — checked against just this hero's own
-	# action instead of the old whole-hero-phase batch, so it can trigger on
-	# any hero's kill regardless of turn order.
-	if float(state["kill_shield"]) > 0.0:
-		var got_kill := false
-		for i in monsters.size():
-			if monsters_hp_before[i] > 0.0 and float(monsters[i]["hp"]) <= 0.0:
-				got_kill = true
-		if got_kill:
-			var living2: Array[Hero] = []
-			living2.assign(party.filter(func(hh): return hh.hp > 0))
-			if not living2.is_empty():
-				var lowest: Hero = living2[0]
-				for h2 in living2:
-					if h2.hp < lowest.hp:
-						lowest = h2
-				var shields: Dictionary = state["hero_shields"]
-				var amt: float = max_hp(lowest) * float(state["kill_shield"])
-				shields[lowest.id] = float(shields.get(lowest.id, 0.0)) + amt
-				log.append("The Lantern grants %s a %d-point shield." % [lowest.name, int(round(amt))])
+	# Checked against just this hero's own action, so on_kill effects (the
+	# Lantern's shield included) trigger on any hero's kill regardless of turn
+	# order. Fires once per action, however many foes that action dropped.
+	for i in monsters.size():
+		if monsters_hp_before[i] > 0.0 and float(monsters[i]["hp"]) <= 0.0:
+			_fire("on_kill", state, h)
+			break
 
 
 ## One living monster's retaliation — the per-monster body of the old batched
@@ -1221,11 +1324,7 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 		back = round(back * (1.0 + float(ability["value"])))
 	if state["_defending"].has(target.id):
 		back *= 0.5
-	var effective_dodge: float = float(state["dodge"])
-	if hero_has_unique_item(target, "last_stand_plate"):
-		var plate_def := GameData.find_unique_item("last_stand_plate")
-		var missing_frac2: float = 1.0 - float(target.hp) / float(max_hp(target))
-		effective_dodge += float(plate_def["value"]) * missing_frac2
+	var effective_dodge: float = float(state["dodge"]) + hero_cond_stat(target, "dodge_pct", state, {"attacker": m})
 	var evaded := false
 	if not warded and effective_dodge > 0.0 and randf() < effective_dodge:
 		log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
@@ -1233,15 +1332,8 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	var heavy_hit: bool = back >= float(max_hp(target)) * 0.25
 	if evaded:
 		back = 0.0
-	if (evaded or heavy_hit) and float(state["counter"]) > 0.0 and randf() < float(state["counter"]):
-		var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
-		m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
-		log.append("%s counters, striking %s for %d!" % [target.name, m["name"], counter_dmg])
-	if (evaded or heavy_hit) and float(state["cooldown_shave"]) > 0.0 and randf() < float(state["cooldown_shave"]):
-		for h2 in party:
-			if h2.ability_cooldown > 0:
-				h2.ability_cooldown -= 1
-		log.append("The Chronometer hums — abilities cool faster!")
+	if evaded or heavy_hit:
+		_fire("evade_or_heavy", state, target, {"attacker": m})
 	var shields: Dictionary = state["hero_shields"]
 	if back > 0.0 and float(shields.get(target.id, 0.0)) > 0.0:
 		var have: float = float(shields[target.id])
@@ -1338,23 +1430,8 @@ func _end_round_effects(state: Dictionary) -> void:
 				mended = true
 		if mended:
 			log.append("The party mends its wounds.")
-			var talisman_wearer: Hero = null
 			for h4 in living:
-				if hero_has_unique_item(h4, "oathbound_talisman"):
-					talisman_wearer = h4
-					break
-			if talisman_wearer:
-				var still_alive: Array[Hero] = living.filter(func(hh): return hh.hp > 0)
-				if not still_alive.is_empty():
-					var lowest_h: Hero = still_alive[0]
-					for hh3 in still_alive:
-						if hh3.hp < lowest_h.hp:
-							lowest_h = hh3
-					var talisman_def := GameData.find_unique_item("oathbound_talisman")
-					var shields2: Dictionary = state["hero_shields"]
-					var shield_amt: float = max_hp(lowest_h) * float(talisman_def["value"])
-					shields2[lowest_h.id] = float(shields2.get(lowest_h.id, 0.0)) + shield_amt
-					log.append("The Oathbound Talisman shields %s for %d." % [lowest_h.name, int(round(shield_amt))])
+				_fire("party_mend", state, h4)
 
 
 ## {} if the fight isn't over; otherwise the {"done":true,...} outcome from
