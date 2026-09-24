@@ -43,6 +43,8 @@ var is_champion: bool = false
 var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
+var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds GameData.EARNED_TRAITS
+var earned_traits: Array[String] = []     # GameData.EARNED_TRAITS ids this hero has unlocked through play
 
 
 func is_downed() -> bool:
@@ -59,6 +61,7 @@ func to_dict() -> Dictionary:
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
+		"history": history, "earned_traits": earned_traits,
 	}
 
 
@@ -96,6 +99,8 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.skills = d.get("skills", {})
 	h.stone_bonus_used = d.get("stone_bonus_used", {})
 	h.ability_awakened = d.get("ability_awakened", false)
+	h.history = d.get("history", {})
+	h.earned_traits.assign(d.get("earned_traits", []))
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
 	h.base_spd = d.get("base_spd", 10)

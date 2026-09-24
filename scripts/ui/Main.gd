@@ -525,6 +525,53 @@ func _passive_text(pool_id: String) -> String:
 	return "%s: %s [%s]" % [str(p["name"]), "; ".join(parts), GameData.ARCHETYPES.get(str(p["arch"]), "")]
 
 
+## "−3% mend; +15% damage while below 50% HP" — a scar's wound and its upside.
+func _scar_text(scar_name: String) -> String:
+	var parts: Array[String] = []
+	var wound: Dictionary = GameData.SCAR_TABLE.get(scar_name, {})
+	for kind in wound:
+		var s := Combat.describe_skill(kind, absf(float(wound[kind])))
+		parts.append("-" + s.trim_prefix("+") if s.begins_with("+") else "less: " + s)
+	for e in GameData.SCAR_UPSIDES.get(scar_name, []):
+		parts.append(Combat.describe_effect(e))
+	return "; ".join(parts)
+
+
+## History, earned traits, the nearest trait still to earn, and grown bonds.
+func _history_lines(h: Hero) -> Array[String]:
+	var lines: Array[String] = []
+	var hist: Array[String] = []
+	for stat in GameData.HISTORY_LABEL:
+		var n := int(h.history.get(stat, 0))
+		if n > 0:
+			hist.append("%d %s" % [n, GameData.HISTORY_LABEL[stat]])
+	if not hist.is_empty():
+		lines.append("History: " + " · ".join(hist))
+	var next_best := {}
+	var next_frac := -1.0
+	for t in GameData.EARNED_TRAITS:
+		if h.earned_traits.has(t["id"]):
+			var what: String = Combat.describe_skill(str(t["kind"]), float(t["value"])) if t.has("kind") else "; ".join(t["effects"].map(func(e): return Combat.describe_effect(e)))
+			lines.append("Earned: %s — %s [%s]" % [t["name"], what, GameData.ARCHETYPES[t["arch"]]])
+		else:
+			var frac := float(h.history.get(t["stat"], 0)) / float(t["need"])
+			if frac > next_frac:
+				next_frac = frac
+				next_best = t
+	if not next_best.is_empty():
+		lines.append("Next trait: %s (%d/%d %s)" % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
+	var bond_parts: Array[String] = []
+	for other in GameState.heroes:
+		if other == h:
+			continue
+		var together := GameState.bond_rifts(h.id, other.id)
+		if together > 0:
+			bond_parts.append("%s Lv%d (%d rifts)" % [other.name.split(" the ")[0], GameData.bond_level(together), together])
+	if not bond_parts.is_empty():
+		lines.append("Bonds: " + " · ".join(bond_parts))
+	return lines
+
+
 ## "Executioner ×3 · Opener ×1" from Combat.hero_archetype_counts, biggest first.
 func _build_text(h: Hero) -> String:
 	var counts := Combat.hero_archetype_counts(h)
@@ -4010,8 +4057,10 @@ func _render_roster(v: VBoxContainer) -> void:
 	if build != "":
 		left_v.add_child(_wrap_label("Build: %s" % build, 11, true))
 	left_v.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+	for line in _history_lines(h):
+		left_v.add_child(_wrap_label(line, 11, true))
 	for scar_name in h.scars:
-		left_v.add_child(_info_row("Scar: %s" % scar_name, 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
+		left_v.add_child(_info_row("Scar: %s — %s" % [scar_name, _scar_text(scar_name)], 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
 			if err != "":
 				push_warning(err)

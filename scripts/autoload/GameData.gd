@@ -83,6 +83,60 @@ const SCAR_TABLE := {
 	"Flinching": {"first_round_pct": -0.10},
 }
 
+## What a scar gives back — every scar is still a net wound (SCAR_TABLE), but
+## one that changes how the hero fights instead of only making them worse.
+## Combat.hero_effects entry shape.
+const SCAR_UPSIDES := {
+	"Shell-Shocked": [{"kind": "dmg_pct", "value": 0.15, "cond": {"ally_below": 0.5}}],
+	"Trembling Hands": [{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.15}],
+	"Battle Fatigue": [{"kind": "dmg_pct", "value": 0.12, "cond": {"round_min": 4}}],
+	"Haunted": [{"kind": "dmg_pct", "value": 0.15, "cond": {"hp_below": 0.5}}],
+	"Flinching": [{"kind": "dodge_pct", "value": 0.15, "cond": {"hp_below": 0.4}}],
+}
+
+## Traits earned through play rather than rolled at recruitment: each unlocks
+## once `stat` in Hero.history reaches `need` (checked by
+## GameState.check_earned_traits after fights and rift seals). Either a flat
+## `kind`/`value` (summed by hero_skill_total) or `effects` (hero_effects).
+const EARNED_TRAITS := [
+	{"id": "bosskiller", "name": "Bosskiller", "stat": "boss_kills", "need": 3, "arch": "executioner",
+	 "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"vs_boss": true}}]},
+	{"id": "elite_hunter", "name": "Elite Hunter", "stat": "elite_kills", "need": 5, "arch": "opener",
+	 "kind": "first_round_pct", "value": 0.10},
+	{"id": "reaper", "name": "Reaper", "stat": "kills", "need": 40, "arch": "executioner",
+	 "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"target_below": 0.3}}]},
+	{"id": "seasoned", "name": "Seasoned", "stat": "kills", "need": 100, "arch": "executioner",
+	 "kind": "dmg_pct", "value": 0.06},
+	{"id": "survivor", "name": "Survivor", "stat": "knockouts", "need": 3, "arch": "evasion",
+	 "effects": [{"kind": "dodge_pct", "value": 0.20, "cond": {"hp_below": 0.3}}]},
+	{"id": "veteran", "name": "Veteran", "stat": "rifts_cleared", "need": 5, "arch": "guardian",
+	 "kind": "hp_pct", "value": 0.08},
+	{"id": "old_guard", "name": "Old Guard", "stat": "rifts_cleared", "need": 15, "arch": "guardian",
+	 "kind": "wipe_guard", "value": 0.05},
+]
+const HISTORY_LABEL := {"kills": "kills", "boss_kills": "bosses", "elite_kills": "elites", "rifts_cleared": "rifts", "knockouts": "knockouts"}
+
+static func find_earned_trait(trait_id: String) -> Dictionary:
+	for t in EARNED_TRAITS:
+		if t["id"] == trait_id:
+			return t
+	return {}
+
+## Bonds between two specific heroes grow by clearing rifts together
+## (GameState.bonds): level N once their shared rift count reaches
+## BOND_LEVEL_RIFTS[N-1]. Each level is +BOND_DMG_PER_LEVEL party damage while
+## both are alive in the fight, capped in total at BOND_DMG_CAP.
+const BOND_LEVEL_RIFTS := [2, 5, 10]
+const BOND_DMG_PER_LEVEL := 0.02
+const BOND_DMG_CAP := 0.15
+
+static func bond_level(rifts_together: int) -> int:
+	var lvl := 0
+	for need in BOND_LEVEL_RIFTS:
+		if rifts_together >= need:
+			lvl += 1
+	return lvl
+
 const RELIC_TYPES := ["Ember", "Frost", "Verdant", "Umbral", "Arcane"]
 
 # Each type nudges (doesn't lock) which power domain a relic's special favors —

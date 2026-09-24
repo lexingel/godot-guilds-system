@@ -43,6 +43,10 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	for scar in h.scars:
 		if GameData.SCAR_TABLE.has(scar):
 			s += GameData.SCAR_TABLE[scar].get(kind, 0.0)
+	for tid in h.earned_traits:
+		var t := GameData.find_earned_trait(tid)
+		if t.get("kind", "") == kind:
+			s += float(t["value"])
 	if GameState.active_incense.get("kind", "") == kind:
 		s += float(GameState.active_incense["value"])
 	return s
@@ -705,6 +709,13 @@ func hero_effects(h: Hero) -> Array[Dictionary]:
 	for n in learned_nodes:
 		for e in n["effects"]:
 			out.append(_tagged(e, str(n["name"]), str(n["arch"])))
+	for scar in h.scars:
+		for e in GameData.SCAR_UPSIDES.get(scar, []):
+			out.append(_tagged(e, scar))
+	for tid in h.earned_traits:
+		var t := GameData.find_earned_trait(tid)
+		for e in t.get("effects", []):
+			out.append(_tagged(e, str(t["name"]), str(t["arch"])))
 	for it in GameState.items:
 		if it.equipped_to != h.id:
 			continue
@@ -739,6 +750,10 @@ func hero_archetype_counts(h: Hero) -> Dictionary:
 		var a: String = str(e.get("arch", ""))
 		if a != "":
 			counts[a] = int(counts.get(a, 0)) + 1
+	for tid in h.earned_traits:
+		var t := GameData.find_earned_trait(tid)
+		if t.has("kind"):
+			counts[t["arch"]] = int(counts.get(t["arch"], 0)) + 1
 	return counts
 
 
@@ -970,6 +985,14 @@ func bond_bonus_for(party: Array[Hero], kind: String) -> float:
 	for bond in GameData.HERO_BONDS:
 		if bond["kind"] == kind and living_pool_ids.has(bond["a"]) and living_pool_ids.has(bond["b"]):
 			total += float(bond["value"])
+	# Grown bonds between specific heroes (GameState.bonds) — damage only.
+	if kind == "dmg_pct":
+		var grown := 0.0
+		for i in party.size():
+			for j in range(i + 1, party.size()):
+				if party[i].hp > 0 and party[j].hp > 0:
+					grown += GameData.BOND_DMG_PER_LEVEL * GameData.bond_level(GameState.bond_rifts(party[i].id, party[j].id))
+		total += min(grown, GameData.BOND_DMG_CAP)
 	return total
 
 
@@ -1420,10 +1443,13 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 	# Checked against just this hero's own action, so on_kill effects (the
 	# Lantern's shield included) trigger on any hero's kill regardless of turn
 	# order. Fires once per action, however many foes that action dropped.
+	var kills := 0
 	for i in monsters.size():
 		if monsters_hp_before[i] > 0.0 and float(monsters[i]["hp"]) <= 0.0:
-			_fire("on_kill", state, h)
-			break
+			kills += 1
+	if kills > 0:
+		h.history["kills"] = int(h.history.get("kills", 0)) + kills
+		_fire("on_kill", state, h)
 
 
 ## One living monster's retaliation — the per-monster body of the old batched
@@ -1683,6 +1709,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 		for h in party:
 			if h.hp <= 0 and h.downed_until <= 0:
 				h.downed_until = now + GameState.recovery_ms()
+				h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
 				# A freshly-knocked-out roster hero has a chance to pick up a
 				# lasting scar, capped at 2 — champions are regenerated fresh
 				# every seal_rift() and carry no persistent state worth scarring.
