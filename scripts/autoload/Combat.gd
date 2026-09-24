@@ -689,19 +689,44 @@ func hero_item_total(h: Hero, kind: String) -> float:
 ## Each returned entry is tagged with "source" (a display name for log lines).
 func hero_effects(h: Hero) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
+	var passive := GameData.subclass_passive(h.pool_id)
+	for e in passive.get("effects", []):
+		out.append(_tagged(e, str(passive["name"]), str(passive["arch"])))
 	for it in GameState.items:
 		if it.equipped_to != h.id:
 			continue
-		var item_effects: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
-		for e in item_effects:
-			out.append(_tagged(e, it.name))
+		if it.unique_id != "":
+			var udef := GameData.find_unique_item(it.unique_id)
+			for e in udef.get("effects", []):
+				out.append(_tagged(e, it.name, str(udef.get("arch", ""))))
+		else:
+			for e in it.effects:
+				out.append(_tagged(e, it.name))
 	return out
 
 
-func _tagged(e: Dictionary, source: String) -> Dictionary:
+## `arch` only fills in an archetype the entry doesn't already carry itself.
+func _tagged(e: Dictionary, source: String, arch: String = "") -> Dictionary:
 	var tagged: Dictionary = e.duplicate()
 	tagged["source"] = source
+	if not tagged.has("arch") and arch != "":
+		tagged["arch"] = arch
 	return tagged
+
+
+## Archetype -> count across everything shaping `h`'s build: their innate
+## kind plus every hero_effects entry (passive, gear, keystones, earned
+## traits). Display-only — the Roster's "Build" line.
+func hero_archetype_counts(h: Hero) -> Dictionary:
+	var counts := {}
+	var innate_arch: String = GameData.KIND_ARCHETYPE.get(h.innate_kind, "")
+	if innate_arch != "":
+		counts[innate_arch] = 1
+	for e in hero_effects(h):
+		var a: String = str(e.get("arch", ""))
+		if a != "":
+			counts[a] = int(counts.get(a, 0)) + 1
+	return counts
 
 
 ## Sum of `h`'s conditional stat effects of `kind` whose condition holds right

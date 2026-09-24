@@ -273,6 +273,83 @@ const KIND_ARCHETYPE := {
 	"dmg_pct": "executioner", "boss_alpha_strike": "executioner",
 }
 
+## Subclass passives — every CLASS_POOL entry gets one, always on from Lv1,
+## chosen by its innate kind: the Nth subclass of a kind (CLASS_POOL order)
+## gets template N mod 3, so siblings of the same kind don't all share one.
+## Values are Rank-F; subclass_passive() scales them by rank. Each passive is
+## a Combat.hero_effects entry list plus the archetype it belongs to.
+const PASSIVE_TEMPLATES := {
+	"dmg_pct": [
+		{"name": "Killer's Eye", "arch": "executioner", "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"target_below": 0.4}}]},
+		{"name": "Bloodrush", "arch": "executioner", "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"hp_below": 0.5}}]},
+		{"name": "Headhunter", "arch": "executioner", "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"vs_boss": true}}]},
+	],
+	"hp_pct": [
+		{"name": "Stand Firm", "arch": "guardian", "effects": [{"kind": "dmg_pct", "value": 0.10, "cond": {"formation": "front"}}]},
+		{"name": "Protector", "arch": "guardian", "effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.20}]},
+		{"name": "Unbowed", "arch": "guardian", "effects": [{"kind": "dodge_pct", "value": 0.10, "cond": {"hp_below": 0.4}}]},
+	],
+	"first_round_pct": [
+		{"name": "Quick Draw", "arch": "opener", "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"acting_first": true}}]},
+		{"name": "Ambusher", "arch": "opener", "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"round_max": 1}}]},
+		{"name": "Opening Salvo", "arch": "opener", "effects": [{"kind": "dmg_pct", "value": 0.08, "cond": {"round_max": 2}}]},
+	],
+	"escalate_pct": [
+		{"name": "Second Wind", "arch": "attrition", "effects": [{"kind": "dmg_pct", "value": 0.10, "cond": {"round_min": 3}}]},
+		{"name": "Long Fight", "arch": "attrition", "effects": [{"kind": "dmg_pct", "value": 0.14, "cond": {"round_min": 5}}]},
+		{"name": "Wear Them Down", "arch": "attrition", "effects": [{"trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.05}]},
+	],
+	"mend_pct": [
+		{"name": "Field Medic", "arch": "sustain", "effects": [{"trigger": "party_mend", "effect": "shield_lowest", "value": 0.04}]},
+		{"name": "Siphon", "arch": "sustain", "effects": [{"trigger": "after_hit", "effect": "lifesteal", "value": 0.08}]},
+		{"name": "Rallying Word", "arch": "sustain", "effects": [{"trigger": "on_kill", "effect": "mend_party", "value": 0.03}]},
+	],
+	"hazard_guard_pct": [
+		{"name": "Wary", "arch": "guardian", "effects": [{"kind": "dodge_pct", "value": 0.08, "cond": {"round_max": 2}}]},
+		{"name": "Brace", "arch": "guardian", "effects": [{"trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.06}]},
+		{"name": "Covering Stance", "arch": "guardian", "effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.15}]},
+	],
+	"dodge_pct": [
+		{"name": "Slippery", "arch": "evasion", "effects": [{"kind": "dodge_pct", "value": 0.10, "cond": {"hp_above": 0.75}}]},
+		{"name": "Riposte", "arch": "evasion", "effects": [{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.15}]},
+		{"name": "Back-Row Shadow", "arch": "evasion", "effects": [{"kind": "dodge_pct", "value": 0.10, "cond": {"formation": "back"}}]},
+	],
+	"wipe_guard": [
+		{"name": "Last Bastion", "arch": "guardian", "effects": [{"kind": "dodge_pct", "value": 0.12, "cond": {"hp_below": 0.3}}]},
+		{"name": "Oathkeeper", "arch": "guardian", "effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.25}]},
+		{"name": "Rally", "arch": "guardian", "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"ally_below": 0.5}}]},
+	],
+	"boss_alpha_strike": [
+		{"name": "Giant's Bane", "arch": "executioner", "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"vs_boss": true}}]},
+		{"name": "Crushing Blow", "arch": "executioner", "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"target_below": 0.3}}]},
+		{"name": "Apex", "arch": "executioner", "effects": [{"trigger": "on_kill", "effect": "extra_turn", "value": 1.0}]},
+	],
+}
+
+static var _passive_cache: Dictionary = {}
+
+## {"name", "arch", "effects"} for a subclass (rank-scaled), or {} if unknown.
+static func subclass_passive(pool_id: String) -> Dictionary:
+	if _passive_cache.has(pool_id):
+		return _passive_cache[pool_id]
+	var cls := find_class(pool_id)
+	var out := {}
+	if not cls.is_empty() and PASSIVE_TEMPLATES.has(cls["kind"]):
+		var n := 0
+		for c in CLASS_POOL:
+			if c["id"] == pool_id:
+				break
+			if c["kind"] == cls["kind"]:
+				n += 1
+		var templates: Array = PASSIVE_TEMPLATES[cls["kind"]]
+		out = templates[n % templates.size()].duplicate(true)
+		var mult := 1.0 + 0.12 * rank_index(cls["rank"])
+		for e in out["effects"]:
+			if str(e.get("effect", "")) != "extra_turn":
+				e["value"] = snappedf(float(e["value"]) * mult, 0.001)
+	_passive_cache[pool_id] = out
+	return out
+
 ## A generated item's base (the noun) grants a small fixed stat — so a Dagger
 ## and a Mace of the same rarity and affixes still pull a build in different
 ## directions. Scaled by item rank (ITEM_RANK_MULT), never by the affix roll.
@@ -917,9 +994,8 @@ static func hero_tree_summaries(h: Hero) -> Array:
 
 ## Every subclass a hero at `cls`'s rank could evolve into — every CLASS_POOL
 ## entry sharing `cls`'s role at the next rank up, not just the first match
-## (CLASS_POOL's array order shouldn't matter). GameState.evolve_hero() picks
-## among these with an aptitude-weighted random roll, not a player choice or
-## a deterministic first-match — see the Evolution Stone constants below.
+## (CLASS_POOL's array order shouldn't matter). The player picks one of these
+## in the Roster's evolution picker; GameState.evolve_hero() validates it.
 static func evolution_choices(cls: Dictionary) -> Array:
 	var rank_idx := rank_index(cls["rank"])
 	for i in range(rank_idx + 1, RANKS.size()):

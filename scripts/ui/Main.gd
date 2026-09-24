@@ -20,7 +20,8 @@ var pending_relic_options: Array = []
 var pending_relic_choice: int = -1
 var selected_hero_id: String = ""
 var expanded_skill_tree_kind: String = ""   # "" = no tree section expanded, else which kind's tree is showing — a plain toggle rather than per-hero, so it stays put switching between heroes. A hero can hold several trees (one per evolution stage); only one is expanded at a time.
-var expanded_slot: String = ""     # "<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
+var evolve_picker_hero_id: String = ""   # "" = closed, else which hero's evolution-path picker is open
+var expanded_slot: String = ""     #"<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
 var rift_gear_open: bool = false   # "Gear Up" panel toggle on non-combat rift nodes (shop/hazard/fork) — lets the party re-equip between fights without retreating
 var confirm_reset: bool = false
 var _combat_animating: bool = false
@@ -511,6 +512,28 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	if it.item_rank != "":
 		text = "Rank %s · %s" % [it.item_rank, text]
 	return text
+
+
+## "Killer's Eye: +14% damage vs foes below 40% HP [Executioner]"
+func _passive_text(pool_id: String) -> String:
+	var p := GameData.subclass_passive(pool_id)
+	if p.is_empty():
+		return "None"
+	var parts: Array[String] = []
+	for e in p["effects"]:
+		parts.append(Combat.describe_effect(e))
+	return "%s: %s [%s]" % [str(p["name"]), "; ".join(parts), GameData.ARCHETYPES.get(str(p["arch"]), "")]
+
+
+## "Executioner ×3 · Opener ×1" from Combat.hero_archetype_counts, biggest first.
+func _build_text(h: Hero) -> String:
+	var counts := Combat.hero_archetype_counts(h)
+	var keys: Array = counts.keys()
+	keys.sort_custom(func(a, b): return int(counts[a]) > int(counts[b]))
+	var parts: Array[String] = []
+	for k in keys:
+		parts.append("%s ×%d" % [GameData.ARCHETYPES[k], int(counts[k])])
+	return " · ".join(parts)
 
 
 ## Every flat kind->value an item contributes (exactly what
@@ -3205,6 +3228,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
+		mid.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 10, true))
 		row.add_child(mid)
 		row.add_child(_button("Reroll (%dc)" % GameData.RECRUIT_REROLL_COST, func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)
@@ -3981,6 +4005,10 @@ func _render_roster(v: VBoxContainer) -> void:
 		var total := Combat.hero_skill_total(h, kind)
 		if total != 0.0:
 			left_v.add_child(_wrap_label(Combat.describe_skill(kind, total), 11, true))
+	left_v.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 11))
+	var build := _build_text(h)
+	if build != "":
+		left_v.add_child(_wrap_label("Build: %s" % build, 11, true))
 	left_v.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 	for scar_name in h.scars:
 		left_v.add_child(_info_row("Scar: %s" % scar_name, 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
@@ -4037,11 +4065,10 @@ func _render_roster(v: VBoxContainer) -> void:
 		))
 	cv.add_child(actions)
 
-	# Evolution now runs on Evolution Stones for the B/A/S jump (dropped by
-	# Rift Map clears — see GameState.seal_rift/evolve_hero) and picks the
-	# resulting subclass itself, aptitude-weighted toward the hero's element
-	# but never guaranteed — a held stone always carries "next try..." odds
-	# rather than a player-chosen fork.
+	# Evolution runs on Evolution Stones for the B/A/S jump (dropped by Rift
+	# Map clears — see GameState.seal_rift/evolve_hero). The player picks the
+	# path: "Evolve" opens every candidate with what it would change (stat,
+	# element, Ability, passive), each with its own confirm button.
 	var evolve_choices: Array = []
 	if h.level >= 10:
 		var cur_cls := GameData.find_class(h.pool_id)
@@ -4053,14 +4080,31 @@ func _render_roster(v: VBoxContainer) -> void:
 		var needs_stone: bool = next_rank_id in ["B", "A", "S"]
 		var stone_count: int = int(GameState.evolution_stones.get(next_rank_id, 0))
 		var evolve_label := "Evolve (%dcr, %d %s-Stone)" % [int(next_rank["cost"]), stone_count, next_rank_id] if needs_stone else "Evolve (%dcr)" % int(next_rank["cost"])
-		cv.add_child(_icon_button("res://assets/skills/star.png", evolve_label, func(id=h.id):
-			var err := GameState.evolve_hero(id)
-			if err != "":
-				push_warning(err)
-			else:
-				_flavor_toast = GameData.narrative_line("hero_evolved")
+		var picking := evolve_picker_hero_id == h.id
+		cv.add_child(_icon_button("res://assets/skills/star.png", "Hide evolution paths" if picking else evolve_label, func(id=h.id):
+			evolve_picker_hero_id = "" if evolve_picker_hero_id == id else id
 			render()
 		))
+		if picking:
+			for c in evolve_choices:
+				var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(str(c["id"]), {})
+				var lines: Array[String] = [
+					"%s — Rank %s, %s" % [str(c["name"]), str(c["rank"]), str(c["type"])],
+					"Main stat: %s" % Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))),
+					"Passive: %s" % _passive_text(str(c["id"])),
+				]
+				if not ab.is_empty():
+					lines.append("Ability: %s — %s" % [str(ab["name"]), str(ab["desc"])])
+				lines.append(str(c["flavor"]))
+				cv.add_child(_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
+					var err := GameState.evolve_hero(id, pid)
+					if err != "":
+						push_warning(err)
+					else:
+						evolve_picker_hero_id = ""
+						_flavor_toast = GameData.narrative_line("hero_evolved")
+					render()
+				)], _icon_trimmed(GameData.portrait_for_hero(str(c["role"]), str(c["id"])), 32) if GameData.portrait_for_hero(str(c["role"]), str(c["id"])) != "" else null))
 
 	var reinforce_count: int = int(GameState.evolution_stones.get(h.rank, 0))
 	var reinforce_used: int = int(h.stone_bonus_used.get(h.pool_id, 0))

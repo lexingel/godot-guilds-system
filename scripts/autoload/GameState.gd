@@ -1393,25 +1393,13 @@ func use_detector_for_shop_boost(detector_id: String) -> String:
 	return ""
 
 
-## Aptitude-weighted random pick among evolution candidates — a same-element
-## match is 3x as likely as a mismatch, but never guaranteed, so a stockpiled
-## Evolution Stone always carries "next try I'll get this one" odds instead
-## of a deterministic outcome.
-func _weighted_evolution_pick(choices: Array, cur_cls: Dictionary) -> Dictionary:
-	var weighted: Array = []
-	for c in choices:
-		var w := 3 if c["type"] == cur_cls["type"] else 1
-		for i in w:
-			weighted.append(c)
-	return weighted[randi() % weighted.size()]
-
-
 ## The B/A/S jump (a real named subclass forking off — see the CLASS_POOL doc
 ## comment) additionally consumes one same-tier Evolution Stone; the earlier
 ## F-E-D-C climb (still the same un-named identity throughout) doesn't need
-## one, same as before this system existed. Which specific candidate a hero
-## lands on is no longer a player choice — see _weighted_evolution_pick.
-func evolve_hero(hero_id: String) -> String:
+## one, same as before this system existed. The player picks which candidate
+## (`target_pool_id`, one of GameData.evolution_choices) — the biggest build
+## decision a hero gets, so it's a choice, not a roll.
+func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
@@ -1430,7 +1418,10 @@ func evolve_hero(hero_id: String) -> String:
 	var needs_stone: bool = next_rank_id in ["B", "A", "S"]
 	if needs_stone and int(evolution_stones.get(next_rank_id, 0)) <= 0:
 		return "Need a %s-Rank Evolution Stone" % next_rank_id
-	var next := _weighted_evolution_pick(choices, cur_cls)
+	var picked: Array = choices.filter(func(c): return c["id"] == target_pool_id)
+	if picked.is_empty():
+		return "Pick an evolution path"
+	var next: Dictionary = picked[0]
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
 	if needs_stone:
