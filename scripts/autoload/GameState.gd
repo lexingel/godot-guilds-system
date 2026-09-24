@@ -47,6 +47,7 @@ var pending_shop_boost: bool = false
 ## same way _flavor_toast is, so the celebration fires wherever the player
 ## happens to be, not just on the Recruits screen.
 var pending_s_rank_reveal: Dictionary = {}
+var bonds: Dictionary = {}   # "<hero_id>|<hero_id>" (sorted) -> rifts sealed together; see GameData.BOND_LEVEL_RIFTS
 var run: Dictionary = {}   # {} = no active run
 var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String,"expires_at":int}] or [{}] (empty, refilled lazily)
 var pending_riftbreak_ranks: Array[String] = []   # ranks that broke since the last Terminal visit, merged into one encounter
@@ -247,6 +248,7 @@ func reset() -> void:
 	bosses_won = 0
 	guild_board = []
 	milestones_claimed = []
+	bonds = {}
 
 
 ## Only run's primitive/ID-based fields survive a save — node_state can hold
@@ -338,6 +340,13 @@ func load_settings() -> void:
 
 
 func save() -> void:
+	# No guild loaded = nothing worth saving, and writing it would clobber the
+	# active slot: render() runs its world-tick resolvers (resolve_guild_board
+	# etc., which save) on the title screen too, before any slot is loaded — so
+	# every boot used to overwrite the active slot with a blank default state
+	# that load_save()/slot_summary() then treat as empty.
+	if guild_name == "":
+		return
 	var data := {
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
 		"crystals": crystals, "tokens": tokens,
@@ -360,6 +369,7 @@ func save() -> void:
 		"crafts_performed": crafts_performed, "flawless_wins": flawless_wins,
 		"elites_won": elites_won, "bosses_won": bosses_won,
 		"guild_board": guild_board, "milestones_claimed": milestones_claimed,
+		"bonds": bonds,
 	}
 	var f := FileAccess.open(_slot_path(active_slot), FileAccess.WRITE)
 	if f:
@@ -451,6 +461,7 @@ func load_save() -> bool:
 	bosses_won = data.get("bosses_won", 0)
 	guild_board.assign(data.get("guild_board", []))
 	milestones_claimed.assign(data.get("milestones_claimed", []))
+	bonds = data.get("bonds", {})
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
 	var champ_data = data.get("current_champion")
@@ -489,6 +500,27 @@ func load_save() -> bool:
 			"bounty": run_data.get("bounty", {}),
 		}
 	return true
+
+
+func _bond_key(a: String, b: String) -> String:
+	return "%s|%s" % [a, b] if a < b else "%s|%s" % [b, a]
+
+
+func bond_rifts(a: String, b: String) -> int:
+	return int(bonds.get(_bond_key(a, b), 0))
+
+
+## Unlocks every GameData.EARNED_TRAITS entry `h` now qualifies for; returns
+## the newly earned trait names (for a "X earned Bosskiller" line).
+func check_earned_traits(h: Hero) -> Array[String]:
+	var gained: Array[String] = []
+	if h.is_champion:
+		return gained
+	for t in GameData.EARNED_TRAITS:
+		if not h.earned_traits.has(t["id"]) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
+			h.earned_traits.append(t["id"])
+			gained.append("%s earned %s!" % [h.name, t["name"]])
+	return gained
 
 
 func find_hero(hero_id: String) -> Hero:
@@ -881,6 +913,16 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			crystals -= comp_crystals
 			result["riftbreak_compensation_coins"] = comp_coins
 			result["riftbreak_compensation_crystals"] = comp_crystals
+		# Hero history (kills/knockouts are tallied inside Combat as they
+		# happen; boss/elite wins are only known here) and any traits it earns.
+		if result["won"] and kind in ["boss", "elite"]:
+			for h in state.get("party", []):
+				h.history[kind + "_kills"] = int(h.history.get(kind + "_kills", 0)) + 1
+		var earned: Array[String] = []
+		for h in state.get("party", []):
+			earned.append_array(check_earned_traits(h))
+		if not earned.is_empty():
+			result["flavor"] = (str(result.get("flavor", "")) + " " + " ".join(earned)).strip_edges()
 		ns["result"] = result
 	run["node_state"] = ns
 	save()
@@ -1132,6 +1174,21 @@ func seal_rift() -> void:
 	var flavor := GameData.narrative_line("fast_clear" if fast_clear else "rift_sealed")
 	if just_unlocked_greater:
 		flavor += " " + GameData.narrative_line("greater_rift_unlocked")
+	# Rift history + bonds: every roster hero who saw this rift through counts
+	# it, and every pair of them grows their bond (see GameData.BOND_LEVEL_RIFTS).
+	var sealers: Array[Hero] = []
+	sealers.assign(current_party().filter(func(h): return not h.is_champion))
+	for i in sealers.size():
+		sealers[i].history["rifts_cleared"] = int(sealers[i].history.get("rifts_cleared", 0)) + 1
+		for j in range(i + 1, sealers.size()):
+			var key := _bond_key(sealers[i].id, sealers[j].id)
+			var before := GameData.bond_level(int(bonds.get(key, 0)))
+			bonds[key] = int(bonds.get(key, 0)) + 1
+			if GameData.bond_level(int(bonds[key])) > before:
+				flavor += " %s and %s's bond deepens (Lv%d)." % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], before + 1]
+	for h in sealers:
+		for line in check_earned_traits(h):
+			flavor += " " + line
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
 	current_champion = Combat.generate_champion()
