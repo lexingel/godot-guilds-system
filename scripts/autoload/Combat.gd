@@ -25,6 +25,10 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 				s += n["value"]
 				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
 					s += float(n.get("combo_bonus", 0.0))
+		# A learned keystone's drawback is a plain flat stat.
+		var ks := GameData.keystone_node(tree_kind)
+		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
+			s += float(ks["value"])
 	s += GameState.party_resonance_bonus(kind)
 	s += GameState.party_eclectic_bonus()
 	if h.innate_kind == kind:
@@ -692,6 +696,15 @@ func hero_effects(h: Hero) -> Array[Dictionary]:
 	var passive := GameData.subclass_passive(h.pool_id)
 	for e in passive.get("effects", []):
 		out.append(_tagged(e, str(passive["name"]), str(passive["arch"])))
+	var learned_nodes: Array = []
+	if h.skills.get("signature", false):
+		learned_nodes.append(GameData.signature_node(h.cls_id))
+	for summary in GameData.hero_tree_summaries(h):
+		if h.skills.get(GameData.skill_storage_key(str(summary["kind"]), "keystone"), false):
+			learned_nodes.append(GameData.keystone_node(str(summary["kind"])))
+	for n in learned_nodes:
+		for e in n["effects"]:
+			out.append(_tagged(e, str(n["name"]), str(n["arch"])))
 	for it in GameState.items:
 		if it.equipped_to != h.id:
 			continue

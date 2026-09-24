@@ -4194,6 +4194,8 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	for req in n["requires"]:
 		if not h.skills.get(GameData.skill_storage_key(kind, req), false):
 			missing_prereq = true
+	if not n.get("requires_any", []).is_empty() and not n["requires_any"].any(func(r): return h.skills.get(GameData.skill_storage_key(kind, r), false)):
+		missing_prereq = true
 	var locked_out := false
 	for excl in n.get("excludes", []):
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
@@ -4227,10 +4229,24 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		if err != "":
 			push_warning(err)
 		render()
-	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), Combat.describe_skill(str(n["kind"]), float(n["value"])), reason, combo_line])
+	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), _node_effect_text(n), reason, combo_line])
 	if learned:
 		tile.modulate = Color(1.15, 1.02, 0.68)
 	return tile
+
+
+## A skill node's effect line — flat stat for ordinary nodes; for a keystone
+## or signature, its effects plus (keystones only) the flat drawback.
+func _node_effect_text(n: Dictionary) -> String:
+	var parts: Array[String] = []
+	for e in n.get("effects", []):
+		parts.append(Combat.describe_effect(e))
+	if str(n["kind"]) != "":
+		var flat := Combat.describe_skill(str(n["kind"]), absf(float(n["value"])))
+		parts.append(("Drawback: -" + flat.trim_prefix("+")) if float(n["value"]) < 0.0 else flat)
+	if n.has("arch"):
+		parts.append("[%s]" % GameData.ARCHETYPES.get(str(n["arch"]), ""))
+	return "\n".join(parts)
 
 
 ## One tree, as a 4-column grid (Tier 1 → Tier 2 → Path → Mastery) instead
@@ -4252,9 +4268,12 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	var tier3: Array = tree.filter(func(n): return int(n["tier"]) == 3)
 	var tier4: Array = tree.filter(func(n): return int(n["tier"]) == 4)
 
+	# 5th column: the tree's keystone (row 0) and the role signature (row 1).
+	var tier5: Array = [GameData.keystone_node(kind), GameData.signature_node(h.cls_id)].filter(func(n): return not n.is_empty())
+
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
-	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery"]:
+	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery", "Keystone"]:
 		var lbl := _label(col_label, 11, true)
 		lbl.custom_minimum_size.x = 72
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -4262,7 +4281,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	cv.add_child(header)
 
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = 5
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 
@@ -4294,6 +4313,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 			grid.add_child(_skill_node_tile(h, kind, other_tier2[row_i - fork_rows]))
 			grid.add_child(Control.new())
 			grid.add_child(Control.new())
+		grid.add_child(_skill_node_tile(h, kind, tier5[row_i]) if row_i < tier5.size() else Control.new())
 
 	cv.add_child(grid)
 

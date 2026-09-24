@@ -958,6 +958,64 @@ const KIND_SKILL_PACKAGE := {
 }
 
 
+## Tier 5, one per tree: a keystone changes HOW a hero plays rather than
+## scaling a number — its upside is `effects` (Combat.hero_effects shape), its
+## cost a real flat drawback in `kind`/`value`. Reached from ANY of the tree's
+## Tier-3 Path nodes (`requires_any`), so whichever fork you took leads here —
+## and at 3 SP against the 9 a Lv10 hero earns, it competes with that path's
+## own Mastery finisher (and Awakening/the role signature) for the same points.
+const KEYSTONE_REQUIRES_ANY := ["cap", "cap_alt", "cap_third"]
+const KEYSTONES := {
+	"dmg_pct": {"name": "Headsman's Creed", "arch": "executioner", "icon": "res://assets/skills/sword_big.png",
+		"effects": [{"kind": "dmg_pct", "value": 0.35, "cond": {"target_below": 0.4}}], "kind": "hp_pct", "value": -0.08},
+	"hp_pct": {"name": "Bulwark Oath", "arch": "guardian", "icon": "res://assets/skills/shield_split.png",
+		"effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.5}], "kind": "dmg_pct", "value": -0.08},
+	"first_round_pct": {"name": "Ambush Doctrine", "arch": "opener", "icon": "res://assets/skills/dagger_red.png",
+		"effects": [{"kind": "dmg_pct", "value": 0.40, "cond": {"round_max": 1}}, {"kind": "dmg_pct", "value": 0.15, "cond": {"acting_first": true}}], "kind": "escalate_pct", "value": -0.02},
+	"escalate_pct": {"name": "Slow Burn", "arch": "attrition", "icon": "res://assets/skills/leaf_big.png",
+		"effects": [{"kind": "dmg_pct", "value": 0.30, "cond": {"round_min": 4}}], "kind": "first_round_pct", "value": -0.15},
+	"mend_pct": {"name": "Martyr's Grace", "arch": "sustain", "icon": "res://assets/skills/potion_red.png",
+		"effects": [{"trigger": "party_mend", "effect": "shield_lowest", "value": 0.10}], "kind": "dmg_pct", "value": -0.10},
+	"hazard_guard_pct": {"name": "Iron Discipline", "arch": "guardian", "icon": "res://assets/skills/armor_chest.png",
+		"effects": [{"trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.12}], "kind": "speed_pct", "value": -0.10},
+	"dodge_pct": {"name": "Phantom Riposte", "arch": "evasion", "icon": "res://assets/skills/face_hood.png",
+		"effects": [{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.40}], "kind": "hp_pct", "value": -0.10},
+	"wipe_guard": {"name": "Undying", "arch": "guardian", "icon": "res://assets/skills/trophy.png",
+		"effects": [{"kind": "dodge_pct", "value": 0.25, "cond": {"hp_below": 0.3}}, {"kind": "dmg_pct", "value": 0.20, "cond": {"hp_below": 0.3}}], "kind": "hp_pct", "value": -0.05},
+	"boss_alpha_strike": {"name": "Giantslayer", "arch": "executioner", "icon": "res://assets/skills/ingot_gold.png",
+		"effects": [{"kind": "dmg_pct", "value": 0.35, "cond": {"vs_boss": true}}], "kind": "first_round_pct", "value": -0.10},
+}
+
+## One per role, shared across every tree the hero holds (stored bare like
+## "edge"/"hide"): the role's signature trick, no drawback. Level 8, needs
+## both Tier-1 roots.
+const ROLE_SIGNATURES := {
+	"warrior": {"name": "Shieldbearer", "arch": "guardian", "icon": "res://assets/skills/helm.png",
+		"effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.30, "cond": {"formation": "front"}}]},
+	"ranger": {"name": "Hunter's Mark", "arch": "executioner", "icon": "res://assets/skills/eye_gem.png",
+		"effects": [{"kind": "dmg_pct", "value": 0.20, "cond": {"target_below": 0.5}}]},
+	"mage": {"name": "Arcane Surge", "arch": "attrition", "icon": "res://assets/skills/gem_blue_big.png",
+		"effects": [{"trigger": "on_kill", "effect": "shave_cooldowns", "value": 1.0}]},
+	"cleric": {"name": "Beacon", "arch": "sustain", "icon": "res://assets/skills/potion_blue.png",
+		"effects": [{"trigger": "on_kill", "effect": "mend_party", "value": 0.05}]},
+	"rogue": {"name": "Opportunist", "arch": "executioner", "icon": "res://assets/skills/dagger_blue.png",
+		"effects": [{"trigger": "on_kill", "effect": "extra_turn", "value": 1.0}]},
+}
+
+## The keystone for `kind`'s tree as a full skill node, or {}.
+static func keystone_node(kind: String) -> Dictionary:
+	if not KEYSTONES.has(kind):
+		return {}
+	var n: Dictionary = KEYSTONES[kind].duplicate(true)
+	n.merge({"id": "keystone", "tier": 5, "req_level": 10, "cost": 3, "requires": [], "requires_any": KEYSTONE_REQUIRES_ANY})
+	return n
+
+## `role`'s signature as a full skill node (Tier 5 column, shared/bare key).
+static func signature_node(role: String) -> Dictionary:
+	var n: Dictionary = ROLE_SIGNATURES.get(role, ROLE_SIGNATURES["warrior"]).duplicate(true)
+	n.merge({"id": "signature", "tier": 5, "req_level": 8, "cost": 2, "kind": "", "value": 0.0, "requires": ["edge", "hide"]})
+	return n
+
 ## The storage key a skill uses in Hero.skills. Every KIND_SKILL_PACKAGE
 ## reuses the same node ids ("cap", "mastery", ...), which was harmless when
 ## a hero only ever had one active tree — evolving keeping the old tree
@@ -966,7 +1024,7 @@ const KIND_SKILL_PACKAGE := {
 ## roots ("edge"/"hide" — shared, learned once, apply to every tree) needs
 ## its owning kind folded into the key.
 static func skill_storage_key(kind: String, node_id: String) -> String:
-	return node_id if node_id in ["edge", "hide"] else "%s:%s" % [kind, node_id]
+	return node_id if node_id in ["edge", "hide", "signature"] else "%s:%s" % [kind, node_id]
 
 
 ## Every distinct tree a hero currently has access to: their current class's
@@ -1863,6 +1921,10 @@ static func find_skill_node(kind: String, skill_id: String, role: String = "warr
 			if n["id"] == skill_id:
 				return n
 		return {}
+	if skill_id == "signature":
+		return signature_node(role)
+	if skill_id == "keystone":
+		return keystone_node(kind)
 	for n in KIND_SKILL_PACKAGE.get(kind, []):
 		if n["id"] == skill_id:
 			return n

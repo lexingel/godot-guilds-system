@@ -379,7 +379,7 @@ func migrate_hero_skill_keys(h: Hero) -> void:
 	var migrated := {}
 	var changed := false
 	for key in h.skills.keys():
-		if str(key).contains(":") or key == "edge" or key == "hide":
+		if str(key).contains(":") or key in ["edge", "hide", "signature"]:
 			migrated[key] = h.skills[key]
 		else:
 			migrated[GameData.skill_storage_key(cur_kind, str(key))] = h.skills[key]
@@ -1595,6 +1595,8 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	for req in n["requires"]:
 		if not h.skills.get(GameData.skill_storage_key(kind, req), false):
 			return "Learn the prerequisite skill(s) first"
+	if not n.get("requires_any", []).is_empty() and not n["requires_any"].any(func(r): return h.skills.get(GameData.skill_storage_key(kind, r), false)):
+		return "Master one of this tree's paths first"
 	for excl in n.get("excludes", []):
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			return "Locked out — you already chose the other path"
@@ -1690,7 +1692,7 @@ func _skill_keys_sp_cost(keys: Array) -> int:
 	var total := 0
 	for key in keys:
 		var key_str := str(key)
-		if key_str == "edge" or key_str == "hide":
+		if not key_str.contains(":"):
 			total += int(GameData.find_skill_node("", key_str).get("cost", 0))
 		else:
 			var parts := key_str.split(":", true, 1)
