@@ -380,6 +380,27 @@ const PASSIVE_TEMPLATES := {
 	],
 }
 
+## Formation (Phase 5): each role has a natural row and a role-flavored
+## bonus while standing in it (Combat.hero_effects adds it only in position).
+## Front row still draws ~3x the monster attacks (Combat.weighted_formation_
+## target), so putting a fragile back-liner up front costs twice over.
+const ROLE_POSITION := {
+	"warrior": {"row": "front", "name": "Vanguard", "arch": "guardian",
+		"effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.15}]},
+	"rogue": {"row": "front", "name": "Flanker", "arch": "executioner",
+		"effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"formation": "front"}}]},
+	"ranger": {"row": "back", "name": "Overwatch", "arch": "opener",
+		"effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"formation": "back", "round_max": 2}}]},
+	"mage": {"row": "back", "name": "Safe Distance", "arch": "attrition",
+		"effects": [{"kind": "dmg_pct", "value": 0.10, "cond": {"formation": "back"}}]},
+	"cleric": {"row": "back", "name": "Sanctuary Line", "arch": "sustain",
+		"effects": [{"trigger": "party_mend", "effect": "shield_lowest", "value": 0.04}]},
+}
+
+## A hero's role even for a Champion (whose cls_id is blank).
+static func hero_role(h: Hero) -> String:
+	return h.cls_id if h.cls_id != "" else str(find_class(h.pool_id).get("role", ""))
+
 static var _passive_cache: Dictionary = {}
 
 ## {"name", "arch", "effects"} for a subclass (rank-scaled), or {} if unknown.

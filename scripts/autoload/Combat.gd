@@ -261,6 +261,7 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	h.base_dmg = round(role_cls["base_dmg"] * cls["dmg_ratio"] * rank["mult"] * s)
 	h.base_spd = round(float(role_cls["base_spd"]) * float(rank["mult"]))
 	h.trait_name = pick_trait_name(cls["role"])
+	h.formation = str(GameData.ROLE_POSITION.get(cls["role"], {}).get("row", "front"))
 	h.hp = max_hp(h)
 	return h
 
@@ -291,6 +292,7 @@ func generate_champion() -> Hero:
 	champ.base_dmg = int(round(8.0 * float(cls["dmg_ratio"]) * float(rank["mult"])))
 	var champ_role_cls := GameData.find_role(str(cls["role"]))
 	champ.base_spd = int(round(float(champ_role_cls["base_spd"]) * float(rank["mult"])))
+	champ.formation = str(GameData.ROLE_POSITION.get(str(cls["role"]), {}).get("row", "front"))
 	champ.hp = max_hp(champ)
 	return champ
 
@@ -721,6 +723,10 @@ func hero_effects(h: Hero) -> Array[Dictionary]:
 	var passive := GameData.subclass_passive(h.pool_id)
 	for e in passive.get("effects", []):
 		out.append(_tagged(e, str(passive["name"]), str(passive["arch"])))
+	var pos: Dictionary = GameData.ROLE_POSITION.get(GameData.hero_role(h), {})
+	if not pos.is_empty() and h.formation == pos["row"]:
+		for e in pos["effects"]:
+			out.append(_tagged(e, str(pos["name"]), str(pos["arch"])))
 	var learned_nodes: Array = []
 	if h.skills.get("signature", false):
 		learned_nodes.append(GameData.signature_node(h.cls_id))

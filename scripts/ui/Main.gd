@@ -519,6 +519,20 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	return text
 
 
+## Party Assembly's formation hint: the role's in-position bonus when the
+## hero stands in their natural row, otherwise which row they'd rather be in.
+func _position_text(h: Hero) -> String:
+	var pos: Dictionary = GameData.ROLE_POSITION.get(GameData.hero_role(h), {})
+	if pos.is_empty():
+		return ""
+	if h.formation != pos["row"]:
+		return "Out of position — suits the %s row (%s)" % [pos["row"], pos["name"]]
+	var parts: Array[String] = []
+	for e in pos["effects"]:
+		parts.append(Combat.describe_effect(e))
+	return "%s row · %s: %s" % [str(pos["row"]).capitalize(), pos["name"], "; ".join(parts)]
+
+
 ## "Killer's Eye: +14% damage vs foes below 40% HP [Executioner]"
 func _passive_text(pool_id: String) -> String:
 	var p := GameData.subclass_passive(pool_id)
@@ -1321,6 +1335,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		GameState.set_hero_formation(id, "back" if f != "back" else "front")
 		render()
 	))
+	champ_row.add_child(_label(_position_text(champ), 11, true))
 	v.add_child(champ_row)
 	for h in GameState.heroes:
 		var row := HBoxContainer.new()
@@ -1345,6 +1360,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			GameState.set_hero_formation(id, "back" if f != "back" else "front")
 			render()
 		))
+		row.add_child(_label(_position_text(h), 11, true))
 		v.add_child(row)
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some from the Guild Terminal first."))
@@ -4053,6 +4069,7 @@ func _render_roster(v: VBoxContainer) -> void:
 		if total != 0.0:
 			left_v.add_child(_wrap_label(Combat.describe_skill(kind, total), 11, true))
 	left_v.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 11))
+	left_v.add_child(_wrap_label(_position_text(h), 11, true))
 	var build := _build_text(h)
 	if build != "":
 		left_v.add_child(_wrap_label("Build: %s" % build, 11, true))
