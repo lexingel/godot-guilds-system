@@ -419,13 +419,13 @@ func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) ->
 	return t
 
 
-## A sprite scaled by height to `height` (width capped at 1.5x that, and at
-## `max_w`), with the rect sized to the sprite itself rather than a square —
-## so it can stand on a ground line instead of floating in a centered box.
-func _sprite_fit(path: String, height: float, max_w: float = INF) -> TextureRect:
+## A sprite drawn at `scale` (width capped at `max_w`), with the rect sized
+## to the sprite itself rather than a square — so it can stand on a ground
+## line instead of floating in a centered box.
+func _sprite_fit(path: String, scale: float, max_w: float = INF) -> TextureRect:
 	var tex: Texture2D = load(path)
 	var sz := tex.get_size()
-	var k := minf(height / sz.y, minf(height * 1.5, max_w) / sz.x)
+	var k := minf(scale, max_w / sz.x)
 	var t := TextureRect.new()
 	t.texture = tex
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

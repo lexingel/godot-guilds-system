@@ -1053,9 +1053,10 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var m: Dictionary = monsters[i]
 		if float(m["hp"]) <= 0:
 			continue
-		# Monster art is drawn at hero resolution, so it scales the same way
-		# heroes do: by height, with the boss/elite a size class up.
-		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), roundf(H * (0.44 if i == big_i else 0.31)), m_slot * 1.1)
+		# Monster art is drawn on the same 200px canvas as the heroes, so one
+		# scale for all keeps every sprite at the heroes' pixel size (and a
+		# small creature small); the boss/elite is drawn a size class up.
+		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), H * (0.46 if i == big_i else 0.33) / 200.0, m_slot * 1.1)
 		var msz: Vector2 = m_rect.custom_minimum_size
 		var ring_w: float = minf(msz.x, msz.y * 1.2) * 0.8
 		var cx: float = mz_x + m_slot * (i + 0.5)
