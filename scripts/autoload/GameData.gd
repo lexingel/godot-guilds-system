@@ -1876,14 +1876,14 @@ static func hero_combat_frames(cls_id: String, pool_id: String, action: String) 
 		return subclass_anim_frames(pool_id, action)
 	return hero_anim_frames(cls_id, action)
 const MONSTER_SPRITE_PATH := {
-	"goblin": "res://assets/monsters/goblin.png",
-	"orc": "res://assets/monsters/orc.png",
-	"skelly": "res://assets/monsters/skelly.png",
-	"mummy": "res://assets/monsters/mummy.png",
-	"zombie": "res://assets/monsters/zombie.png",
-	"slime": "res://assets/monsters/slime.png",
-	"wraith": "res://assets/monsters/wraith.png",
-	"fire_skull": "res://assets/monsters/fire_skull.png",
+	"ember_whelp": "res://assets/monsters/ember_whelp.png",
+	"sable_fang": "res://assets/monsters/sable_fang.png",
+	"marrow_crawler": "res://assets/monsters/marrow_crawler.png",
+	"hollow_reaver": "res://assets/monsters/hollow_reaver.png",
+	"husk_brute": "res://assets/monsters/husk_brute.png",
+	"cinder_moth": "res://assets/monsters/cinder_moth.png",
+	"gloom_stalker": "res://assets/monsters/gloom_stalker.png",
+	"rift_wisp": "res://assets/monsters/rift_wisp.png",
 	# Content pass: 8 new regular monsters, plus dedicated art for every
 	# elite/boss name that previously fell through to a hash-picked sprite
 	# from the pool above (a boss used to be able to look identical to a
@@ -1909,9 +1909,9 @@ const MONSTER_SPRITE_PATH := {
 	"sythrane": "res://assets/monsters/sythrane.png",
 }
 const MONSTER_NAME_SPRITE := {
-	"Gloom Stalker": "wraith", "Rift Wisp": "fire_skull", "Husk Brute": "zombie",
-	"Sable Fang": "orc", "Ember Whelp": "goblin", "Marrow Crawler": "skelly",
-	"Hollow Reaver": "mummy", "Cinder Moth": "slime",
+	"Gloom Stalker": "gloom_stalker", "Rift Wisp": "rift_wisp", "Husk Brute": "husk_brute",
+	"Sable Fang": "sable_fang", "Ember Whelp": "ember_whelp", "Marrow Crawler": "marrow_crawler",
+	"Hollow Reaver": "hollow_reaver", "Cinder Moth": "cinder_moth",
 	"Bog Wretch": "bog_wretch", "Silt Crawler": "silt_crawler",
 	"Glass Wisp": "glass_wisp", "Mirror Fiend": "mirror_fiend",
 	"Frost Stalker": "frost_stalker", "Ashclad Ghoul": "ashclad_ghoul",
@@ -1924,13 +1924,15 @@ const MONSTER_NAME_SPRITE := {
 }
 
 
-## Any monster name resolves to a sprite key: direct name match first, else a
-## stable hash-based fallback across all 8 sprites — matches the HTML's
-## spriteForMonster, so even Boss names (never in MONSTER_NAME_SPRITE) get a
-## deterministic sprite instead of no icon at all.
+## Any monster name resolves to a sprite key: a name match first (bosses by
+## the part before the comma), else a stable hash-based pick so an unknown
+## name still gets a deterministic sprite.
 static func monster_sprite_key(monster_name: String) -> String:
-	if MONSTER_NAME_SPRITE.has(monster_name):
-		return MONSTER_NAME_SPRITE[monster_name]
+	# Bosses are named "Korrath, Lesser Warden" — their art is keyed by the
+	# name before the comma.
+	var base_name := monster_name.split(",")[0]
+	if MONSTER_NAME_SPRITE.has(base_name):
+		return MONSTER_NAME_SPRITE[base_name]
 	var keys: Array = MONSTER_SPRITE_PATH.keys()
 	var hash_sum := 0
 	for c in monster_name:
@@ -1943,14 +1945,9 @@ static func sprite_for_monster(monster_name: String) -> String:
 
 
 ## Combat animation frames for a monster (5 each, same shape as
-## hero_anim_frames) — the original 8 monster sprites all got usable
-## attack/hurt motion on the first PixelLab pass. The content-pass batch of
-## 19 more (Phase 19) got their static sprites generated but ran out of
-## PixelLab credits before their animations — checking frame 0 actually
-## exists (rather than assuming every known sprite key has animations, like
-## this used to) means those 19 gracefully fall back to a tween instead of
-## erroring on a missing resource every time they're hit, the same contract
-## hero_anim_frames already has for its own gaps.
+## hero_anim_frames). Every monster's base sprite and frames share one crop
+## box, so swapping frames never shifts the sprite. A monster with no frames
+## falls back to a tween, the same contract hero_anim_frames has.
 static func monster_anim_frames(monster_name: String, action: String) -> Array[String]:
 	var key := monster_sprite_key(monster_name)
 	var frames: Array[String] = []

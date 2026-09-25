@@ -759,7 +759,6 @@ var _banner_state: Dictionary = {}     # the fight + round whose "Round N" slide
 var _banner_round: int = -1
 var _boss_intro_for: Dictionary = {}   # the combat state whose boss intro already played (by reference)
 
-const MONSTER_PX := 48.0     # monster sprite source size — only ever scaled by whole multiples
 const UNIT_PLATE_H := 44.0   # name/HP row + bar + status row
 
 
@@ -1054,20 +1053,22 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var m: Dictionary = monsters[i]
 		if float(m["hp"]) <= 0:
 			continue
-		var mult: int = max(1, roundi(H * (0.36 if i == big_i else 0.24) / MONSTER_PX))
-		var ms: float = MONSTER_PX * mult
+		# Monster art is drawn at hero resolution, so it scales the same way
+		# heroes do: by height, with the boss/elite a size class up.
+		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), roundf(H * (0.44 if i == big_i else 0.31)), m_slot * 1.1)
+		var msz: Vector2 = m_rect.custom_minimum_size
+		var ring_w: float = minf(msz.x, msz.y * 1.2) * 0.8
 		var cx: float = mz_x + m_slot * (i + 0.5)
 		var feet: float = ground - (H * 0.06 if i % 2 == 1 else 0.0)
 		if i == _combat_target and current_hero:
-			var tring := _ground_ring(cx, feet, ms * 0.8, Palette.HAZARD)
+			var tring := _ground_ring(cx, feet, ring_w, Palette.HAZARD)
 			arena.add_child(tring)
 			_pulse(tring)
 		if i == acting_monster:
-			arena.add_child(_ground_ring(cx, feet, ms * 0.8, Palette.EMBER_BRIGHT))
-		var m_rect := _icon(GameData.sprite_for_monster(str(m["name"])), int(ms))
+			arena.add_child(_ground_ring(cx, feet, ring_w, Palette.EMBER_BRIGHT))
 		var m_wrapper := _wrap_icon(m_rect)
-		m_wrapper.position = Vector2(cx - ms * 0.5, feet - ms)
-		_add_ground_shadow(arena, m_wrapper.position, ms)
+		m_wrapper.position = Vector2(cx - msz.x * 0.5, feet - msz.y)
+		_add_ground_shadow(arena, Vector2(cx - ring_w * 0.625, feet - ring_w * 1.25), ring_w * 1.25)
 		arena.add_child(m_wrapper)
 		_start_idle_sway(m_wrapper)
 		monster_wrappers[i] = m_wrapper
@@ -1086,7 +1087,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 					_start_mechanic_pulse(m_wrapper, Palette.RANK_E)
 		var pw: float = minf(m_slot - 10.0, 132.0)
 		var plate := _unit_plate(str(m["name"]), int(m["hp"]), int(m["max_hp"]), pw, 0.0, _monster_statuses(state, i))
-		plate.position = Vector2(cx - pw * 0.5, feet - ms - UNIT_PLATE_H - 2.0)
+		plate.position = Vector2(cx - pw * 0.5, feet - msz.y - UNIT_PLATE_H - 2.0)
 		arena.add_child(plate)
 		_monster_plates[i] = plate
 

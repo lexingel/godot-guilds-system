@@ -419,6 +419,23 @@ func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) ->
 	return t
 
 
+## A sprite scaled by height to `height` (width capped at 1.5x that, and at
+## `max_w`), with the rect sized to the sprite itself rather than a square —
+## so it can stand on a ground line instead of floating in a centered box.
+func _sprite_fit(path: String, height: float, max_w: float = INF) -> TextureRect:
+	var tex: Texture2D = load(path)
+	var sz := tex.get_size()
+	var k := minf(height / sz.y, minf(height * 1.5, max_w) / sz.x)
+	var t := TextureRect.new()
+	t.texture = tex
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.custom_minimum_size = (sz * k).round()
+	t.size = t.custom_minimum_size
+	return t
+
+
 ## Same as _icon(), but for hero portrait art specifically: crops the texture
 ## to its opaque pixel bounding box (Image.get_used_rect()) before fitting it
 ## into the size x size box. The ~100 hero/subclass portraits were generated
