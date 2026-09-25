@@ -445,6 +445,32 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
 	l.queue_free()
 
 
+## Floats every effect that fired this turn (Combat._proc: "Counter!",
+## "Intercept!", a passive or Legendary's name...) over its hero, staggered so
+## several procs on one hero stack instead of overlapping. Fire-and-forget:
+## never awaited, so it can't hold up the turn's own animation chain.
+func _spawn_procs(state: Dictionary, hero_wrappers: Dictionary) -> void:
+	var per_hero := {}
+	for p in state.get("_procs", []):
+		var wrapper: Control = hero_wrappers.get(str(p["hero"]))
+		if wrapper == null or not is_instance_valid(wrapper):
+			continue
+		var n: int = per_hero.get(p["hero"], 0)
+		per_hero[p["hero"]] = n + 1
+		var l := _label(str(p["text"]), 13)
+		l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		l.add_theme_constant_override("shadow_offset_x", 1)
+		l.add_theme_constant_override("shadow_offset_y", 1)
+		l.position = Vector2(-10, -30 - n * 16)
+		wrapper.add_child(l)
+		var tween := create_tween()
+		tween.tween_interval(0.25 * n)
+		tween.tween_property(l, "position:y", l.position.y - 20, 1.1)
+		tween.parallel().tween_property(l, "modulate:a", 0.0, 1.1).set_delay(0.5)
+		tween.tween_callback(l.queue_free)
+
+
 func _spawn_ability_bucket_burst(pool_id: String, wrapper: Control) -> void:
 	var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(pool_id, {})
 	var bucket: String = GameData.ABILITY_AWAKENING_BUCKET.get(str(ab.get("effect", "")), "buff")
@@ -563,6 +589,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var action: String = str(pending.get(str(turn["id"]), {}).get("action", "attack"))
 
 		GameState.resolve_turn_now()
+		_spawn_procs(state, hero_wrappers)
 
 		if h == null or h.hp <= 0:
 			return   # died earlier this round (e.g. a monster's turn) — the turn was just skipped, nothing to animate
@@ -605,6 +632,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var i: int = int(turn["id"])
 
 		GameState.resolve_turn_now()
+		_spawn_procs(state, hero_wrappers)
 
 		if i >= monsters.size():
 			return
@@ -824,6 +852,23 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var m_plate_pos := Vector2(m_x + m_size * 0.5 - m_plate_w * 0.5, m_ground - m_size - STATUS_PLATE_HEIGHT - 6.0)
 			m_plate.position = m_plate_pos
 			arena.add_child(m_plate)
+
+			# Intent (Slay the Spire style): who this monster hits this round and
+			# how hard — rolled at round start by Combat._start_round, so what's
+			# shown is what happens (barring an intercept or escort).
+			var intent := Combat.monster_intent(state, i)
+			if not intent.is_empty():
+				var t: Hero = intent["target"]
+				var il := _label("%s %s · %d" % ["HEAVY →" if intent["heavy"] else "→", t.name.split(" the ")[0], int(intent["dmg"])], 11)
+				il.add_theme_color_override("font_color", Palette.HAZARD if intent["heavy"] else Palette.TEXT)
+				il.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+				il.add_theme_constant_override("shadow_offset_x", 1)
+				il.add_theme_constant_override("shadow_offset_y", 1)
+				il.size = Vector2(m_plate_w + 30.0, 16)
+				il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				il.position = Vector2(m_x + m_size * 0.5 - il.size.x * 0.5, m_ground + 2.0)
+				il.tooltip_text = "Attacks %s this round for about %d%s" % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""]
+				arena.add_child(il)
 
 			# A persistent badge for the boss's own mechanic(s) (Enraged/Warded/
 			# Regenerating/Frenzied — an SS-rank+ mapped rift's boss can carry
@@ -1183,7 +1228,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					if legendary:
 						_flavor_toast = GameData.narrative_line("legendary_drop")
 					render()
-				))
+				, "" if is_relic else _item_card(obj)))
 			victory_col.add_child(reward_row)
 		else:
 			victory_col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
@@ -1248,6 +1293,8 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		var card := PanelContainer.new()
 		card.theme_type_variation = &"CardPanelViolet"
 		card.custom_minimum_size.x = 200
+		if not is_relic:
+			_rich_tip(card, _item_card(obj))
 		var cv := _vbox(4)
 		var icon_wrap := CenterContainer.new()
 		icon_wrap.add_child(_icon(icon_path, 40))

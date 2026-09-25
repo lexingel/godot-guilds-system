@@ -16,3 +16,8 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	if on_drop.is_valid():
 		on_drop.call(data)
+
+
+## BBCode tooltips render as item cards (see RichTip).
+func _make_custom_tooltip(for_text: String) -> Object:
+	return RichTip.card(for_text)

@@ -20,3 +20,8 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	preview.modulate = Color(1, 1, 1, 0.85)
 	set_drag_preview(preview)
 	return drag_payload
+
+
+## BBCode tooltips render as item cards (see RichTip).
+func _make_custom_tooltip(for_text: String) -> Object:
+	return RichTip.card(for_text)

@@ -453,7 +453,7 @@ func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0)
 		GameState.equip_item(h.id, slot_type, idx, str(data.get("item_id", "")))
 		render()
 	var drop_target := {"can_accept": can_accept, "on_drop": on_drop}
-	return _action_slot(icon_path, "", is_open, false, cb, size, label_text, "", "", drop_target)
+	return _action_slot(icon_path, "", is_open, false, cb, size, label_text, "", _item_card(equipped) if equipped else "", drop_target)
 
 
 ## The picker for whichever equip slot is currently expanded: shows the
@@ -483,7 +483,9 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	var pv := _vbox(4)
 
 	if equipped:
-		pv.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12, [], _icon(GameData.ITEM_CATEGORY_ICON_PATH[equipped.category], 18)))
+		var eq_row := _info_row("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12, [], _icon(GameData.ITEM_CATEGORY_ICON_PATH[equipped.category], 18))
+		_rich_tip(eq_row, _item_card(equipped))
+		pv.add_child(eq_row)
 		var eactions := HBoxContainer.new()
 		eactions.add_child(_icon_button("res://assets/skills/armor_chest.png", "Unequip", func(hid=h.id, st=slot_type, i=idx):
 			GameState.equip_item(hid, st, i, "")
@@ -515,7 +517,9 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 			expanded_slot = ""
 			render()
 		)
-		pv.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, [equip_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18)))
+		var cand_row := _info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, [equip_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 18))
+		_rich_tip(cand_row, _item_card(it, h, idx))
+		pv.add_child(cand_row)
 		var cmp := _item_compare_text(it, h, idx)
 		if cmp != "":
 			pv.add_child(_wrap_label(cmp.replace(":\n", ": ").replace("\n", " · "), 10, true))
@@ -620,7 +624,9 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			GameState.sell_item(id)
 			render()
 		))
-		v.add_child(_info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, actions, _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20)))
+		var inv_row := _info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, actions, _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20))
+		_rich_tip(inv_row, _item_card(it))
+		v.add_child(inv_row)
 
 	v.add_child(_hsep())
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))

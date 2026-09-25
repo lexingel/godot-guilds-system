@@ -73,6 +73,27 @@ func power_of(h: Hero) -> int:
 	return dmg_of(h) * 2 + round(max_hp(h) / 3.0)
 
 
+## The power a party should bring to a rift: its difficulty's rec_power
+## (Endless = cycle 0), nudged up by a mapped rift's rank modifiers. The
+## difficulty curve was tuned against this ratio — see MONSTER_FLOOR_SCALE.
+func recommended_power(diff_id: String, endless: bool, rift_rank: String = "") -> int:
+	var diff: Dictionary = endless_diff_for_cycle(0) if endless else GameData.DIFFICULTIES[0]
+	if not endless:
+		for d in GameData.DIFFICULTIES:
+			if d["id"] == diff_id:
+				diff = d
+	var mods: Dictionary = GameData.RIFT_RANK_MODIFIERS.get(rift_rank, {})
+	return int(round(float(diff["rec_power"]) * sqrt(float(mods.get("monster_hp_mult", 1.0)) * float(mods.get("monster_dmg_mult", 1.0)))))
+
+
+## Summed power_of for a party (the Champion included by the caller).
+func party_power(party: Array) -> int:
+	var total := 0
+	for h in party:
+		total += power_of(h)
+	return total
+
+
 func xp_to_next(level: int) -> int:
 	return 40 + (level - 1) * 25
 
@@ -866,26 +887,31 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 			if after_hp > 0.0 and float(t["max_hp"]) > 0.0 and after_hp / float(t["max_hp"]) < value:
 				ctx["dealt"] = float(t["hp"])
 				log.append("%s's %s finds the killing blow!" % [h.name, source])
+				_proc(state, h, source)
 		"lifesteal":
 			var healed: int = max(1, int(round(float(ctx["dealt"]) * value)))
 			h.hp = min(max_hp(h), h.hp + healed)
 			log.append("%s drains %d HP from the strike." % [h.name, healed])
+			_proc(state, h, "+%d HP" % healed)
 		"shield_lowest":
 			var shielded := _shield_lowest(state, value)
 			if not shielded.is_empty():
 				log.append("The %s shields %s for %d." % [source, shielded[0].name, int(round(shielded[1]))])
+				_proc(state, shielded[0], "Shield +%d" % int(round(shielded[1])))
 		"counter_attack":
 			if randf() < value:
 				var m: Dictionary = ctx["attacker"]
 				var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
 				m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
 				log.append("%s counters, striking %s for %d!" % [h.name, m["name"], counter_dmg])
+				_proc(state, h, "Counter!")
 		"shave_cooldowns":
 			if randf() < value:
 				for h2 in state["party"]:
 					if h2.ability_cooldown > 0:
 						h2.ability_cooldown -= 1
 				log.append("The %s hums — abilities cool faster!" % source)
+				_proc(state, h, "Cooldowns -1")
 		"extra_turn":
 			var used: Dictionary = state.get("_extra_turned", {})
 			if not used.has(h.id) and h.hp > 0:
@@ -893,22 +919,32 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 				state["_extra_turned"] = used
 				state["turn_order"].insert(int(state["turn_idx"]), {"type": "hero", "id": h.id, "_spd": 0.0})
 				log.append("%s's %s — they act again!" % [h.name, source])
+				_proc(state, h, "Act again!")
 		"intercept":
 			var aimed: Hero = ctx["target"]
 			if aimed != h and float(aimed.hp) / float(max_hp(aimed)) < 0.5 and randf() < value:
 				ctx["target"] = h
 				log.append("%s steps in front of the blow meant for %s!" % [h.name, aimed.name])
+				_proc(state, h, "Intercept!")
 		"weaken_attacker":
 			var m2: Dictionary = ctx["attacker"]
 			m2["dmg"] = float(m2["dmg"]) * (1.0 - value)
 			log.append("%s's %s blunts %s's strength." % [h.name, source, m2["name"]])
+			_proc(state, h, source)
 		"mend_party":
 			for a in state["party"]:
 				if a.hp > 0:
 					a.hp = min(max_hp(a), a.hp + max(1, int(round(max_hp(a) * value))))
 			log.append("%s's %s mends the party." % [h.name, source])
+			_proc(state, h, source)
 		_:
 			push_error("Unknown effect '%s'" % effect)
+
+
+## Queues a floating label over `h` for the combat screen (state["_procs"],
+## reset every turn by resolve_turn) — the log alone made builds invisible.
+func _proc(state: Dictionary, h: Hero, text: String) -> void:
+	state.get_or_add("_procs", []).append({"hero": h.id, "text": text})
 
 
 ## One effect entry (hero_effects shape) as a player-facing sentence, e.g.
@@ -1205,6 +1241,35 @@ func describe_incoming(state: Dictionary) -> String:
 	return ""
 
 
+## A monster's raw hit this round before defend/dodge/shields — enrage and
+## frenzy included. Shared by the real attack and the intent preview.
+func _monster_hit(m: Dictionary, round_num: int) -> float:
+	var back: float = float(m["dmg"])
+	var mech: Dictionary = m.get("mechanic", {})
+	var mech2: Dictionary = m.get("mechanic2", {})
+	var ability: Dictionary = m.get("ability", {})
+	if (mech.get("id") == "enrage" or mech2.get("id") == "enrage") and round_num > GameData.BOSS_ENRAGE_ROUND:
+		back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
+	if ability.get("kind") == "frenzy" and float(m["hp"]) / float(m["max_hp"]) <= 0.3:
+		back = round(back * (1.0 + float(ability["value"])))
+	return back
+
+
+## What monster `i` is about to do this round, for the combat screen:
+## {"target": Hero, "dmg": int, "heavy": bool} or {} if it's down / no target.
+## Heavy = a quarter of the target's max HP or more (same bar as the log's
+## heavy-hit reactions). Intercepts/escort hits can still change the outcome.
+func monster_intent(state: Dictionary, i: int) -> Dictionary:
+	var m: Dictionary = state["monsters"][i]
+	if float(m["hp"]) <= 0:
+		return {}
+	var t := _find_party_hero(state["party"], str(state.get("intents", {}).get(i, "")))
+	if t == null or t.hp <= 0:
+		return {}
+	var dmg := _monster_hit(m, int(state.get("round_num", 0)))
+	return {"target": t, "dmg": int(dmg), "heavy": dmg >= float(max_hp(t)) * 0.25}
+
+
 func _find_party_hero(party: Array[Hero], hero_id: String) -> Hero:
 	for h in party:
 		if h.id == hero_id:
@@ -1290,6 +1355,12 @@ func _start_round(state: Dictionary) -> void:
 		pending[h.id] = {"action": str(prev.get("action", "attack")), "target": target_idx}
 
 	state["turn_order"] = _compute_turn_order(state)
+	var intents := {}
+	if not living.is_empty():
+		for mi in monsters.size():
+			if float(monsters[mi]["hp"]) > 0:
+				intents[mi] = weighted_formation_target(living).id
+	state["intents"] = intents
 	state["turn_idx"] = 0
 
 
@@ -1506,7 +1577,11 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	alive_now.assign(party.filter(func(h): return h.hp > 0))
 	if alive_now.is_empty():
 		return
-	var target: Hero = weighted_formation_target(alive_now)
+	# The target was rolled at round start (state["intents"]) so the combat
+	# screen can show it; re-roll only if that hero has since dropped.
+	var target: Hero = _find_party_hero(party, str(state.get("intents", {}).get(i, "")))
+	if target == null or target.hp <= 0:
+		target = weighted_formation_target(alive_now)
 	var aim := {"target": target, "attacker": m}
 	for ally in alive_now:
 		if ally != target:
@@ -1517,12 +1592,8 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	var mech: Dictionary = m.get("mechanic", {})
 	var mech2: Dictionary = m.get("mechanic2", {})
 	var ability: Dictionary = m.get("ability", {})
-	var back: float = float(m["dmg"])
+	var back: float = _monster_hit(m, round_num)
 	var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
-	if (mech.get("id") == "enrage" or mech2.get("id") == "enrage") and round_num > GameData.BOSS_ENRAGE_ROUND:
-		back = round(back * (1.0 + 0.15 * (round_num - GameData.BOSS_ENRAGE_ROUND)))
-	if ability.get("kind") == "frenzy" and float(m["hp"]) / float(m["max_hp"]) <= 0.3:
-		back = round(back * (1.0 + float(ability["value"])))
 	if state["_defending"].has(target.id):
 		back *= 0.5
 	var effective_dodge: float = float(state["dodge"]) + hero_cond_stat(target, "dodge_pct", state, {"attacker": m})
@@ -1678,6 +1749,7 @@ func peek_next_turn(state: Dictionary) -> Dictionary:
 ## turn (see Main.gd's _run_combat_turns, which drives this automatically for
 ## monster turns and on the player's action-bar click for a hero's turn).
 func resolve_turn(state: Dictionary) -> Dictionary:
+	state["_procs"] = []   # effects that fired this turn — the combat screen floats their names
 	var turn: Dictionary = peek_next_turn(state)
 	var turn_idx: int = int(state["turn_idx"])
 	state["turn_idx"] = turn_idx + 1

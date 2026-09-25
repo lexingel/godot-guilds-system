@@ -460,6 +460,11 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		scene.add_child(hotspot)
 
 	v.add_child(scene)
+	var best := _best_party_power()
+	v.add_child(_power_readout(best, Combat.recommended_power("lesser", false), "Lesser Rift — your strongest party"))
+	if GameState.greater_rift_unlocked():
+		v.add_child(_power_readout(best, Combat.recommended_power("greater", false), "Greater Rift — your strongest party"))
+	v.add_child(_power_readout(best, Combat.recommended_power("endless", true), "Endless Rift (cycle 1) — your strongest party"))
 	if not GameState.greater_rift_unlocked():
 		v.add_child(_label("Greater Rift — Seal %d more Rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed], 12))
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Terminal", func():
@@ -661,6 +666,13 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
 	v.add_child(_hsep())
+	var going: Array = [champ]
+	for h in GameState.heroes:
+		if pending_party.has(h.id):
+			going.append(h)
+	var map_run := _pending_map_slot_idx >= 0
+	v.add_child(_power_readout(Combat.party_power(going),
+		Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)))
 	v.add_child(_icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
 		if pending_party.is_empty():
 			return

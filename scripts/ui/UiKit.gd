@@ -315,7 +315,7 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 ## a stack of buttons taking up the full column height. Same layered-hotspot
 ## technique as _action_slot: decorative content first, an invisible flat
 ## Button overlaid last for the actual click handling.
-func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable) -> Control:
+func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable, tip_bbcode: String = "") -> Control:
 	const TILE_W := 156.0
 	const TILE_H := 122.0
 	var wrap := Control.new()
@@ -360,6 +360,8 @@ func _reward_tile(icon_path: String, name_text: String, rarity_text: String, des
 		btn.add_theme_stylebox_override(style_name, clear_style)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn.tooltip_text = "%s — %s" % [name_text, desc_text]
+	if tip_bbcode != "":
+		_rich_tip(btn, tip_bbcode)
 	btn.pressed.connect(cb)
 	wrap.add_child(btn)
 	return wrap
@@ -431,11 +433,7 @@ func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) ->
 	t.size = Vector2(size, size)
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	t.tooltip_text = "%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)]
-	if compare_for:
-		var cmp := _item_compare_text(it, compare_for)
-		if cmp != "":
-			t.tooltip_text += "\n\n" + cmp
+	t.tooltip_text = _item_card(it, compare_for)
 	t.mouse_default_cursor_shape = Control.CURSOR_MOVE
 	t.drag_payload = {"kind": "inventory_item", "item_id": it.id, "slot_type": it.slot_type()}
 	return t
@@ -624,6 +622,108 @@ func _build_text(h: Hero) -> String:
 	for k in keys:
 		parts.append("%s ×%d" % [GameData.ARCHETYPES[k], int(counts[k])])
 	return " · ".join(parts)
+
+
+const ITEM_RARITY_COLOR := {"common": Palette.MUTED, "rare": Palette.RANK_D, "epic": Palette.VIOLET_BRIGHT, "legendary": Palette.RANK_S}
+const ARCH_COLOR := {"opener": Palette.CRYSTALS, "attrition": Palette.EMBER, "guardian": Palette.RANK_E,
+	"evasion": Palette.VIOLET_BRIGHT, "sustain": Palette.TOKENS, "executioner": Palette.HAZARD}
+
+
+func _bb(c: Color, text: String) -> String:
+	return "[color=#%s]%s[/color]" % [c.to_html(false), text.replace("[", "[lb]")]
+
+
+func _arch_chip(arch: String) -> String:
+	return _bb(ARCH_COLOR.get(arch, Palette.MUTED), "◆ " + str(GameData.ARCHETYPES.get(arch, arch))) if arch != "" else ""
+
+
+## An item as a tooltip card (RichTip): rarity-colored name, type/rank line,
+## base stat, one line per affix, situational effects in italics with their
+## archetype, a Legendary's text + drawback in red, and — given a hero —
+## what equipping it would change (▲ gains / ▼ losses vs the slot's item).
+func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
+	var lines: Array[String] = []
+	var rc: Color = ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT)
+	lines.append("[b]%s[/b]" % _bb(rc, it.name))
+	var sub := "%s %s" % [it.rarity.capitalize(), GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category)]
+	if it.item_rank != "":
+		sub += " · Rank %s" % it.item_rank
+	lines.append(_bb(Palette.MUTED, sub))
+	if it.implicit_kind != "":
+		lines.append(_bb(Palette.MUTED, "Base: " + Combat.describe_skill(it.implicit_kind, it.implicit_value)))
+	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value]]:
+		if str(pair[0]) != "":
+			lines.append(Combat.describe_skill(str(pair[0]), float(pair[1])))
+	if it.unique_id != "":
+		var udef := GameData.find_unique_item(it.unique_id)
+		for e in udef.get("effects", []):
+			lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(udef.get("arch", "")))])
+		if it.drawback_kind != "":
+			lines.append(_bb(Palette.HAZARD, "Drawback: " + Combat.describe_skill(it.drawback_kind, it.drawback_value)))
+		if it.locked_role != "":
+			lines.append(_bb(Palette.MUTED, "%s only" % it.locked_role.capitalize()))
+	for e in it.effects:
+		lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(e.get("arch", "")))])
+	if it.socketed_kind != "":
+		lines.append(_bb(Palette.CRYSTALS, "Socket: " + Combat.describe_skill(it.socketed_kind, it.socketed_value)))
+	if compare_for != null and it.equipped_to != compare_for.id:
+		if slot == -2:
+			slot = _best_swap_slot(compare_for, it.slot_type())
+		var current: Item = _find_equipped_at(compare_for.id, it.slot_type(), slot) if slot >= 0 else null
+		lines.append("")
+		lines.append(_bb(Palette.MUTED, "If equipped on %s%s:" % [compare_for.name.split(" the ")[0], (" (replacing %s)" % current.name) if current else ""]))
+		var a := _item_stat_map(it)
+		var b := _item_stat_map(current)
+		var any := false
+		for kind in GameData.BUILD_KINDS:
+			var d: float = float(a.get(kind, 0.0)) - float(b.get(kind, 0.0))
+			if absf(d) >= 0.001:
+				# hazard guard reads inverted ("-8% hazard severity" is good), so
+				# judge better/worse by the raw delta, not the text's sign.
+				lines.append(_bb(Palette.RANK_E if d > 0 else Palette.HAZARD, ("▲ " if d > 0 else "▼ ") + Combat.describe_skill(kind, d)))
+				any = true
+		if current:
+			var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
+			for e in lost:
+				lines.append(_bb(Palette.HAZARD, "▼ loses: " + Combat.describe_effect(e)))
+				any = true
+		if not any:
+			lines.append(_bb(Palette.MUTED, "No stat change"))
+	return "
+".join(lines)
+
+
+## "Party power 142 / Recommended 150 — Even fight", colored like a traffic
+## light. Bands match the tuned difficulty curve: under ~1.1x the rift wins
+## more often than not, ~1.1-1.5x is a real fight, 1.5x+ is comfortable.
+func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Label:
+	var ratio := float(power) / float(max(1, rec))
+	var verdict := "Risky" if ratio < 1.1 else ("Even fight" if ratio < 1.5 else "Favored")
+	var color: Color = Palette.HAZARD if ratio < 1.1 else (Palette.COINS if ratio < 1.5 else Palette.RANK_E)
+	var l := _label("%s %d / Recommended %d — %s" % [prefix, power, rec, verdict], 13)
+	l.add_theme_color_override("font_color", color)
+	return l
+
+
+## Champion + the 4 strongest heroes able to go right now.
+func _best_party_power() -> int:
+	var ready: Array = GameState.heroes.filter(func(h): return not h.is_downed())
+	ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+	var party: Array = ready.slice(0, 4)
+	var champ := GameState.ensure_champion()
+	if champ:
+		party.append(champ)
+	return Combat.party_power(party)
+
+
+## Gives `node` a card tooltip (see RichTip) — attaches the RichTip script
+## when the node has none of its own.
+func _rich_tip(node: Control, bbcode: String) -> void:
+	if node.get_script() == null:
+		node.set_script(RichTip)
+	node.tooltip_text = bbcode
+	if node.mouse_filter == Control.MOUSE_FILTER_IGNORE:
+		node.mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 ## Every flat kind->value an item contributes (exactly what
