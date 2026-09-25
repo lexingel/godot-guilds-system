@@ -530,8 +530,7 @@ func _scar_text(scar_name: String) -> String:
 	var parts: Array[String] = []
 	var wound: Dictionary = GameData.SCAR_TABLE.get(scar_name, {})
 	for kind in wound:
-		var s := Combat.describe_skill(kind, absf(float(wound[kind])))
-		parts.append("-" + s.trim_prefix("+") if s.begins_with("+") else "less: " + s)
+		parts.append(Combat.describe_skill(kind, float(wound[kind])))
 	for e in GameData.SCAR_UPSIDES.get(scar_name, []):
 		parts.append(Combat.describe_effect(e))
 	return "; ".join(parts)
@@ -610,11 +609,7 @@ func _item_compare_text(it: Item, h: Hero, slot: int = -2) -> String:
 	for kind in GameData.BUILD_KINDS:
 		var d: float = float(a.get(kind, 0.0)) - float(b.get(kind, 0.0))
 		if absf(d) >= 0.001:
-			var s := Combat.describe_skill(kind, absf(d))
-			if s.begins_with("+"):
-				lines.append(s if d > 0 else "-" + s.substr(1))
-			else:
-				lines.append(("more: " if d > 0 else "less: ") + s)
+			lines.append(Combat.describe_skill(kind, d))
 	var gained: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
 	for e in gained:
 		lines.append("gains: " + Combat.describe_effect(e))
@@ -4291,8 +4286,8 @@ func _node_effect_text(n: Dictionary) -> String:
 	for e in n.get("effects", []):
 		parts.append(Combat.describe_effect(e))
 	if str(n["kind"]) != "":
-		var flat := Combat.describe_skill(str(n["kind"]), absf(float(n["value"])))
-		parts.append(("Drawback: -" + flat.trim_prefix("+")) if float(n["value"]) < 0.0 else flat)
+		var flat := Combat.describe_skill(str(n["kind"]), float(n["value"]))
+		parts.append(("Drawback: " + flat) if float(n["value"]) < 0.0 else flat)
 	if n.has("arch"):
 		parts.append("[%s]" % GameData.ARCHETYPES.get(str(n["arch"]), ""))
 	return "\n".join(parts)
