@@ -224,7 +224,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
-		mid.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 10, true))
+		mid.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
 		row.add_child(_button("Reroll (%dc)" % GameData.RECRUIT_REROLL_COST, func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)

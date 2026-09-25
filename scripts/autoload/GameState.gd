@@ -48,6 +48,7 @@ var pending_shop_boost: bool = false
 ## same way _flavor_toast is, so the celebration fires wherever the player
 ## happens to be, not just on the Recruits screen.
 var pending_s_rank_reveal: Dictionary = {}
+var pending_toasts: Array = []   # UI-only, never saved: [{cls_id, pool_id, title, text}] for Main's portrait pop-ups
 var bonds: Dictionary = {}   # "<hero_id>|<hero_id>" (sorted) -> rifts sealed together; see GameData.BOND_LEVEL_RIFTS
 var run: Dictionary = {}   # {} = no active run
 var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String,"expires_at":int}] or [{}] (empty, refilled lazily)
@@ -504,6 +505,11 @@ func load_save() -> bool:
 	return true
 
 
+## Queues a portrait pop-up (Main drains these on its next render).
+func push_toast(h: Hero, title: String, text: String) -> void:
+	pending_toasts.append({"cls_id": h.cls_id, "pool_id": h.pool_id, "title": title, "text": text})
+
+
 func _bond_key(a: String, b: String) -> String:
 	return "%s|%s" % [a, b] if a < b else "%s|%s" % [b, a]
 
@@ -522,6 +528,8 @@ func check_earned_traits(h: Hero) -> Array[String]:
 		if not h.earned_traits.has(t["id"]) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
 			h.earned_traits.append(t["id"])
 			gained.append("%s earned %s!" % [h.name, t["name"]])
+			var what: String = Combat.describe_skill(str(t["kind"]), float(t["value"])) if t.has("kind") else Combat.describe_effect(t["effects"][0])
+			push_toast(h, "Trait earned: %s" % t["name"], "%s — %s" % [h.name.split(" the ")[0], what])
 	return gained
 
 
@@ -1188,6 +1196,7 @@ func seal_rift() -> void:
 			bonds[key] = int(bonds.get(key, 0)) + 1
 			if GameData.bond_level(int(bonds[key])) > before:
 				flavor += " %s and %s's bond deepens (Lv%d)." % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], before + 1]
+				push_toast(sealers[i], "Bond deepened — Lv%d" % (before + 1), "%s & %s: +%d%% party damage while both stand" % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
 	for h in sealers:
 		for line in check_earned_traits(h):
 			flavor += " " + line
@@ -1503,6 +1512,8 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	h.innate_value = Combat.hero_innate_value(next, rank_idx)
 	h.name = "%s the %s" % [h.name.split(" the ")[0], next["name"]]
 	h.hp = Combat.max_hp(h)
+	var passive := GameData.subclass_passive(h.pool_id)
+	push_toast(h, "Evolved — Rank %s" % h.rank, "%s · new passive: %s" % [h.name, str(passive.get("name", "none"))])
 	save()
 	state_changed.emit()
 	return ""

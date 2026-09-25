@@ -557,15 +557,68 @@ func _position_text(h: Hero) -> String:
 	return "%s row · %s: %s" % [str(pos["row"]).capitalize(), pos["name"], "; ".join(parts)]
 
 
-## "Killer's Eye: +14% damage vs foes below 40% HP [Executioner]"
-func _passive_text(pool_id: String) -> String:
+## A subclass passive as BBCode — "Killer's Eye: +14% damage vs foes below
+## 40% HP" plus a colored archetype chip (render with _rich_line).
+func _passive_bb(pool_id: String) -> String:
 	var p := GameData.subclass_passive(pool_id)
 	if p.is_empty():
 		return "None"
 	var parts: Array[String] = []
 	for e in p["effects"]:
 		parts.append(Combat.describe_effect(e))
-	return "%s: %s [%s]" % [str(p["name"]), "; ".join(parts), GameData.ARCHETYPES.get(str(p["arch"]), "")]
+	return "[b]%s[/b]: %s  %s" % [str(p["name"]).replace("[", "[lb]"), "; ".join(parts).replace("[", "[lb]"), _arch_chip(str(p["arch"]))]
+
+
+## The hero's archetype counts as colored chips, biggest first.
+func _build_bb(h: Hero) -> String:
+	var counts := Combat.hero_archetype_counts(h)
+	var keys: Array = counts.keys()
+	keys.sort_custom(func(a, b): return int(counts[a]) > int(counts[b]))
+	var parts: Array[String] = []
+	for k in keys:
+		parts.append("%s ×%d" % [_arch_chip(str(k)), int(counts[k])])
+	return "  ".join(parts)
+
+
+## The single archetype a hero leans into most ("" if none) — the colored
+## badge on roster portraits and party cards.
+func _main_arch(h: Hero) -> String:
+	var counts := Combat.hero_archetype_counts(h)
+	var best := ""
+	for k in counts:
+		if best == "" or int(counts[k]) > int(counts[best]):
+			best = k
+	return best
+
+
+## _info_row with a BBCode body (see _rich_line).
+func _rich_info_row(bbcode: String, size: int, actions: Array[Control], leading: Control = null) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	if leading:
+		row.add_child(leading)
+	row.add_child(_rich_line(bbcode, size))
+	for a in actions:
+		row.add_child(a)
+	return row
+
+
+## A wrapping RichTextLabel line for BBCode text (colored chips etc.) —
+## the rich counterpart of _wrap_label. Ignores the mouse so tooltips and
+## drops on whatever sits underneath still work.
+func _rich_line(bbcode: String, size: int = 11, muted: bool = false) -> RichTextLabel:
+	var rt := RichTextLabel.new()
+	rt.bbcode_enabled = true
+	rt.fit_content = true
+	rt.scroll_active = false
+	rt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rt.add_theme_font_size_override("normal_font_size", size)
+	rt.add_theme_font_size_override("bold_font_size", size)
+	rt.add_theme_color_override("default_color", Palette.MUTED if muted else Palette.TEXT)
+	rt.text = bbcode
+	return rt
 
 
 ## "−3% mend; +15% damage while below 50% HP" — a scar's wound and its upside.
@@ -579,7 +632,8 @@ func _scar_text(scar_name: String) -> String:
 	return "; ".join(parts)
 
 
-## History, earned traits, the nearest trait still to earn, and grown bonds.
+## History, earned traits, the nearest trait still to earn, and grown bonds —
+## as BBCode lines (render with _rich_line).
 func _history_lines(h: Hero) -> Array[String]:
 	var lines: Array[String] = []
 	var hist: Array[String] = []
@@ -594,7 +648,7 @@ func _history_lines(h: Hero) -> Array[String]:
 	for t in GameData.EARNED_TRAITS:
 		if h.earned_traits.has(t["id"]):
 			var what: String = Combat.describe_skill(str(t["kind"]), float(t["value"])) if t.has("kind") else "; ".join(t["effects"].map(func(e): return Combat.describe_effect(e)))
-			lines.append("Earned: %s — %s [%s]" % [t["name"], what, GameData.ARCHETYPES[t["arch"]]])
+			lines.append("Earned: [b]%s[/b] — %s  %s" % [t["name"], what.replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
 		else:
 			var frac := float(h.history.get(t["stat"], 0)) / float(t["need"])
 			if frac > next_frac:
@@ -612,17 +666,6 @@ func _history_lines(h: Hero) -> Array[String]:
 	if not bond_parts.is_empty():
 		lines.append("Bonds: " + " · ".join(bond_parts))
 	return lines
-
-
-## "Executioner ×3 · Opener ×1" from Combat.hero_archetype_counts, biggest first.
-func _build_text(h: Hero) -> String:
-	var counts := Combat.hero_archetype_counts(h)
-	var keys: Array = counts.keys()
-	keys.sort_custom(func(a, b): return int(counts[a]) > int(counts[b]))
-	var parts: Array[String] = []
-	for k in keys:
-		parts.append("%s ×%d" % [GameData.ARCHETYPES[k], int(counts[k])])
-	return " · ".join(parts)
 
 
 const ITEM_RARITY_COLOR := {"common": Palette.MUTED, "rare": Palette.RANK_D, "epic": Palette.VIOLET_BRIGHT, "legendary": Palette.RANK_S}

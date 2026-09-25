@@ -22,6 +22,20 @@ func _ready() -> void:
 	# Game both route through _switch_slot(), which is what actually loads
 	# (or resets) a slot's state once the player picks one.
 	GameState.state_changed.connect(render)
+	# Portrait pop-ups live on their own CanvasLayer so render()'s
+	# _clear_root() never wipes one mid-fade.
+	var toast_layer := CanvasLayer.new()
+	toast_layer.layer = 50
+	add_child(toast_layer)
+	_toast_box = VBoxContainer.new()
+	_toast_box.add_theme_constant_override("separation", 6)
+	_toast_box.anchor_left = 1.0
+	_toast_box.anchor_right = 1.0
+	_toast_box.offset_left = -300
+	_toast_box.offset_right = -12
+	_toast_box.offset_top = 70
+	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toast_layer.add_child(_toast_box)
 	render()
 
 
@@ -44,7 +58,50 @@ func _apply_resolution(idx: int) -> void:
 	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
 
 
+var _toast_box: VBoxContainer
+
+
+## Shows every queued GameState toast as a portrait card at the top right,
+## each fading out on its own after a few seconds (real time — unaffected by
+## the combat speed setting).
+func _drain_toasts() -> void:
+	if _toast_box == null:
+		return
+	for t in GameState.pending_toasts:
+		var card := PanelContainer.new()
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new()
+		style.bg_color = Palette.SURFACE2
+		style.border_color = Palette.EMBER_BRIGHT
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(8)
+		style.set_content_margin_all(8)
+		card.add_theme_stylebox_override("panel", style)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var portrait := GameData.portrait_for_hero(str(t["cls_id"]), str(t["pool_id"]))
+		if portrait != "":
+			row.add_child(_icon_trimmed(portrait, 44))
+		var col := _vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var title := _label(str(t["title"]), 13)
+		title.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		col.add_child(title)
+		col.add_child(_wrap_label(str(t["text"]), 11, true))
+		row.add_child(col)
+		card.add_child(row)
+		_toast_box.add_child(card)
+		AudioManager.play_sfx(GameData.SFX_PATH["ui_confirm"])
+		var tw := card.create_tween()
+		tw.set_ignore_time_scale(true)
+		tw.tween_interval(4.5)
+		tw.tween_property(card, "modulate:a", 0.0, 0.6)
+		tw.tween_callback(card.queue_free)
+	GameState.pending_toasts.clear()
+
+
 func render() -> void:
+	_drain_toasts()
 	_combat_hotkeys.clear()
 	# Combat speed only ever applies inside a rift — camp animations (embers,
 	# day/night drift) always run at normal speed.
@@ -891,7 +948,9 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
 	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
 	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · downed" if downed else ""], 10, true))
-	names.add_child(_label("Power %d" % Combat.power_of(h), 10, true))
+	var power_line := "Power %d" % Combat.power_of(h)
+	var arch := _main_arch(h)
+	names.add_child(_rich_line(power_line + ("  " + _arch_chip(arch) if arch != "" else ""), 10, true))
 	top.add_child(names)
 	cv.add_child(top)
 	var pos_text := _position_text(h) if in_party else ""

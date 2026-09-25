@@ -71,14 +71,14 @@ func _render_roster(v: VBoxContainer) -> void:
 			var stat_line := _wrap_label(Combat.describe_skill(kind, total), 11, true)
 			_rich_tip(stat_line, _stat_breakdown_card(h, kind, total))
 			left_v.add_child(stat_line)
-	left_v.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 11))
+	left_v.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 11))
 	left_v.add_child(_wrap_label(_position_text(h), 11, true))
-	var build := _build_text(h)
+	var build := _build_bb(h)
 	if build != "":
-		left_v.add_child(_wrap_label("Build: %s" % build, 11, true))
+		left_v.add_child(_rich_line("Build: " + build, 11, true))
 	left_v.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
 	for line in _history_lines(h):
-		left_v.add_child(_wrap_label(line, 11, true))
+		left_v.add_child(_rich_line(line, 11, true))
 	for scar_name in h.scars:
 		left_v.add_child(_info_row("Scar: %s — %s" % [scar_name, _scar_text(scar_name)], 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
 			var err := GameState.scrub_scar(id, sn)
@@ -158,14 +158,14 @@ func _render_roster(v: VBoxContainer) -> void:
 			for c in evolve_choices:
 				var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(str(c["id"]), {})
 				var lines: Array[String] = [
-					"%s — Rank %s, %s" % [str(c["name"]), str(c["rank"]), str(c["type"])],
+					"[b]%s[/b] — Rank %s, %s" % [str(c["name"]), str(c["rank"]), str(c["type"])],
 					"Main stat: %s" % Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))),
-					"Passive: %s" % _passive_text(str(c["id"])),
+					"Passive: %s" % _passive_bb(str(c["id"])),
 				]
 				if not ab.is_empty():
 					lines.append("Ability: %s — %s" % [str(ab["name"]), str(ab["desc"])])
 				lines.append(str(c["flavor"]))
-				cv.add_child(_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
+				cv.add_child(_rich_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
 					var err := GameState.evolve_hero(id, pid)
 					if err != "":
 						push_warning(err)
@@ -408,6 +408,11 @@ func _roster_portrait_button(h: Hero) -> Control:
 		pv.add_child(icon_wrap)
 	pv.add_child(_label(h.name.split(" the ")[0], 10))
 	pv.add_child(_label("%d/%d HP" % [h.hp, Combat.max_hp(h)], 9, true))
+	var arch := _main_arch(h)
+	if arch != "":
+		var chip := _label("◆ " + str(GameData.ARCHETYPES[arch]), 9)
+		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
+		pv.add_child(chip)
 	panel.add_child(pv)
 	wrap.add_child(panel)
 
