@@ -15,6 +15,7 @@ func _ready() -> void:
 	AudioManager.set_music_volume(GameState.music_volume)
 	AudioManager.set_sfx_volume(GameState.sfx_volume)
 	_apply_resolution(GameState.resolution_idx)
+	get_tree().root.content_scale_factor = GameState.ui_scale
 	# Deliberately doesn't load_save()/reset() or route past "title" here —
 	# every boot lands on the title screen now (New Game/Load Game/Credits/
 	# Quit) regardless of whether the active slot has a guild in it, matching
@@ -844,6 +845,22 @@ func _render_settings(v: VBoxContainer) -> void:
 
 	v.add_child(_hsep())
 	v.add_child(_label("Display", 15))
+	# Scales every piece of UI (text, buttons, art) together — the game's
+	# fixed-size layouts stay intact, just bigger or smaller.
+	var scale_row := HBoxContainer.new()
+	scale_row.add_theme_constant_override("separation", 6)
+	scale_row.add_child(_label("Text & UI size", 13))
+	for sc in [0.9, 1.0, 1.15, 1.3]:
+		var sb := _button("%d%%" % int(round(sc * 100)), func(val=sc):
+			GameState.ui_scale = val
+			get_tree().root.content_scale_factor = val
+			GameState.save_settings()
+			render()
+		)
+		sb.toggle_mode = true
+		sb.button_pressed = is_equal_approx(GameState.ui_scale, sc)
+		scale_row.add_child(sb)
+	v.add_child(scale_row)
 	if OS.has_feature("web"):
 		# Resolution switching is a desktop-only concept — on Web the browser
 		# tab/window already sizes the canvas correctly on its own.

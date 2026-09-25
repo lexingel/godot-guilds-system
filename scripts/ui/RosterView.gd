@@ -329,6 +329,10 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), _node_effect_text(n), reason, combo_line])
 	if learned:
 		tile.modulate = Color(1.15, 1.02, 0.68)
+	var card := "[b]%s[/b]\n%s\n%s%s" % [str(n["name"]).replace("[", "[lb]"), _node_effect_text(n).replace("[", "[lb]"), _bb(Palette.MUTED, reason), combo_line.replace("[", "[lb]")]
+	for c in tile.get_children():
+		if c is BaseButton:
+			_rich_tip(c, card + _kw_footer(card))
 	return tile
 
 

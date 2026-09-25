@@ -16,7 +16,8 @@ var active_slot: int = 0
 # Player/device prefs — global across save slots, not part of any guild's
 # own save data, so they survive Reset Guild and switching slots.
 var music_volume: float = 1.0
-var combat_speed: float = 1.0   # animation time scale inside a rift (x1/x2/x3), a settings.json preference
+var combat_speed: float = 1.0
+var ui_scale: float = 1.0   # whole-UI scale (Window.content_scale_factor), a settings.json preference   # animation time scale inside a rift (x1/x2/x3), a settings.json preference
 var sfx_volume: float = 1.0
 var resolution_idx: int = 0
 
@@ -326,7 +327,7 @@ func save_settings() -> void:
 	var f := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({
-			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx, "combat_speed": combat_speed,
+			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx, "combat_speed": combat_speed, "ui_scale": ui_scale,
 		}))
 
 
@@ -338,6 +339,7 @@ func load_settings() -> void:
 	if typeof(parsed) == TYPE_DICTIONARY:
 		music_volume = parsed.get("music_volume", 1.0)
 		combat_speed = float(parsed.get("combat_speed", 1.0))
+		ui_scale = float(parsed.get("ui_scale", 1.0))
 		sfx_volume = parsed.get("sfx_volume", 1.0)
 		resolution_idx = parsed.get("resolution_idx", 0)
 

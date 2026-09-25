@@ -96,6 +96,7 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 
 
 var _last_scroll_y: float = 0.0
+var _revealed_rewards: Array = []   # the reward_options array whose flip-reveal already played (by reference)
 var roster_tab: String = "overview"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
@@ -614,12 +615,46 @@ func _rich_line(bbcode: String, size: int = 11, muted: bool = false) -> RichText
 	rt.scroll_active = false
 	rt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	rt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rt.mouse_filter = Control.MOUSE_FILTER_PASS
 	rt.add_theme_font_size_override("normal_font_size", size)
 	rt.add_theme_font_size_override("bold_font_size", size)
 	rt.add_theme_color_override("default_color", Palette.MUTED if muted else Palette.TEXT)
-	rt.text = bbcode
+	rt.text = _kw_hints(bbcode)
 	return rt
+
+
+## Wraps the first mention of each glossary keyword (GameData.KEYWORDS) in
+## a [hint] so hovering it explains the term; underlined so it reads as
+## hoverable. Only touches text outside BBCode tags.
+func _kw_hints(bbcode: String) -> String:
+	var out := bbcode
+	for k in GameData.keyword_regexes():
+		var re: RegEx = k[2]
+		var search_from := 0
+		while true:
+			var m := re.search(out, search_from)
+			if m == null:
+				break
+			var inside_tag := out.rfind("[", m.get_start()) > out.rfind("]", m.get_start())
+			if inside_tag:
+				search_from = m.get_end()
+				continue
+			var wrapped := "[hint=%s — %s][u]%s[/u][/hint]" % [k[0], k[1], m.get_string()]
+			out = out.substr(0, m.get_start()) + wrapped + out.substr(m.get_end())
+			break
+	return out
+
+
+## A tooltip card's glossary footer: every keyword the card mentions, once.
+func _kw_footer(text: String) -> String:
+	var lines: Array[String] = []
+	for k in GameData.keyword_regexes():
+		var re: RegEx = k[2]
+		if re.search(text) != null:
+			lines.append("[b]%s[/b] — %s" % [k[0], k[1]])
+	if lines.is_empty():
+		return ""
+	return "\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]" % [Palette.MUTED2.to_html(false), Palette.MUTED.to_html(false), "\n".join(lines)]
 
 
 ## "−3% mend; +15% damage while below 50% HP" — a scar's wound and its upside.
@@ -734,8 +769,8 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 				any = true
 		if not any:
 			lines.append(_bb(Palette.MUTED, "No stat change"))
-	return "
-".join(lines)
+	var card := "\n".join(lines)
+	return card + _kw_footer(card)
 
 
 ## "Party power 142 / Recommended 150 — Even fight", colored like a traffic
@@ -777,7 +812,8 @@ func _stat_breakdown_card(h: Hero, kind: String, total: float) -> String:
 		lines.append("")
 		lines.append(_bb(Palette.MUTED, "Situational:"))
 		lines.append_array(situational)
-	return "\n".join(lines)
+	var card := "\n".join(lines)
+	return card + _kw_footer(card)
 
 
 ## Gives `node` a card tooltip (see RichTip) — attaches the RichTip script

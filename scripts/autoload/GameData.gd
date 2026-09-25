@@ -310,6 +310,44 @@ const ITEM_AFFIX_SUFFIX := {
 	"speed_pct": ["of Haste", "of the Wind"],
 }
 
+## Glossary for keyword tooltips: [regex (case-insensitive, word-bounded),
+## title, definition]. UiKit hovers these in rich text lines ([hint]) and
+## lists the ones a tooltip card mentions at its foot. Definitions must not
+## contain "]" (they go inside a BBCode tag).
+const KEYWORDS := [
+	["first-strike", "First-strike", "bonus damage on the party's opening round of every fight"],
+	["per round \\(stacking\\)|escalat\\w*", "Escalation", "damage that keeps growing every round the fight goes on"],
+	["hazard severity|hazard guard", "Hazard guard", "cuts the damage rift hazards (traps, fog, lava) deal to the party"],
+	["block a retaliation|dodge", "Dodge", "chance to avoid a monster's attack completely"],
+	["mends?|mending", "Mend", "the party heals a share of its HP at the end of every round"],
+	["survive a wipe|wipe guard", "Wipe guard", "once per rift, the last hero standing survives a killing blow"],
+	["take the hit|intercept", "Intercept", "step in front of an attack aimed at a wounded ally"],
+	["counter-attack|counters?", "Counter", "strike back at the attacker after dodging or taking a heavy hit"],
+	["finish foes|execute", "Execute", "instantly defeats a foe your hit leaves below the threshold"],
+	["act again", "Extra turn", "the hero immediately takes another turn, once per round"],
+	["shields?", "Shield", "absorbs incoming damage before HP is lost"],
+	["acting first|acting last", "Turn order", "everyone acts in Speed order each round; first/last means this round's order"],
+	["turn speed|speed", "Speed", "sets turn order each round, faster acts earlier"],
+	["front row|back row", "Formation", "the front row draws about 3x as many monster attacks as the back row"],
+	["opener", "Opener", "win fast: first-strike, speed and round-one bursts"],
+	["attrition", "Attrition", "win long fights: bonuses that grow with every round"],
+	["guardian", "Guardian", "keep the party standing: HP, hazard/wipe guard, intercepts"],
+	["evasion", "Evasion", "avoid hits: dodge and punishing counters"],
+	["sustain", "Sustain", "outlast: mending, lifesteal and shields"],
+	["executioner", "Executioner", "finish things: raw damage, executes, boss killing"],
+]
+
+static var _keyword_res: Array = []
+
+## [title, definition, RegEx] for every KEYWORDS entry (compiled once).
+static func keyword_regexes() -> Array:
+	if _keyword_res.is_empty():
+		for k in KEYWORDS:
+			var re := RegEx.new()
+			re.compile("(?i)\\b(" + str(k[0]) + ")\\b")
+			_keyword_res.append([str(k[1]), str(k[2]), re])
+	return _keyword_res
+
 ## Build archetypes — the shared vocabulary that ties a hero's innate kind,
 ## subclass passive, skill keystones, item affixes and Legendaries together
 ## into one visible "build". Purely a display/grouping layer: combat never

@@ -8,6 +8,15 @@ extends RosterView
 ## Callable for a marker that's purely informational (a future floor's
 ## still-open preview, or any already-resolved floor) — only the current
 ## floor's still-open fork options are actually clickable.
+const MAP_NODE_DESC := {
+	"combat": "Combat — 1-3 monsters. Coins, Crystals and a loot pick.",
+	"elite": "Elite — one tough foe (double HP, harder hits). +40% rewards.",
+	"shop": "Shop — spend Coins on items and relics. No fighting.",
+	"hazard": "Hazard — a trap that hurts the party (hazard guard helps). May drop Coins or Crystals.",
+	"boss": "Boss — the rift's warden, with a special mechanic. Win to seal the rift.",
+}
+
+
 func _path_node_marker(kind: String, is_current: bool, cb: Callable) -> Control:
 	const MARKER_SIZE := 34.0
 	var wrap := Control.new()
@@ -44,6 +53,8 @@ func _path_node_marker(kind: String, is_current: bool, cb: Callable) -> Control:
 		l.position = Vector2(MARKER_SIZE * 0.32, MARKER_SIZE * 0.16)
 		wrap.add_child(l)
 
+	var desc: String = MAP_NODE_DESC.get(kind, str(kind).capitalize())
+	ring.tooltip_text = desc
 	if cb.is_valid():
 		var btn := Button.new()
 		btn.flat = true
@@ -53,7 +64,7 @@ func _path_node_marker(kind: String, is_current: bool, cb: Callable) -> Control:
 		for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
 			btn.add_theme_stylebox_override(style_name, clear_style)
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.tooltip_text = str(kind).capitalize()
+		btn.tooltip_text = desc + "\n(click to take this path)"
 		btn.pressed.connect(cb)
 		wrap.add_child(btn)
 
@@ -98,15 +109,38 @@ func _render_rift_map(v: VBoxContainer) -> void:
 		var ay: float = base_y + sin(float(i) * 1.1) * 22.0
 		anchors.append(Vector2(ax, ay))
 
-	# Path line first, so the node markers draw on top of it rather than
-	# under it.
+	# Where each floor's node(s) sit: one marker once resolved, else one per
+	# fork option stacked around the anchor. Every option can lead to every
+	# option on the next floor, so links run all-to-all between floors.
+	var spread := 30.0
+	var slots: Array = []   # per floor: [[kind, Vector2], ...]
+	for i in n:
+		var opts_i: Array = layers[i]["options"]
+		var resolved_i: String = str(chosen[i]) if chosen.has(i) else (str(opts_i[0]) if opts_i.size() == 1 else "")
+		var here: Array = []
+		if resolved_i != "":
+			here.append([resolved_i, anchors[i]])
+		else:
+			for oi in opts_i.size():
+				here.append([str(opts_i[oi]), Vector2(anchors[i].x, anchors[i].y + (float(oi) - float(opts_i.size() - 1) / 2.0) * spread)])
+		slots.append(here)
+	# Links first, so markers draw on top: gold along the path already
+	# walked, dim for what's still ahead.
 	for i in n - 1:
-		var line := Line2D.new()
-		line.width = 3.0
-		line.default_color = Color(Palette.LINE.r, Palette.LINE.g, Palette.LINE.b, 0.85)
-		line.add_point(anchors[i])
-		line.add_point(anchors[i + 1])
-		map_ctrl.add_child(line)
+		for a in slots[i]:
+			for b in slots[i + 1]:
+				var line := Line2D.new()
+				var walked := i + 1 <= pos and chosen.has(i + 1) or (i + 1 <= pos and (layers[i + 1]["options"] as Array).size() == 1)
+				line.width = 3.0 if walked else 2.0
+				var c: Color = Palette.EMBER_BRIGHT if walked else Palette.LINE
+				line.default_color = Color(c.r, c.g, c.b, 0.9 if walked else 0.7)
+				line.add_point(a[1])
+				line.add_point(b[1])
+				map_ctrl.add_child(line)
+	for i in n:
+		var num := _label(str(i + 1), 10, true)
+		num.position = Vector2(anchors[i].x - 4, MAP_SIZE.y - 16)
+		map_ctrl.add_child(num)
 
 	for i in n:
 		var opts: Array = layers[i]["options"]
@@ -115,9 +149,10 @@ func _render_rift_map(v: VBoxContainer) -> void:
 		if resolved != "":
 			var marker := _path_node_marker(resolved, i == pos, Callable())
 			marker.position = anchor - marker.size * 0.5
+			if i < pos:
+				marker.modulate = Color(1, 1, 1, 0.55)
 			map_ctrl.add_child(marker)
 		else:
-			var spread := 24.0
 			for oi in opts.size():
 				var opt := str(opts[oi])
 				var oy: float = anchor.y + (float(oi) - float(opts.size() - 1) / 2.0) * spread
@@ -1339,6 +1374,25 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					render()
 				, "" if is_relic else _item_card(obj)))
 			victory_col.add_child(reward_row)
+			# Flip each reward card in, one after another, the first time this
+			# result is shown (a re-render after that shows them instantly).
+			# Legendaries land with a gold flash.
+			if not is_same(options, _revealed_rewards):
+				_revealed_rewards = options
+				# The row is a container, which resets its direct children's
+				# scale on every layout — so flip each tile's own (freely
+				# positioned) children instead of the tile itself.
+				for ri in reward_row.get_child_count():
+					var tile: Control = reward_row.get_child(ri)
+					var tw := tile.create_tween().set_parallel(true)
+					for part in tile.get_children():
+						if part is Control:
+							part.pivot_offset = tile.custom_minimum_size * 0.5 - part.position
+							part.scale = Vector2(0.0, 1.0)
+							tw.tween_property(part, "scale", Vector2.ONE, 0.22).set_delay(0.2 + 0.18 * ri).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+					if str(options[ri]["obj"].rarity) == "legendary":
+						tw.tween_property(tile, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.45 + 0.18 * ri)
+						tw.tween_property(tile, "modulate", Color.WHITE, 0.45).set_delay(0.6 + 0.18 * ri)
 		else:
 			victory_col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
