@@ -344,6 +344,9 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 ## not tier1 alone, so a kind with more forks than the usual 2 (dodge_pct's
 ## 3-way fork) still gets a row for its extra fork+finisher pair instead of
 ## that pair silently never rendering.
+const COL_W := 84.0   # skill tree column width (tile + room for its caption)
+
+
 func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	var tree: Array = GameData.tier1_for_role(h.cls_id) + GameData.KIND_SKILL_PACKAGE.get(kind, [])
 	var tier1: Array = tree.filter(func(n): return int(n["tier"]) == 1)
@@ -354,19 +357,28 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	# 5th column: the tree's keystone (row 0) and the role signature (row 1).
 	var tier5: Array = [GameData.keystone_node(kind), GameData.signature_node(h.cls_id)].filter(func(n): return not n.is_empty())
 
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 8)
-	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery", "Keystone"]:
-		var lbl := _label(col_label, 11, true)
-		lbl.custom_minimum_size.x = 72
-		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		header.add_child(lbl)
-	cv.add_child(header)
-
 	var grid := GridContainer.new()
 	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
+	grid.add_theme_constant_override("h_separation", 26)
+	grid.add_theme_constant_override("v_separation", 10)
+	# Column headers are the grid's own first row (they used to be a separate
+	# HBox that spread across the full width and drifted off the columns).
+	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery", "Keystone"]:
+		var lbl := _label(col_label, 11, true)
+		lbl.custom_minimum_size.x = COL_W
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		grid.add_child(lbl)
+	# Every cell is centered in a fixed-width column; `tiles` remembers each
+	# node's tile so the link lines can find it.
+	var tiles := {}
+	var cell := func(n: Dictionary) -> Control:
+		var c := CenterContainer.new()
+		c.custom_minimum_size.x = COL_W
+		if not n.is_empty():
+			var tile := _skill_node_tile(h, kind, n)
+			tiles[str(n["id"])] = tile
+			c.add_child(tile)
+		return c
 
 	var singly_gated_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() == 1)
 	var other_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() != 1)
@@ -377,28 +389,49 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 		if row_i < fork_rows:
 			if row_i < tier1.size():
 				var t1: Dictionary = tier1[row_i]
-				grid.add_child(_skill_node_tile(h, kind, t1))
+				grid.add_child(cell.call(t1))
 				var dep := singly_gated_tier2.filter(func(n): return (n["requires"] as Array).has(t1["id"]))
-				grid.add_child(_skill_node_tile(h, kind, dep[0]) if not dep.is_empty() else Control.new())
+				grid.add_child(cell.call(dep[0] if not dep.is_empty() else {}))
 			else:
-				grid.add_child(Control.new())
-				grid.add_child(Control.new())
+				grid.add_child(cell.call({}))
+				grid.add_child(cell.call({}))
 			if row_i < tier3.size():
 				var fork: Dictionary = tier3[row_i]
-				grid.add_child(_skill_node_tile(h, kind, fork))
+				grid.add_child(cell.call(fork))
 				var finisher := tier4.filter(func(n): return (n["requires"] as Array).has(fork["id"]))
-				grid.add_child(_skill_node_tile(h, kind, finisher[0]) if not finisher.is_empty() else Control.new())
+				grid.add_child(cell.call(finisher[0] if not finisher.is_empty() else {}))
 			else:
-				grid.add_child(Control.new())
-				grid.add_child(Control.new())
+				grid.add_child(cell.call({}))
+				grid.add_child(cell.call({}))
 		else:
-			grid.add_child(Control.new())
-			grid.add_child(_skill_node_tile(h, kind, other_tier2[row_i - fork_rows]))
-			grid.add_child(Control.new())
-			grid.add_child(Control.new())
-		grid.add_child(_skill_node_tile(h, kind, tier5[row_i]) if row_i < tier5.size() else Control.new())
+			grid.add_child(cell.call({}))
+			grid.add_child(cell.call(other_tier2[row_i - fork_rows]))
+			grid.add_child(cell.call({}))
+			grid.add_child(cell.call({}))
+		grid.add_child(cell.call(tier5[row_i] if row_i < tier5.size() else {}))
 
-	cv.add_child(grid)
+	# Prerequisite links, drawn behind the tiles (SkillTreeLines).
+	var lines := SkillTreeLines.new()
+	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var learned := func(id: String) -> bool: return h.skills.get(GameData.skill_storage_key(kind, id), false)
+	for n in tree + tier5:
+		var nid := str(n["id"])
+		# The role signature hangs off the Tier-1 roots, which would draw a
+		# line straight across the whole tree — its tooltip says what it needs.
+		if not tiles.has(nid) or nid == "signature":
+			continue
+		for r in n.get("requires", []) + n.get("requires_any", []):
+			if tiles.has(str(r)):
+				var state := 2 if learned.call(str(r)) and learned.call(nid) else (1 if learned.call(str(r)) else 0)
+				lines.edges.append([tiles[str(r)], tiles[nid], state])
+	# A MarginContainer stacks its children over the same rect, so the lines
+	# layer sits exactly behind the grid and sizes itself with it.
+	var holder := MarginContainer.new()
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	holder.add_child(lines)
+	holder.add_child(grid)
+	cv.add_child(holder)
+	grid.sort_children.connect(lines.queue_redraw)
 
 
 ## One hero's clickable portrait for the Roster row — a PanelContainer

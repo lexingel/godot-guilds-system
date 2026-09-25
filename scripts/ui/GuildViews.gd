@@ -99,6 +99,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		["Command Tent", Rect2(358, 60, 42, 80), func(): hub_cluster = "command"; render()],
 	]
 	var scene_scale := SCENE_SIZE / Vector2(400, 157)
+	var badges := _camp_badges()
 	for entry in area_entries:
 		var label_text: String = entry[0]
 		var native_rect: Rect2 = entry[1]
@@ -110,6 +111,11 @@ func _render_camp(v: VBoxContainer) -> void:
 		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb)
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
+		var badge: Array = badges.get(label_text, [])
+		if not badge.is_empty():
+			var chip := _count_badge(str(badge[0]), str(badge[1]))
+			chip.position = Vector2(rect.end.x - 18, rect.position.y - 6)
+			scene.add_child(chip)
 
 	# Pixel-scanned against camp_bg.png directly (flame-colored pixels cluster
 	# at x:189-223, y:106-130 on the native 400x157 canvas) — previously
@@ -119,6 +125,79 @@ func _render_camp(v: VBoxContainer) -> void:
 	var fire_native_pos := Vector2(206, 112)
 	_start_ember_loop(scene, fire_native_pos * scene_scale)
 	v.add_child(scene)
+
+
+## Notification counts per camp building: {building label: [badge text,
+## tooltip]} — only for things the player can act on right now.
+func _camp_badges() -> Dictionary:
+	var out := {}
+	var needy: Array[String] = []
+	for h in GameState.heroes:
+		var reasons: Array[String] = []
+		if h.skill_points > 0:
+			reasons.append("%d SP" % h.skill_points)
+		if h.level >= 10:
+			var choices := GameData.evolution_choices(GameData.find_class(h.pool_id))
+			if not choices.is_empty():
+				var nr := GameData.find_rank(str(choices[0]["rank"]))
+				var needs_stone: bool = str(choices[0]["rank"]) in ["B", "A", "S"]
+				if GameState.crystals >= int(nr["cost"]) and (not needs_stone or int(GameState.evolution_stones.get(str(choices[0]["rank"]), 0)) > 0):
+					reasons.append("can evolve")
+		for st in ["weapon", "gear"]:
+			if _first_free_slot(h, st) >= 0 and GameState.items.any(func(it): return it.equipped_to == "" and it.slot_type() == st and GameState.item_fits_hero(it, h)):
+				reasons.append("empty %s slot" % st)
+				break
+		if not reasons.is_empty():
+			needy.append("%s: %s" % [h.name.split(" the ")[0], ", ".join(reasons)])
+	if not needy.is_empty():
+		out["Command Tent"] = [str(needy.size()), "\n".join(needy)]
+	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded)
+	if not hurt.is_empty():
+		out["Medical Tent"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
+	if GameState.heroes.size() < GameState.hero_slot_cap():
+		var affordable := GameState.recruit_pool.filter(func(h): return GameState.coins >= int(GameData.find_rank(h.rank)["cost"]))
+		if not affordable.is_empty():
+			out["Hero Recruits"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
+	var craftable := 0
+	var groups := {}
+	for it in GameState.items:
+		if it.equipped_to == "" and it.rarity in ["common", "rare"]:
+			var k := "i:%s:%s" % [it.category, it.rarity]
+			groups[k] = int(groups.get(k, 0)) + 1
+	for r in GameState.relics:
+		if not r.equipped and r.rarity in ["common", "rare"]:
+			var k2 := "r:%s:%s" % [r.type, r.rarity]
+			groups[k2] = int(groups.get(k2, 0)) + 1
+	for k in groups:
+		craftable += int(groups[k]) / 3
+	if craftable > 0:
+		out["Trading Post"] = [str(craftable), "%d craft(s) ready at the Crafting Hall" % craftable]
+	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
+	if not claimable.is_empty():
+		out["Scholar's Lodge"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
+	if not GameState.pending_riftbreak_ranks.is_empty():
+		out["Rift Gate"] = ["!", "A rift has broken open — a Riftbreak fight is waiting"]
+	return out
+
+
+## A small round ember badge with a count (or "!") and a tooltip.
+func _count_badge(text: String, tooltip: String) -> Control:
+	var badge := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.EMBER
+	style.border_color = Palette.INK
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 1
+	style.content_margin_bottom = 1
+	badge.add_theme_stylebox_override("panel", style)
+	badge.tooltip_text = tooltip
+	var l := _label(text, 12)
+	l.add_theme_color_override("font_color", Palette.INK)
+	badge.add_child(l)
+	return badge
 
 
 ## The small in-place picker a multi-destination building opens instead of
