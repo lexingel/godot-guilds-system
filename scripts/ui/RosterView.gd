@@ -68,7 +68,9 @@ func _render_roster(v: VBoxContainer) -> void:
 	for kind in GameData.BUILD_KINDS:
 		var total := Combat.hero_skill_total(h, kind)
 		if total != 0.0:
-			left_v.add_child(_wrap_label(Combat.describe_skill(kind, total), 11, true))
+			var stat_line := _wrap_label(Combat.describe_skill(kind, total), 11, true)
+			_rich_tip(stat_line, _stat_breakdown_card(h, kind, total))
+			left_v.add_child(stat_line)
 	left_v.add_child(_wrap_label("Passive — %s" % _passive_text(h.pool_id), 11))
 	left_v.add_child(_wrap_label(_position_text(h), 11, true))
 	var build := _build_text(h)

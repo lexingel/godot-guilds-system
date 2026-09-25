@@ -52,6 +52,56 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	return s
 
 
+## Where hero_skill_total(h, kind) comes from, term by term, as
+## [label, value] pairs — the Roster's stat-breakdown tooltip. Mirrors
+## hero_skill_total exactly (same terms, same order); a check keeps the two
+## in sync. Display only: combat always reads hero_skill_total.
+func hero_skill_sources(h: Hero, kind: String) -> Array:
+	var out: Array = []
+	var add := func(label: String, v: float) -> void:
+		if absf(v) > 0.0005:
+			out.append([label, v])
+	for n in GameData.tier1_for_role(h.cls_id):
+		if n["kind"] == kind and h.skills.get(n["id"], false):
+			add.call("Skill: %s" % n["name"], float(n["value"]))
+	for summary in GameData.hero_tree_summaries(h):
+		var tree_kind: String = summary["kind"]
+		for n in GameData.KIND_SKILL_PACKAGE.get(tree_kind, []):
+			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
+				add.call("Skill: %s" % n["name"], float(n["value"]))
+				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
+					add.call("Combo: %s" % n["name"], float(n.get("combo_bonus", 0.0)))
+		var ks := GameData.keystone_node(tree_kind)
+		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
+			add.call("Keystone drawback: %s" % ks["name"], float(ks["value"]))
+	add.call("Party Resonance", GameState.party_resonance_bonus(kind))
+	add.call("Party Eclectic", GameState.party_eclectic_bonus())
+	if h.innate_kind == kind:
+		add.call("Innate (%s)" % GameData.find_class(h.pool_id).get("name", "class"), h.innate_value)
+	if h.prior_innate_kind == kind:
+		add.call("Innate (former class)", h.prior_innate_value)
+	for it in GameState.items:
+		if it.equipped_to == h.id:
+			var v := 0.0
+			for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
+					[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
+				if pair[0] == kind:
+					v += float(pair[1])
+			add.call(it.name, v)
+	if GameData.TRAIT_TABLE.has(h.trait_name):
+		add.call("Trait: %s" % h.trait_name, float(GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)))
+	for scar in h.scars:
+		if GameData.SCAR_TABLE.has(scar):
+			add.call("Scar: %s" % scar, float(GameData.SCAR_TABLE[scar].get(kind, 0.0)))
+	for tid in h.earned_traits:
+		var t := GameData.find_earned_trait(tid)
+		if t.get("kind", "") == kind:
+			add.call("Earned: %s" % t["name"], float(t["value"]))
+	if GameState.active_incense.get("kind", "") == kind:
+		add.call("Incense: %s" % GameState.active_incense.get("name", "active"), float(GameState.active_incense["value"]))
+	return out
+
+
 func max_hp(h: Hero) -> int:
 	return round(h.base_hp * (1.0 + hero_skill_total(h, "hp_pct")))
 

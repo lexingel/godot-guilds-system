@@ -449,6 +449,16 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color) -> void:
 ## "Intercept!", a passive or Legendary's name...) over its hero, staggered so
 ## several procs on one hero stack instead of overlapping. Fire-and-forget:
 ## never awaited, so it can't hold up the turn's own animation chain.
+## Combat hotkeys (see _combat_hotkeys, filled while the action bar builds).
+func _unhandled_input(event: InputEvent) -> void:
+	if screen != "rift_run" or not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	var key := OS.get_keycode_string(event.keycode)
+	if _combat_hotkeys.has(key):
+		get_viewport().set_input_as_handled()
+		_combat_hotkeys[key].call()
+
+
 func _spawn_procs(state: Dictionary, hero_wrappers: Dictionary) -> void:
 	var per_hero := {}
 	for p in state.get("_procs", []):
@@ -1092,32 +1102,55 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				var target_name: String = str(monsters[i]["name"]).split(" ")[0]
 				var attack_cb := func(hid=current_hero.id, ti=i):
 					_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "attack", ti))
+				var atk_key := str(slots.size() + 1)
+				_combat_hotkeys[atk_key] = attack_cb
+				if current_action == "attack" and current_target == i:
+					_combat_hotkeys["Space"] = attack_cb
 				slots.append(_action_slot(GameData.sprite_for_monster(str(monsters[i]["name"])), "",
 					current_action == "attack" and current_target == i, false,
-					attack_cb, 64.0, "Atk %s" % target_name
+					attack_cb, 64.0, "%s · Atk %s" % [atk_key, target_name]
 				))
 			if Combat.qualifies_for_ability(current_hero):
 				var cd: int = current_hero.ability_cooldown
 				var ability_name := str(GameData.SUBCLASS_ABILITIES.get(current_hero.pool_id, {}).get("name", "Ability")).split(" ")[0]
 				var ability_cb := func(hid=current_hero.id):
 					_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "ability"))
+				var ab_key := str(slots.size() + 1)
+				if cd == 0:
+					_combat_hotkeys[ab_key] = ability_cb
+					if current_action == "ability":
+						_combat_hotkeys["Space"] = ability_cb
 				slots.append(_action_slot(GameData.ability_icon(current_hero.pool_id), str(cd) if cd > 0 else "",
 					current_action == "ability", cd > 0,
-					ability_cb, 64.0, ability_name
+					ability_cb, 64.0, "%s · %s" % [ab_key, ability_name]
 				))
 			var defend_cb := func(hid=current_hero.id):
 				_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena, true, func(): GameState.set_hero_action(hid, "defend"))
+			var def_key := str(slots.size() + 1)
+			_combat_hotkeys[def_key] = defend_cb
+			if current_action == "defend":
+				_combat_hotkeys["Space"] = defend_cb
+			if not _combat_hotkeys.has("Space") and _combat_hotkeys.has("1"):
+				_combat_hotkeys["Space"] = _combat_hotkeys["1"]
 			slots.append(_action_slot("res://assets/skills/shield_basic.png", "",
 				current_action == "defend", false,
-				defend_cb, 64.0, "Defend"
+				defend_cb, 64.0, "%s · Defend" % def_key
 			))
 			menu.add_child(_slot_row(slots))
+			menu.add_child(_label("Keys: 1-%d pick an action · Space repeats the highlighted one" % slots.size(), 10, true))
 		elif living_heroes.is_empty():
 			menu.add_child(_label("The party is down.", 12, true))
 		else:
 			menu.add_child(_label("...", 12, true))
 
 		var bottom_row := HBoxContainer.new()
+		bottom_row.add_child(_icon_button("res://assets/skills/boots.png", "Speed x%d" % int(GameState.combat_speed), func():
+			GameState.combat_speed = 1.0 if GameState.combat_speed >= 3.0 else GameState.combat_speed + 1.0
+			Engine.time_scale = GameState.combat_speed
+			GameState.save_settings()
+			if not _combat_animating:
+				render()
+		))
 		bottom_row.add_child(_icon_button("res://assets/skills/wing.png", "Retreat", func():
 			# Guard against a second click firing while a turn's animation is
 			# still mid-flight — that would mutate the same `state` dict

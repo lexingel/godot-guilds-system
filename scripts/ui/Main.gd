@@ -45,6 +45,10 @@ func _apply_resolution(idx: int) -> void:
 
 
 func render() -> void:
+	_combat_hotkeys.clear()
+	# Combat speed only ever applies inside a rift — camp animations (embers,
+	# day/night drift) always run at normal speed.
+	Engine.time_scale = GameState.combat_speed if screen == "rift_run" else 1.0
 	GameState.resolve_recovery()
 	GameState.resolve_rift_map()
 	GameState.resolve_guild_board()
@@ -536,46 +540,65 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
-	v.add_child(_label("Assemble Party (pick up to 4)", 20))
+	v.add_child(_label("Assemble Party (up to 4 + the Champion)", 20))
 	var champ := GameState.ensure_champion()
-	var champ_row := HBoxContainer.new()
-	var champ_portrait := GameData.portrait_for_hero(champ.cls_id, champ.pool_id)
-	if champ_portrait != "":
-		champ_row.add_child(_icon(champ_portrait, 48))
-	champ_row.add_child(_label("Champion: %s — Rank %s (always joins) · %d/%d HP" % [champ.name, champ.rank, champ.hp, Combat.max_hp(champ)], 13))
-	champ_row.add_child(_icon_button("res://assets/skills/shield_orange.png" if champ.formation != "back" else "res://assets/skills/shield_basic.png", "Back" if champ.formation != "back" else "Front", func(id=champ.id, f=champ.formation):
-		GameState.set_hero_formation(id, "back" if f != "back" else "front")
-		render()
-	))
-	champ_row.add_child(_label(_position_text(champ), 11, true))
-	v.add_child(champ_row)
-	for h in GameState.heroes:
-		var row := HBoxContainer.new()
-		var picked := pending_party.has(h.id)
-		var cb := CheckBox.new()
-		cb.button_pressed = picked
-		cb.disabled = h.is_downed()
-		cb.toggled.connect(func(on: bool):
-			if on and pending_party.size() < 4:
-				pending_party.append(h.id)
-			else:
-				pending_party.erase(h.id)
+	# Formation slots (Darkest Dungeon style): the party sits in a Front and a
+	# Back row. Drag a portrait into a row (from the roster below, or between
+	# rows), or use Add/Move/Remove. The front row draws ~3x the attacks; each
+	# role has a natural row with its own bonus (GameData.ROLE_POSITION).
+	var lineup: Array[Hero] = [champ]
+	for hid in pending_party:
+		var ph := GameState.find_hero(hid)
+		if ph:
+			lineup.append(ph)
+	for row_id in ["front", "back"]:
+		var zone := DropZone.new()
+		var zone_style := StyleBoxFlat.new()
+		zone_style.bg_color = Palette.SURFACE2
+		zone_style.border_color = Palette.EMBER if row_id == "front" else Palette.VIOLET
+		zone_style.set_border_width_all(1)
+		zone_style.set_corner_radius_all(8)
+		zone_style.set_content_margin_all(8)
+		zone.add_theme_stylebox_override("panel", zone_style)
+		zone.can_accept = func(data) -> bool:
+			if typeof(data) != TYPE_DICTIONARY or data.get("kind", "") != "party_hero":
+				return false
+			var hid2: String = str(data.get("hero_id", ""))
+			return hid2 == champ.id or pending_party.has(hid2) or pending_party.size() < 4
+		zone.on_drop = func(data, r=row_id) -> void:
+			var hid2: String = str(data.get("hero_id", ""))
+			if hid2 != champ.id and not pending_party.has(hid2):
+				pending_party.append(hid2)
+			GameState.set_hero_formation(hid2, r)
 			render()
-		)
-		row.add_child(cb)
-		var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-		if portrait_path != "":
-			row.add_child(_icon_trimmed(portrait_path, 40))
-		var status := " (downed)" if h.is_downed() else ""
-		row.add_child(_label("%s — Lv%d %s · %d/%d HP%s" % [h.name, h.level, h.cls_id.capitalize(), h.hp, Combat.max_hp(h), status]))
-		row.add_child(_icon_button("res://assets/skills/shield_orange.png" if h.formation != "back" else "res://assets/skills/shield_basic.png", "Back" if h.formation != "back" else "Front", func(id=h.id, f=h.formation):
-			GameState.set_hero_formation(id, "back" if f != "back" else "front")
-			render()
-		))
-		row.add_child(_label(_position_text(h), 11, true))
-		v.add_child(row)
+		var zv := _vbox(6)
+		zv.mouse_filter = Control.MOUSE_FILTER_PASS
+		var in_row: Array = lineup.filter(func(x): return x.formation == row_id)
+		zv.add_child(_label("%s row (%d) — %s" % [row_id.capitalize(), in_row.size(),
+			"takes most of the enemy's attacks" if row_id == "front" else "attacked far less often"], 13))
+		var cards := HFlowContainer.new()
+		cards.add_theme_constant_override("h_separation", 8)
+		cards.add_theme_constant_override("v_separation", 8)
+		cards.mouse_filter = Control.MOUSE_FILTER_PASS
+		for ph in in_row:
+			cards.add_child(_party_card(ph, ph == champ, true))
+		if in_row.is_empty():
+			cards.add_child(_label("Drag a hero here", 11, true))
+		zv.add_child(cards)
+		zone.add_child(zv)
+		v.add_child(zone)
+
+	var bench: Array = GameState.heroes.filter(func(x): return not pending_party.has(x.id))
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some from the Guild Terminal first."))
+	elif not bench.is_empty():
+		v.add_child(_label("Roster — drag into a row, or Add (joins their natural row)", 12, true))
+		var bench_flow := HFlowContainer.new()
+		bench_flow.add_theme_constant_override("h_separation", 8)
+		bench_flow.add_theme_constant_override("v_separation", 8)
+		for bh in bench:
+			bench_flow.add_child(_party_card(bh, false, false))
+		v.add_child(bench_flow)
 
 	# Surface any Hero Bond among the currently-picked heroes (+ the Champion,
 	# who always joins) so it's discoverable while assembling a party, not
@@ -827,3 +850,75 @@ func _render_slot_list(v: VBoxContainer) -> void:
 					render()
 				))
 		v.add_child(_info_row(text, 13, actions))
+
+## One hero as a Party Assembly card: a draggable portrait (drop it on a
+## Front/Back row), name, level/role/HP, and their position bonus. `in_party`
+## cards get Move/Remove (the Champion can't be removed); bench cards get Add,
+## which drops the hero into their role's natural row.
+func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
+	var card := PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE3 if in_party else Palette.SURFACE
+	style.border_color = Palette.LINE
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(6)
+	card.add_theme_stylebox_override("panel", style)
+	var cv := _vbox(2)
+	cv.custom_minimum_size.x = 150
+	cv.mouse_filter = Control.MOUSE_FILTER_PASS
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_PASS
+	var downed := h.is_downed()
+	var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait != "":
+		var icon := DragIcon.new()
+		var tex: Texture2D = _icon_trimmed(portrait, 44).texture
+		icon.texture = tex
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.custom_minimum_size = Vector2(44, 44)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if not downed:
+			icon.drag_payload = {"kind": "party_hero", "hero_id": h.id}
+			icon.mouse_default_cursor_shape = Control.CURSOR_MOVE
+			icon.tooltip_text = "Drag onto the Front or Back row"
+		else:
+			icon.modulate = Color(1, 1, 1, 0.4)
+		top.add_child(icon)
+	var names := _vbox(0)
+	names.mouse_filter = Control.MOUSE_FILTER_PASS
+	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
+	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · downed" if downed else ""], 10, true))
+	names.add_child(_label("Power %d" % Combat.power_of(h), 10, true))
+	top.add_child(names)
+	cv.add_child(top)
+	var pos_text := _position_text(h) if in_party else ""
+	if pos_text != "":
+		cv.add_child(_wrap_label(pos_text, 10, true))
+	var actions := HBoxContainer.new()
+	if in_party:
+		var other := "back" if h.formation == "front" else "front"
+		actions.add_child(_button("Move %s" % other, func(id=h.id, r=other):
+			GameState.set_hero_formation(id, r)
+			render()
+		))
+		if not is_champ:
+			actions.add_child(_button("Remove", func(id=h.id):
+				pending_party.erase(id)
+				render()
+			))
+	elif not downed:
+		var add_btn := _button("Add", func(id=h.id, hero=h):
+			if pending_party.size() >= 4:
+				return
+			pending_party.append(id)
+			GameState.set_hero_formation(id, str(GameData.ROLE_POSITION.get(GameData.hero_role(hero), {}).get("row", hero.formation)))
+			render()
+		)
+		add_btn.disabled = pending_party.size() >= 4
+		actions.add_child(add_btn)
+	cv.add_child(actions)
+	card.add_child(cv)
+	return card

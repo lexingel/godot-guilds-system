@@ -96,6 +96,7 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 
 
 var _last_scroll_y: float = 0.0
+var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
 
 func _clear_root() -> void:
@@ -714,6 +715,25 @@ func _best_party_power() -> int:
 	if champ:
 		party.append(champ)
 	return Combat.party_power(party)
+
+
+## A Roster stat line's tooltip: the total, then every source feeding it
+## (Combat.hero_skill_sources), then situational bonuses that only apply in
+## the right moment (Combat.hero_effects stat entries of this kind).
+func _stat_breakdown_card(h: Hero, kind: String, total: float) -> String:
+	var lines: Array[String] = ["[b]%s[/b]" % Combat.describe_skill(kind, total).replace("[", "[lb]")]
+	for src in Combat.hero_skill_sources(h, kind):
+		var v: float = src[1]
+		lines.append("%s  %s" % [_bb(Palette.RANK_E if v > 0 else Palette.HAZARD, "%s%d%%" % ["+" if v > 0 else "-", int(round(absf(v) * 100))]), str(src[0]).replace("[", "[lb]")])
+	var situational: Array[String] = []
+	for e in Combat.hero_effects(h):
+		if e.get("kind", "") == kind:
+			situational.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _bb(Palette.MUTED, str(e.get("source", "")))])
+	if not situational.is_empty():
+		lines.append("")
+		lines.append(_bb(Palette.MUTED, "Situational:"))
+		lines.append_array(situational)
+	return "\n".join(lines)
 
 
 ## Gives `node` a card tooltip (see RichTip) — attaches the RichTip script
