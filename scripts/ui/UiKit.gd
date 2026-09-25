@@ -96,6 +96,7 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 
 
 var _last_scroll_y: float = 0.0
+var roster_tab: String = "overview"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
 

@@ -51,197 +51,225 @@ func _render_roster(v: VBoxContainer) -> void:
 	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
-	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)]))
+	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP · Power %d" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h)]))
 
-	# Two-column dashboard — portrait/stats/trait on the left, the full
-	# weapon+gear paper-doll as a grid on the right — replaces what used to
-	# be five separate full-width rows (portrait, then a labeled Weapon row,
-	# then a labeled Gear row) stacked one under another.
-	var dash := HBoxContainer.new()
-	dash.add_theme_constant_override("separation", 14)
-
-	var left_v := _vbox(4)
-	left_v.custom_minimum_size.x = 180
-	left_v.add_child(_framed_portrait(h.cls_id, h.pool_id, 96.0))
-	left_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
-	left_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
-	for kind in GameData.BUILD_KINDS:
-		var total := Combat.hero_skill_total(h, kind)
-		if total != 0.0:
-			var stat_line := _wrap_label(Combat.describe_skill(kind, total), 11, true)
-			_rich_tip(stat_line, _stat_breakdown_card(h, kind, total))
-			left_v.add_child(stat_line)
-	left_v.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 11))
-	left_v.add_child(_wrap_label(_position_text(h), 11, true))
-	var build := _build_bb(h)
-	if build != "":
-		left_v.add_child(_rich_line("Build: " + build, 11, true))
-	left_v.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
-	for line in _history_lines(h):
-		left_v.add_child(_rich_line(line, 11, true))
-	for scar_name in h.scars:
-		left_v.add_child(_info_row("Scar: %s — %s" % [scar_name, _scar_text(scar_name)], 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
-			var err := GameState.scrub_scar(id, sn)
-			if err != "":
-				push_warning(err)
-			render()
-		)], null, true))
-	dash.add_child(left_v)
-
-	var right_v := _vbox(4)
-	right_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right_v.add_child(_label("Equipment", 12, true))
-	var equip_grid := GridContainer.new()
-	equip_grid.columns = 3
-	equip_grid.add_theme_constant_override("h_separation", 8)
-	equip_grid.add_theme_constant_override("v_separation", 8)
-	for i in GameData.weapon_slots(h.pool_id):
-		equip_grid.add_child(_equip_slot_frame(h, "weapon", i))
-	for i in GameData.gear_slots(h.rank):
-		equip_grid.add_child(_equip_slot_frame(h, "gear", i))
-	right_v.add_child(equip_grid)
-	if expanded_slot.begins_with("%s:weapon:" % h.id):
-		_render_equip_picker(right_v, h, "weapon", int(expanded_slot.split(":")[2]))
-	if expanded_slot.begins_with("%s:gear:" % h.id):
-		_render_equip_picker(right_v, h, "gear", int(expanded_slot.split(":")[2]))
-
-	var fitting_items: Array[Item] = []
-	fitting_items.assign(GameState.items.filter(func(it): return it.equipped_to == "" and GameState.item_fits_hero(it, h)))
-	if not fitting_items.is_empty():
-		right_v.add_child(_label("Inventory — drag onto a slot to equip", 11, true))
-		var inv_flow := HFlowContainer.new()
-		inv_flow.add_theme_constant_override("h_separation", 6)
-		inv_flow.add_theme_constant_override("v_separation", 6)
-		for it in fitting_items:
-			inv_flow.add_child(_draggable_item_icon(it, 32, h))
-		right_v.add_child(inv_flow)
-	dash.add_child(right_v)
-	cv.add_child(dash)
-
-	var actions := HBoxContainer.new()
-	actions.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (60c)", func(id=h.id):
-		var err := GameState.reroll_trait(id)
-		if err != "":
-			push_warning(err)
-		render()
-	))
-	if h.trait_name != "":
-		actions.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub Trait (30c)", func(id=h.id):
-			var err := GameState.scrub_trait(id)
-			if err != "":
-				push_warning(err)
-			render()
-		))
-	cv.add_child(actions)
-
-	# Evolution runs on Evolution Stones for the B/A/S jump (dropped by Rift
-	# Map clears — see GameState.seal_rift/evolve_hero). The player picks the
-	# path: "Evolve" opens every candidate with what it would change (stat,
-	# element, Ability, passive), each with its own confirm button.
+	# Tabs (Overview · Gear · Skills · History) instead of one long card that
+	# stacked every section. A dot marks a tab with something to act on:
+	# unequipped gear that fits, or unspent SP / an available evolution.
 	var evolve_choices: Array = []
 	if h.level >= 10:
 		var cur_cls := GameData.find_class(h.pool_id)
 		if not cur_cls.is_empty():
 			evolve_choices = GameData.evolution_choices(cur_cls)
-	if not evolve_choices.is_empty():
-		var next_rank_id: String = evolve_choices[0]["rank"]
-		var next_rank := GameData.find_rank(next_rank_id)
-		var needs_stone: bool = next_rank_id in ["B", "A", "S"]
-		var stone_count: int = int(GameState.evolution_stones.get(next_rank_id, 0))
-		var evolve_label := "Evolve (%dcr, %d %s-Stone)" % [int(next_rank["cost"]), stone_count, next_rank_id] if needs_stone else "Evolve (%dcr)" % int(next_rank["cost"])
-		var picking := evolve_picker_hero_id == h.id
-		cv.add_child(_icon_button("res://assets/skills/star.png", "Hide evolution paths" if picking else evolve_label, func(id=h.id):
-			evolve_picker_hero_id = "" if evolve_picker_hero_id == id else id
+	var fitting_items: Array[Item] = []
+	fitting_items.assign(GameState.items.filter(func(it): return it.equipped_to == "" and GameState.item_fits_hero(it, h)))
+	if expanded_slot.begins_with(h.id + ":"):
+		roster_tab = "gear"
+	if evolve_picker_hero_id == h.id:
+		roster_tab = "skills"
+	var tab_defs := [
+		["overview", "Overview", false],
+		["gear", "Gear", not fitting_items.is_empty()],
+		["skills", "Skills", h.skill_points > 0 or not evolve_choices.is_empty()],
+		["history", "History", false],
+	]
+	var tab_row := HBoxContainer.new()
+	tab_row.add_theme_constant_override("separation", 4)
+	for td in tab_defs:
+		var tb := _button(str(td[1]) + ("  •" if td[2] else ""), func(t=str(td[0])):
+			roster_tab = t
+			if t == "skills" and expanded_skill_tree_kind == "":
+				expanded_skill_tree_kind = h.innate_kind
 			render()
-		))
-		if picking:
-			for c in evolve_choices:
-				var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(str(c["id"]), {})
-				var lines: Array[String] = [
-					"[b]%s[/b] — Rank %s, %s" % [str(c["name"]), str(c["rank"]), str(c["type"])],
-					"Main stat: %s" % Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))),
-					"Passive: %s" % _passive_bb(str(c["id"])),
-				]
-				if not ab.is_empty():
-					lines.append("Ability: %s — %s" % [str(ab["name"]), str(ab["desc"])])
-				lines.append(str(c["flavor"]))
-				cv.add_child(_rich_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
-					var err := GameState.evolve_hero(id, pid)
+		)
+		tb.toggle_mode = true
+		tb.button_pressed = roster_tab == td[0]
+		tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab_row.add_child(tb)
+	cv.add_child(tab_row)
+	cv.add_child(_hsep())
+
+	match roster_tab:
+		"gear":
+			cv.add_child(_label("Equipment — click a slot to swap, or drag an item onto it", 12, true))
+			var equip_grid := GridContainer.new()
+			equip_grid.columns = 3
+			equip_grid.add_theme_constant_override("h_separation", 8)
+			equip_grid.add_theme_constant_override("v_separation", 8)
+			for i in GameData.weapon_slots(h.pool_id):
+				equip_grid.add_child(_equip_slot_frame(h, "weapon", i))
+			for i in GameData.gear_slots(h.rank):
+				equip_grid.add_child(_equip_slot_frame(h, "gear", i))
+			cv.add_child(equip_grid)
+			if expanded_slot.begins_with("%s:weapon:" % h.id):
+				_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
+			if expanded_slot.begins_with("%s:gear:" % h.id):
+				_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
+			if not fitting_items.is_empty():
+				cv.add_child(_label("Inventory — drag onto a slot to equip", 11, true))
+				var inv_flow := HFlowContainer.new()
+				inv_flow.add_theme_constant_override("h_separation", 6)
+				inv_flow.add_theme_constant_override("v_separation", 6)
+				for it in fitting_items:
+					inv_flow.add_child(_draggable_item_icon(it, 32, h))
+				cv.add_child(inv_flow)
+			else:
+				cv.add_child(_label("No unequipped gear fits this hero.", 11, true))
+		"skills":
+			if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
+				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
+				var ab_row := HBoxContainer.new()
+				ab_row.add_theme_constant_override("separation", 8)
+				ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
+				var ab_mid := _vbox(0)
+				ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
+				ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
+				ab_row.add_child(ab_mid)
+				if h.level < 3:
+					ab_row.add_child(_label("Unlocks at Lv3", 11, true))
+				elif h.ability_awakened:
+					ab_row.add_child(_label("Awakened (%s)" % GameData.awakening_bonus_text(h.pool_id), 11, true))
+				else:
+					ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", "Awaken (%d SP, %s)" % [GameData.ABILITY_AWAKENING_COST, GameData.awakening_bonus_text(h.pool_id)], func(id=h.id):
+						var err := GameState.awaken_ability(id)
+						if err != "":
+							push_warning(err)
+						render()
+					))
+				cv.add_child(ab_row)
+				if not evolve_choices.is_empty() or h.prior_pool_id != "":
+					cv.add_child(_label("Evolving replaces this Ability, but skill trees carry over.", 10, true))
+			# Evolution runs on Evolution Stones for the B/A/S jump (dropped by Rift
+			# Map clears — see GameState.seal_rift/evolve_hero). The player picks the
+			# path: "Evolve" opens every candidate with what it would change (stat,
+			# element, Ability, passive), each with its own confirm button.
+			if not evolve_choices.is_empty():
+				var next_rank_id: String = evolve_choices[0]["rank"]
+				var next_rank := GameData.find_rank(next_rank_id)
+				var needs_stone: bool = next_rank_id in ["B", "A", "S"]
+				var stone_count: int = int(GameState.evolution_stones.get(next_rank_id, 0))
+				var evolve_label := "Evolve (%dcr, %d %s-Stone)" % [int(next_rank["cost"]), stone_count, next_rank_id] if needs_stone else "Evolve (%dcr)" % int(next_rank["cost"])
+				var picking := evolve_picker_hero_id == h.id
+				cv.add_child(_icon_button("res://assets/skills/star.png", "Hide evolution paths" if picking else evolve_label, func(id=h.id):
+					evolve_picker_hero_id = "" if evolve_picker_hero_id == id else id
+					render()
+				))
+				if picking:
+					for c in evolve_choices:
+						var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(str(c["id"]), {})
+						var lines: Array[String] = [
+							"[b]%s[/b] — Rank %s, %s" % [str(c["name"]), str(c["rank"]), str(c["type"])],
+							"Main stat: %s" % Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))),
+							"Passive: %s" % _passive_bb(str(c["id"])),
+						]
+						if not ab.is_empty():
+							lines.append("Ability: %s — %s" % [str(ab["name"]), str(ab["desc"])])
+						lines.append(str(c["flavor"]))
+						cv.add_child(_rich_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
+							var err := GameState.evolve_hero(id, pid)
+							if err != "":
+								push_warning(err)
+							else:
+								evolve_picker_hero_id = ""
+								_flavor_toast = GameData.narrative_line("hero_evolved")
+							render()
+						)], _icon_trimmed(GameData.portrait_for_hero(str(c["role"]), str(c["id"])), 32) if GameData.portrait_for_hero(str(c["role"]), str(c["id"])) != "" else null))
+
+			var reinforce_count: int = int(GameState.evolution_stones.get(h.rank, 0))
+			var reinforce_used: int = int(h.stone_bonus_used.get(h.pool_id, 0))
+			if reinforce_count > 0 and reinforce_used < GameData.EVOLUTION_STONE_BONUS_SP_CAP:
+				cv.add_child(_icon_button("res://assets/skills/gem_red.png", "Reinforce (+1 SP, %d/%d used)" % [reinforce_used, GameData.EVOLUTION_STONE_BONUS_SP_CAP], func(id=h.id):
+					var err := GameState.reinforce_hero(id)
 					if err != "":
 						push_warning(err)
-					else:
-						evolve_picker_hero_id = ""
-						_flavor_toast = GameData.narrative_line("hero_evolved")
 					render()
-				)], _icon_trimmed(GameData.portrait_for_hero(str(c["role"]), str(c["id"])), 32) if GameData.portrait_for_hero(str(c["role"]), str(c["id"])) != "" else null))
+				))
+			# One pill per tree the hero has unlocked — evolving keeps every past
+			# stage's tree reachable instead of replacing it, so a heavily-evolved
+			# hero can have several; only one tree's grid shows at a time (accordion
+			# style) to avoid stacking multiple full grids on screen at once.
+			var tree_summaries: Array = GameData.hero_tree_summaries(h)
+			var pills := HBoxContainer.new()
+			pills.add_theme_constant_override("separation", 6)
+			for summary in tree_summaries:
+				var kind: String = summary["kind"]
+				var is_open: bool = expanded_skill_tree_kind == kind
+				pills.add_child(_icon_button("res://assets/skills/eye_gem.png", "Hide %s" % str(summary["label"]) if is_open else str(summary["label"]), func(k=kind):
+					expanded_skill_tree_kind = "" if expanded_skill_tree_kind == k else k
+					render()
+				))
+			cv.add_child(pills)
 
-	var reinforce_count: int = int(GameState.evolution_stones.get(h.rank, 0))
-	var reinforce_used: int = int(h.stone_bonus_used.get(h.pool_id, 0))
-	if reinforce_count > 0 and reinforce_used < GameData.EVOLUTION_STONE_BONUS_SP_CAP:
-		cv.add_child(_icon_button("res://assets/skills/gem_red.png", "Reinforce (+1 SP, %d/%d used)" % [reinforce_used, GameData.EVOLUTION_STONE_BONUS_SP_CAP], func(id=h.id):
-			var err := GameState.reinforce_hero(id)
-			if err != "":
-				push_warning(err)
-			render()
-		))
-
-	if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
-		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
-		var ab_row := HBoxContainer.new()
-		ab_row.add_theme_constant_override("separation", 8)
-		ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
-		var ab_mid := _vbox(0)
-		ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		ab_mid.add_child(_label("Ability: %s" % str(ab["name"]), 12))
-		ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
-		ab_row.add_child(ab_mid)
-		if h.level < 3:
-			ab_row.add_child(_label("Unlocks at Lv3", 11, true))
-		elif h.ability_awakened:
-			ab_row.add_child(_label("Awakened (%s)" % GameData.awakening_bonus_text(h.pool_id), 11, true))
-		else:
-			ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", "Awaken (%d SP, %s)" % [GameData.ABILITY_AWAKENING_COST, GameData.awakening_bonus_text(h.pool_id)], func(id=h.id):
-				var err := GameState.awaken_ability(id)
+			if not expanded_skill_tree_kind.is_empty() and tree_summaries.any(func(s): return s["kind"] == expanded_skill_tree_kind):
+				cv.add_child(_hsep())
+				cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
+				_render_skill_tree_graph(cv, h, expanded_skill_tree_kind)
+				# Per-tree, not "respec everything" — a hero holds at most 2 trees
+				# (current + one prior evolution stage), so undoing just the one
+				# fork choice you regret no longer means nuking the other tree too.
+				var tree_prefix := "%s:" % expanded_skill_tree_kind
+				var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
+				if tree_spent:
+					cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec this tree (%dc)" % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
+						var err := GameState.respec_hero(id, k)
+						if err != "":
+							push_warning(err)
+						render()
+					))
+		"history":
+			var hist_lines := _history_lines(h)
+			for line in hist_lines:
+				cv.add_child(_rich_line(line, 12, true))
+			if hist_lines.is_empty():
+				cv.add_child(_label("No deeds yet — send this hero into a rift.", 11, true))
+			for scar_name in h.scars:
+				cv.add_child(_info_row("Scar: %s — %s" % [scar_name, _scar_text(scar_name)], 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
+					var err := GameState.scrub_scar(id, sn)
+					if err != "":
+						push_warning(err)
+					render()
+				)], null, true))
+		_:
+			var dash := HBoxContainer.new()
+			dash.add_theme_constant_override("separation", 14)
+			var left_v := _vbox(4)
+			left_v.custom_minimum_size.x = 180
+			left_v.add_child(_framed_portrait(h.cls_id, h.pool_id, 96.0))
+			left_v.add_child(_label("Power %d" % Combat.power_of(h), 13))
+			left_v.add_child(_label("HP %d/%d" % [h.hp, Combat.max_hp(h)], 12, true))
+			for kind in GameData.BUILD_KINDS:
+				var total := Combat.hero_skill_total(h, kind)
+				if total != 0.0:
+					var stat_line := _wrap_label(Combat.describe_skill(kind, total), 11, true)
+					_rich_tip(stat_line, _stat_breakdown_card(h, kind, total))
+					left_v.add_child(stat_line)
+			dash.add_child(left_v)
+			var info := _vbox(6)
+			info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			info.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 12))
+			info.add_child(_wrap_label(_position_text(h), 11, true))
+			var build := _build_bb(h)
+			if build != "":
+				info.add_child(_rich_line("Build: " + build, 12, true))
+			info.add_child(_wrap_label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true))
+			var actions := HBoxContainer.new()
+			actions.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (60c)", func(id=h.id):
+				var err := GameState.reroll_trait(id)
 				if err != "":
 					push_warning(err)
 				render()
 			))
-		cv.add_child(ab_row)
-		if not evolve_choices.is_empty() or h.prior_pool_id != "":
-			cv.add_child(_label("Evolving replaces this Ability, but skill trees carry over.", 10, true))
-
-	# One pill per tree the hero has unlocked — evolving keeps every past
-	# stage's tree reachable instead of replacing it, so a heavily-evolved
-	# hero can have several; only one tree's grid shows at a time (accordion
-	# style) to avoid stacking multiple full grids on screen at once.
-	var tree_summaries: Array = GameData.hero_tree_summaries(h)
-	var pills := HBoxContainer.new()
-	pills.add_theme_constant_override("separation", 6)
-	for summary in tree_summaries:
-		var kind: String = summary["kind"]
-		var is_open: bool = expanded_skill_tree_kind == kind
-		pills.add_child(_icon_button("res://assets/skills/eye_gem.png", "Hide %s" % str(summary["label"]) if is_open else str(summary["label"]), func(k=kind):
-			expanded_skill_tree_kind = "" if expanded_skill_tree_kind == k else k
-			render()
-		))
-	cv.add_child(pills)
-
-	if not expanded_skill_tree_kind.is_empty() and tree_summaries.any(func(s): return s["kind"] == expanded_skill_tree_kind):
-		cv.add_child(_hsep())
-		cv.add_child(_label("Skill Points: %d" % h.skill_points, 12))
-		_render_skill_tree_graph(cv, h, expanded_skill_tree_kind)
-		# Per-tree, not "respec everything" — a hero holds at most 2 trees
-		# (current + one prior evolution stage), so undoing just the one
-		# fork choice you regret no longer means nuking the other tree too.
-		var tree_prefix := "%s:" % expanded_skill_tree_kind
-		var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
-		if tree_spent:
-			cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec this tree (%dc)" % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
-				var err := GameState.respec_hero(id, k)
-				if err != "":
-					push_warning(err)
-				render()
-			))
+			if h.trait_name != "":
+				actions.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub Trait (30c)", func(id=h.id):
+					var err := GameState.scrub_trait(id)
+					if err != "":
+						push_warning(err)
+					render()
+				))
+			info.add_child(actions)
+			dash.add_child(info)
+			cv.add_child(dash)
 
 	card.add_child(cv)
 	v.add_child(card)

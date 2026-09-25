@@ -136,6 +136,93 @@ func _render_rift_map(v: VBoxContainer) -> void:
 
 
 # ---------------- Rift Run ----------------
+## The strip at the top of every rift screen (StS/Hades-style run HUD):
+## rift name, node pips, run tags (Hardcore, incense, rank, relic ward),
+## then — outside combat, where the arena already shows HP — every party
+## member's portrait with an HP bar, and the equipped relics (hover for
+## what each does). HP carries across nodes, so this is the number that
+## decides whether to take the elite or the shop.
+func _run_bar(in_combat: bool) -> Control:
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.SURFACE2
+	style.border_color = Palette.LINE
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", style)
+	var col := _vbox(6)
+	var diff := GameState._diff()
+	var pos: int = int(GameState.run["pos"])
+	var total_layers: int = (GameState.run["layers"] as Array).size()
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 10)
+	var cycle_label := (" (cycle %d)" % (int(GameState.run["cycle"]) + 1)) if GameState.run.get("endless", false) else ""
+	top.add_child(_label("%s%s" % [diff["name"], cycle_label], 16))
+	var pips := HBoxContainer.new()
+	pips.add_theme_constant_override("separation", 3)
+	for li in total_layers:
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(10, 10)
+		pip.color = Palette.EMBER_BRIGHT if li == pos else (Palette.VIOLET if li < pos else Palette.GUNMETAL_DEEP)
+		pips.add_child(pip)
+	var pip_wrap := CenterContainer.new()
+	pip_wrap.add_child(pips)
+	top.add_child(pip_wrap)
+	top.add_child(_label("Node %d/%d" % [pos + 1, total_layers], 12, true))
+	var tags: Array[String] = []
+	var rank: String = str(GameState.run.get("rift_rank", ""))
+	if rank != "":
+		tags.append("Rank %s" % rank)
+	if GameState.run.get("hardcore", false):
+		tags.append("Hardcore")
+	if not GameState.active_incense.is_empty():
+		tags.append(str(GameState.active_incense["name"]))
+	if int(GameState.run.get("shield", 0)) > 0:
+		tags.append("Relic ward %d" % int(GameState.run["shield"]))
+	if not tags.is_empty():
+		top.add_child(_label(" · ".join(tags), 11, true))
+	col.add_child(top)
+
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 10)
+	if not in_combat:
+		for h in GameState.current_party():
+			var hv := _vbox(2)
+			var hrow := HBoxContainer.new()
+			hrow.add_theme_constant_override("separation", 4)
+			var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+			if portrait != "":
+				var pic := _icon_trimmed(portrait, 28)
+				if h.hp <= 0 or h.is_downed():
+					pic.modulate = Color(1, 1, 1, 0.35)
+				hrow.add_child(pic)
+			var nv := _vbox(0)
+			nv.add_child(_label(h.name.split(" the ")[0] + (" (C)" if h.is_champion else ""), 10))
+			nv.add_child(_label("%d/%d%s" % [max(0, h.hp), Combat.max_hp(h), " · down" if h.hp <= 0 or h.is_downed() else ""], 9, true))
+			hrow.add_child(nv)
+			hv.add_child(hrow)
+			hv.add_child(_hp_bar(h.hp, Combat.max_hp(h), 70.0))
+			bottom.add_child(hv)
+	var relics := Combat.equipped_relics()
+	if not relics.is_empty():
+		var rrow := HBoxContainer.new()
+		rrow.add_theme_constant_override("separation", 3)
+		for r in relics:
+			var ricon := _icon(GameData.RELIC_TYPE_ICON_PATH.get(r.type, GameData.CHEST_ICON_PATH), 22)
+			ricon.mouse_filter = Control.MOUSE_FILTER_PASS
+			ricon.tooltip_text = "%s — %s" % [_loot_display_name(r), _loot_desc(r, true)]
+			rrow.add_child(ricon)
+		if in_combat:
+			top.add_child(rrow)
+		else:
+			bottom.add_child(rrow)
+	if bottom.get_child_count() > 0:
+		col.add_child(bottom)
+	panel.add_child(col)
+	return panel
+
+
 func _render_rift_run(v: VBoxContainer) -> void:
 	if GameState.run.is_empty():
 		screen = "terminal"
@@ -148,17 +235,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var rb_flavor := str(GameState.run.get("riftbreak_flavor", ""))
 		if rb_flavor != "":
 			v.add_child(_label(rb_flavor, 12, true))
-	var diff := GameState._diff()
-	var pos: int = int(GameState.run["pos"])
-	var total_layers: int = (GameState.run["layers"] as Array).size()
-	var cycle_label := (" (cycle %d)" % (int(GameState.run["cycle"]) + 1)) if GameState.run.get("endless", false) else ""
-	v.add_child(_label("%s%s — Node %d/%d" % [diff["name"], cycle_label, pos + 1, total_layers], 18))
-	if GameState.run.get("hardcore", false):
-		v.add_child(_label("Hardcore Mode active", 12))
-	if not GameState.active_incense.is_empty():
-		v.add_child(_label("%s active" % str(GameState.active_incense["name"]), 12, true))
-
 	var kind := GameState.current_node_kind()
+	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
 	# The battle screen already shows every hero's HP twice over (arena
 	# nameplates + the action menu) and has its own Retreat button — repeating
 	# a third party-HP list and a second Retreat button above/below it just
@@ -205,8 +283,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 
 	if not is_combat_kind:
 		v.add_child(_hsep())
-		for h in GameState.current_party():
-			v.add_child(_label("%s%s — %d/%d HP%s" % [h.name, " (Champion)" if h.is_champion else "", h.hp, Combat.max_hp(h), " (downed)" if h.is_downed() else ""]))
 		_render_mid_rift_gear(v)
 		v.add_child(_hsep())
 
