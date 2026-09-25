@@ -444,7 +444,7 @@ func gen_loot(rarity_id: String) -> Dictionary:
 
 
 func endless_diff_for_cycle(cycle: int) -> Dictionary:
-	var mult := 1.0 + cycle * 0.35
+	var mult := 1.0 + cycle * ENDLESS_CYCLE_GROWTH
 	var base := GameData.ENDLESS_BASE
 	return {
 		"id": "endless", "name": "Endless Rift", "floors": 6, "power": "Extreme",
@@ -496,10 +496,22 @@ func build_layers(diff: Dictionary) -> Array:
 	return layers
 
 
+## Difficulty knobs, tuned with a full-run simulation (HP carrying across a
+## rift's floors): the pressure sits on later floors, elites, bosses and the
+## harder rifts, so a fresh Lesser run stays winnable while an invested party
+## still has to make real choices. Endless growth is ENDLESS_CYCLE_GROWTH.
+const MONSTER_FLOOR_SCALE := 0.14
+const ELITE_HP_MULT := 2.0
+const ELITE_DMG_MULT := 1.6
+const BOSS_HP_MULT := 3.0
+const BOSS_DMG_MULT := 2.0
+const ENDLESS_CYCLE_GROWTH := 0.5
+
+
 func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
-	var scale := 1.0 + floor_idx * 0.12
-	var hp_mult := 1.8 if kind == "boss" else (1.45 if kind == "elite" else 1.0)
-	var dmg_mult := 1.5 if kind == "boss" else (1.3 if kind == "elite" else 1.0)
+	var scale := 1.0 + floor_idx * MONSTER_FLOOR_SCALE
+	var hp_mult := BOSS_HP_MULT if kind == "boss" else (ELITE_HP_MULT if kind == "elite" else 1.0)
+	var dmg_mult := BOSS_DMG_MULT if kind == "boss" else (ELITE_DMG_MULT if kind == "elite" else 1.0)
 	var hp: int = round(diff["monster_hp"] * scale * hp_mult)
 	var dmg: int = round(diff["monster_dmg"] * scale * dmg_mult)
 	var name: String
