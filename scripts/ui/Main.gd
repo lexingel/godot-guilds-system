@@ -498,7 +498,12 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	var it: Item = obj
 	if it.unique_id != "":
 		var udef := GameData.find_unique_item(it.unique_id)
-		return "%s [%s]" % [str(udef.get("desc", "")), GameData.ARCHETYPES.get(str(udef.get("arch", "")), "Unique")]
+		var utext := "%s [%s]" % [str(udef.get("desc", "")), GameData.ARCHETYPES.get(str(udef.get("arch", "")), "Unique")]
+		if it.kind != "":
+			utext = "%s · %s" % [Combat.describe_skill(it.kind, it.value), utext]
+		if it.item_rank != "":
+			utext = "Rank %s · %s" % [it.item_rank, utext]
+		return utext
 	var parts: Array[String] = [Combat.describe_skill(it.kind, it.value)]
 	if it.secondary_kind != "":
 		parts.append(Combat.describe_skill(it.secondary_kind, it.secondary_value))

@@ -420,8 +420,13 @@ func gen_unique_item() -> Item:
 	it.name = str(def["name"])
 	it.category = str(def["category"])
 	it.rarity = "legendary"
-	it.kind = ""
-	it.value = 0.0
+	# A Legendary also rolls one Epic-strength stat from its category (rank-
+	# scaled like any drop) — with only its effect and a drawback, it used to
+	# be a straight downgrade from the Epic it replaced.
+	it.item_rank = GameState.loot_rank()
+	var kinds: Array = GameData.ITEM_CATEGORY_KINDS[it.category]
+	it.kind = str(kinds[randi() % kinds.size()])
+	it.value = snappedf(GameData.ITEM_KIND_BASE[it.kind] * float(GameData.find_rarity("epic")["mult"]) * randf_range(GameData.ITEM_ROLL_RANGE[0], GameData.ITEM_ROLL_RANGE[1]) * GameData.ITEM_RANK_MULT[GameData.rift_rank_index(it.item_rank)], 0.001)
 	it.unique_id = str(def["id"])
 	it.drawback_kind = str(def.get("drawback_kind", ""))
 	it.drawback_value = float(def.get("drawback_value", 0.0))
@@ -1363,8 +1368,11 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 				if not shielded.is_empty():
 					log.append("%s is shielded for %d." % [shielded[0].name, int(round(shielded[1]))])
 			"reset_cooldowns":
+				# Everyone but the caster — resetting its own cooldown too let
+				# it recast every turn, keeping every Ability permanently ready.
 				for h2 in party:
-					h2.ability_cooldown = 0
+					if h2 != h:
+						h2.ability_cooldown = 0
 				log.append("Every ability is ready again.")
 			"dodge_surge":
 				state["dodge"] = min(0.6, float(state["dodge"]) + val)

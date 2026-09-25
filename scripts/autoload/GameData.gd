@@ -128,7 +128,7 @@ static func find_earned_trait(trait_id: String) -> Dictionary:
 ## both are alive in the fight, capped in total at BOND_DMG_CAP.
 const BOND_LEVEL_RIFTS := [2, 5, 10]
 const BOND_DMG_PER_LEVEL := 0.02
-const BOND_DMG_CAP := 0.15
+const BOND_DMG_CAP := 0.10
 
 static func bond_level(rifts_together: int) -> int:
 	var lvl := 0
@@ -428,7 +428,7 @@ const ITEM_BASE_IMPLICIT := {
 ## Item rank = the rank of the rift it dropped in (GameState.loot_rank), and
 ## scales every rolled number on it — so higher-rank rifts are worth the risk
 ## and early gear eventually gets replaced. Indexed like RIFT_RANKS (F..SSS).
-const ITEM_RANK_MULT := [1.0, 1.08, 1.16, 1.25, 1.35, 1.47, 1.6, 1.75, 1.9]
+const ITEM_RANK_MULT := [1.0, 1.04, 1.08, 1.12, 1.16, 1.22, 1.28, 1.35, 1.42]
 ## Each rolled affix lands somewhere in this band of its base value.
 const ITEM_ROLL_RANGE := [0.8, 1.2]
 
@@ -528,9 +528,9 @@ const UNIQUE_ITEMS := [
 	 "desc": "+50% damage when this hero is the last in the round to act. -40% Speed."},
 	{"id": "hourglass_of_first_light", "name": "Hourglass of First Light", "category": "focus", "arch": "opener",
 	 "effects": [{"kind": "dmg_pct", "value": 0.40, "cond": {"acting_first": true}}],
-	 "drawback_kind": "escalate_pct", "drawback_value": -0.02,
+	 "drawback_kind": "hp_pct", "drawback_value": -0.08,
 	 "locked_role": "", "locked_subclasses": [],
-	 "desc": "+40% damage when this hero acts first in the round. -2% damage per round (stacking)."},
+	 "desc": "+40% damage when this hero acts first in the round. -8% HP."},
 	{"id": "wardens_oath", "name": "Warden's Oath", "category": "armor", "arch": "guardian",
 	 "effects": [{"trigger": "ally_targeted", "effect": "intercept", "value": 0.60}],
 	 "drawback_kind": "dodge_pct", "drawback_value": -0.10,
