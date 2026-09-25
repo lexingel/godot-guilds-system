@@ -5,16 +5,13 @@ extends RiftRunView
 
 # ---------------- Terminal ----------------
 func _render_terminal(v: VBoxContainer) -> void:
-	if _flavor_toast != "":
-		v.add_child(_label(_flavor_toast, 12, true))
-		_flavor_toast = ""
 	var tier := Combat.guild_tier_info()
 	var tier_name := str(tier["name"])
 	# Guild Tier is purely derived (not stored), so "just reached a new tier"
 	# is detected by comparing against the last tier seen at render time —
 	# UI-only state, not persisted, same as _flavor_toast above.
 	if _last_guild_tier_name != "" and _last_guild_tier_name != tier_name:
-		v.add_child(_label(GameData.narrative_line("guild_tier_reached"), 12, true))
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild tier reached", "text": GameData.narrative_line("guild_tier_reached")})
 	_last_guild_tier_name = tier_name
 	var tier_line := "%s — %d levels purchased" % [tier["name"], tier["total"]]
 	if not tier["next"].is_empty():
@@ -25,20 +22,12 @@ func _render_terminal(v: VBoxContainer) -> void:
 	if tier_icon_path != "":
 		tier_row.add_child(_icon(tier_icon_path, 18))
 	tier_row.add_child(_label(tier_line, 12, true))
-	v.add_child(tier_row)
 
 	if term_tab == "camp":
 		_render_camp(v)
+		v.add_child(tier_row)
 		return
 
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Camp", func():
-		term_tab = "camp"
-		medical_picker_bed = -1
-		mgmt_branch = ""
-		inv_category = ""
-		render()
-	))
-	v.add_child(_hsep())
 	match term_tab:
 		"inventory": _render_inventory(v)
 		"recruits": _render_recruits(v)
@@ -62,14 +51,12 @@ func _render_terminal(v: VBoxContainer) -> void:
 ## painted art — sidesteps the exact coordinate-precision problem that
 ## caused the mismatched props last time.
 func _render_camp(v: VBoxContainer) -> void:
-	v.add_child(_label("Guild Name", 12, true))
-	v.add_child(_label(GameState.guild_name, 20))
-
 	if hub_cluster != "":
 		_render_hub_cluster(v)
 		return
 
-	const SCENE_SIZE := Vector2(800, 314)
+	var scene_w: float = v.custom_minimum_size.x
+	var SCENE_SIZE := Vector2(scene_w, roundf(scene_w * 157.0 / 400.0))
 	var scene := Control.new()
 	scene.custom_minimum_size = SCENE_SIZE
 
@@ -100,6 +87,7 @@ func _render_camp(v: VBoxContainer) -> void:
 	]
 	var scene_scale := SCENE_SIZE / Vector2(400, 157)
 	var badges := _camp_badges()
+	var plaques: Array = []
 	for entry in area_entries:
 		var label_text: String = entry[0]
 		var native_rect: Rect2 = entry[1]
@@ -108,13 +96,22 @@ func _render_camp(v: VBoxContainer) -> void:
 			native_rect.position.x * scene_scale.x, native_rect.position.y * scene_scale.y,
 			native_rect.size.x * scene_scale.x, native_rect.size.y * scene_scale.y
 		)
-		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb)
+		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb, false)
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
-		var badge: Array = badges.get(label_text, [])
+		plaques.append([label_text, rect])
+
+	# Name plaques along the bottom edge of each building, added after every
+	# hotspot so no building's hover area paints over a neighbour's plaque.
+	for pq in plaques:
+		var prect: Rect2 = pq[1]
+		var plaque := _camp_plaque(str(pq[0]))
+		plaque.position = Vector2(prect.get_center().x - plaque.size.x * 0.5, minf(prect.end.y - 6.0, SCENE_SIZE.y - plaque.size.y - 4.0))
+		scene.add_child(plaque)
+		var badge: Array = badges.get(str(pq[0]), [])
 		if not badge.is_empty():
 			var chip := _count_badge(str(badge[0]), str(badge[1]))
-			chip.position = Vector2(rect.end.x - 18, rect.position.y - 6)
+			chip.position = plaque.position + Vector2(plaque.size.x - 10.0, -12.0)
 			scene.add_child(chip)
 
 	# Pixel-scanned against camp_bg.png directly (flame-colored pixels cluster
@@ -178,26 +175,6 @@ func _camp_badges() -> Dictionary:
 	if not GameState.pending_riftbreak_ranks.is_empty():
 		out["Rift Gate"] = ["!", "A rift has broken open — a Riftbreak fight is waiting"]
 	return out
-
-
-## A small round ember badge with a count (or "!") and a tooltip.
-func _count_badge(text: String, tooltip: String) -> Control:
-	var badge := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.EMBER
-	style.border_color = Palette.INK
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(999)
-	style.content_margin_left = 6
-	style.content_margin_right = 6
-	style.content_margin_top = 1
-	style.content_margin_bottom = 1
-	badge.add_theme_stylebox_override("panel", style)
-	badge.tooltip_text = tooltip
-	var l := _label(text, 12)
-	l.add_theme_color_override("font_color", Palette.INK)
-	badge.add_child(l)
-	return badge
 
 
 ## The small in-place picker a multi-destination building opens instead of

@@ -1,6 +1,6 @@
 class_name UiKit
 extends Control
-## Bottom of Main's inheritance chain (UiKit <- RosterView <- RiftRunView <-
+## Bottom of Main's inheritance chain (UiKit <- RosterView <- BattleView <- RiftRunView <-
 ## GuildViews <- Main): every piece of UI state, shared widget builders and
 ## text helpers. Nothing here may call a screen renderer; render() is a
 ## virtual that Main overrides so widgets/callbacks can still trigger it.
@@ -97,6 +97,7 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 
 var _last_scroll_y: float = 0.0
 var _revealed_rewards: Array = []   # the reward_options array whose flip-reveal already played (by reference)
+var selected_item_id: String = ""   # the Inventory item whose card shows in the right pane
 var roster_tab: String = "overview"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
@@ -119,6 +120,7 @@ func _vbox(gap: int = 10) -> VBoxContainer:
 ## content column, so it wraps at a sane width via _wrap_label() below instead
 ## — or via _info_row() when the wrapping text needs to share its row with buttons.
 func _label(text: String, size: int = 14, muted: bool = false) -> Label:
+	size = max(size, 12)   # type floor: nothing on screen below 12px
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
@@ -163,37 +165,6 @@ func _hp_bar(current: int, max_val: int, width: float) -> ProgressBar:
 	return bar
 
 
-## A plain floating name + HP readout above a hero/monster in the arena — a
-## name label over a colored bar with "cur/max" text, no ornate frame. Swapped
-## from an earlier wooden-nameplate-prop version to match the reference battle
-## screens' simple floating HP bars.
-const STATUS_PLATE_HEIGHT := 34.0
-
-
-func _status_plate(name_text: String, hp: int, max_hp_val: int, width: float = 160.0) -> Control:
-	var wrap := Control.new()
-	wrap.custom_minimum_size = Vector2(width, STATUS_PLATE_HEIGHT)
-	wrap.size = Vector2(width, STATUS_PLATE_HEIGHT)
-
-	var name_label := _label(name_text, 11)
-	name_label.size = Vector2(width, 15)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	name_label.add_theme_constant_override("shadow_offset_x", 1)
-	name_label.add_theme_constant_override("shadow_offset_y", 1)
-	wrap.add_child(name_label)
-
-	var bar := _hp_bar(hp, max_hp_val, width)
-	bar.position = Vector2(0, 16)
-	wrap.add_child(bar)
-	var hp_label := _label("%d/%d" % [hp, max_hp_val], 9, true)
-	hp_label.size = Vector2(width, 12)
-	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hp_label.position = Vector2(0, 27)
-	wrap.add_child(hp_label)
-	return wrap
-
-
 ## A hero portrait inside GameData.PORTRAIT_FRAME_PATH's ornate frame, sized
 ## to `size` — shared by the Roster hero card and Recruit offer cards so a
 ## hero's portrait always reads the same way wherever it appears. Returns an
@@ -225,7 +196,7 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
 ## border) since the border alone was too easy to miss against the wooden
 ## shelf background.
 func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "", drop_target: Dictionary = {}) -> Control:
-	var label_h := 14.0 if label_text != "" else 0.0
+	var label_h := 30.0 if label_text != "" else 0.0   # room for a 2-line caption
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(size, size + label_h)
 	wrap.size = Vector2(size, size + label_h)
@@ -279,12 +250,18 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 		wrap.add_child(badge)
 
 	if label_text != "":
-		var lbl := _label(label_text, 9, disabled)
-		lbl.custom_minimum_size = Vector2(size, label_h)
-		lbl.size = Vector2(size, label_h)
+		# Wraps to at most two lines, a little wider than the tile; the wrap
+		# and trim have to be set before sizing or the label grows to fit.
+		var lbl := _label(label_text, 12, disabled)
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl.max_lines_visible = 2
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.clip_text = true
-		lbl.position = Vector2(0, size)
+		lbl.add_theme_constant_override("line_spacing", -3)
+		var cap_w := size + 22.0
+		lbl.custom_minimum_size = Vector2(cap_w, label_h)
+		lbl.size = Vector2(cap_w, label_h)
+		lbl.position = Vector2((size - cap_w) * 0.5, size + 1.0)
 		wrap.add_child(lbl)
 
 	var btn: Button
@@ -616,6 +593,7 @@ func _rich_line(bbcode: String, size: int = 11, muted: bool = false) -> RichText
 	rt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rt.mouse_filter = Control.MOUSE_FILTER_PASS
+	size = max(size, 12)
 	rt.add_theme_font_size_override("normal_font_size", size)
 	rt.add_theme_font_size_override("bold_font_size", size)
 	rt.add_theme_color_override("default_color", Palette.MUTED if muted else Palette.TEXT)
@@ -639,7 +617,9 @@ func _kw_hints(bbcode: String) -> String:
 			if inside_tag:
 				search_from = m.get_end()
 				continue
-			var wrapped := "[hint=%s — %s][u]%s[/u][/hint]" % [k[0], k[1], m.get_string()]
+			# Quoted: an apostrophe in an unquoted hint value breaks the parse and
+			# the whole line then renders as raw BBCode.
+			var wrapped := "[hint=\"%s — %s\"][u]%s[/u][/hint]" % [k[0], k[1], m.get_string()]
 			out = out.substr(0, m.get_start()) + wrapped + out.substr(m.get_end())
 			break
 	return out
@@ -978,6 +958,7 @@ func _button(text: String, cb: Callable) -> Button:
 ## with no trailing-argument fiddling after a multi-line callback closure.
 func _icon_button(icon_path: String, text: String, cb: Callable) -> Button:
 	var b := _button(text, cb)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	if icon_path != "":
 		b.icon = load(icon_path)
 	return b
@@ -1190,10 +1171,10 @@ func _start_daynight_cycle(bg: CanvasItem) -> void:
 ## which read as an awkward seam when scaled). Hovering instead fades in a
 ## soft blurred glow (StyleBoxFlat's built-in shadow, not a hard-edged box)
 ## around the prop's own silhouette bounds, like it's catching firelight.
-func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, cb: Callable) -> Control:
+func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, cb: Callable, with_plaque: bool = true) -> Control:
 	var wrap := Control.new()
-	wrap.custom_minimum_size = Vector2(hit_rect.size.x, hit_rect.size.y + 16)
-	wrap.size = Vector2(hit_rect.size.x, hit_rect.size.y + 16)
+	wrap.custom_minimum_size = hit_rect.size
+	wrap.size = hit_rect.size
 
 	var glow_style := StyleBoxFlat.new()
 	glow_style.bg_color = Color(0, 0, 0, 0)
@@ -1231,13 +1212,78 @@ func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, c
 	)
 	wrap.add_child(btn)
 
-	var caption := _label(label_text, 11, true)
-	caption.position = Vector2(0, hit_rect.size.y + 1)
-	caption.custom_minimum_size = Vector2(hit_rect.size.x, 0)
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	wrap.add_child(caption)
-
+	btn.tooltip_text = label_text
+	if with_plaque:
+		var plaque := _camp_plaque(label_text)
+		plaque.position = Vector2((hit_rect.size.x - plaque.size.x) * 0.5, hit_rect.size.y - plaque.size.y - 6.0)
+		wrap.add_child(plaque)
 	return wrap
+
+
+## A small dark name plaque for a camp building (click-through: the
+## building's own hotspot underneath handles the click).
+func _camp_plaque(text: String) -> PanelContainer:
+	var p := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(Palette.INK, 0.82)
+	st.border_color = Palette.EMBER_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(4)
+	st.content_margin_left = 8
+	st.content_margin_right = 8
+	st.content_margin_top = 2
+	st.content_margin_bottom = 2
+	p.add_theme_stylebox_override("panel", st)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := _label(text, 13)
+	l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	p.add_child(l)
+	p.size = p.get_combined_minimum_size()
+	return p
+
+
+## A plain ProgressBar with flat, square-cornered styles; `transparent_bg`
+## drops the dark track (a bar stacked over another needs none).
+func _flat_bar(max_val: int, value: int, width: float, height: float, color: Color, transparent_bg: bool = false) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = max(1, max_val)
+	bar.value = clampi(value, 0, max(1, max_val))
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(width, height)
+	bar.size = bar.custom_minimum_size
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0, 0, 0, 0) if transparent_bg else Color(Palette.INK, 0.9)
+	if not transparent_bg:
+		bg.border_color = Color(0, 0, 0, 0.8)
+		bg.set_border_width_all(1)
+		bg.set_expand_margin_all(1)
+	bar.add_theme_stylebox_override("background", bg)
+	var fs := StyleBoxFlat.new()
+	fs.bg_color = color
+	bar.add_theme_stylebox_override("fill", fs)
+	bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	return bar
+
+
+## A small round ember badge with a count (or "!") and a tooltip.
+func _count_badge(text: String, tooltip: String) -> Control:
+	var badge := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Palette.EMBER
+	style.border_color = Palette.INK
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 1
+	style.content_margin_bottom = 1
+	badge.add_theme_stylebox_override("panel", style)
+	badge.tooltip_text = tooltip
+	var l := _label(text, 12)
+	l.add_theme_color_override("font_color", Palette.INK)
+	badge.add_child(l)
+	return badge
 
 
 ## The camp's one icon-based hotspot (Rift Hall, no matching background

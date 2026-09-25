@@ -19,107 +19,152 @@
 [ext_resource type="Texture2D" path="res://assets/ui/button_ember_pressed.png" id="19"]
 [ext_resource type="Texture2D" path="res://assets/ui/button_ember_disabled.png" id="20"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_disabled"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
 content_margin_left = 14.0
-content_margin_top = 8.0
+content_margin_top = 7.0
 content_margin_right = 14.0
-content_margin_bottom = 8.0
-texture = ExtResource("5")
-texture_margin_left = 14.0
-texture_margin_top = 10.0
-texture_margin_right = 14.0
-texture_margin_bottom = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.09, 0.071, 0.137, 0.4)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.239, 0.2, 0.341, 0.5)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_hover"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
 content_margin_left = 14.0
-content_margin_top = 8.0
+content_margin_top = 7.0
 content_margin_right = 14.0
-content_margin_bottom = 8.0
-texture = ExtResource("3")
-texture_margin_left = 14.0
-texture_margin_top = 10.0
-texture_margin_right = 14.0
-texture_margin_bottom = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.18, 0.145, 0.278, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788, 0.702, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_normal"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
 content_margin_left = 14.0
-content_margin_top = 8.0
+content_margin_top = 7.0
 content_margin_right = 14.0
-content_margin_bottom = 8.0
-texture = ExtResource("2")
-texture_margin_left = 14.0
-texture_margin_top = 10.0
-texture_margin_right = 14.0
-texture_margin_bottom = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.09, 0.071, 0.137, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.239, 0.2, 0.341, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_pressed"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
 content_margin_left = 14.0
-content_margin_top = 8.0
+content_margin_top = 7.0
 content_margin_right = 14.0
-content_margin_bottom = 8.0
-texture = ExtResource("4")
-texture_margin_left = 14.0
-texture_margin_top = 10.0
-texture_margin_right = 14.0
-texture_margin_bottom = 10.0
+content_margin_bottom = 7.0
+bg_color = Color(0.29, 0.165, 0.6, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.361, 0.965, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_hsep"]
 color = Color(0.239, 0.2, 0.341, 1)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-texture = ExtResource("1")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+bg_color = Color(0.129, 0.102, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.239, 0.2, 0.341, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel_violet"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_violet"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-texture = ExtResource("9")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+bg_color = Color(0.129, 0.102, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.3, 0.75, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel_ember"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_ember"]
 content_margin_left = 14.0
 content_margin_top = 12.0
 content_margin_right = 14.0
 content_margin_bottom = 12.0
-texture = ExtResource("10")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+bg_color = Color(0.129, 0.102, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7, 0.3, 0.13, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile_violet"]
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
-texture = ExtResource("11")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_tile_violet"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.09, 0.071, 0.137, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.165, 0.6, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_stat_tile_ember"]
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
-texture = ExtResource("12")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_tile_ember"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.09, 0.071, 0.137, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.541, 0.169, 0.071, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_violet_normal"]
 content_margin_left = 14.0
@@ -209,39 +254,60 @@ texture_margin_top = 10.0
 texture_margin_right = 14.0
 texture_margin_bottom = 10.0
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_focus"]
+content_margin_left = 14.0
+content_margin_top = 7.0
+content_margin_right = 14.0
+content_margin_bottom = 7.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788, 0.702, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
 [resource]
 default_font = ExtResource("8")
 default_font_size = 14
 Button/colors/font_color = Color(0.914, 0.886, 0.961, 1)
+Button/constants/icon_max_width = 24
 Button/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
 Button/colors/font_hover_color = Color(0.914, 0.886, 0.961, 1)
-Button/colors/font_pressed_color = Color(0.055, 0.055, 0.055, 1)
-Button/styles/disabled = SubResource("StyleBoxTexture_btn_disabled")
-Button/styles/focus = SubResource("StyleBoxTexture_btn_hover")
-Button/styles/hover = SubResource("StyleBoxTexture_btn_hover")
-Button/styles/normal = SubResource("StyleBoxTexture_btn_normal")
-Button/styles/pressed = SubResource("StyleBoxTexture_btn_pressed")
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
+Button/styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+Button/styles/focus = SubResource("StyleBoxFlat_focus")
+Button/styles/hover = SubResource("StyleBoxFlat_btn_hover")
+Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
+Button/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 CheckBox/colors/font_color = Color(0.914, 0.886, 0.961, 1)
 CheckButton/colors/font_color = Color(0.914, 0.886, 0.961, 1)
-CheckButton/colors/font_selected_color = Color(0.055, 0.055, 0.055, 1)
-CheckButton/styles/hover = SubResource("StyleBoxTexture_btn_hover")
-CheckButton/styles/normal = SubResource("StyleBoxTexture_btn_normal")
-CheckButton/styles/pressed = SubResource("StyleBoxTexture_btn_pressed")
+CheckButton/colors/font_selected_color = Color(1, 1, 1, 1)
+CheckButton/styles/hover = SubResource("StyleBoxFlat_btn_hover")
+CheckButton/styles/normal = SubResource("StyleBoxFlat_btn_normal")
+CheckButton/styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 HSeparator/styles/separator = SubResource("StyleBoxLine_hsep")
 Label/colors/font_color = Color(0.914, 0.886, 0.961, 1)
 LineEdit/colors/font_color = Color(0.914, 0.886, 0.961, 1)
 LineEdit/colors/font_placeholder_color = Color(0.659, 0.608, 0.788, 1)
-LineEdit/styles/focus = SubResource("StyleBoxTexture_btn_hover")
-LineEdit/styles/normal = SubResource("StyleBoxTexture_btn_normal")
-PanelContainer/styles/panel = SubResource("StyleBoxTexture_panel")
+LineEdit/styles/focus = SubResource("StyleBoxFlat_btn_hover")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_btn_normal")
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
 CardPanelViolet/base_type = &"PanelContainer"
-CardPanelViolet/styles/panel = SubResource("StyleBoxTexture_panel_violet")
+CardPanelViolet/styles/panel = SubResource("StyleBoxFlat_panel_violet")
 CardPanelEmber/base_type = &"PanelContainer"
-CardPanelEmber/styles/panel = SubResource("StyleBoxTexture_panel_ember")
+CardPanelEmber/styles/panel = SubResource("StyleBoxFlat_panel_ember")
 StatTileViolet/base_type = &"PanelContainer"
-StatTileViolet/styles/panel = SubResource("StyleBoxTexture_stat_tile_violet")
+StatTileViolet/styles/panel = SubResource("StyleBoxFlat_stat_tile_violet")
 StatTileEmber/base_type = &"PanelContainer"
-StatTileEmber/styles/panel = SubResource("StyleBoxTexture_stat_tile_ember")
+StatTileEmber/styles/panel = SubResource("StyleBoxFlat_stat_tile_ember")
 ButtonViolet/base_type = &"Button"
 ButtonViolet/colors/font_color = Color(0.086, 0.067, 0.133, 1)
 ButtonViolet/colors/font_hover_color = Color(0.086, 0.067, 0.133, 1)
@@ -249,7 +315,7 @@ ButtonViolet/colors/font_pressed_color = Color(0.788, 0.702, 1, 1)
 ButtonViolet/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
 ButtonViolet/styles/normal = SubResource("StyleBoxTexture_btn_violet_normal")
 ButtonViolet/styles/hover = SubResource("StyleBoxTexture_btn_violet_hover")
-ButtonViolet/styles/focus = SubResource("StyleBoxTexture_btn_violet_hover")
+ButtonViolet/styles/focus = SubResource("StyleBoxFlat_focus")
 ButtonViolet/styles/pressed = SubResource("StyleBoxTexture_btn_violet_pressed")
 ButtonViolet/styles/disabled = SubResource("StyleBoxTexture_btn_violet_disabled")
 ButtonEmber/base_type = &"Button"
@@ -259,6 +325,6 @@ ButtonEmber/colors/font_pressed_color = Color(1.0, 0.9, 0.8, 1)
 ButtonEmber/colors/font_disabled_color = Color(0.659, 0.608, 0.788, 1)
 ButtonEmber/styles/normal = SubResource("StyleBoxTexture_btn_ember_normal")
 ButtonEmber/styles/hover = SubResource("StyleBoxTexture_btn_ember_hover")
-ButtonEmber/styles/focus = SubResource("StyleBoxTexture_btn_ember_hover")
+ButtonEmber/styles/focus = SubResource("StyleBoxFlat_focus")
 ButtonEmber/styles/pressed = SubResource("StyleBoxTexture_btn_ember_pressed")
 ButtonEmber/styles/disabled = SubResource("StyleBoxTexture_btn_ember_disabled")

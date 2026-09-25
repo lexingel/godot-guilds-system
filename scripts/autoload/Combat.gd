@@ -318,7 +318,14 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	var h := Hero.new()
 	h.id = "h" + str(GameState.next_id)
 	GameState.next_id += 1
-	h.name = "%s the %s" % [GameData.FIRST_NAMES[randi() % GameData.FIRST_NAMES.size()], cls["name"]]
+	# Avoid a first name already in the roster or on offer (two "Aldric"s
+	# are hard to tell apart in the arena and party lists).
+	var taken := {}
+	for other in GameState.heroes + GameState.recruit_pool:
+		taken[other.name.split(" the ")[0]] = true
+	var free_names: Array = GameData.FIRST_NAMES.filter(func(n): return not taken.has(n))
+	var names: Array = free_names if not free_names.is_empty() else GameData.FIRST_NAMES
+	h.name = "%s the %s" % [names[randi() % names.size()], cls["name"]]
 	h.cls_id = cls["role"]
 	h.pool_id = cls["id"]
 	h.type = cls["type"]
@@ -1601,6 +1608,16 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 	if kills > 0:
 		h.history["kills"] = int(h.history.get("kills", 0)) + kills
 		_fire("on_kill", state, h)
+	# Per-fight tallies for the victory screen (damage dealt, kills).
+	var dealt_now := 0.0
+	for i in monsters.size():
+		dealt_now += maxf(0.0, monsters_hp_before[i] - maxf(0.0, float(monsters[i]["hp"])))
+	var dealt_map: Dictionary = state.get("_dealt", {})
+	dealt_map[h.id] = float(dealt_map.get(h.id, 0.0)) + dealt_now
+	state["_dealt"] = dealt_map
+	var kill_map: Dictionary = state.get("_kills", {})
+	kill_map[h.id] = int(kill_map.get(h.id, 0)) + kills
+	state["_kills"] = kill_map
 
 
 ## One living monster's retaliation — the per-monster body of the old batched
@@ -1892,8 +1909,16 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 					bonus_crystal += randi() % 4 + 2
 			result["bonus_crystal"] = bonus_crystal
 		var xp_gain: int = 30 if is_boss else (20 if is_elite else 12)
+		var summary: Array = []
 		for h in party:
+			var lv0 := h.level
+			var xp0 := h.xp
 			gain_xp(h, xp_gain)
+			summary.append({"id": h.id, "name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "alive": h.hp > 0,
+				"lv0": lv0, "xp0": xp0, "next0": xp_to_next(lv0), "lv1": h.level, "xp1": h.xp, "next1": xp_to_next(h.level),
+				"dealt": int(round(float(state.get("_dealt", {}).get(h.id, 0.0)))), "kills": int(state.get("_kills", {}).get(h.id, 0))})
+		result["heroes"] = summary
+		result["xp_gain"] = xp_gain
 		if not is_boss:
 			var options := [gen_loot(weighted_rarity()), gen_loot(weighted_rarity())]
 			if randf() < min(0.5, drop_rate_bonus() * 2.0):

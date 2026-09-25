@@ -16,7 +16,7 @@ func _sorted_heroes() -> Array[Hero]:
 
 
 func _render_roster(v: VBoxContainer) -> void:
-	v.add_child(_banner(GameData.ROSTER_BG, 760, 190))
+	v.add_child(_banner(GameData.ROSTER_BG, v.custom_minimum_size.x, 120))
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes recruited yet."))
 		return
@@ -26,25 +26,33 @@ func _render_roster(v: VBoxContainer) -> void:
 	if still_here.is_empty():
 		selected_hero_id = ""
 
-	v.add_child(_sort_cycle_button(roster_sort, [
+	# Two panes: the hero list on the left, the selected hero's card on the right.
+	var split := HBoxContainer.new()
+	split.add_theme_constant_override("separation", 14)
+	var left := _vbox(6)
+	left.custom_minimum_size.x = 300
+	var right := _vbox(8)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	split.add_child(left)
+	split.add_child(right)
+	v.add_child(split)
+
+	var sort_btn := _sort_cycle_button(roster_sort, [
 		{"id": "power", "label": "Power"},
 		{"id": "level", "label": "Level"},
 		{"id": "rank", "label": "Rank"},
-	], func(new_id): roster_sort = new_id))
-
+	], func(new_id): roster_sort = new_id)
+	sort_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	left.add_child(sort_btn)
 	var stones_text := GameData.evolution_stones_text(GameState.evolution_stones)
 	if stones_text != "":
-		v.add_child(_label("Evolution Stones: %s" % stones_text, 11, true))
-
-	var portrait_row := HBoxContainer.new()
-	portrait_row.add_theme_constant_override("separation", 12)
-	for h in _sorted_heroes():
-		portrait_row.add_child(_roster_portrait_button(h))
-	v.add_child(portrait_row)
-
+		left.add_child(_wrap_label("Evolution Stones: %s" % stones_text, 12, true))
+	var sorted := _sorted_heroes()
 	if selected_hero_id == "":
-		v.add_child(_label("Click a hero above for their details.", 12, true))
-		return
+		selected_hero_id = sorted[0].id
+		still_here.assign([sorted[0]])
+	for hh in sorted:
+		left.add_child(_roster_row(hh))
 	var h: Hero = still_here[0]
 
 	var card := PanelContainer.new()
@@ -272,7 +280,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			cv.add_child(dash)
 
 	card.add_child(cv)
-	v.add_child(card)
+	right.add_child(card)
 
 
 ## One skill node as a compact hex tile (icon + short name caption) instead
@@ -438,64 +446,61 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	grid.sort_children.connect(lines.queue_redraw)
 
 
-## One hero's clickable portrait for the Roster row — a PanelContainer
-## (bordered/highlighted when selected) with a flat invisible Button on top,
-## same layered-hotspot approach as the camp/management screens.
-func _roster_portrait_button(h: Hero) -> Control:
-	var w := 72.0
-	var ht := 100.0
-	var wrap := Control.new()
-	wrap.custom_minimum_size = Vector2(w, ht)
-	wrap.size = Vector2(w, ht)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(w, ht)
-	panel.size = Vector2(w, ht)
-	if selected_hero_id == h.id:
-		var sel_style := StyleBoxFlat.new()
-		sel_style.bg_color = Palette.SURFACE2
-		sel_style.border_width_left = 2
-		sel_style.border_width_top = 2
-		sel_style.border_width_right = 2
-		sel_style.border_width_bottom = 2
-		sel_style.border_color = Palette.VIOLET
-		sel_style.corner_radius_top_left = 8
-		sel_style.corner_radius_top_right = 8
-		sel_style.corner_radius_bottom_left = 8
-		sel_style.corner_radius_bottom_right = 8
-		sel_style.content_margin_top = 4
-		panel.add_theme_stylebox_override("panel", sel_style)
-	var pv := _vbox(2)
-	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-	if portrait_path != "":
-		var icon_wrap := CenterContainer.new()
-		icon_wrap.add_child(_icon_trimmed(portrait_path, 48))
-		pv.add_child(icon_wrap)
-	pv.add_child(_label(h.name.split(" the ")[0], 10))
-	pv.add_child(_label("%d/%d HP" % [h.hp, Combat.max_hp(h)], 9, true))
-	var arch := _main_arch(h)
-	if arch != "":
-		var chip := _label("◆ " + str(GameData.ARCHETYPES[arch]), 9)
-		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
-		pv.add_child(chip)
-	panel.add_child(pv)
-	wrap.add_child(panel)
-
-	var btn := Button.new()
-	btn.flat = true
-	btn.custom_minimum_size = Vector2(w, ht)
-	btn.size = Vector2(w, ht)
-	var clear_style := StyleBoxEmpty.new()
-	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
-		btn.add_theme_stylebox_override(style_name, clear_style)
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.pressed.connect(func(id=h.id):
-		selected_hero_id = "" if selected_hero_id == id else id
+## One hero in the Roster list: portrait, name, level/class, an HP bar and
+## their build chip, with a dot when they have something to act on (unspent
+## SP, gear that fits an empty slot). The selected row is outlined.
+func _roster_row(h: Hero) -> Control:
+	var selected := selected_hero_id == h.id
+	var b := _button("", func(id=h.id):
+		selected_hero_id = id
 		expanded_slot = ""
 		render()
 	)
-	wrap.add_child(btn)
-	return wrap
+	b.custom_minimum_size = Vector2(300, 64)
+	b.toggle_mode = true
+	b.button_pressed = selected
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 8
+	row.offset_right = -8
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait_path != "":
+		var pi := _icon_trimmed(portrait_path, 48)
+		pi.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if h.is_downed() or h.hp <= 0:
+			pi.modulate = Color(0.5, 0.5, 0.5, 0.8)
+		row.add_child(pi)
+	var col := _vbox(2)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 6)
+	var nm := _label(h.name.split(" the ")[0], 14)
+	if selected:
+		nm.add_theme_color_override("font_color", Palette.VIOLET_BRIGHT)
+	top.add_child(nm)
+	var arch := _main_arch(h)
+	if arch != "":
+		var chip := _label("◆ " + str(GameData.ARCHETYPES[arch]), 12)
+		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
+		top.add_child(chip)
+	col.add_child(top)
+	col.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)], 12, true))
+	col.add_child(_flat_bar(Combat.max_hp(h), h.hp, 170, 4, _hp_color(float(h.hp) / float(max(1, Combat.max_hp(h))))))
+	row.add_child(col)
+	var needs := h.skill_points > 0
+	for st in ["weapon", "gear"]:
+		if _first_free_slot(h, st) >= 0 and GameState.items.any(func(it): return it.equipped_to == "" and it.slot_type() == st and GameState.item_fits_hero(it, h)):
+			needs = true
+	if needs:
+		var dot := _count_badge("!", "Unspent skill points or gear that fits an empty slot")
+		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(dot)
+	b.add_child(row)
+	return b
 
 
 ## One equip-slot frame for the Roster paper-doll: a rarity-tinted border
@@ -608,7 +613,6 @@ func _render_inventory(v: VBoxContainer) -> void:
 	if inv_category == "":
 		_render_inventory_hub(v)
 		return
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Inventory", func(): inv_category = ""; render()))
 	match inv_category:
 		"relics": _render_inventory_relics(v)
 		"detectors": _render_inventory_detectors(v)
@@ -623,6 +627,7 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 	var scene_size := Vector2(700, 340)
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.INVENTORY_BG)
@@ -660,14 +665,17 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 
 
 func _render_inventory_items(v: VBoxContainer) -> void:
-	v.add_child(_label("Items", 16))
 	var unequipped_items: Array[Item] = []
 	unequipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == ""))
-	v.add_child(_sort_cycle_button(inv_sort, [
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	head.add_child(_label("Items (%d)" % unequipped_items.size(), 20))
+	head.add_child(_sort_cycle_button(inv_sort, [
 		{"id": "rarity", "label": "Rarity"},
 		{"id": "value", "label": "Value"},
 		{"id": "name", "label": "Name"},
 	], func(new_id): inv_sort = new_id))
+	v.add_child(head)
 	match inv_sort:
 		"rarity":
 			unequipped_items.sort_custom(func(a, b): return _rarity_rank(a.rarity) > _rarity_rank(b.rarity))
@@ -677,7 +685,29 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			unequipped_items.sort_custom(func(a, b): return a.name < b.name)
 	if unequipped_items.is_empty():
 		v.add_child(_label("No unequipped items.", 12))
+	elif not unequipped_items.any(func(it): return it.id == selected_item_id):
+		selected_item_id = unequipped_items[0].id
+	# Two panes: a grid of item tiles, and the selected item's card + actions.
+	var split := HBoxContainer.new()
+	split.add_theme_constant_override("separation", 14)
+	var grid := HFlowContainer.new()
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	grid.custom_minimum_size.x = 460
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var detail := _vbox(8)
+	detail.custom_minimum_size.x = 380
+	if not unequipped_items.is_empty():
+		split.add_child(grid)
+		split.add_child(detail)
+		v.add_child(split)
 	for it in unequipped_items:
+		grid.add_child(_action_slot(GameData.ITEM_CATEGORY_ICON_PATH[it.category], "", it.id == selected_item_id, false, func(id=it.id):
+			selected_item_id = id
+			render()
+		, 68.0, "", GameData.RARITY_FRAME_PATH.get(it.rarity, ""), _loot_display_name(it)))
+		if it.id != selected_item_id:
+			continue
 		var actions: Array[Control] = []
 		for h2 in GameState.heroes:
 			var slot := it.slot_type()
@@ -696,9 +726,18 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 			GameState.sell_item(id)
 			render()
 		))
-		var inv_row := _info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, actions, _icon(GameData.ITEM_CATEGORY_ICON_PATH[it.category], 20))
-		_rich_tip(inv_row, _item_card(it))
-		v.add_child(inv_row)
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelViolet"
+		var cv := _vbox(10)
+		cv.add_child(_rich_line(_item_card(it), 13))
+		var act_flow := HFlowContainer.new()
+		act_flow.add_theme_constant_override("h_separation", 6)
+		act_flow.add_theme_constant_override("v_separation", 6)
+		for a in actions:
+			act_flow.add_child(a)
+		cv.add_child(act_flow)
+		card.add_child(cv)
+		detail.add_child(card)
 
 	v.add_child(_hsep())
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))

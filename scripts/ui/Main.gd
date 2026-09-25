@@ -34,7 +34,7 @@ func _ready() -> void:
 	_toast_box.anchor_right = 1.0
 	_toast_box.offset_left = -300
 	_toast_box.offset_right = -12
-	_toast_box.offset_top = 70
+	_toast_box.offset_top = 84
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
 	render()
@@ -85,10 +85,11 @@ func _drain_toasts() -> void:
 			row.add_child(_icon_trimmed(portrait, 44))
 		var col := _vbox(2)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var title := _label(str(t["title"]), 13)
-		title.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		col.add_child(title)
-		col.add_child(_wrap_label(str(t["text"]), 11, true))
+		if str(t["title"]) != "":
+			var title := _label(str(t["title"]), 14)
+			title.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			col.add_child(title)
+		col.add_child(_wrap_label(str(t["text"]), 12, true))
 		row.add_child(col)
 		card.add_child(row)
 		_toast_box.add_child(card)
@@ -102,7 +103,6 @@ func _drain_toasts() -> void:
 
 
 func render() -> void:
-	_drain_toasts()
 	_combat_hotkeys.clear()
 	# Combat speed only ever applies inside a rift — camp animations (embers,
 	# day/night drift) always run at normal speed.
@@ -113,7 +113,11 @@ func render() -> void:
 	var newly_claimed := GameState.check_milestones()
 	if not newly_claimed.is_empty():
 		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
-		_flavor_toast = "Milestone reached: %s" % str(m["label"])
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Milestone reached", "text": str(m["label"])})
+	if _flavor_toast != "":
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "", "text": _flavor_toast})
+		_flavor_toast = ""
+	_drain_toasts()
 	if screen == "terminal" and GameState.run.is_empty() and not GameState.pending_riftbreak_ranks.is_empty():
 		GameState.start_riftbreak_encounter()
 		if not GameState.run.is_empty():
@@ -158,13 +162,12 @@ func render() -> void:
 	outer.add_child(scroll)
 	scroll.set_deferred("scroll_vertical", _last_scroll_y)
 	var v := _vbox(14)
-	# Rift Run gets extra width for the combat arena (background + positioned
-	# sprites) sitting alongside the log/action column, and the camp hub
-	# needs room for its 6-building scene — every other screen stays at the
-	# original column width.
-	var is_camp_scene := screen == "terminal" and term_tab == "camp" and hub_cluster == ""
-	v.custom_minimum_size = Vector2(940 if screen == "rift_run" else (800 if is_camp_scene else 760), 0)
-	scroll.add_child(v)
+	v.custom_minimum_size = Vector2(_column_width(), 0)
+	# Centered in the window instead of hugging the left edge.
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
+	center.add_child(v)
 
 	match screen:
 		"title": _render_title(v)
@@ -294,6 +297,52 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 ## bordered bar so the whole header reads as a single designed piece instead
 ## of loose elements, matching the bordered-card language the rest of the UI
 ## already uses (CardPanelEmber/StatTileEmber).
+var _shown_counts: Dictionary = {}   # currency icon path -> value the header last showed
+
+
+## A number label that counts up (or down) from the value it showed last
+## time, so a currency change reads as a change instead of a silent swap.
+func _count_label(key: String, value: int, size: int) -> Label:
+	var l := _label(str(value), size)
+	var from: int = int(_shown_counts.get(key, value))
+	_shown_counts[key] = value
+	if from != value:
+		l.text = str(from)
+		var tw := l.create_tween()
+		tw.set_ignore_time_scale(true)
+		tw.tween_method(func(x: float): l.text = str(int(round(x))), float(from), float(value), 0.6).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(l, "modulate", Palette.RANK_S if value > from else Palette.HAZARD, 0.1)
+		tw.tween_property(l, "modulate", Color.WHITE, 0.4)
+	return l
+
+
+## Where the header's back arrow goes on this screen (invalid = no arrow).
+func _header_back() -> Callable:
+	if screen == "terminal" and term_tab == "inventory" and inv_category != "":
+		return func():
+			inv_category = ""
+			render()
+	if screen == "terminal" and term_tab != "camp":
+		return func():
+			term_tab = "camp"
+			medical_picker_bed = -1
+			mgmt_branch = ""
+			inv_category = ""
+			render()
+	return Callable()
+
+
+## Content column width: combat, the camp scene and the two-pane screens
+## use the window's width; text-heavy screens stay at a readable measure.
+func _column_width() -> float:
+	var avail: float = get_viewport().get_visible_rect().size.x - 64.0
+	if screen == "rift_run":
+		return _battle_width()
+	if screen == "terminal" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory"]):
+		return clampf(avail, 760.0, 1180.0)
+	return clampf(avail, 700.0, 860.0)
+
+
 func _topbar(container: Control, breadcrumb: String = "") -> void:
 	var bar_style := StyleBoxFlat.new()
 	bar_style.bg_color = Palette.SURFACE2
@@ -308,11 +357,24 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	var bar_v := _vbox(4)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", 12)
+	var back := _header_back()
+	if back.is_valid():
+		var bb := _button("", back)
+		bb.icon = load(GameData.BUTTON_ICON_PATH["back"])
+		bb.tooltip_text = "Back to Camp"
+		bb.custom_minimum_size = Vector2(40, 36)
+		row.add_child(bb)
 	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
 	var name_lbl := _label(GameState.guild_name, 16)
 	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
+	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_lbl)
+	if breadcrumb != "":
+		var crumb := _label("›  " + breadcrumb, 16)
+		crumb.add_theme_color_override("font_color", Palette.MUTED)
+		crumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(crumb)
 	var stat_spacer := Control.new()
 	stat_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(stat_spacer)
@@ -324,7 +386,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	]:
 		var stat_row := HBoxContainer.new()
 		stat_row.add_child(_icon(entry[0], 18))
-		stat_row.add_child(_label(str(entry[1]), 16))
+		stat_row.add_child(_count_label(str(entry[0]), int(entry[1]), 16))
 		var tile := PanelContainer.new()
 		tile.theme_type_variation = &"StatTileEmber"
 		tile.add_child(stat_row)
@@ -345,8 +407,6 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	)
 	row.add_child(settings_btn)
 	bar_v.add_child(row)
-	if breadcrumb != "":
-		bar_v.add_child(_label(breadcrumb, 12, true))
 	bar.add_child(bar_v)
 	container.add_child(bar)
 
