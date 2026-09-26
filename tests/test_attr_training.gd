@@ -19,7 +19,7 @@ func run() -> void:
 		GameState.train_attr("h1")
 	check(h.attr_trained == GameData.ATTR_TRAIN_CAP and h.attr_points == GameData.ATTR_TRAIN_CAP, "capped at %d trained" % GameData.ATTR_TRAIN_CAP)
 	var back := Hero.from_dict(JSON.parse_string(JSON.stringify(h.to_dict())))
-	check(back.attr_trained == 5, "attr_trained saved")
+	check(back.attr_trained == GameData.ATTR_TRAIN_CAP, "attr_trained saved")
 	# Reset unequips gear that no longer qualifies.
 	GameState.auto_assign_attrs("h1")
 	var it := Combat.gen_item("epic", "weapon")
