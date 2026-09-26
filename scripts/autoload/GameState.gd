@@ -1167,6 +1167,22 @@ func engage_node() -> void:
 	state_changed.emit()
 
 
+## Quick fight: engages the node and plays it out instantly with the auto
+## policy (Combat.auto_action), landing straight on the result screen.
+func quick_fight() -> void:
+	engage_node()
+	var st: Dictionary = run.get("node_state", {}).get("combat_state", {})
+	for i in 600:
+		if st.is_empty() or run.get("node_state", {}).has("result"):
+			break
+		var nxt := Combat.peek_next_turn(st)
+		if str(nxt["type"]) == "hero":
+			var h := Combat._find_party_hero(st["party"], str(nxt["id"]))
+			if h and h.hp > 0:
+				st["pending_actions"][h.id] = Combat.auto_action(st, h)
+		resolve_turn_now()
+
+
 ## Sets one hero's pending action for the round about to resolve — a pure
 ## "what will they do" toggle, no combat math, mirrors how e.g.
 ## choose_node_type() just records a choice.

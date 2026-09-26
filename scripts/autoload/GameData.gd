@@ -1978,6 +1978,20 @@ const SFX_PATH := {
 	"knockout": "res://assets/audio/sfx/knockout.ogg",
 	"victory": "res://assets/audio/sfx/victory.ogg",
 	"craft": "res://assets/audio/sfx/craft.ogg",
+	# Synthesized by tools/gen_sfx.py.
+	"windup": "res://assets/audio/sfx/gen_windup.wav",
+	"stun": "res://assets/audio/sfx/gen_stun.wav",
+	"burn": "res://assets/audio/sfx/gen_burn.wav",
+	"chill": "res://assets/audio/sfx/gen_chill.wav",
+	"shield": "res://assets/audio/sfx/gen_shield.wav",
+	"heal": "res://assets/audio/sfx/gen_heal.wav",
+	"ability": "res://assets/audio/sfx/gen_ability.wav",
+	"relic": "res://assets/audio/sfx/gen_relic.wav",
+	"level_up": "res://assets/audio/sfx/gen_level_up.wav",
+	"unlock": "res://assets/audio/sfx/gen_unlock.wav",
+	"story": "res://assets/audio/sfx/gen_story.wav",
+	"defeat": "res://assets/audio/sfx/gen_defeat.wav",
+	"boss": "res://assets/audio/sfx/gen_boss.wav",
 }
 ## Looping background music — none of these exist yet (a future session
 ## generates them via Suno, per the plan doc), but every combat/camp screen

@@ -1136,6 +1136,8 @@ var _pending_diff_id: String = "lesser"
 
 var _pending_endless: bool = false
 var _pending_finale: bool = false   # Party Assembly is for the current act's finale
+var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_action)
+var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 
 
 var _pending_hardcore: bool = false

@@ -134,7 +134,8 @@ func render() -> void:
 	GameState.resolve_rift_map()
 	GameState.resolve_guild_board()
 	if GameState.guild_name != "":
-		GameState.check_feature_unlocks()
+		if not GameState.check_feature_unlocks().is_empty():
+			AudioManager.play_sfx(GameData.SFX_PATH["unlock"])
 	var newly_claimed := GameState.check_milestones()
 	if not newly_claimed.is_empty():
 		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
@@ -226,6 +227,10 @@ func render() -> void:
 	# snapping into place, so moving between hubs reads as one continuous
 	# world instead of a slideshow of unrelated pages.
 	if not GameState.pending_stories.is_empty() and screen not in ["title", "load_game", "credits", "onboard"]:
+		var card_key := "story:" + str(GameState.pending_stories[0].get("title", ""))
+		if not _sfx_seen.has(card_key):
+			_sfx_seen[card_key] = true
+			AudioManager.play_sfx(GameData.SFX_PATH["story"])
 		_story_overlay(GameState.pending_stories[0])
 	if is_navigation:
 		root.modulate = Color(1, 1, 1, 0)

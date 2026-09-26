@@ -1489,6 +1489,21 @@ func _monster_hit(m: Dictionary, round_num: int) -> float:
 ## {"target": Hero, "dmg": int, "heavy": bool} or {} if it's down / no target.
 ## Heavy = a quarter of the target's max HP or more (same bar as the log's
 ## heavy-hit reactions). Intercepts/escort hits can still change the outcome.
+## What an auto-played hero does this turn (Auto toggle, Quick fight, the
+## balance sim): Defend against a heavy blow aimed at them, the Champion's
+## Call on a boss, an Ability when ready, otherwise attack the weakest foe.
+func auto_action(state: Dictionary, h: Hero) -> Dictionary:
+	for mi in (state["monsters"] as Array).size():
+		var it := monster_intent(state, mi)
+		if it.get("heavy_blow", false) and it["target"] == h:
+			return {"action": "defend", "target": 0}
+	if bool(state.get("is_boss", false)) and GameState.champion_call_ready(h):
+		return {"action": "call", "target": 0}
+	if qualifies_for_ability(h) and h.ability_cooldown == 0:
+		return {"action": "ability", "target": 0}
+	return {"action": "attack", "target": max(0, _lowest_hp_living_monster_idx(state["monsters"]))}
+
+
 func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	var m: Dictionary = state["monsters"][i]
 	if float(m["hp"]) <= 0:

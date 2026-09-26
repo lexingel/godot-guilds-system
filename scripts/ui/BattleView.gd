@@ -389,8 +389,10 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var pending: Dictionary = state["pending_actions"]
 		var action: String = str(pending.get(str(turn["id"]), {}).get("action", "attack"))
 
+		var log_before: int = (state["log"] as Array).size()
 		GameState.resolve_turn_now()
 		_spawn_procs(state, hero_wrappers)
+		_turn_sfx((state["log"] as Array).slice(log_before))
 
 		if h == null or h.hp <= 0:
 			return   # died earlier this round (e.g. a monster's turn) — the turn was just skipped, nothing to animate
@@ -438,8 +440,10 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 	else:
 		var i: int = int(turn["id"])
 
+		var log_before2: int = (state["log"] as Array).size()
 		GameState.resolve_turn_now()
 		_spawn_procs(state, hero_wrappers)
+		_turn_sfx((state["log"] as Array).slice(log_before2))
 
 		if i >= monsters.size():
 			return
@@ -527,7 +531,9 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 				if str(current.get("type", "")) == "hero":
 					var h := _hero_by_id(state["party"], str(current["id"]))
 					if h and h.hp > 0:
-						break
+						if not _auto_battle:
+							break
+						state["pending_actions"][h.id] = Combat.auto_action(state, h)
 		force = false
 		await _play_turn_bounded(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 		if GameState.run.get("node_state", {}).has("result"):
@@ -570,6 +576,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, roundf(clampf(bw * 0.36, 280.0, 420.0))))
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label, 16))
+		if kind == "combat":
+			var qf := _icon_button("res://assets/skills/sword_dual.png", "Quick fight  (Q)", func():
+				GameState.quick_fight()
+			)
+			qf.tooltip_text = "Play the whole fight out instantly on Auto and jump to the result"
+			v.add_child(qf)
+			_combat_hotkeys["Q"] = func(): GameState.quick_fight()
 		_combat_hotkeys["Space"] = func(): GameState.engage_node()
 		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", "Engage  (Space)", func():
 			# engage_node() already emits state_changed, which render() is
@@ -629,6 +642,12 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var victory_col := _vbox(8)
 		victory_frame.add_child(victory_col)
 
+		# A level-up chime, once per won fight (keyed by the node position).
+		var win_key := "win%d:%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0)), int(GameState.run.get("cycle", 0))]
+		if result.has("heroes") and not _sfx_seen.has(win_key):
+			_sfx_seen[win_key] = true
+			if (result["heroes"] as Array).any(func(hs): return int(hs["lv1"]) > int(hs["lv0"])):
+				AudioManager.play_sfx(GameData.SFX_PATH["level_up"])
 		var vt := _label("Victory!", 28)
 		vt.add_theme_color_override("font_color", Palette.RANK_S)
 		victory_col.add_child(vt)
@@ -717,6 +736,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		))
 	else:
 		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
+		var defeat_key := "defeat%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0))]
+		if not result.get("retreated", false) and not _sfx_seen.has(defeat_key):
+			_sfx_seen[defeat_key] = true
+			AudioManager.play_sfx(GameData.SFX_PATH["defeat"])
 		v.add_child(_label(defeat_text))
 		if result.has("riftbreak_compensation_coins"):
 			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
@@ -1207,8 +1230,9 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 
 	_play_round_banner(arena, state, W, H)
 
-	# Auto-play any turn that needs no input (a monster's, or a skipped hero).
-	if current_hero == null and not living_heroes.is_empty():
+	# Auto-play any turn that needs no input (a monster's, a skipped hero, or
+	# every turn while Auto is on).
+	if (current_hero == null or _auto_battle) and not living_heroes.is_empty():
 		_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 
 
@@ -1468,6 +1492,15 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if not _combat_animating:
 			render()
 	))
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", "Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe", func():
+		_auto_battle = not _auto_battle
+		if not _combat_animating:
+			render()
+	)
+	auto_btn.toggle_mode = true
+	auto_btn.button_pressed = _auto_battle
+	tools.add_child(auto_btn)
+	_combat_hotkeys["A"] = auto_btn.pressed.emit
 	tools.add_child(_tool_button("res://assets/skills/eye_gem.png", "Log", "Show or hide the fight log", func():
 		_combat_log_open = not _combat_log_open
 		if not _combat_animating:
@@ -1493,10 +1526,23 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 
 ## Round N slides in across the arena once per round; a boss gets a name
 ## card the first time its fight is shown.
+## One extra sound for what a turn did (the hit/attack sounds already play):
+## the most notable event in its new log lines wins.
+func _turn_sfx(lines: Array) -> void:
+	var text := " ".join(lines)
+	for pair in [["gathers its strength", "windup"], ["stunned", "stun"], ["ablaze", "burn"], ["chilled", "chill"],
+			["strikes every foe", "relic"], ["Phoenix", "relic"], ["uses ", "ability"], ["shield", "shield"],
+			["mends", "heal"], ["Field Tonic", "heal"]]:
+		if text.contains(pair[0]):
+			AudioManager.play_sfx(GameData.SFX_PATH[pair[1]])
+			return
+
+
 func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -> void:
 	var round_num := int(state.get("round_num", 0))
 	if state.get("is_boss", false) and not is_same(_boss_intro_for, state):
 		_boss_intro_for = state
+		AudioManager.play_sfx(GameData.SFX_PATH["boss"])
 		_banner_state = state
 		_banner_round = round_num
 		var boss: Dictionary = state["monsters"][0]

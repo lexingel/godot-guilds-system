@@ -75,7 +75,13 @@ func run() -> void:
 	for ph in st["party"]:
 		ph.hp = Combat.max_hp(ph) * 10   # whoever takes it survives it
 	st["_defending"] = {}
-	Combat._resolve_monster_action(st, 0)
+	st["dodge"] = 0.0
+	# A dodge avoids the blow entirely, so retry until one lands.
+	for attempt in 12:
+		Combat._resolve_monster_action(st, 0)
+		if not st.get("_stunned", {}).is_empty():
+			break
+		m["_charged"] = true
 	# (An ally's intercept effect may take the blow instead — whoever is hit is stunned.)
 	var stunned_ids: Array = st.get("_stunned", {}).keys()
 	check(stunned_ids.size() == 1, "an undefended heavy blow stuns whoever it hits")
@@ -124,4 +130,23 @@ func run() -> void:
 	GameState.best_rift_rank_sealed = 3
 	GameState.start_finale(ids, null)
 	check(GameState.run_biome() == "marsh", "the Act II finale is in the Marshes")
+	GameState.run = {}
+
+	# Auto policy and Quick fight.
+	GameState.campaign_act = 1
+	GameState.start_run("lesser", ids, null, false, false)
+	var st2 := _fight(ids)
+	var ha: Hero = (st2["party"] as Array).filter(func(h): return not h.is_champion)[0]
+	st2["monsters"][0]["_charged"] = true
+	st2["intents"] = {0: ha.id}
+	st2["turn_order"] = []
+	st2["turn_idx"] = 0
+	check(str(Combat.auto_action(st2, ha)["action"]) == "defend", "auto Defends against a heavy blow aimed at it")
+	st2["monsters"][0]["_charged"] = false
+	ha.ability_cooldown = 5
+	check(str(Combat.auto_action(st2, ha)["action"]) == "attack", "auto attacks otherwise")
+	GameState.run["node_state"] = {}
+	GameState.choose_node_type("combat")
+	GameState.quick_fight()
+	check(GameState.run["node_state"].has("result"), "Quick fight plays the whole fight out")
 	GameState.run = {}
