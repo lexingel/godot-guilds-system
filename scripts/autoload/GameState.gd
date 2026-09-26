@@ -2212,6 +2212,39 @@ func auto_assign_attrs(hero_id: String) -> void:
 	state_changed.emit()
 
 
+## Points a hero has put into attributes beyond their role's starting spread.
+func attr_points_spent(h: Hero) -> int:
+	var base := GameData.role_attrs(GameData.hero_role(h))
+	var n := 0
+	for a in GameData.ATTRIBUTES:
+		n += int(h.attrs.get(a, GameData.ATTR_BASELINE)) - int(base[a])
+	return max(n, 0)
+
+
+func attr_respec_cost(h: Hero) -> int:
+	return h.level * GameData.RESPEC_TOKENS_PER_LEVEL
+
+
+## Refunds every spent attribute point for Seal Tokens. Equipped gear stays on
+## even if its requirement is no longer met; the requirement gates equipping.
+func respec_attrs(hero_id: String) -> String:
+	var h := find_hero(hero_id)
+	if not h or h.is_champion:
+		return "Can't reset this hero"
+	var refund := attr_points_spent(h)
+	if refund <= 0:
+		return "Nothing to reset"
+	var cost := attr_respec_cost(h)
+	if tokens < cost:
+		return "Not enough Seal Tokens"
+	tokens -= cost
+	h.attrs = GameData.role_attrs(GameData.hero_role(h))
+	h.attr_points += refund
+	save()
+	state_changed.emit()
+	return ""
+
+
 func spend_attr_point(hero_id: String, a: String) -> void:
 	var h := find_hero(hero_id)
 	if not h or h.attr_points <= 0 or not GameData.ATTRIBUTES.has(a):

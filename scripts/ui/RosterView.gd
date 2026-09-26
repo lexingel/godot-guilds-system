@@ -346,6 +346,31 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		var auto := _button("Auto", func(id=h.id): GameState.auto_assign_attrs(id); render())
 		auto.tooltip_text = "Spend them the %s way" % GameData.hero_role(h).capitalize()
 		head.add_child(auto)
+	var refund := GameState.attr_points_spent(h)
+	if refund > 0 and not h.is_champion:
+		var cost := GameState.attr_respec_cost(h)
+		if h.attr_points <= 0:
+			var sp3 := Control.new()
+			sp3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			head.add_child(sp3)
+		var reset: Button
+		if _confirm_respec_id == h.id:
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Confirm — %d" % cost, func(id=h.id):
+				_confirm_respec_id = ""
+				var err := GameState.respec_attrs(id)
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			head.add_child(_button("Keep", func(): _confirm_respec_id = ""; render()))
+		else:
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Reset %d" % cost, func(id=h.id):
+				_confirm_respec_id = id
+				render()
+			)
+			reset.disabled = GameState.tokens < cost
+		reset.tooltip_text = "Refund all %d spent points for %d Seal Tokens (you have %d)" % [refund, cost, GameState.tokens]
+		head.add_child(reset)
 	v.add_child(head)
 	for a in GameData.ATTRIBUTES:
 		var row := HBoxContainer.new()

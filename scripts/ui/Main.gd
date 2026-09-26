@@ -311,7 +311,7 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 var CURRENCY_TIPS := {
 	GameData.CURRENCY_ICON_PATH["coins"]: "Coins — recruit heroes, buy from rift shops, reroll offers, buy incense and runestones.",
 	GameData.CURRENCY_ICON_PATH["crystals"]: "Crystals — evolve heroes, upgrade relics, buy Guild Management upgrades, bypass hazards.",
-	GameData.CURRENCY_ICON_PATH["tokens"]: "Seal Tokens — earned by sealing rifts and from Guild Board dailies.",
+	GameData.CURRENCY_ICON_PATH["tokens"]: "Seal Tokens — earned by sealing rifts and from Guild Board dailies. Spent on resetting a hero's attributes (Roster → Hero).",
 	GameData.CURRENCY_ICON_PATH["reputation"]: "Reputation — from rift bounties and quests. Every 20 guarantees an Epic relic at your next rift shop.",
 }
 

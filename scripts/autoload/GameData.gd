@@ -548,6 +548,10 @@ const ITEM_ATTR_BONUS := {"common": 1, "rare": 2, "epic": 3, "legendary": 4}
 const ITEM_ATTR_REQ := {"common": 0, "rare": 7, "epic": 10, "legendary": 13}
 
 
+## Resetting a hero's attributes costs this many Seal Tokens per hero level.
+const RESPEC_TOKENS_PER_LEVEL := 5
+
+
 static func role_attrs(role: String) -> Dictionary:
 	var v: Array = ROLE_ATTRS.get(role, [ATTR_BASELINE, ATTR_BASELINE, ATTR_BASELINE])
 	return {"might": int(v[0]), "agility": int(v[1]), "focus": int(v[2])}
