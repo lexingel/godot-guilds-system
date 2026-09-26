@@ -43,6 +43,7 @@ var best_endless_cycle: int = 0
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
+var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
 ## One-shot flag for a hero/Champion that just rolled Rank S from any of the
 ## blind-reroll sources (recruit-offer reroll, Champion reroll, or the free
 ## automatic refresh on rift seal) — {} = none. Consumed by Main.render() the
@@ -243,6 +244,7 @@ func reset() -> void:
 	rifts_sealed = 0
 	triage_used_this_cycle = false
 	pending_shop_boost = false
+	guide_hidden = false
 	run = {}
 	rift_map = []
 	for i in 6:
@@ -375,6 +377,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
+		"guide_hidden": guide_hidden,
 		"run": _run_for_save(),
 		"rift_map": rift_map, "pending_riftbreak_ranks": pending_riftbreak_ranks,
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
@@ -485,6 +488,7 @@ func load_save() -> bool:
 	rifts_sealed = data.get("rifts_sealed", 0)
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
 	pending_shop_boost = data.get("pending_shop_boost", false)
+	guide_hidden = data.get("guide_hidden", false)
 
 	var run_data: Dictionary = data.get("run", {})
 	if run_data.is_empty():
@@ -845,13 +849,14 @@ func set_hero_formation(hero_id: String, formation: String) -> void:
 	state_changed.emit()
 
 
-func set_hero_action(hero_id: String, action: String, target: int = 0) -> void:
+## `ally_id` is the hero a "guard" action protects.
+func set_hero_action(hero_id: String, action: String, target: int = 0, ally_id: String = "") -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
 	if state.is_empty():
 		return
 	var pending: Dictionary = state["pending_actions"]
-	pending[hero_id] = {"action": action, "target": target}
+	pending[hero_id] = {"action": action, "target": target, "ally": ally_id}
 	save()
 	state_changed.emit()
 
@@ -991,6 +996,166 @@ func pick_combat_reward(idx: int) -> void:
 		r.equipped = Combat.equipped_relics().size() < relic_slot_cap()
 		relics.append(r)
 	ns["reward_chosen"] = true
+	save()
+	state_changed.emit()
+
+
+# ---------------- Campfire / event / treasure nodes ----------------
+
+## Campfire: one of Rest (heal), Train (XP) or Sharpen (abilities ready).
+func campfire_choose(choice: String) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	if ns.get("resolved", false):
+		return
+	var party := current_party().filter(func(h): return h.hp > 0)
+	var log: Array[String] = []
+	match choice:
+		"rest":
+			for h in party:
+				h.hp = min(Combat.max_hp(h), h.hp + int(ceil(Combat.max_hp(h) * GameData.CAMPFIRE_HEAL_PCT)))
+			log.append("The party rests by the fire and recovers %d%% HP." % int(GameData.CAMPFIRE_HEAL_PCT * 100))
+		"train":
+			for h in party:
+				Combat.gain_xp(h, GameData.CAMPFIRE_TRAIN_XP)
+			log.append("The party drills together: +%d XP each." % GameData.CAMPFIRE_TRAIN_XP)
+		"sharpen":
+			for h in party:
+				h.ability_cooldown = 0
+			log.append("Weapons sharpened, focus restored — every ability is ready.")
+	ns["type"] = "campfire"
+	ns["resolved"] = true
+	ns["log"] = log
+	run["node_state"] = ns
+	save()
+	state_changed.emit()
+
+
+func ensure_event() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	if ns.has("event"):
+		return
+	ns["type"] = "event"
+	ns["event"] = GameData.RIFT_EVENTS[randi() % GameData.RIFT_EVENTS.size()]
+	ns["resolved"] = false
+	run["node_state"] = ns
+
+
+func can_afford(cost: Dictionary) -> bool:
+	return coins >= int(cost.get("coins", 0)) and crystals >= int(cost.get("crystals", 0))
+
+
+func resolve_event(choice_idx: int) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	if ns.get("resolved", false) or not ns.has("event"):
+		return
+	var choices: Array = ns["event"]["choices"]
+	if choice_idx < 0 or choice_idx >= choices.size():
+		return
+	var c: Dictionary = choices[choice_idx]
+	var cost: Dictionary = c.get("cost", {})
+	if not can_afford(cost):
+		return
+	coins -= int(cost.get("coins", 0))
+	crystals -= int(cost.get("crystals", 0))
+	var log: Array[String] = []
+	if c.has("gamble"):
+		var g: Dictionary = c["gamble"]
+		var won := randf() < float(g["chance"])
+		log.append("Luck is with you." if won else "Luck is not with you.")
+		log.append_array(_apply_event_effect(g["win"] if won else g["lose"]))
+	else:
+		log.append_array(_apply_event_effect(c.get("effect", {})))
+	if log.is_empty():
+		log.append("You move on.")
+	ns["resolved"] = true
+	ns["log"] = log
+	run["node_state"] = ns
+	save()
+	state_changed.emit()
+
+
+func _event_amount(v) -> int:
+	return randi_range(int(v[0]), int(v[1])) if v is Array else int(v)
+
+
+func _apply_event_effect(e: Dictionary) -> Array[String]:
+	var log: Array[String] = []
+	var party := current_party().filter(func(h): return h.hp > 0)
+	if e.has("coins"):
+		var n := _event_amount(e["coins"])
+		coins += n
+		log.append("+%d Coins." % n)
+	if e.has("crystals"):
+		var n2 := _event_amount(e["crystals"])
+		crystals += n2
+		log.append("+%d Crystals." % n2)
+	if e.has("reputation"):
+		var r := int(e["reputation"])
+		add_reputation(r)
+		log.append("%+d Reputation." % r)
+	if e.has("xp_all"):
+		for h in party:
+			Combat.gain_xp(h, int(e["xp_all"]))
+		log.append("Every hero gains %d XP." % int(e["xp_all"]))
+	if e.has("heal_pct"):
+		for h in party:
+			h.hp = min(Combat.max_hp(h), h.hp + int(ceil(Combat.max_hp(h) * float(e["heal_pct"]))))
+		log.append("The party heals %d%% HP." % int(float(e["heal_pct"]) * 100))
+	if e.has("hurt_pct"):
+		for h in party:
+			h.hp = max(1, h.hp - int(ceil(Combat.max_hp(h) * float(e["hurt_pct"]))))
+		log.append("Everyone loses %d%% HP." % int(float(e["hurt_pct"]) * 100))
+	if e.get("ready", false):
+		for h in party:
+			h.ability_cooldown = 0
+		log.append("Every ability is ready.")
+	if e.has("loot"):
+		var rarity := Combat.weighted_rarity()
+		if _rarity_order(rarity) < _rarity_order(str(e["loot"])):
+			rarity = str(e["loot"])
+		var loot: Dictionary = Combat.gen_loot(rarity)
+		_grant_loot(loot)
+		log.append("You receive: %s (%s)." % [loot["obj"].name, rarity.capitalize()])
+	return log
+
+
+func _rarity_order(r: String) -> int:
+	return ["common", "rare", "epic", "legendary"].find(r)
+
+
+## Adds a rolled loot entry ({loot_type, obj}) to the guild's stash.
+func _grant_loot(loot: Dictionary) -> void:
+	if loot["loot_type"] == "item":
+		var it: Item = loot["obj"]
+		it.id = "it" + str(next_id)
+		next_id += 1
+		items.append(it)
+	else:
+		var r: Relic = loot["obj"]
+		r.id = "rl" + str(next_id)
+		next_id += 1
+		r.equipped = Combat.equipped_relics().size() < relic_slot_cap()
+		relics.append(r)
+
+
+## Treasure: pick one of two loot drops, no fight.
+func ensure_treasure() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	if ns.has("options"):
+		return
+	ns["type"] = "treasure"
+	ns["options"] = [Combat.gen_loot(Combat.weighted_rarity()), Combat.gen_loot(Combat.weighted_rarity())]
+	ns["picked"] = false
+	run["node_state"] = ns
+
+
+func pick_treasure(idx: int) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var options: Array = ns.get("options", [])
+	if ns.get("picked", false) or idx < 0 or idx >= options.size():
+		return
+	_grant_loot(options[idx])
+	ns["picked"] = true
 	save()
 	state_changed.emit()
 

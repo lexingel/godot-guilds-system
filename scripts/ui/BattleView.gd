@@ -661,12 +661,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				var is_relic: bool = opt["loot_type"] == "relic"
 				var desc: String = _loot_desc(obj, is_relic)
 				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
+				var note := _loot_fit_note(obj, is_relic, GameState.current_party())
 				reward_row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), desc, func(idx=i, legendary=(obj.rarity == "legendary")):
 					GameState.pick_combat_reward(idx)
 					if legendary:
 						_flavor_toast = GameData.narrative_line("legendary_drop")
 					render()
-				, "" if is_relic else _item_card(obj)))
+				, "" if is_relic else _item_card(obj, note[2]), note))
 			victory_col.add_child(reward_row)
 			# Flip each reward card in, one after another, the first time this
 			# result is shown (a re-render after that shows them instantly).
@@ -755,6 +756,8 @@ var _hero_plates: Dictionary = {}      # hero id -> unit plate (live HP updates 
 var _monster_plates: Dictionary = {}   # monster index -> unit plate
 var _combat_target: int = -1           # the foe Attack / key 1 hits; click a foe or Tab to change
 var _combat_log_open: bool = false
+var _guard_picking: bool = false       # the command bar is asking which ally to guard
+var _guard_picker_for: String = ""     # the hero that picker belongs to
 var _banner_state: Dictionary = {}     # the fight + round whose "Round N" slide-in already played
 var _banner_round: int = -1
 var _boss_intro_for: Dictionary = {}   # the combat state whose boss intro already played (by reference)
@@ -901,6 +904,13 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 	var poison: Dictionary = state.get("hero_poison", {})
 	if poison.has(h.id):
 		out.append({"icon": "res://assets/skills/shard_green.png", "tip": "Poisoned — %d damage a round for %d more round(s)" % [int(round(float(poison[h.id]["value"]) * Combat.max_hp(h))), int(poison[h.id]["rounds"])], "color": Palette.RANK_E})
+	var guarding: Dictionary = state.get("_guarding", {})
+	if guarding.has(h.id):
+		var g := _hero_by_id(state["party"], str(guarding[h.id]))
+		if g:
+			out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Guarded by %s this round" % g.name, "color": Palette.VIOLET_BRIGHT})
+	if guarding.values().has(h.id):
+		out.append({"icon": "res://assets/skills/shield_split.png", "tip": "Guarding an ally this round (takes their hits, 25% weaker)", "color": Palette.VIOLET_BRIGHT})
 	if h.ability_cooldown == 0 and Combat.qualifies_for_ability(h):
 		out.append({"icon": GameData.ability_icon(h.pool_id), "tip": "Ability ready", "color": Palette.EMBER_BRIGHT})
 	return out
@@ -949,6 +959,9 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		if candidate and candidate.hp > 0:
 			current_hero = candidate
 	var acting_monster: int = int(current_turn["id"]) if str(current_turn.get("type", "")) == "monster" else -1
+	if current_hero == null or current_hero.id != _guard_picker_for:
+		_guard_picking = false
+	_guard_picker_for = current_hero.id if current_hero else ""
 
 	var living_idx: Array[int] = []
 	for i in monsters.size():
@@ -1247,6 +1260,48 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 	return b
 
 
+## Replaces the command buttons with "Guard whom?": one button per ally
+## (keys 1-4) showing the damage already headed their way, and Cancel.
+func _guard_picker(row: HBoxContainer, state: Dictionary, current_hero: Hero, living_heroes: Array[Hero], run_turns: Callable) -> void:
+	for c in row.get_children():
+		if c.get_index() > 0:
+			c.queue_free()
+	_combat_hotkeys.clear()
+	var ask := _label("Guard whom?", 15)
+	ask.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	ask.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ask)
+	var incoming := {}
+	var monsters: Array = state["monsters"]
+	for i in monsters.size():
+		var it := Combat.monster_intent(state, i)
+		if not it.is_empty() and not it.get("guarded", false):
+			var t: Hero = it["target"]
+			incoming[t.id] = int(incoming.get(t.id, 0)) + int(it["dmg"])
+	var hid := current_hero.id
+	var n := 0
+	for a in living_heroes:
+		if a == current_hero:
+			continue
+		n += 1
+		var pick := func(aid=a.id):
+			_guard_picking = false
+			run_turns.call(func(): GameState.set_hero_action(hid, "guard", 0, aid))
+		var text := "%s  %d/%d" % [a.name.split(" the ")[0], a.hp, Combat.max_hp(a)]
+		if incoming.has(a.id):
+			text += "  (%d dmg incoming)" % int(incoming[a.id])
+		var b := _button(text, pick)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.tooltip_text = "Key %d" % n
+		row.add_child(b)
+		_combat_hotkeys[str(n)] = pick
+	var cancel := func():
+		_guard_picking = false
+		render()
+	row.add_child(_button("Cancel", cancel))
+	_combat_hotkeys["Escape"] = cancel
+
+
 ## Small square utility button (speed, log, retreat).
 func _tool_button(icon_path: String, text: String, tip: String, cb: Callable) -> Button:
 	var b := _button(text, cb)
@@ -1309,10 +1364,20 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 				if last_action == "ability":
 					_combat_hotkeys["Space"] = do_ability
 		var do_defend := func(): run_turns.call(func(): GameState.set_hero_action(hid, "defend"))
-		row.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "3", do_defend, "Defend (3) — take much less damage until your next turn.", last_action == "defend"))
+		row.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "3", do_defend, "Defend (3) — take half damage from hits this round.", last_action == "defend"))
 		_combat_hotkeys["3"] = do_defend
 		if last_action == "defend":
 			_combat_hotkeys["Space"] = do_defend
+		var allies: Array = living_heroes.filter(func(a): return a != current_hero)
+		if not allies.is_empty():
+			var start_guard := func():
+				if _combat_animating:
+					return
+				_guard_picking = true
+				render()
+			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "4", start_guard, "Guard (4) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker.", last_action == "guard")
+			row.add_child(gb)
+			_combat_hotkeys["4"] = start_guard
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
 		var living_idx: Array[int] = []
@@ -1328,6 +1393,8 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var hint := _label("Target: %s\nSpace repeats your last action" % tgt_name, 12, true)
 		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(hint)
+		if _guard_picking:
+			_guard_picker(row, state, current_hero, living_heroes, run_turns)
 	else:
 		var l := _label("The party is down." if living_heroes.is_empty() else "Enemy turn…", 14, true)
 		l.custom_minimum_size = Vector2(200, 72)

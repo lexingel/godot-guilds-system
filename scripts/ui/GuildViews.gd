@@ -26,6 +26,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 	if term_tab == "camp":
 		_render_camp(v)
 		v.add_child(tier_row)
+		_render_getting_started(v)
 		return
 
 	match term_tab:
@@ -124,6 +125,52 @@ func _render_camp(v: VBoxContainer) -> void:
 	v.add_child(scene)
 
 
+## A short first-guild checklist under the camp scene, each step ticking off
+## from real game state. Gone once every step is done, the guild has sealed
+## a few rifts, or the player hides it.
+func _render_getting_started(v: VBoxContainer) -> void:
+	if GameState.guide_hidden or GameState.rifts_sealed >= 3:
+		return
+	var steps := [
+		["Recruit a hero at Hero Recruits", not GameState.heroes.is_empty()],
+		["Assemble a party at the Rift Gate and enter a rift", not GameState.monsters_seen.is_empty()],
+		["Equip an item on a hero (Roster > Gear)", GameState.items.any(func(it): return it.equipped_to != "")],
+		["Spend a skill point (Roster > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
+		["Seal your first rift by beating its boss", GameState.rifts_sealed >= 1],
+	]
+	var done: int = steps.filter(func(s): return s[1]).size()
+	if done == steps.size():
+		return
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelViolet"
+	var cv := _vbox(4)
+	var head := HBoxContainer.new()
+	head.add_child(_label("Getting started — %d/%d" % [done, steps.size()], 15))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(spacer)
+	head.add_child(_button("Hide", func():
+		GameState.guide_hidden = true
+		GameState.save()
+		render()
+	))
+	cv.add_child(head)
+	for s in steps:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		if s[1]:
+			row.add_child(_icon(GameData.BUTTON_ICON_PATH["confirm"], 14))
+		else:
+			var dot := _label("•", 13)
+			dot.custom_minimum_size.x = 14
+			dot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			row.add_child(dot)
+		row.add_child(_label(str(s[0]), 13, s[1]))
+		cv.add_child(row)
+	panel.add_child(cv)
+	v.add_child(panel)
+
+
 ## Notification counts per camp building: {building label: [badge text,
 ## tooltip]} — only for things the player can act on right now.
 func _camp_badges() -> Dictionary:
@@ -169,6 +216,10 @@ func _camp_badges() -> Dictionary:
 		craftable += int(groups[k]) / 3
 	if craftable > 0:
 		out["Trading Post"] = [str(craftable), "%d craft(s) ready at the Crafting Hall" % craftable]
+	var free_relic_slots := GameState.relic_slot_cap() - Combat.equipped_relics().size()
+	var spare_relics := GameState.relics.filter(func(r): return not r.equipped).size()
+	if free_relic_slots > 0 and spare_relics > 0:
+		out["Inventory"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic from Inventory" % free_relic_slots]
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty():
 		out["Scholar's Lodge"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
@@ -523,50 +574,87 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 ## _seen/_defeated array records it, full color once encountered. Reuses
 ## existing art everywhere (monster sprites, HAZARD_BG illustrations) — no
 ## new generation beyond the one hub icon.
+const MONSTER_ABILITY_DESC := {
+	"poison": "poisons its target for a few rounds",
+	"healer": "heals its allies each round",
+	"shielded": "starts the fight behind a ward",
+	"frenzy": "hits harder when badly hurt",
+	"drain": "heals itself from the damage it deals",
+	"reflect": "reflects part of the damage it takes",
+}
+
+
+## A card per creature: art and what it does once you've met it, a dark
+## silhouette and "???" until then.
 func _render_bestiary(v: VBoxContainer) -> void:
 	v.add_child(_label("Bestiary", 20))
+	var groups := [
+		["Monsters", GameData.MONSTER_NAMES, "Monster"],
+		["Elites", GameData.ELITE_NAMES, "Elite"],
+		["Rift Wardens", GameData.BOSS_NAMES, "Boss"],
+	]
+	for g in groups:
+		var names: Array = g[1]
+		var seen_n: int = names.filter(func(n): return GameState.monsters_seen.has(n)).size()
+		v.add_child(_label("%s — %d/%d met" % [g[0], seen_n, names.size()], 15))
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 8)
+		flow.add_theme_constant_override("v_separation", 8)
+		for mname in names:
+			flow.add_child(_bestiary_card(str(mname), str(g[2])))
+		v.add_child(flow)
+		v.add_child(_hsep())
 
-	v.add_child(_label("Monsters", 14, true))
-	var monster_row := HBoxContainer.new()
-	monster_row.add_theme_constant_override("separation", 8)
-	for mname in GameData.MONSTER_NAMES + GameData.ELITE_NAMES:
-		var seen: bool = GameState.monsters_seen.has(mname)
-		var icon := _icon(GameData.sprite_for_monster(mname), 40)
-		if not seen:
-			icon.modulate = Color(0.25, 0.25, 0.25, 1.0)
-		var wrap := _wrap_icon(icon)
-		wrap.tooltip_text = mname if seen else "???"
-		monster_row.add_child(wrap)
-	v.add_child(monster_row)
-
-	v.add_child(_hsep())
-	v.add_child(_label("Bosses", 14, true))
-	var boss_row := HBoxContainer.new()
-	boss_row.add_theme_constant_override("separation", 8)
-	for bname in GameData.BOSS_NAMES:
-		var defeated: bool = GameState.bosses_defeated.has(bname)
-		var bicon := _icon(GameData.sprite_for_monster(bname), 40)
-		if not defeated:
-			bicon.modulate = Color(0.25, 0.25, 0.25, 1.0)
-		var bwrap := _wrap_icon(bicon)
-		bwrap.tooltip_text = bname if defeated else "???"
-		boss_row.add_child(bwrap)
-	v.add_child(boss_row)
-
-	v.add_child(_hsep())
-	v.add_child(_label("Hazards", 14, true))
-	var hazard_row := HBoxContainer.new()
-	hazard_row.add_theme_constant_override("separation", 8)
+	v.add_child(_label("Hazards — %d/%d met" % [GameData.HAZARD_TYPES.filter(func(h): return GameState.hazards_seen.has(str(h["id"]))).size(), GameData.HAZARD_TYPES.size()], 15))
+	var hflow := HFlowContainer.new()
+	hflow.add_theme_constant_override("h_separation", 8)
+	hflow.add_theme_constant_override("v_separation", 8)
 	for hz in GameData.HAZARD_TYPES:
-		var hz_id := str(hz["id"])
-		var seen: bool = GameState.hazards_seen.has(hz_id)
-		var hicon := _icon(GameData.HAZARD_BG.get(hz_id, ""), 40)
+		var seen: bool = GameState.hazards_seen.has(str(hz["id"]))
+		var card := PanelContainer.new()
+		card.custom_minimum_size.x = 180
+		var cv := _vbox(4)
+		var art := _banner(GameData.HAZARD_BG.get(str(hz["id"]), ""), 156, 70)
 		if not seen:
-			hicon.modulate = Color(0.25, 0.25, 0.25, 1.0)
-		var hwrap := _wrap_icon(hicon)
-		hwrap.tooltip_text = str(hz["name"]) if seen else "???"
-		hazard_row.add_child(hwrap)
-	v.add_child(hazard_row)
+			art.modulate = Color(0.2, 0.2, 0.25)
+		cv.add_child(art)
+		cv.add_child(_label(str(hz["name"]) if seen else "???", 13))
+		if seen:
+			var mult := float(hz["dmg_mult"])
+			var sev := _label("%s · finds %s" % [_hazard_severity_label(mult), "Coins" if str(hz["bonus_type"]) == "coins" else "Crystals"], 12)
+			sev.add_theme_color_override("font_color", _hazard_severity_color(mult))
+			cv.add_child(sev)
+		card.add_child(cv)
+		hflow.add_child(card)
+	v.add_child(hflow)
+
+
+func _bestiary_card(mname: String, tier: String) -> PanelContainer:
+	var seen: bool = GameState.monsters_seen.has(mname)
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(180, 0)
+	var cv := _vbox(3)
+	var art := _sprite_fit(GameData.sprite_for_monster(mname), 90.0 / 200.0, 156.0)
+	if not seen:
+		art.modulate = Color(0.08, 0.07, 0.12)
+	var art_row := CenterContainer.new()
+	art_row.custom_minimum_size.y = 94
+	art_row.add_child(art)
+	cv.add_child(art_row)
+	var nl := _label(mname if seen else "???", 13)
+	cv.add_child(nl)
+	var tl := _label(tier, 12, true)
+	tl.add_theme_color_override("font_color", Palette.ELITE if tier != "Monster" else Palette.MUTED)
+	cv.add_child(tl)
+	if seen:
+		var ability: Dictionary = GameData.MONSTER_ABILITIES.get(mname, {})
+		if not ability.is_empty():
+			cv.add_child(_wrap_label("%s — %s" % [str(ability["name"]), MONSTER_ABILITY_DESC.get(str(ability["kind"]), "")], 12, true))
+		elif tier == "Boss":
+			var beaten: bool = GameState.bosses_defeated.has(mname)
+			cv.add_child(_wrap_label("Brings a random warden mechanic each fight. %s" % ("Defeated." if beaten else "Not yet defeated."), 12, true))
+	card.add_child(cv)
+	return card
 
 
 func _compendium_tab_row(v: VBoxContainer) -> void:

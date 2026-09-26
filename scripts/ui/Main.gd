@@ -307,6 +307,15 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 ## bordered bar so the whole header reads as a single designed piece instead
 ## of loose elements, matching the bordered-card language the rest of the UI
 ## already uses (CardPanelEmber/StatTileEmber).
+## What each header currency is for (keyed by its icon path).
+var CURRENCY_TIPS := {
+	GameData.CURRENCY_ICON_PATH["coins"]: "Coins — recruit heroes, buy from rift shops, reroll offers, buy incense and runestones.",
+	GameData.CURRENCY_ICON_PATH["crystals"]: "Crystals — evolve heroes, upgrade relics, buy Guild Management upgrades, bypass hazards.",
+	GameData.CURRENCY_ICON_PATH["tokens"]: "Seal Tokens — earned by sealing rifts and from Guild Board dailies.",
+	GameData.CURRENCY_ICON_PATH["reputation"]: "Reputation — from rift bounties and quests. Every 20 guarantees an Epic relic at your next rift shop.",
+}
+
+
 var _shown_counts: Dictionary = {}   # currency icon path -> value the header last showed
 
 
@@ -333,7 +342,7 @@ const QUICK_NAV := [
 	["roster", "Roster", "Command Tent"],
 	["recruits", "Recruits", "Hero Recruits"],
 	["medical", "Medical", "Medical Tent"],
-	["inventory", "Inventory", ""],
+	["inventory", "Inventory", "Inventory"],
 	["crafting", "Crafting", "Trading Post"],
 	["quests", "Quests", "Scholar's Lodge"],
 	["rift", "Rift Hall", "Rift Gate"],
@@ -456,7 +465,7 @@ func _column_width() -> float:
 	var avail: float = get_viewport().get_visible_rect().size.x - 64.0
 	if screen == "rift_run":
 		return _battle_width()
-	if screen == "terminal" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory"]):
+	if screen == "terminal" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory", "bestiary"]):
 		return clampf(avail, 760.0, 1180.0)
 	return clampf(avail, 700.0, 860.0)
 
@@ -507,6 +516,8 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		stat_row.add_child(_count_label(str(entry[0]), int(entry[1]), 16))
 		var tile := PanelContainer.new()
 		tile.theme_type_variation = &"StatTileEmber"
+		tile.tooltip_text = CURRENCY_TIPS.get(str(entry[0]), "")
+		tile.mouse_filter = Control.MOUSE_FILTER_STOP
 		tile.add_child(stat_row)
 		row.add_child(tile)
 	var settings_btn := TextureButton.new()
@@ -708,7 +719,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
 		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),
 			"" if unlocked else "Seal %d more rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed]],
-		["Endless Rift", "Scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true), ""],
+		["Endless Rift", "Late-game challenge — scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true), ""],
 	]
 	for cd in card_defs:
 		var card := PanelContainer.new()
@@ -966,15 +977,45 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	else:
 		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
-	v.add_child(_hsep())
+	var launch := _party_launch_bar(champ)
+	v.add_child(launch)
+	v.move_child(launch, 1)
+
+
+## The top of Party Assembly: party power against the recommendation, any
+## wounded members, and Enter the Rift — up where it's seen, not below the
+## roster and options.
+func _party_launch_bar(champ: Hero) -> Control:
+	var bar := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = Palette.VIOLET_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(8)
+	st.set_content_margin_all(10)
+	bar.add_theme_stylebox_override("panel", st)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var info := _vbox(4)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var going: Array = [champ]
 	for h in GameState.heroes:
 		if pending_party.has(h.id):
 			going.append(h)
 	var map_run := _pending_map_slot_idx >= 0
-	v.add_child(_power_readout(Combat.party_power(going),
-		Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)))
-	v.add_child(_icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
+	var pr := _power_readout(Combat.party_power(going),
+		Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank))
+	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(pr)
+	var hurt: Array = going.filter(func(h): return h.hp < Combat.max_hp(h) * 0.5)
+	if pending_party.is_empty():
+		info.add_child(_label("Add at least one hero to the party.", 12, true))
+	elif not hurt.is_empty():
+		var hl := _wrap_label("Wounded: %s — they start the rift hurt." % ", ".join(hurt.map(func(h): return "%s (%d/%d)" % [h.name.split(" the ")[0], h.hp, Combat.max_hp(h)])), 12)
+		hl.add_theme_color_override("font_color", Palette.HAZARD)
+		info.add_child(hl)
+	row.add_child(info)
+	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -995,7 +1036,12 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		screen = "rift_run"
 		render()
 		_play_rift_entry_flash()
-	))
+	)
+	enter.disabled = pending_party.is_empty()
+	enter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(enter)
+	bar.add_child(row)
+	return bar
 
 
 # ---------------- Settings ----------------
@@ -1173,6 +1219,11 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
 	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
 	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · out %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"] if downed else ""], 10, true))
+	if not downed and h.hp < Combat.max_hp(h) * 0.5:
+		var wl := _label("Wounded — %d%% HP" % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)
+		wl.add_theme_color_override("font_color", Palette.HAZARD)
+		wl.tooltip_text = "Starts the rift at this HP. A Medical Bay bed or a rest heals them."
+		names.add_child(wl)
 	var power_line := "Power %d" % Combat.power_of(h)
 	var arch := _main_arch(h)
 	names.add_child(_rich_line(power_line + ("  " + _arch_chip(arch) if arch != "" else ""), 10, true))

@@ -773,7 +773,13 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 
 
 func _render_inventory_relics(v: VBoxContainer) -> void:
-	v.add_child(_label("Relics — %d/%d slots equipped" % [Combat.equipped_relics().size(), GameState.relic_slot_cap()], 16))
+	var used := Combat.equipped_relics().size()
+	var cap := GameState.relic_slot_cap()
+	v.add_child(_label("Relics — %d/%d slots equipped" % [used, cap], 16))
+	if used < cap and GameState.relics.any(func(r): return not r.equipped):
+		var hint := _label("%d slot(s) empty — equipped relics apply to every hero in every rift." % (cap - used), 13)
+		hint.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		v.add_child(hint)
 	v.add_child(_sort_cycle_button(inv_sort, [
 		{"id": "rarity", "label": "Rarity"},
 		{"id": "level", "label": "Level"},
@@ -790,14 +796,20 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 			relics_sorted.sort_custom(func(a, b): return a.name < b.name)
 	for r in relics_sorted:
 		var actions: Array[Control] = []
-		actions.append(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip" if r.equipped else "Equip", func(id=r.id):
+		var eq_cb := func(id=r.id):
 			GameState.toggle_equip_relic(id)
 			render()
-		))
+		if r.equipped:
+			actions.append(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip", eq_cb))
+		else:
+			var eb := _icon_domain_button("ember", GameData.RELIC_TYPE_ICON_PATH[r.type], "Equip", eq_cb)
+			eb.disabled = used >= cap
+			eb.tooltip_text = "All relic slots are full — unequip one first" if used >= cap else ""
+			actions.append(eb)
 		if r.level < GameState.RELIC_MAX_LEVEL:
 			var rar := GameData.find_rarity(r.rarity)
 			var cost := int(round(15.0 * float(rar["mult"]) * r.level))
-			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade (%dcr)" % cost, func(id=r.id):
+			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade — %d" % cost, func(id=r.id):
 				var err := GameState.upgrade_relic(id)
 				if err != "":
 					push_warning(err)

@@ -1291,6 +1291,50 @@ static func rank_odds_text() -> String:
 ## Recovery in rift runs rather than real time: a downed hero sits out this
 ## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
 ## hero regains this share of max HP each time a run ends (all of it in a bed).
+## Rift events: a short scene with 2-3 choices, each stating its outcome up
+## front (odds included). Effect keys, applied by GameState.resolve_event:
+## coins/crystals/reputation (int, or [min, max]), xp_all, heal_pct / hurt_pct
+## (of each living hero's max HP; events never knock anyone out), ready (all
+## abilities off cooldown), loot (minimum rarity). "cost" is paid first and
+## must be affordable; "gamble" = {chance, win: effect, lose: effect}.
+const RIFT_EVENTS := [
+	{"id": "traveler", "name": "A Wounded Traveler", "text": "A scout from another guild lies bleeding against the wall, clutching a torn map.",
+		"choices": [
+			{"label": "Patch them up", "desc": "Costs 15 Coins · +3 Reputation", "cost": {"coins": 15}, "effect": {"reputation": 3}},
+			{"label": "Ask for the map", "desc": "+6-12 Crystals", "effect": {"crystals": [6, 12]}},
+			{"label": "Move on", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "altar", "name": "Blood Altar", "text": "An altar hums with rift-light. It wants something from you.",
+		"choices": [
+			{"label": "Offer blood", "desc": "Every hero loses 15% HP (never below 1) · gain a Rare-or-better item or relic", "effect": {"hurt_pct": 0.15, "loot": "rare"}},
+			{"label": "Walk away", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "cache", "name": "Abandoned Cache", "text": "Supplies left behind by a party that didn't make it out.",
+		"choices": [
+			{"label": "Search it all", "desc": "70%: 20-35 Coins · 30%: a trap hits everyone for 10% HP", "gamble": {"chance": 0.7, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Take what's on top", "desc": "+8 Coins", "effect": {"coins": 8}},
+		]},
+	{"id": "echo", "name": "Rift Echo", "text": "Shimmering memories of old battles replay in the air around you.",
+		"choices": [
+			{"label": "Study the fighting", "desc": "Every hero in the party gains 20 XP", "effect": {"xp_all": 20}},
+			{"label": "Absorb its energy", "desc": "All abilities ready · +5 Crystals", "effect": {"ready": true, "crystals": 5}},
+		]},
+	{"id": "gambler", "name": "The Gambler", "text": "A cloaked figure shuffles cards on an upturned crate and grins at you.",
+		"choices": [
+			{"label": "Bet 20 Coins", "desc": "50%: win 45 Coins (net +25) · 50%: lose the bet", "cost": {"coins": 20}, "gamble": {"chance": 0.5, "win": {"coins": 45}, "lose": {}}},
+			{"label": "Decline", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "shrine", "name": "Quiet Shrine", "text": "A small shrine the rift somehow left untouched. The air is calm here.",
+		"choices": [
+			{"label": "Pray", "desc": "Every hero heals 20% HP", "effect": {"heal_pct": 0.20}},
+			{"label": "Take the offerings", "desc": "+6-12 Crystals · -1 Reputation", "effect": {"crystals": [6, 12], "reputation": -1}},
+		]},
+]
+
+## Campfire: heal share for Rest, XP for Train.
+const CAMPFIRE_HEAL_PCT := 0.25
+const CAMPFIRE_TRAIN_XP := 15
+
 const DOWNED_RECOVERY_RUNS := 2
 const WOUND_HEAL_PER_RUN := 0.5
 

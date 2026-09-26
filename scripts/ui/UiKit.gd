@@ -98,6 +98,7 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 var _last_scroll_y: float = 0.0
 var _revealed_rewards: Array = []   # the reward_options array whose flip-reveal already played (by reference)
 var selected_item_id: String = ""   # the Inventory item whose card shows in the right pane
+var _confirm_retreat: bool = false   # the run bar's Retreat asks once before ending the run
 var roster_tab: String = "overview"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
@@ -295,9 +296,9 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 ## a stack of buttons taking up the full column height. Same layered-hotspot
 ## technique as _action_slot: decorative content first, an invisible flat
 ## Button overlaid last for the actual click handling.
-func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable, tip_bbcode: String = "") -> Control:
-	const TILE_W := 156.0
-	const TILE_H := 122.0
+func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable, tip_bbcode: String = "", note: Array = []) -> Control:
+	const TILE_W := 184.0
+	var TILE_H := 132.0 if note.is_empty() else 160.0
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(TILE_W, TILE_H)
 	wrap.size = Vector2(TILE_W, TILE_H)
@@ -328,7 +329,20 @@ func _reward_tile(icon_path: String, name_text: String, rarity_text: String, des
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_lbl.custom_minimum_size = Vector2(TILE_W - 24.0, 0)
 	col.add_child(desc_lbl)
+	if not note.is_empty():
+		var note_lbl := _label(str(note[0]), 12)
+		note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+		note_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		note_lbl.custom_minimum_size = Vector2(TILE_W - 24.0, 0)
+		note_lbl.add_theme_color_override("font_color", note[1])
+		col.add_child(note_lbl)
 	panel.add_child(col)
+	# Grow to fit long item text instead of spilling past the frame.
+	var fit := Vector2(TILE_W, maxf(TILE_H, panel.get_combined_minimum_size().y))
+	wrap.custom_minimum_size = fit
+	wrap.size = fit
+	panel.custom_minimum_size = fit
+	panel.size = fit
 	wrap.add_child(panel)
 
 	var btn := Button.new()
@@ -863,6 +877,23 @@ func _item_compare_text(it: Item, h: Hero, slot: int = -2) -> String:
 	return "%s:\n%s" % ["vs " + current.name if current else "Into an empty slot", "\n".join(lines)]
 
 
+## Who a piece of loot helps, for shop offers and victory rewards:
+## [text, color, hero to compare against or null]. An item names the party
+## member it helps (an empty slot first); a relic says whether a slot is free.
+func _loot_fit_note(obj, is_relic: bool, party: Array) -> Array:
+	if is_relic:
+		var used := Combat.equipped_relics().size()
+		var cap := GameState.relic_slot_cap()
+		return ["Relic slots %d/%d — %s" % [used, cap, "equips right away" if used < cap else "goes to your Inventory"], Palette.MUTED, null]
+	var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
+	if fits.is_empty():
+		return ["No one in this party can use it", Palette.HAZARD, null]
+	var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
+	if not free.is_empty():
+		return ["Fills an empty slot on %s" % free[0].name.split(" the ")[0], Palette.RANK_E, free[0]]
+	return ["For %s — hover to compare" % ", ".join(fits.map(func(h): return h.name.split(" the ")[0])), Palette.MUTED, fits[0]]
+
+
 func _loot_display_name(obj) -> String:
 	var uid: String = obj.unique_id
 	return "★ %s" % obj.name if uid != "" else obj.name
@@ -1074,10 +1105,11 @@ var _pending_map_slot_idx: int = -1
 const MAP_NODE_COLOR := {
 	"combat": Palette.HAZARD, "elite": Palette.ELITE, "shop": Palette.COINS,
 	"hazard": Palette.CRYSTALS, "boss": Palette.TOKENS,
+	"campfire": Palette.RANK_E, "event": Palette.VIOLET_BRIGHT, "treasure": Palette.RANK_S,
 }
 
 
-const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B"}
+const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B", "campfire": "R", "event": "?", "treasure": "T"}
 
 
 const MAP_NODE_ICON := {
@@ -1086,6 +1118,9 @@ const MAP_NODE_ICON := {
 	"shop": "res://assets/ui/icon_coins.png",
 	"hazard": "res://assets/skills/shield_split.png",
 	"boss": "res://assets/skills/icon_boss_skull.png",
+	"campfire": "res://assets/skills/heart.png",
+	"event": "res://assets/skills/eye_gem.png",
+	"treasure": "res://assets/dungeon/chest_icon.png",
 }
 
 

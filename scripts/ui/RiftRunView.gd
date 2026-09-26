@@ -14,6 +14,9 @@ const MAP_NODE_DESC := {
 	"shop": "Shop — spend Coins on items and relics. No fighting.",
 	"hazard": "Hazard — a trap that hurts the party (hazard guard helps). May drop Coins or Crystals.",
 	"boss": "Boss — the rift's warden, with a special mechanic. Win to seal the rift.",
+	"campfire": "Campfire — rest (heal), train (XP) or sharpen (abilities ready). No fighting.",
+	"event": "Event — a strange encounter with a few choices; each says what it does.",
+	"treasure": "Treasure — pick one of two loot drops. No fighting.",
 }
 
 
@@ -183,7 +186,7 @@ func _render_rift_map(v: VBoxContainer) -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	legend.add_child(spacer)
-	for k in ["combat", "elite", "shop", "hazard", "boss"]:
+	for k in ["combat", "elite", "shop", "hazard", "campfire", "event", "treasure", "boss"]:
 		if not kinds.has(k):
 			continue
 		var item := HBoxContainer.new()
@@ -232,7 +235,6 @@ func _run_bar(in_combat: bool) -> Control:
 	var pip_wrap := CenterContainer.new()
 	pip_wrap.add_child(pips)
 	top.add_child(pip_wrap)
-	top.add_child(_label("Node %d/%d" % [pos + 1, total_layers], 12, true))
 	var tags: Array[String] = []
 	var rank: String = str(GameState.run.get("rift_rank", ""))
 	if rank != "":
@@ -244,7 +246,29 @@ func _run_bar(in_combat: bool) -> Control:
 	if int(GameState.run.get("shield", 0)) > 0:
 		tags.append("Relic ward %d" % int(GameState.run["shield"]))
 	if not tags.is_empty():
-		top.add_child(_label(" · ".join(tags), 11, true))
+		top.add_child(_label(" · ".join(tags), 12, true))
+	# Retreat lives up here, out of the way, and asks once before ending the
+	# run (it used to be a big button at the bottom of every node). In combat
+	# the command bar has its own.
+	if not in_combat and GameState.run.get("sealed") == null:
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top.add_child(spacer)
+		if _confirm_retreat:
+			var q := _label("Leave the rift? You keep your loot but earn no Seal Tokens.", 12)
+			q.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			top.add_child(q)
+			top.add_child(_icon_domain_button("ember", "res://assets/skills/wing.png", "Leave rift", func():
+				_confirm_retreat = false
+				GameState.retreat_now()
+				screen = "terminal"
+				render()
+			))
+			top.add_child(_button("Stay", func(): _confirm_retreat = false; render()))
+		else:
+			var rb := _icon_button("res://assets/skills/wing.png", "Retreat", func(): _confirm_retreat = true; render())
+			rb.tooltip_text = "Leave the rift now — keep your loot, no Seal Tokens"
+			top.add_child(rb)
 	col.add_child(top)
 
 	var bottom := HBoxContainer.new()
@@ -356,14 +380,10 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		"combat", "boss", "elite": _render_combat_node(v)
 		"shop": _render_shop_node(v)
 		"hazard": _render_hazard_node(v)
+		"campfire": _render_campfire_node(v)
+		"event": _render_event_node(v)
+		"treasure": _render_treasure_node(v)
 
-	if not is_combat_kind:
-		v.add_child(_hsep())
-		v.add_child(_icon_button("res://assets/skills/wing.png", "Retreat (keep loot, no Seal Tokens)", func():
-			GameState.retreat_now()
-			screen = "terminal"
-			render()
-		))
 
 
 ## The 3 shop offers as an icon-forward card grid instead of stacked
@@ -413,31 +433,12 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(str(obj.rarity), Palette.TEXT))
 		cv.add_child(nl)
 		cv.add_child(_wrap_label(desc, 12, true))
-		# Who it's for: an item names the party member it helps (hover for the
-		# full comparison); a relic says whether a slot is free.
-		var fit_text := ""
-		var fit_color: Color = Palette.MUTED
-		if is_relic:
-			var used := Combat.equipped_relics().size()
-			var cap := GameState.relic_slot_cap()
-			fit_text = "Relic slots %d/%d — %s" % [used, cap, "equips right away" if used < cap else "goes to your Inventory"]
-		else:
-			var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
-			if fits.is_empty():
-				fit_text = "No one in this party can use it"
-				fit_color = Palette.HAZARD
-				_rich_tip(card, _item_card(obj))
-			else:
-				var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
-				var who: Hero = free[0] if not free.is_empty() else fits[0]
-				_rich_tip(card, _item_card(obj, who))
-				if not free.is_empty():
-					fit_text = "Fills an empty slot on %s" % who.name.split(" the ")[0]
-					fit_color = Palette.RANK_E
-				else:
-					fit_text = "For %s — hover to compare" % ", ".join(fits.map(func(h): return h.name.split(" the ")[0]))
-		var fl := _wrap_label(fit_text, 12)
-		fl.add_theme_color_override("font_color", fit_color)
+		# Who it's for (hover an item to compare it with that hero's gear).
+		var note := _loot_fit_note(obj, is_relic, party)
+		if not is_relic:
+			_rich_tip(card, _item_card(obj, note[2]))
+		var fl := _wrap_label(str(note[0]), 12)
+		fl.add_theme_color_override("font_color", note[1])
 		cv.add_child(fl)
 		if bought:
 			cv.add_child(_label("Bought", 12, true))
@@ -475,6 +476,98 @@ func _hazard_severity_label(dmg_mult: float) -> String:
 	elif dmg_mult <= 1.15:
 		return "Moderate"
 	return "Severe"
+
+
+func _node_continue(v: VBoxContainer) -> void:
+	v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+		GameState.advance_node()
+		render()
+	))
+
+
+func _node_log(v: VBoxContainer, ns: Dictionary) -> void:
+	for line in ns.get("log", []):
+		v.add_child(_wrap_label(str(line), 13))
+
+
+## Campfire: three one-off choices, each saying exactly what it does.
+func _render_campfire_node(v: VBoxContainer) -> void:
+	var ns: Dictionary = GameState.run["node_state"]
+	v = _node_split(v, GameData.CAMP_BG)
+	v.add_child(_label("Campfire", 18))
+	if ns.get("resolved", false):
+		_node_log(v, ns)
+		_node_continue(v)
+		return
+	v.add_child(_wrap_label("A sheltered corner of the rift. There's time for one thing before moving on.", 13, true))
+	var party := GameState.current_party().filter(func(h): return h.hp > 0)
+	var hurt := party.filter(func(h): return h.hp < Combat.max_hp(h))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.add_child(_hazard_option("res://assets/skills/heart.png", "Rest",
+		["Every hero heals %d%% HP" % int(GameData.CAMPFIRE_HEAL_PCT * 100), "%d of %d hurt right now" % [hurt.size(), party.size()]], [],
+		func(): GameState.campfire_choose("rest"); render()))
+	row.add_child(_hazard_option("res://assets/skills/star.png", "Train",
+		["Every hero gains %d XP" % GameData.CAMPFIRE_TRAIN_XP], [],
+		func(): GameState.campfire_choose("train"); render()))
+	var cooling := party.filter(func(h): return h.ability_cooldown > 0).size()
+	row.add_child(_hazard_option("res://assets/skills/sword_silver.png", "Sharpen",
+		["Every ability is ready for the next fight", "%d on cooldown right now" % cooling], [],
+		func(): GameState.campfire_choose("sharpen"); render()))
+	v.add_child(row)
+
+
+## Event: the scene, then one card per choice with its outcome spelled out.
+func _render_event_node(v: VBoxContainer) -> void:
+	GameState.ensure_event()
+	var ns: Dictionary = GameState.run["node_state"]
+	var ev: Dictionary = ns["event"]
+	v = _node_split(v, "res://assets/screens/riftpath_bg.png")
+	v.add_child(_label(str(ev["name"]), 18))
+	v.add_child(_wrap_label(str(ev["text"]), 13, true))
+	if ns.get("resolved", false):
+		_node_log(v, ns)
+		_node_continue(v)
+		return
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var choices: Array = ev["choices"]
+	for i in choices.size():
+		var c: Dictionary = choices[i]
+		var afford := GameState.can_afford(c.get("cost", {}))
+		var lines: Array = [str(c["desc"])]
+		if not afford:
+			lines.append("You can't afford this")
+		row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"] if c.has("gamble") else GameData.BUTTON_ICON_PATH["confirm"], str(c["label"]),
+			lines, [], func(idx=i): GameState.resolve_event(idx); render(), not afford))
+	v.add_child(row)
+
+
+## Treasure: pick one of two drops (same cards as a victory reward).
+func _render_treasure_node(v: VBoxContainer) -> void:
+	GameState.ensure_treasure()
+	var ns: Dictionary = GameState.run["node_state"]
+	v = _node_split(v, GameData.INVENTORY_BG)
+	v.add_child(_label("Treasure", 18))
+	if ns.get("picked", false):
+		v.add_child(_label("You take your pick and pack it away.", 13, true))
+		_node_continue(v)
+		return
+	v.add_child(_wrap_label("A forgotten stash. There's only room to carry one of these.", 13, true))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var options: Array = ns["options"]
+	for i in options.size():
+		var opt: Dictionary = options[i]
+		var obj = opt["obj"]
+		var is_relic: bool = opt["loot_type"] == "relic"
+		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
+		var note := _loot_fit_note(obj, is_relic, GameState.current_party())
+		row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), _loot_desc(obj, is_relic), func(idx=i):
+			GameState.pick_treasure(idx)
+			render()
+		, "" if is_relic else _item_card(obj, note[2]), note))
+	v.add_child(row)
 
 
 ## Shop and hazard nodes: the node's art on the left at its own 320x200

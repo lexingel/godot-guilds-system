@@ -542,7 +542,9 @@ func endless_diff_for_cycle(cycle: int) -> Dictionary:
 func build_layers(diff: Dictionary) -> Array:
 	var layers: Array = [{"options": ["combat"]}]
 	var mid_count: int = int(diff["floors"]) - 2
-	var pool := ["combat", "combat", "shop", "hazard", "elite"]
+	# Campfire / event / treasure are one entry each, so fights stay about
+	# half of every fork.
+	var pool := ["combat", "combat", "combat", "shop", "hazard", "elite", "campfire", "event", "treasure"]
 	# A mapped rift's elite_chance_up/shop_chance_down modifiers bias the pool
 	# by adding/removing one entry rather than reworking the odds formula.
 	if diff.get("elite_chance_up", false):
@@ -1320,11 +1322,34 @@ func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	var m: Dictionary = state["monsters"][i]
 	if float(m["hp"]) <= 0:
 		return {}
+	# A monster that has already acted this round has nothing left to show
+	# (and Guard can't change a hit that already landed).
+	var order: Array = state.get("turn_order", [])
+	for k in min(int(state.get("turn_idx", 0)), order.size()):
+		if str(order[k]["type"]) == "monster" and int(order[k]["id"]) == i:
+			return {}
 	var t := _find_party_hero(state["party"], str(state.get("intents", {}).get(i, "")))
 	if t == null or t.hp <= 0:
 		return {}
 	var dmg := _monster_hit(m, int(state.get("round_num", 0)))
-	return {"target": t, "dmg": int(dmg), "heavy": dmg >= float(max_hp(t)) * 0.25}
+	# A guarded target shows the hit landing on its guard.
+	var guard := guard_of(state, t)
+	if guard:
+		t = guard
+		dmg *= GUARD_DAMAGE_MULT
+	return {"target": t, "dmg": int(dmg), "heavy": dmg >= float(max_hp(t)) * 0.25, "guarded": guard != null}
+
+
+const GUARD_DAMAGE_MULT := 0.75
+
+
+## The living hero guarding `target` this round, or null.
+func guard_of(state: Dictionary, target: Hero) -> Hero:
+	var gid: String = str(state.get("_guarding", {}).get(target.id, ""))
+	if gid == "":
+		return null
+	var g := _find_party_hero(state["party"], gid)
+	return g if g and g.hp > 0 and g != target else null
 
 
 func _find_party_hero(party: Array[Hero], hero_id: String) -> Hero:
@@ -1397,6 +1422,7 @@ func _start_round(state: Dictionary) -> void:
 	state["_attack_mult"] = attack_mult
 	state["_escalate_mult"] = escalate_mult
 	state["_defending"] = {}
+	state["_guarding"] = {}   # guarded hero id -> guard's id (see "guard" below)
 	state["_extra_turned"] = {}
 
 	for h in party:
@@ -1469,6 +1495,15 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			_fire("after_hit", state, h, hit)
 	elif action == "defend":
 		state["_defending"][h.id] = true
+	elif action == "guard":
+		# Until the round ends, attacks aimed at the ally hit this hero
+		# instead, 25% weaker (see _resolve_monster_action).
+		var ally := _find_party_hero(party, str(act.get("ally", "")))
+		if ally and ally != h and ally.hp > 0:
+			var guards: Dictionary = state.get("_guarding", {})
+			guards[ally.id] = h.id
+			state["_guarding"] = guards
+			log.append("%s moves to guard %s." % [h.name, ally.name])
 	elif action == "ability" and h.ability_cooldown == 0:
 		var team_dmg_base: float = float(state["team_dmg_base"])
 		h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
@@ -1656,10 +1691,17 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 			if aim["target"] != target:
 				break
 	target = aim["target"]
+	var guard := guard_of(state, target)
+	if guard:
+		log.append("%s takes the blow meant for %s!" % [guard.name, target.name])
+		_proc(state, guard, "Guard!")
+		target = guard
 	var mech: Dictionary = m.get("mechanic", {})
 	var mech2: Dictionary = m.get("mechanic2", {})
 	var ability: Dictionary = m.get("ability", {})
 	var back: float = _monster_hit(m, round_num)
+	if guard:
+		back *= GUARD_DAMAGE_MULT
 	var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
 	if state["_defending"].has(target.id):
 		back *= 0.5
