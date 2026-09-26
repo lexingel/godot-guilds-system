@@ -923,6 +923,36 @@ const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang"
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]
 const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 
+## Biomes: each rift is in one, which sets its foes and arenas (indices into
+## BATTLE_BACKGROUNDS). A finale fights in its act's biome; other rifts pick
+## from the biomes the campaign has reached (GameState.pick_biome).
+const BIOMES := {
+	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver"],
+		"elites": ["Warbound Elite", "Iron Revenant"], "backgrounds": [1, 3, 0]},
+	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite"],
+		"elites": ["Blightfang Elite", "Storm-Called Elite"], "backgrounds": [5, 6, 2]},
+	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend"],
+		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "backgrounds": [4, 8, 7, 9]},
+}
+const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
+## Armor: the share of every basic attack an armored foe shrugs off. Each hit
+## that lands chips it by ARMOR_SUNDER; abilities, relic strikes and counters
+## ignore it.
+const MONSTER_ARMOR := {"Husk Brute": 0.35, "Hollow Reaver": 0.3, "Deep Anchorite": 0.35, "Iron Revenant": 0.4,
+	"Warbound Elite": 0.3, "Rift-Touched Colossus": 0.35, "Korrath": 0.3, "Drevok": 0.25}
+const ARMOR_SUNDER := 0.05
+## Statuses foes inflict on a hit (chance per hit): burn deals `value` of max
+## HP per round for `rounds`; chill makes the hero act late next round. A
+## heavy blow stuns (the hero loses their next turn) unless they Defended.
+const MONSTER_STATUS := {"Ember Whelp": "burn", "Cinder Moth": "burn", "Ashclad Ghoul": "burn", "Ashen Broodlord": "burn",
+	"Frost Stalker": "chill", "Glass Wisp": "chill", "Storm-Called Elite": "chill", "Nyxara": "chill", "Sythrane": "burn"}
+const STATUS_INFO := {"burn": {"chance": 0.5, "rounds": 3, "value": 0.05}, "chill": {"chance": 0.5, "rounds": 1}}
+## Wind-ups: some foes spend a turn gathering strength, then land a heavy
+## blow (HEAVY_BLOW_MULT damage + stun). The intent tag warns a turn ahead.
+const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
+const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
+const HEAVY_BLOW_MULT := 3.0
+
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers; Endless
 # (below, via ENDLESS_BASE) is a separate infinite-scaling mode. Ascendant
 # isn't its own selectable tier — ENDLESS_BASE just reuses its numbers.

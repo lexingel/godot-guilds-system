@@ -905,6 +905,13 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 	var sh := float(state.get("hero_shields", {}).get(h.id, 0.0))
 	if sh > 0.0:
 		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Shield — absorbs the next %d damage" % int(round(sh)), "color": Palette.CRYSTALS})
+	var burn: Dictionary = state.get("hero_burn", {})
+	if burn.has(h.id):
+		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s). A Field Tonic puts it out." % [int(round(float(burn[h.id]["value"]) * Combat.max_hp(h))), int(burn[h.id]["rounds"])], "color": Palette.HAZARD})
+	if state.get("_chilled", {}).has(h.id):
+		out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Chilled — acts late next round", "color": Palette.CRYSTALS})
+	if state.get("_stunned", {}).has(h.id):
+		out.append({"icon": "res://assets/relics/u_stopped_clock.png", "tip": "Stunned — loses their next turn", "color": Palette.HAZARD})
 	var poison: Dictionary = state.get("hero_poison", {})
 	if poison.has(h.id):
 		out.append({"icon": "res://assets/skills/shard_green.png", "tip": "Poisoned — %d damage a round for %d more round(s)" % [int(round(float(poison[h.id]["value"]) * Combat.max_hp(h))), int(poison[h.id]["rounds"])], "color": Palette.RANK_E})
@@ -938,6 +945,14 @@ func _monster_statuses(state: Dictionary, i: int) -> Array:
 		var a_icon: String = GameData.MONSTER_ABILITY_ICON.get(str(ability["kind"]), "")
 		if a_icon != "":
 			out.append({"icon": a_icon, "tip": str(ability["name"]), "color": Palette.ELITE})
+	var armor := float(m.get("armor", 0.0))
+	if armor > 0.0:
+		out.append({"icon": "res://assets/skills/armor_chest.png", "tip": "Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor." % int(round(armor * 100)), "color": Palette.LINE})
+	match str(m.get("status", "")):
+		"burn": out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Its hits can set a hero ablaze (damage over time)", "color": Palette.HAZARD})
+		"chill": out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Its hits can chill a hero (acts late next round)", "color": Palette.CRYSTALS})
+	if m.get("_charged", false) or m.get("_winding", false):
+		out.append({"icon": "res://assets/skills/sword_big.png", "tip": "Winding up a heavy blow", "color": Palette.HAZARD})
 	var ward := float(state.get("monster_shields", {}).get(i, 0.0))
 	if ward > 0.0:
 		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Ward — absorbs the next %d damage" % int(round(ward)), "color": Palette.CRYSTALS})
@@ -1002,8 +1017,8 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var t: Hero = intent["target"]
 		var e: Dictionary = incoming.get(t.id, {"dmg": 0, "heavy": false, "from": []})
 		e["dmg"] = int(e["dmg"]) + int(intent["dmg"])
-		e["heavy"] = bool(e["heavy"]) or bool(intent["heavy"])
-		(e["from"] as Array).append("%s (%d)" % [str(monsters[i]["name"]), int(intent["dmg"])])
+		e["heavy"] = bool(e["heavy"]) or bool(intent["heavy"]) or intent.get("charging", false)
+		(e["from"] as Array).append("%s (%s)" % [str(monsters[i]["name"]), "winding up a heavy blow" if intent.get("charging", false) else str(int(intent["dmg"]))])
 		incoming[t.id] = e
 
 	# --- Heroes: back row on the left, front row nearest the enemy. ---
@@ -1052,7 +1067,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		_hero_plates[h.id] = plate
 		if incoming.has(h.id):
 			var e: Dictionary = incoming[h.id]
-			var chip := _intent_chip("-%d" % int(e["dmg"]), bool(e["heavy"]), "Incoming this round: %s" % ", ".join(e["from"]))
+			var chip := _intent_chip("-%d" % int(e["dmg"]) if int(e["dmg"]) > 0 else "Next round!", bool(e["heavy"]), "Incoming this round: %s" % ", ".join(e["from"]))
 			chip.position = plate.position + Vector2(pw - 38.0, -20.0)
 			arena.add_child(chip)
 
@@ -1112,8 +1127,15 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var intent := Combat.monster_intent(state, i)
 		if not intent.is_empty():
 			var t: Hero = intent["target"]
-			var chip := _intent_chip("%d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], bool(intent["heavy"]),
-				"Attacks %s this round for about %d%s" % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""])
+			var chip: PanelContainer
+			if intent.get("charging", false):
+				chip = _intent_chip("Winding up", true, "Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row." % str(GameData.HEAVY_BLOW_MULT))
+			elif intent.get("heavy_blow", false):
+				chip = _intent_chip("⚠ %d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], true,
+					"HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (3) halves it; Guard (4) takes it for them." % [t.name, int(intent["dmg"])])
+			else:
+				chip = _intent_chip("%d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], bool(intent["heavy"]),
+					"Attacks %s this round for about %d%s" % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""])
 			chip.position = plate.position + Vector2(0, -22.0)
 			var ring: Control = target_rings.get(t.id)
 			if ring:

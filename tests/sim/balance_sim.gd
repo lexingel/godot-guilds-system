@@ -168,6 +168,11 @@ func _fight(living: Array[Hero], kind: String, diff: Dictionary, pos: int) -> bo
 			var act := "ability" if Combat.qualifies_for_ability(h) and h.ability_cooldown == 0 and t % 2 == 0 else "attack"
 			if CHAMP_V2 and kind == "boss" and GameState.champion_call_ready(h):
 				act = "call"
+			# Answer a telegraphed heavy blow aimed at this hero by Defending.
+			for mi in (state["monsters"] as Array).size():
+				var it := Combat.monster_intent(state, mi)
+				if it.get("heavy_blow", false) and it["target"] == h:
+					act = "defend"
 			state["pending_actions"][h.id] = {"action": act, "target": _lowest(state["monsters"])}
 		var out := Combat.resolve_turn(state)
 		if out["done"]:

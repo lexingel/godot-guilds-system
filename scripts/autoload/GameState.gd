@@ -326,7 +326,7 @@ func _run_for_save() -> Dictionary:
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
-		"finale": run.get("finale", 0), "training": run.get("training", false),
+		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
 	}
 
 
@@ -656,7 +656,7 @@ func load_save() -> bool:
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
-			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)),
+			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 		}
 	return true
 
@@ -988,7 +988,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
 		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
-		"rift_rank": rift_rank, "seed": randi(), "training": training,
+		"rift_rank": rift_rank, "seed": randi(), "training": training, "biome": pick_biome(),
 	}
 	if training:
 		# No elites in the training rift — a campfire takes their place.
@@ -1028,6 +1028,9 @@ func _diff() -> Dictionary:
 	if run.get("is_riftbreak", false):
 		return _apply_riftbreak_severity(diff, int(run.get("riftbreak_severity", 0)))
 	diff = _apply_rift_rank_modifiers(diff, str(run.get("rift_rank", "")))
+	if not run.is_empty() and not run.get("is_riftbreak", false):
+		diff = diff.duplicate()
+		diff["biome"] = run_biome()
 	if int(run.get("finale", 0)) > 0:
 		return _apply_finale(diff)
 	return _apply_training(diff) if run.get("training", false) else diff
@@ -1133,7 +1136,8 @@ func ensure_combat_bg() -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	if ns.has("bg_idx") or ns.has("combat_state"):
 		return
-	ns["bg_idx"] = randi() % GameData.BATTLE_BACKGROUNDS.size()
+	var bgs: Array = GameData.BIOMES.get(run_biome(), {}).get("backgrounds", [])
+	ns["bg_idx"] = int(bgs[randi() % bgs.size()]) if not bgs.is_empty() else randi() % GameData.BATTLE_BACKGROUNDS.size()
 	run["node_state"] = ns
 
 
@@ -1877,8 +1881,23 @@ func start_finale(hero_ids: Array[String], starting_relic: Relic) -> void:
 	start_run(str(act["tier"]), hero_ids, starting_relic, false, false)
 	run["finale"] = int(act["act"])
 	run["training"] = false
+	run["biome"] = str(GameData.ACT_BIOME[int(act["act"])])
 	run["layers"] = Combat.build_layers(_diff())
 	save()
+
+
+## A biome for a new rift: the Vale in Act I, the Vale or the Marshes in Act
+## II, any of the three after that.
+func pick_biome() -> String:
+	var open := ["vale"] if campaign_act <= 1 else (["vale", "marsh", "marsh"] if campaign_act == 2 else ["vale", "marsh", "ashen"])
+	return str(open[randi() % open.size()])
+
+
+## The run's biome (Endless rotates through all three, one per cycle).
+func run_biome() -> String:
+	if run.get("endless", false):
+		return ["vale", "marsh", "ashen"][int(run.get("cycle", 0)) % 3]
+	return str(run.get("biome", "vale"))
 
 
 func _apply_finale(diff: Dictionary) -> Dictionary:

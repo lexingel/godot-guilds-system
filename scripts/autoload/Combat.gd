@@ -703,6 +703,11 @@ const BOSS_DMG_MULT := 2.0
 const ENDLESS_CYCLE_GROWTH := 0.5
 
 
+func _biome_background(diff: Dictionary) -> int:
+	var bgs: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("backgrounds", [])
+	return int(bgs[randi() % bgs.size()]) if not bgs.is_empty() else randi() % GameData.BATTLE_BACKGROUNDS.size()
+
+
 func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	var scale := 1.0 + floor_idx * MONSTER_FLOOR_SCALE
 	var hp_mult := BOSS_HP_MULT if kind == "boss" else (ELITE_HP_MULT if kind == "elite" else 1.0)
@@ -715,10 +720,14 @@ func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	elif kind == "boss":
 		name = "%s, %s Warden" % [GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()], diff["name"].split(" ")[0]]
 	elif kind == "elite":
-		name = GameData.ELITE_NAMES[randi() % GameData.ELITE_NAMES.size()]
+		var elites: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("elites", GameData.ELITE_NAMES)
+		name = str(elites[randi() % elites.size()])
 	else:
-		name = GameData.MONSTER_NAMES[randi() % GameData.MONSTER_NAMES.size()]
-	return {"name": name, "hp": hp, "dmg": dmg, "spd": 9 + randi() % 4}
+		var pool: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("monsters", GameData.MONSTER_NAMES)
+		name = str(pool[randi() % pool.size()])
+	var base_name := name.split(",")[0]
+	return {"name": name, "hp": hp, "dmg": dmg, "spd": 9 + randi() % 4, "tier": kind,
+		"armor": float(GameData.MONSTER_ARMOR.get(base_name, 0.0)), "status": str(GameData.MONSTER_STATUS.get(base_name, ""))}
 
 
 func _first_living_monster_idx(monsters: Array) -> int:
@@ -1371,7 +1380,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var state := {
 		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx, "hardcore": hardcore,
 		"is_boss": is_boss, "is_elite": is_elite,
-		"monsters": monsters, "background_idx": randi() % GameData.BATTLE_BACKGROUNDS.size(),
+		"monsters": monsters, "background_idx": _biome_background(diff),
 		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
@@ -1489,13 +1498,18 @@ func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	var t := _find_party_hero(state["party"], str(state.get("intents", {}).get(i, "")))
 	if t == null or t.hp <= 0:
 		return {}
+	if m.get("_winding", false):
+		return {"target": t, "dmg": 0, "heavy": false, "guarded": false, "charging": true}
 	var dmg := _monster_hit(m, int(state.get("round_num", 0)))
+	var blow: bool = m.get("_charged", false)
+	if blow:
+		dmg *= GameData.HEAVY_BLOW_MULT
 	# A guarded target shows the hit landing on its guard.
 	var guard := guard_of(state, t)
 	if guard:
 		t = guard
 		dmg *= GUARD_DAMAGE_MULT
-	return {"target": t, "dmg": int(dmg), "heavy": dmg >= float(max_hp(t)) * 0.25, "guarded": guard != null}
+	return {"target": t, "dmg": int(dmg), "heavy": blow or dmg >= float(max_hp(t)) * 0.25, "guarded": guard != null, "heavy_blow": blow}
 
 
 const GUARD_DAMAGE_MULT := 0.75
@@ -1522,9 +1536,10 @@ func _find_party_hero(party: Array[Hero], hero_id: String) -> Hero:
 ## resolve in the same order) — this round's turn sequence.
 func _compute_turn_order(state: Dictionary) -> Array:
 	var entries: Array = []
+	var chilled: Dictionary = state.get("_chilled", {})
 	for h in state["party"]:
 		if h.hp > 0:
-			entries.append({"type": "hero", "id": h.id, "_spd": spd_of(h) + randf() * 0.01})
+			entries.append({"type": "hero", "id": h.id, "_spd": spd_of(h) * (0.5 if chilled.has(h.id) else 1.0) + randf() * 0.01})
 	var monsters: Array = state["monsters"]
 	for i in monsters.size():
 		if float(monsters[i]["hp"]) > 0:
@@ -1604,6 +1619,23 @@ func _start_round(state: Dictionary) -> void:
 		pending[h.id] = {"action": str(prev.get("action", "attack")), "target": target_idx}
 
 	state["turn_order"] = _compute_turn_order(state)
+	var chilled: Dictionary = state.get("_chilled", {})
+	for hid in chilled.keys().duplicate():
+		chilled[hid] = int(chilled[hid]) - 1
+		if int(chilled[hid]) <= 0:
+			chilled.erase(hid)
+	state["_chilled"] = chilled
+	for mw in monsters:
+		if float(mw["hp"]) <= 0 or mw.get("_charged", false):
+			continue
+		if int(mw.get("_windup_cd", 0)) > 0:
+			mw["_windup_cd"] = int(mw["_windup_cd"]) - 1
+			continue
+		var wtier := str(mw.get("tier", "combat"))
+		if wtier == "combat" and GameData.WINDUP_BRUTES.has(str(mw["name"])):
+			wtier = "brute"
+		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)):
+			mw["_winding"] = true
 	if int(state["round_num"]) % 3 == 0 and not living.is_empty():
 		_fire("round_third", state, living[0])
 	var intents := {}
@@ -1645,6 +1677,12 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			hit["dealt"] = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * type_mult * formation_mult * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
 			_fire("before_hit", state, h, hit)
 			var dealt: float = hit["dealt"]
+			var armor := float(monsters[target_idx].get("armor", 0.0))
+			if armor > 0.0 and dealt > 0.0:
+				var blocked: float = dealt * armor
+				dealt -= blocked
+				monsters[target_idx]["armor"] = maxf(0.0, armor - GameData.ARMOR_SUNDER)
+				log.append("%s's armor turns aside %d." % [monsters[target_idx]["name"], int(round(blocked))])
 			var m_shields: Dictionary = state["monster_shields"]
 			if dealt > 0.0 and float(m_shields.get(target_idx, 0.0)) > 0.0:
 				var m_have: float = float(m_shields[target_idx])
@@ -1671,6 +1709,8 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 		if patient == null or patient.hp <= 0:
 			patient = h
 		GameState.tonics -= 1
+		for key in ["hero_poison", "hero_burn", "_chilled", "_stunned"]:
+			state.get(key, {}).erase(patient.id)
 		var healed: int = min(max_hp(patient) - patient.hp, int(round(max_hp(patient) * GameData.TONIC_HEAL_PCT)))
 		patient.hp += healed
 		log.append("%s gives %s a Field Tonic: +%d HP." % [h.name, patient.name, healed])
@@ -1874,6 +1914,11 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 			log.append("%s doesn't survive the fight." % str(escort["name"]))
 		return
 
+	if m.get("_winding", false):
+		m["_winding"] = false
+		m["_charged"] = true
+		log.append("%s gathers its strength — a heavy blow is coming!" % m["name"])
+		return
 	var alive_now: Array[Hero] = []
 	alive_now.assign(party.filter(func(h): return h.hp > 0))
 	if alive_now.is_empty():
@@ -1899,6 +1944,11 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	var mech2: Dictionary = m.get("mechanic2", {})
 	var ability: Dictionary = m.get("ability", {})
 	var back: float = _monster_hit(m, round_num)
+	var heavy_blow: bool = m.get("_charged", false)
+	if heavy_blow:
+		m["_charged"] = false
+		m["_windup_cd"] = 1
+		back *= GameData.HEAVY_BLOW_MULT
 	if guard:
 		back *= GUARD_DAMAGE_MULT
 	var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
@@ -1931,6 +1981,18 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 		else:
 			target.hp = max(0, target.hp - dealt_back)
 			log.append("The %s hits %s for %d." % [m["name"], target.name, dealt_back])
+			if heavy_blow and target.hp > 0 and not state["_defending"].has(target.id):
+				state.get_or_add("_stunned", {})[target.id] = true
+				log.append("%s is stunned by the blow!" % target.name)
+			var status := str(m.get("status", ""))
+			if status != "" and target.hp > 0 and randf() < float(GameData.STATUS_INFO[status]["chance"]):
+				var info: Dictionary = GameData.STATUS_INFO[status]
+				if status == "burn":
+					state.get_or_add("hero_burn", {})[target.id] = {"rounds": int(info["rounds"]), "value": float(info["value"])}
+					log.append("%s is set ablaze!" % target.name)
+				elif status == "chill":
+					state.get_or_add("_chilled", {})[target.id] = int(info["rounds"]) + 1
+					log.append("%s is chilled — they'll act late next round." % target.name)
 			if ability.get("kind") == "poison" and target.hp > 0:
 				state["hero_poison"][target.id] = {"rounds": 2, "value": float(ability["value"])}
 				log.append("%s is poisoned!" % target.name)
@@ -1978,6 +2040,20 @@ func _end_round_effects(state: Dictionary) -> void:
 			monsters[lowest_idx]["hp"] = min(float(monsters[lowest_idx]["max_hp"]), float(monsters[lowest_idx]["hp"]) + heal_amt)
 			log.append("%s mends %s for %d." % [m["name"], monsters[lowest_idx]["name"], heal_amt])
 
+	var burn: Dictionary = state.get("hero_burn", {})
+	for bid in burn.keys().duplicate():
+		var hb: Hero = _find_party_hero(party, str(bid))
+		if hb == null or hb.hp <= 0:
+			burn.erase(bid)
+			continue
+		var btick: int = max(1, int(round(max_hp(hb) * float(burn[bid]["value"]))))
+		hb.hp = max(0, hb.hp - btick)
+		log.append("%s burns for %d." % [hb.name, btick])
+		if hb.hp <= 0:
+			log.append("%s is knocked out!" % hb.name)
+		burn[bid]["rounds"] = int(burn[bid]["rounds"]) - 1
+		if int(burn[bid]["rounds"]) <= 0 or hb.hp <= 0:
+			burn.erase(bid)
 	var poison: Dictionary = state["hero_poison"]
 	for hero_id in poison.keys().duplicate():
 		var h5: Hero = null
@@ -2071,7 +2147,11 @@ func resolve_turn(state: Dictionary) -> Dictionary:
 
 	if turn["type"] == "hero":
 		var h := _find_party_hero(state["party"], str(turn["id"]))
-		if h and h.hp > 0:
+		var stunned: Dictionary = state.get("_stunned", {})
+		if h and h.hp > 0 and stunned.has(h.id):
+			stunned.erase(h.id)
+			(state["log"] as Array).append("%s is stunned and loses the turn." % h.name)
+		elif h and h.hp > 0:
 			_resolve_hero_action(state, h)
 	else:
 		var i: int = int(turn["id"])
