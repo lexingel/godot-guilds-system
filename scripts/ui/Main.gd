@@ -1184,6 +1184,11 @@ func _render_slot_list(v: VBoxContainer) -> void:
 		if is_active:
 			text += "  (Active)"
 		var actions: Array[Control] = []
+		# From the title's Load Game, the active slot still needs a way back in.
+		if is_active and not is_empty and screen == "load_game":
+			actions.append(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func(s=slot):
+				_switch_slot(s)
+			))
 		if not is_active:
 			actions.append(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Play", func(s=slot):
 				_switch_slot(s)

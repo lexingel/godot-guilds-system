@@ -134,7 +134,7 @@ func _render_getting_started(v: VBoxContainer) -> void:
 	var steps := [
 		["Recruit a hero at Hero Recruits", not GameState.heroes.is_empty()],
 		["Assemble a party at the Rift Gate and enter a rift", not GameState.monsters_seen.is_empty()],
-		["Equip an item on a hero (Roster > Gear)", GameState.items.any(func(it): return it.equipped_to != "")],
+		["Equip an item on a hero (Roster > Hero)", GameState.items.any(func(it): return it.equipped_to != "")],
 		["Spend a skill point (Roster > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
 		["Seal your first rift by beating its boss", GameState.rifts_sealed >= 1],
 	]

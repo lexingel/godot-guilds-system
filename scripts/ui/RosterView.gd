@@ -395,12 +395,14 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		var long_bits: Array[String] = []
 		for k in per:
 			var val: float = (total - GameData.ATTR_BASELINE) * float(per[k]) * 100.0
+			if is_zero_approx(val):
+				continue
 			bits.append(("%+.1f%% %s" if absf(val) < 1.0 else "%+.0f%% %s") % [val, _ATTR_SHORT.get(k, k)])
 			long_bits.append(Combat.describe_skill(str(k), val / 100.0))
 		row.tooltip_text += "
 " + "
 ".join(long_bits)
-		row.add_child(_label(", ".join(bits), 12, true))
+		row.add_child(_label(", ".join(bits) if not bits.is_empty() else "no bonus yet (%d is the baseline)" % GameData.ATTR_BASELINE, 12, true))
 		if h.attr_points > 0:
 			var plus := _button("+", func(id=h.id, at=a): GameState.spend_attr_point(id, at); render())
 			plus.custom_minimum_size = Vector2(36, 30)
