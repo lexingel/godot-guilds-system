@@ -879,7 +879,9 @@ func engage_node() -> void:
 		var mname := str(m["name"]).split(",")[0]
 		if not monsters_seen.has(mname):
 			monsters_seen.append(mname)
-	run["node_state"] = {"type": "combat", "combat_state": state, "reward_chosen": false}
+	# bg_idx stays alongside so a reload mid-fight (which drops combat_state)
+	# brings back the same arena.
+	run["node_state"] = {"type": "combat", "combat_state": state, "reward_chosen": false, "bg_idx": int(state.get("background_idx", prior_bg_idx))}
 	save()
 	state_changed.emit()
 
