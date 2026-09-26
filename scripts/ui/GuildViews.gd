@@ -215,11 +215,6 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	for entry in entries:
 		row.add_child(_hub_card(entry[0], entry[1], entry[2]))
 	v.add_child(row)
-	v.add_child(_hsep())
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
-		hub_cluster = ""
-		render()
-	))
 
 
 func _render_recruits(v: VBoxContainer) -> void:
@@ -415,6 +410,13 @@ func _play_craft_flourish(v: VBoxContainer, icon_path: String) -> void:
 ## instead of just selling it: feed 3 unequipped items (same category+rarity)
 ## or 3 unequipped relics (same type+rarity) into one craft for 1 of the next
 ## rarity up. Reuses Combat.gen_item/gen_relic entirely — no new loot tables.
+## "2/3 — need 1 more" until a craft is possible, then how many crafts.
+func _craft_count(count: int) -> String:
+	if count < 3:
+		return "%d/3 — need %d more" % [count, 3 - count]
+	return "%d owned — ready to craft%s" % [count, " (x%d)" % (count / 3) if count >= 6 else ""]
+
+
 func _render_crafting_hall(v: VBoxContainer) -> void:
 	v.add_child(_label("Crafting Hall", 20))
 	v.add_child(_label("Combine 3 of the same kind and rarity into 1 of the next rarity up.", 12, true))
@@ -462,7 +464,7 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 			render()
 		)
 		craft_btn.disabled = count < 3
-		v.add_child(_info_row("%s %s x%d" % [GameData.find_rarity(rarity)["name"], GameData.ITEM_CATEGORY_LABEL[category], count], 12, [craft_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[category], 20)))
+		v.add_child(_info_row("%s %s — %s" % [GameData.find_rarity(rarity)["name"], GameData.ITEM_CATEGORY_LABEL[category], _craft_count(count)], 13, [craft_btn], _icon(GameData.ITEM_CATEGORY_ICON_PATH[category], 20), count < 3))
 
 	v.add_child(_hsep())
 	v.add_child(_label("Relics", 16))
@@ -494,14 +496,9 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 			render()
 		)
 		rcraft_btn.disabled = rcount < 3
-		v.add_child(_info_row("%s %s x%d" % [GameData.find_rarity(rrarity)["name"], rtype, rcount], 12, [rcraft_btn], _icon(GameData.RELIC_TYPE_ICON_PATH[rtype], 20)))
+		v.add_child(_info_row("%s %s — %s" % [GameData.find_rarity(rrarity)["name"], rtype, _craft_count(rcount)], 13, [rcraft_btn], _icon(GameData.RELIC_TYPE_ICON_PATH[rtype], 20), rcount < 3))
 
-	v.add_child(_hsep())
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Camp", func():
-		screen = "terminal"
-		term_tab = "camp"
-		render()
-	))
+
 
 
 ## Pure checklist, no reward tied to completion — three sections (Monsters,
@@ -650,13 +647,26 @@ func _render_quests(v: VBoxContainer) -> void:
 		var progress := GameState.quest_progress(q)
 		var target := int(q["target"])
 		var done := progress >= target
-		var text := "[%s] %s — %d/%d\nReward: %s" % [str(q["tier"]).capitalize(), GameState.quest_desc(q), progress, target, GameState.quest_reward_desc(q["reward"])]
-		var claim_btn := _icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Claim" if done else "In Progress", func(qid=str(q["id"])):
-			GameState.claim_quest(qid)
-			render()
-		)
-		claim_btn.disabled = not done
-		v.add_child(_info_row(text, 13, [claim_btn]))
+		var text := "[%s] %s\nReward: %s" % [str(q["tier"]).capitalize(), GameState.quest_desc(q), GameState.quest_reward_desc(q["reward"])]
+		# Unfinished: a progress bar. Finished: a Claim button — no greyed
+		# "In Progress" button that read as already done.
+		var status: Control
+		if done:
+			status = _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Claim", func(qid=str(q["id"])):
+				GameState.claim_quest(qid)
+				render()
+			)
+		else:
+			var pv := _vbox(2)
+			pv.custom_minimum_size.x = 140
+			pv.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var pl := _label("%d / %d" % [min(progress, target), target], 12, true)
+			pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			pv.add_child(pl)
+			pv.add_child(_flat_bar(target, min(progress, target), 140, 6, Palette.VIOLET_BRIGHT))
+			status = pv
+		var actions: Array[Control] = [status]
+		v.add_child(_info_row(text, 13, actions))
 		v.add_child(_hsep())
 
 	v.add_child(_label("Milestones", 16))
@@ -679,7 +689,6 @@ func _render_management(v: VBoxContainer) -> void:
 	for b in GameData.BRANCHES:
 		if b["id"] == mgmt_branch:
 			branch = b
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "< Back to Branches", func(): mgmt_branch = ""; render()))
 	v.add_child(_banner(GameData.BRANCH_BANNER[mgmt_branch], 700, 150))
 	v.add_child(_label("%s — %s" % [branch["name"], branch["sub"]], 16))
 	var grid := GridContainer.new()

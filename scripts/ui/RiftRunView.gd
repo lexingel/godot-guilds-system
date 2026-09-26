@@ -87,22 +87,23 @@ func _render_rift_map(v: VBoxContainer) -> void:
 	var chosen: Dictionary = GameState.run.get("chosen", {})
 	var pos: int = int(GameState.run["pos"])
 
-	const MAP_SIZE := Vector2(900, 140)
+	# Spans the column (the combat arena's width), not a fixed 900px strip.
+	var map_size := Vector2(maxf(700.0, v.custom_minimum_size.x), 150)
 	var map_ctrl := Control.new()
-	map_ctrl.custom_minimum_size = MAP_SIZE
+	map_ctrl.custom_minimum_size = map_size
 
 	var bg := TextureRect.new()
 	bg.texture = load("res://assets/screens/riftpath_bg.png")
-	bg.custom_minimum_size = MAP_SIZE
-	bg.size = MAP_SIZE
+	bg.custom_minimum_size = map_size
+	bg.size = map_size
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	map_ctrl.add_child(bg)
 
 	var n := layers.size()
 	var margin := 40.0
-	var step: float = (MAP_SIZE.x - margin * 2.0) / float(max(1, n - 1))
-	var base_y := MAP_SIZE.y * 0.55
+	var step: float = (map_size.x - margin * 2.0) / float(max(1, n - 1))
+	var base_y := map_size.y * 0.55
 	var anchors: Array[Vector2] = []
 	for i in n:
 		var ax: float = margin + step * i
@@ -139,7 +140,7 @@ func _render_rift_map(v: VBoxContainer) -> void:
 				map_ctrl.add_child(line)
 	for i in n:
 		var num := _label(str(i + 1), 10, true)
-		num.position = Vector2(anchors[i].x - 4, MAP_SIZE.y - 16)
+		num.position = Vector2(anchors[i].x - 4, map_size.y - 16)
 		map_ctrl.add_child(num)
 
 	for i in n:
@@ -166,8 +167,35 @@ func _render_rift_map(v: VBoxContainer) -> void:
 				map_ctrl.add_child(marker2)
 
 	v.add_child(map_ctrl)
+
+	# Legend for the node icons actually on this map (hover any node for more).
+	var kinds: Array[String] = []
+	for layer in layers:
+		for k in layer["options"]:
+			if not kinds.has(str(k)):
+				kinds.append(str(k))
+	var legend := HBoxContainer.new()
+	legend.add_theme_constant_override("separation", 16)
 	if pos < n and (layers[pos]["options"] as Array).size() > 1 and not chosen.has(pos):
-		v.add_child(_label("Choose your path — click a node above.", 12, true))
+		var hint := _label("Choose your path — click a node on the map.", 13)
+		hint.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		legend.add_child(hint)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	legend.add_child(spacer)
+	for k in ["combat", "elite", "shop", "hazard", "boss"]:
+		if not kinds.has(k):
+			continue
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 4)
+		item.tooltip_text = MAP_NODE_DESC.get(k, "")
+		item.mouse_filter = Control.MOUSE_FILTER_STOP
+		item.add_child(_icon(MAP_NODE_ICON[k], 16))
+		var kl := _label(k.capitalize(), 12)
+		kl.add_theme_color_override("font_color", MAP_NODE_COLOR.get(k, Palette.TEXT))
+		item.add_child(kl)
+		legend.add_child(item)
+	v.add_child(legend)
 
 
 # ---------------- Rift Run ----------------

@@ -316,20 +316,41 @@ func _count_label(key: String, value: int, size: int) -> Label:
 	return l
 
 
-## Where the header's back arrow goes on this screen (invalid = no arrow).
-func _header_back() -> Callable:
-	if screen == "terminal" and term_tab == "inventory" and inv_category != "":
-		return func():
-			inv_category = ""
-			render()
-	if screen == "terminal" and term_tab != "camp":
-		return func():
-			term_tab = "camp"
-			medical_picker_bed = -1
-			mgmt_branch = ""
-			inv_category = ""
-			render()
-	return Callable()
+## The header's back button for this screen: [callback, destination name],
+## or [] for none. Every screen's "back" lives here, so it's always in the
+## same place instead of at the bottom of a long page.
+func _header_back() -> Array:
+	var to_camp := func():
+		screen = "terminal"
+		term_tab = "camp"
+		hub_cluster = ""
+		medical_picker_bed = -1
+		mgmt_branch = ""
+		inv_category = ""
+		render()
+	match screen:
+		"terminal":
+			if term_tab == "inventory" and inv_category != "":
+				return [func(): inv_category = ""; render(), "Inventory"]
+			if term_tab == "management" and mgmt_branch != "":
+				return [func(): mgmt_branch = ""; render(), "Management"]
+			if term_tab != "camp" or hub_cluster != "":
+				return [to_camp, "Camp"]
+		"rift_hall", "rift_map", "crafting_hall":
+			return [to_camp, "Camp"]
+		"party_assembly":
+			var from_map := _pending_rift_rank != ""
+			return [func():
+				screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
+				_pending_rift_rank = ""
+				_pending_map_slot_idx = -1
+				render()
+			, "Rift Map" if from_map else "Rift Hall"]
+		"settings":
+			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "rift_map": "Rift Map",
+				"party_assembly": "Party Assembly", "crafting_hall": "Crafting Hall"}
+			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
+	return []
 
 
 ## Content column width: combat, the camp scene and the two-pane screens
@@ -359,10 +380,10 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	var back := _header_back()
-	if back.is_valid():
-		var bb := _button("", back)
+	if not back.is_empty():
+		var bb := _button(str(back[1]), back[0])
 		bb.icon = load(GameData.BUTTON_ICON_PATH["back"])
-		bb.tooltip_text = "Back to Camp"
+		bb.tooltip_text = "Back to %s" % str(back[1])
 		bb.custom_minimum_size = Vector2(40, 36)
 		row.add_child(bb)
 	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
@@ -540,6 +561,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var scene_size := Vector2(700, 340)
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.RIFTHALL_BG)
@@ -551,57 +573,75 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 
 	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
 	var lesser: Dictionary = GameData.DIFFICULTIES[0]
-	var gate_entries := [
-		["%s — Floors %d · Rec. Power %d" % [lesser["name"], lesser["floors"], lesser["rec_power"]],
-			Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98),
-			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = str(lesser["id"]); _pending_endless = false; render()],
-		["Endless Rift — scales forever. Best cycle: %d" % GameState.best_endless_cycle,
-			Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
-			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = "endless"; _pending_endless = true; render()],
-	]
-	# The chained, rubble-blocked archway to the right stays inert until
-	# GameState.greater_rift_unlocked() (earned by sealing rifts, not bought
-	# with Guild Management currency) — no hotspot at all while locked, same
-	# as this gate's behavior before Greater Rift existed.
-	if GameState.greater_rift_unlocked():
-		var greater: Dictionary = GameData.DIFFICULTIES[1]
-		gate_entries.append(["%s — Floors %d · Rec. Power %d" % [greater["name"], greater["floors"], greater["rec_power"]],
-			Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140),
-			func(): pending_party.clear(); screen = "party_assembly"; _pending_diff_id = str(greater["id"]); _pending_endless = false; render()])
-	for entry in gate_entries:
-		var label_text: String = entry[0]
-		var hit_rect: Rect2 = entry[1]
-		var native_rect: Rect2 = entry[2]
-		var cb: Callable = entry[3]
-		var glow_rect := Rect2(
-			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
-			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
-		)
-		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, cb)
-		hotspot.position = hit_rect.position
-		scene.add_child(hotspot)
-
-	v.add_child(scene)
-	var best := _best_party_power()
-	v.add_child(_power_readout(best, Combat.recommended_power("lesser", false), "Lesser Rift — your strongest party"))
-	if GameState.greater_rift_unlocked():
-		v.add_child(_power_readout(best, Combat.recommended_power("greater", false), "Greater Rift — your strongest party"))
-	v.add_child(_power_readout(best, Combat.recommended_power("endless", true), "Endless Rift (cycle 1) — your strongest party"))
-	if not GameState.greater_rift_unlocked():
-		v.add_child(_label("Greater Rift — Seal %d more Rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed], 12))
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Terminal", func():
-		screen = "terminal"
+	var greater: Dictionary = GameData.DIFFICULTIES[1]
+	var unlocked := GameState.greater_rift_unlocked()
+	var go := func(diff_id: String, endless: bool):
+		pending_party.clear()
+		screen = "party_assembly"
+		_pending_diff_id = diff_id
+		_pending_endless = endless
 		render()
-	))
+	var gate_entries := [
+		["Lesser Rift", Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(str(lesser["id"]), false)],
+		["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("endless", true)],
+	]
+	# The chained, rubble-blocked archway stays inert until
+	# GameState.greater_rift_unlocked() (earned by sealing rifts).
+	if unlocked:
+		gate_entries.append(["Greater Rift", Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(str(greater["id"]), false)])
+	for entry in gate_entries:
+		var native_rect: Rect2 = entry[2]
+		var glow_rect := Rect2(native_rect.position * camp_scale, native_rect.size * camp_scale)
+		var hotspot := _camp_area_hotspot(entry[1], glow_rect, str(entry[0]), entry[3])
+		hotspot.position = (entry[1] as Rect2).position
+		scene.add_child(hotspot)
+	if not unlocked:
+		var lock_plaque := _camp_plaque("Greater Rift — locked")
+		lock_plaque.position = Vector2(470 + (230 - lock_plaque.size.x) * 0.5, 340 - lock_plaque.size.y - 6)
+		scene.add_child(lock_plaque)
+	v.add_child(scene)
+
+	# One card per rift: what it is, how your strongest party measures up,
+	# and the button to go.
+	var best := _best_party_power()
+	var cards := HBoxContainer.new()
+	cards.add_theme_constant_override("separation", 10)
+	cards.alignment = BoxContainer.ALIGNMENT_CENTER
+	var card_defs := [
+		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
+		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),
+			"" if unlocked else "Seal %d more rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed]],
+		["Endless Rift", "Scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true), ""],
+	]
+	for cd in card_defs:
+		var card := PanelContainer.new()
+		card.custom_minimum_size.x = 270
+		var cv := _vbox(6)
+		cv.add_child(_label(str(cd[0]), 16))
+		cv.add_child(_label(str(cd[1]), 12, true))
+		if str(cd[4]) != "":
+			cv.add_child(_wrap_label(str(cd[4]), 12, true))
+			card.modulate = Color(1, 1, 1, 0.6)
+		else:
+			var pr := _power_readout(best, int(cd[2]), "Your best party")
+			pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			cv.add_child(pr)
+			var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party", cd[3])
+			b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			cv.add_child(b)
+		card.add_child(cv)
+		cards.add_child(card)
+	v.add_child(cards)
 
 
 func _render_rift_map_hub(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Map", 20))
-	v.add_child(_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
+	v.add_child(_wrap_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
 
 	var scene_size := Vector2(700, 200)
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.RIFTMAP_BG)
@@ -614,21 +654,19 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 	var map_scale := Vector2(scene_size.x / 320.0, scene_size.y / 200.0)
 	var now := int(Time.get_unix_time_from_system() * 1000)
 	var icon_size := 32.0
+	var best := _best_party_power()
+	# The map only carries a numbered marker per rift (captions here used to
+	# pile on top of each other); the details live in the list below it.
+	var rows := _vbox(6)
+	var n := 0
 	for i in GameState.rift_map.size():
 		var slot: Dictionary = GameState.rift_map[i]
 		if slot.is_empty():
 			continue
+		n += 1
 		var rank := str(slot.get("rank", "F"))
-		var remain_ms: int = max(0, int(slot.get("expires_at", 0)) - now)
-		var remain_s := remain_ms / 1000
-		var mm := remain_s / 60
-		var ss := remain_s % 60
-		var caption := "Rank %s — %02d:%02d" % [rank, mm, ss]
-		var bounty: Dictionary = slot.get("bounty", {})
-		if not bounty.is_empty():
-			caption += "\n+%dc, +%d Rep" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))]
-
-		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], icon_size, caption, func(idx=i, r=rank):
+		var remain_s: int = max(0, int(slot.get("expires_at", 0)) - now) / 1000
+		var enter := func(idx=i, r=rank):
 			pending_party.clear()
 			pending_relic_options.clear()
 			pending_relic_choice = -1
@@ -636,24 +674,48 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 			_pending_map_slot_idx = idx
 			screen = "party_assembly"
 			render()
-		)
+		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], icon_size, "", enter)
 		var marker: Vector2 = RIFT_MAP_MARKER_POS[i % RIFT_MAP_MARKER_POS.size()]
 		hotspot.position = Vector2(marker.x * map_scale.x, marker.y * map_scale.y) - Vector2(icon_size, icon_size) / 2.0
-		var rank_label := hotspot.get_child(1) as Label
-		rank_label.add_theme_color_override("font_color", Palette.rank_color(rank))
+		(hotspot.get_child(0) as Control).tooltip_text = "Rank %s rift" % rank
 		scene.add_child(hotspot)
+		var num := _count_badge(str(n), "Rank %s rift" % rank)
+		num.position = hotspot.position + Vector2(icon_size - 10, -8)
+		scene.add_child(num)
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var row_badge := _count_badge(str(n), "")
+		row_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row_badge.custom_minimum_size.x = 24
+		row.add_child(row_badge)
+		var rl := _label("Rank %s" % rank, 15)
+		rl.add_theme_color_override("font_color", Palette.rank_color(rank))
+		rl.custom_minimum_size.x = 76
+		row.add_child(rl)
+		var tl := _label("closes in %d:%02d" % [remain_s / 60, remain_s % 60], 13, true)
+		tl.custom_minimum_size.x = 120
+		tl.tooltip_text = "Real time. An unaddressed rift spills out as a forced fight."
+		row.add_child(tl)
+		var bounty: Dictionary = slot.get("bounty", {})
+		var bl := _label("Bounty +%dc, +%d Rep" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))] if not bounty.is_empty() else "", 13)
+		bl.add_theme_color_override("font_color", Palette.COINS)
+		bl.custom_minimum_size.x = 160
+		row.add_child(bl)
+		var pr := _power_readout(best, Combat.recommended_power("lesser", false, rank), "Your best")
+		pr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(pr)
+		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter", enter))
+		rows.add_child(row)
 
 	v.add_child(scene)
+	if n == 0:
+		v.add_child(_label("No rifts are open right now — new ones appear over time.", 13, true))
+	v.add_child(rows)
 
 	if not GameState.pending_riftbreak_ranks.is_empty():
 		v.add_child(_hsep())
 		v.add_child(_label("A Riftbreak is looming — %d unaddressed rift(s) will spill out next time you return to the Terminal." % GameState.pending_riftbreak_ranks.size(), 12, true))
-
-	v.add_child(_hsep())
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to Terminal", func():
-		screen = "terminal"
-		render()
-	))
 
 
 # ---------------- Party Assembly ----------------
@@ -836,12 +898,6 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		render()
 		_play_rift_entry_flash()
 	))
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
-		screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
-		_pending_rift_rank = ""
-		_pending_map_slot_idx = -1
-		render()
-	))
 
 
 # ---------------- Settings ----------------
@@ -939,12 +995,6 @@ func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_hsep())
 	v.add_child(_label("Save Slots", 15))
 	_render_slot_list(v)
-
-	v.add_child(_hsep())
-	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
-		screen = _pre_settings_screen
-		render()
-	))
 
 
 ## Shared by Settings' "Save Slots" section and the title screen's Load Game
