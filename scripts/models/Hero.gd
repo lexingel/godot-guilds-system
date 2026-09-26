@@ -42,6 +42,7 @@ var down_runs: int = 0           # rift runs this hero still sits out while reco
 var bedded: bool = false
 var hp: int = 0
 var is_champion: bool = false
+var oath: int = 0   # rifts sealed together as Champion (see GameData.CHAMPION_OATH_SEALS)
 var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
@@ -62,7 +63,7 @@ func to_dict() -> Dictionary:
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
-		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion,
+		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
@@ -135,6 +136,7 @@ static func from_dict(d: Dictionary) -> Hero:
 		attrs_migrated += 1
 	h.hp = d.get("hp", 0)
 	h.is_champion = d.get("is_champion", false)
+	h.oath = int(d.get("oath", 0))
 	h.ability_cooldown = d.get("ability_cooldown", 0)
 	h.formation = d.get("formation", "front")
 	return h

@@ -298,7 +298,7 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 	var headline := _label("★ RANK S ★", 18)
 	headline.add_theme_color_override("font_color", Palette.RANK_S)
 	mid.add_child(headline)
-	var source_text := "joins as Champion!" if str(data["source"]) == "champion" else "is available to recruit!"
+	var source_text := "is offered as a Champion!" if str(data["source"]) == "champion" else "is available to recruit!"
 	mid.add_child(_label("%s %s" % [str(data["name"]), source_text], 13))
 	row.add_child(mid)
 
@@ -1250,6 +1250,10 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	var names := _vbox(0)
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
 	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
+	if is_champ:
+		var boon := _wrap_label(GameState.champion_boon_text(h), 12, true)
+		boon.add_theme_color_override("font_color", Palette.RANK_E)
+		names.add_child(boon)
 	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · out %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"] if downed else ""], 10, true))
 	if not downed and h.hp < Combat.max_hp(h) * 0.5:
 		var wl := _label("Wounded — %d%% HP" % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)

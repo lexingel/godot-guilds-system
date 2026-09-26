@@ -268,23 +268,63 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	v.add_child(row)
 
 
+## A Champion as a card: who they are, their Boon and Call, and — for the
+## current one — oath progress and Swear In; for an offer, a Choose button.
+func _champion_card(c: Hero, current: bool, offer_idx: int = -1) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelEmber" if current else &"CardPanelViolet"
+	if not current:
+		card.custom_minimum_size.x = 270
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 64.0 if current else 52.0))
+	var col := _vbox(3)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nm := _label(c.name, 15 if current else 14)
+	nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if current else Palette.TEXT)
+	col.add_child(nm)
+	col.add_child(_label("Rank %s · Lv%d %s · Power %d" % [c.rank, c.level, GameState.champion_role(c).capitalize(), Combat.power_of(c)], 12, true))
+	var boon := _wrap_label("Boon: " + GameState.champion_boon_text(c), 12)
+	boon.add_theme_color_override("font_color", Palette.RANK_E)
+	col.add_child(boon)
+	var call := GameState.champion_call(c)
+	col.add_child(_wrap_label("Call: %s — %s (once per rift)" % [call["name"], call["desc"]], 12))
+	if current:
+		var need := GameData.CHAMPION_OATH_SEALS
+		if c.oath >= need:
+			if GameState.champion_can_swear():
+				col.add_child(_wrap_label("%s has fought through %d rifts with you and offers to swear to the guild." % [c.name, need], 12))
+				var swear := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Swear in — joins your roster", func():
+					var err := GameState.swear_in_champion()
+					if err != "":
+						push_warning(err)
+					render()
+				)
+				swear.disabled = not GameState.run.is_empty()
+				swear.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+				col.add_child(swear)
+			else:
+				col.add_child(_wrap_label("Ready to swear in — free a roster slot first.", 12, true))
+		else:
+			col.add_child(_label("Oath %d/%d — seal %d more rift%s together and they'll join your roster for good" % [c.oath, need, need - c.oath, "" if need - c.oath == 1 else "s"], 12, true))
+	else:
+		var pick := _button("Choose", func(i=offer_idx):
+			GameState.choose_champion(i)
+			render()
+		)
+		pick.disabled = not GameState.run.is_empty()
+		pick.tooltip_text = "Can't swap mid-rift" if pick.disabled else "Replace the current Champion"
+		pick.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		col.add_child(pick)
+	row.add_child(col)
+	card.add_child(row)
+	return card
+
+
 func _render_recruits(v: VBoxContainer) -> void:
 	var champ := GameState.ensure_champion()
-	var champ_row := HBoxContainer.new()
-	champ_row.add_theme_constant_override("separation", 10)
-	champ_row.add_child(_framed_portrait(champ.cls_id, champ.pool_id, 56.0))
-	var champ_mid := _vbox(2)
-	champ_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	champ_mid.add_child(_label("Champion: %s" % champ.name, 13))
-	champ_mid.add_child(_label("Rank %s · always joins free" % champ.rank, 11, true))
-	champ_row.add_child(champ_mid)
-	champ_row.add_child(_button("Reroll (%dc)" % GameData.CHAMPION_REROLL_COST, func():
-		var err := GameState.reroll_champion()
-		if err != "":
-			push_warning(err)
-		render()
-	))
-	v.add_child(champ_row)
+	v.add_child(_label("Champion — joins every rift for free", 16))
+	v.add_child(_champion_card(champ, true))
 	var champ_weapon_row := HBoxContainer.new()
 	champ_weapon_row.add_theme_constant_override("separation", 8)
 	for i in GameData.weapon_slots(champ.pool_id):
@@ -296,6 +336,24 @@ func _render_recruits(v: VBoxContainer) -> void:
 		_render_equip_picker(v, champ, "weapon", int(expanded_slot.split(":")[2]))
 	if expanded_slot.begins_with("%s:gear:" % champ.id):
 		_render_equip_picker(v, champ, "gear", int(expanded_slot.split(":")[2]))
+
+	if not GameState.champion_offers.is_empty():
+		v.add_child(_label("Or swap in another Champion (their gear comes back to you, the oath starts over):", 13, true))
+		var offers := HFlowContainer.new()
+		offers.add_theme_constant_override("h_separation", 10)
+		offers.add_theme_constant_override("v_separation", 10)
+		for i in GameState.champion_offers.size():
+			offers.add_child(_champion_card(GameState.champion_offers[i], false, i))
+		v.add_child(offers)
+	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "New offers (%dc)" % GameData.CHAMPION_REROLL_COST, func():
+		var err := GameState.reroll_champion()
+		if err != "":
+			push_warning(err)
+		render()
+	)
+	reroll.disabled = GameState.coins < GameData.CHAMPION_REROLL_COST
+	reroll.tooltip_text = "A free set of offers also arrives every time you seal a rift."
+	v.add_child(reroll)
 	v.add_child(_wrap_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
 	v.add_child(_hsep())
 
@@ -735,6 +793,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
 		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
+		["Champions", "A free guest fighter joins every rift. Pick one of three offers each cycle (a new set arrives with every seal). They level with your strongest hero, give the whole party their Boon while standing, and have one Champion Call per rift (key 7 on their turn). Seal 3 rifts with the same Champion and they can swear in to your roster for good."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 5 extra points with Coins, or reset a hero's points for 5 Seal Tokens per level (gear they no longer qualify for comes off)."],
 		["Guild Board & Milestones", "Contracts and Dailies are quick rotating objectives paying Coins/Crystals/Tokens/Reputation. Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]

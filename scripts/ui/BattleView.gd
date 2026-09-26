@@ -403,7 +403,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 					await _play_frames(hero_rects[h.id], frames)
 				else:
 					await _tween_lunge(hero_wrappers[h.id])
-			elif action == "ability":
+			elif action == "ability" or action == "call":
 				AudioManager.play_sfx(GameData.SFX_PATH["attack"])
 				var frames := GameData.hero_combat_frames(h.cls_id, h.pool_id, "skill")
 				if not frames.is_empty() and hero_rects.has(h.id):
@@ -1387,6 +1387,13 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "4", start_guard, "Guard (4) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker.", last_action == "guard")
 			row.add_child(gb)
 			_combat_hotkeys["4"] = start_guard
+		if GameState.champion_call_ready(current_hero):
+			var call := GameState.champion_call(current_hero)
+			var do_call := func(): run_turns.call(func(): GameState.set_hero_action(hid, "call"))
+			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "7", do_call, "Champion's Call (7) — %s. Once per rift." % call["desc"], false)
+			cb.modulate = Color(1.15, 1.0, 0.7)
+			row.add_child(cb)
+			_combat_hotkeys["7"] = do_call
 		var to_row := "back" if current_hero.formation != "back" else "front"
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
 		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "5", do_swap, "Move (5) — step to the %s row. Front draws attacks; some classes fight better from one row." % to_row, false))

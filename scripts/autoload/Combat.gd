@@ -34,6 +34,7 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 			s += float(ks["value"])
 	s += GameState.party_resonance_bonus(kind)
 	s += GameState.party_eclectic_bonus()
+	s += GameState.champion_boon(kind)
 	if h.innate_kind == kind:
 		s += h.innate_value
 	# Same one-stage-back retention as the tree above — the innate bonus
@@ -83,6 +84,7 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 			add.call("Keystone drawback: %s" % ks["name"], float(ks["value"]))
 	add.call("Party Resonance", GameState.party_resonance_bonus(kind))
 	add.call("Party Eclectic", GameState.party_eclectic_bonus())
+	add.call("Champion Boon", GameState.champion_boon(kind))
 	if h.innate_kind == kind:
 		add.call("Innate (%s)" % GameData.find_class(h.pool_id).get("name", "class"), h.innate_value)
 	if h.prior_innate_kind == kind:
@@ -407,7 +409,15 @@ func generate_champion() -> Hero:
 	var champ := Hero.new()
 	champ.id = "champ" + str(GameState.next_id)
 	GameState.next_id += 1
-	champ.name = cls["name"]
+	# A name of their own, not just the class — someone you'd want to keep.
+	var taken := {}
+	for other in GameState.heroes + GameState.champion_offers:
+		taken[other.name.split(" the ")[0]] = true
+	if GameState.current_champion:
+		taken[GameState.current_champion.name.split(" the ")[0]] = true
+	var free: Array = GameData.FIRST_NAMES.filter(func(n): return not taken.has(n))
+	var names: Array = free if not free.is_empty() else GameData.FIRST_NAMES
+	champ.name = "%s the %s" % [names[randi() % names.size()], cls["name"]]
 	champ.is_champion = true
 	champ.pool_id = cls["id"]
 	champ.rank = rank_id
@@ -1579,10 +1589,15 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			guards[ally.id] = h.id
 			state["_guarding"] = guards
 			log.append("%s moves to guard %s." % [h.name, ally.name])
-	elif action == "ability" and h.ability_cooldown == 0:
+	elif (action == "ability" and h.ability_cooldown == 0) or (action == "call" and GameState.champion_call_ready(h)):
 		var team_dmg_base: float = float(state["team_dmg_base"])
-		h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
-		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
+		var ab: Dictionary
+		if action == "call":
+			ab = GameState.champion_call(h)
+			GameState.run["champion_call_used"] = true
+		else:
+			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
+			ab = GameData.SUBCLASS_ABILITIES[h.pool_id]
 		var eff: String = ab["effect"]
 		var val: float = float(ab["value"])
 		# Focus: ability power strengthens the effect — a damage-cutting

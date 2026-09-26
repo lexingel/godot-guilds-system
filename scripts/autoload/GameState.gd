@@ -40,6 +40,7 @@ var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
+var champion_offers: Array[Hero] = []   # pick one to replace current_champion (refreshed each seal)
 var best_endless_cycle: int = 0
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
 var best_rift_rank_sealed: int = -1   # highest Rift Map rank sealed (GameData.RIFT_RANKS index) — gates Riftborn nodes
@@ -248,6 +249,7 @@ func reset() -> void:
 	upgrades = {}
 	caps = {}
 	current_champion = null
+	champion_offers = []
 	best_endless_cycle = 0
 	rifts_sealed = 0
 	best_rift_rank_sealed = -1
@@ -295,7 +297,7 @@ func _run_for_save() -> Dictionary:
 		"riftbreak_severity": run.get("riftbreak_severity", 0),
 		"riftbreak_worst_index": run.get("riftbreak_worst_index", 0),
 		"riftbreak_flavor": run.get("riftbreak_flavor", ""),
-		"bounty": run.get("bounty", {}),
+		"bounty": run.get("bounty", {}), "champion_call_used": run.get("champion_call_used", false),
 	}
 
 
@@ -419,6 +421,7 @@ func save() -> void:
 		"consumables": consumables, "active_incense": active_incense, "runestones": runestones, "tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
+		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"best_endless_cycle": best_endless_cycle,
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
@@ -535,6 +538,7 @@ func load_save() -> bool:
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
 	if current_champion:
 		migrate_hero_skill_keys(current_champion)
+	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	rifts_sealed = data.get("rifts_sealed", 0)
 	best_rift_rank_sealed = int(data.get("best_rift_rank_sealed", -1))
@@ -566,7 +570,7 @@ func load_save() -> bool:
 			"riftbreak_severity": run_data.get("riftbreak_severity", 0),
 			"riftbreak_worst_index": run_data.get("riftbreak_worst_index", 0),
 			"riftbreak_flavor": run_data.get("riftbreak_flavor", ""),
-			"bounty": run_data.get("bounty", {}),
+			"bounty": run_data.get("bounty", {}), "champion_call_used": bool(run_data.get("champion_call_used", false)),
 		}
 	return true
 
@@ -669,6 +673,9 @@ func ensure_champion() -> Hero:
 	if not current_champion:
 		current_champion = Combat.generate_champion()
 		_maybe_flag_s_rank(current_champion, "champion")
+	if champion_offers.is_empty():
+		refresh_champion_offers()
+	sync_champion_level()
 	current_champion.hp = Combat.max_hp(current_champion)
 	current_champion.down_runs = 0
 	return current_champion
@@ -692,14 +699,134 @@ func reroll_recruit_offer(offer_id: String) -> String:
 	return ""
 
 
-## On-demand version of the free reroll seal_rift() already does every rift
-## cycle — same generator, just player-triggered and paid.
+## A fresh set of Champion offers for Coins (a free set arrives every seal).
 func reroll_champion() -> String:
 	if coins < GameData.CHAMPION_REROLL_COST:
 		return "Not enough Coins."
 	coins -= GameData.CHAMPION_REROLL_COST
-	current_champion = Combat.generate_champion()
-	_maybe_flag_s_rank(current_champion, "champion")
+	refresh_champion_offers()
+	save()
+	state_changed.emit()
+	return ""
+
+
+func refresh_champion_offers() -> void:
+	champion_offers.clear()
+	var roles := {}
+	for i in GameData.CHAMPION_OFFER_COUNT:
+		# Different roles where the dice allow, so it's a real choice of Boon/Call.
+		var c := Combat.generate_champion()
+		for attempt in 12:
+			if not roles.has(champion_role(c)):
+				break
+			c = Combat.generate_champion()
+		roles[champion_role(c)] = true
+		_maybe_flag_s_rank(c, "champion")
+		_sync_level(c)
+		c.hp = Combat.max_hp(c)
+		champion_offers.append(c)
+
+
+## Swaps in one of the offers. The outgoing Champion's gear returns to the
+## Inventory and their oath resets — the new one starts at 0.
+func choose_champion(idx: int) -> void:
+	if not run.is_empty() or idx < 0 or idx >= champion_offers.size():
+		return
+	_release_champion_gear()
+	current_champion = champion_offers[idx]
+	champion_offers.clear()
+	sync_champion_level()
+	current_champion.hp = Combat.max_hp(current_champion)
+	save()
+	state_changed.emit()
+
+
+func _release_champion_gear() -> void:
+	if not current_champion:
+		return
+	for it in items:
+		if it.equipped_to == current_champion.id:
+			it.equipped_to = ""
+			it.equipped_idx = -1
+
+
+## The Champion keeps pace with your strongest hero (never drops a level).
+func sync_champion_level() -> void:
+	if current_champion:
+		_sync_level(current_champion)
+
+
+func _sync_level(c: Hero) -> void:
+	var target := 1
+	for h in heroes:
+		target = max(target, h.level)
+	while c.level < target:
+		c.level += 1
+		c.base_hp = int(round(c.base_hp * (1.0 + GameData.LEVEL_GROWTH)))
+		c.base_dmg = int(round(c.base_dmg * (1.0 + GameData.LEVEL_GROWTH)))
+		c.attr_points += GameData.ATTR_POINTS_PER_LEVEL
+	Combat.auto_spend_attrs(c)
+
+
+func champion_role(c: Hero) -> String:
+	return str(GameData.find_class(c.pool_id).get("role", "warrior"))
+
+
+## The party-wide Boon while the Champion is standing in a run.
+func champion_boon(kind: String) -> float:
+	if run.is_empty() or current_champion == null or current_champion.hp <= 0:
+		return 0.0
+	var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(current_champion), {})
+	if b.get("kind", "") != kind:
+		return 0.0
+	return float(b["value"]) * float(GameData.find_rank(current_champion.rank)["mult"])
+
+
+func champion_boon_text(c: Hero) -> String:
+	var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(c), {})
+	if b.is_empty():
+		return ""
+	return "%s — party %s" % [b["name"], Combat.describe_skill(str(b["kind"]), float(b["value"]) * float(GameData.find_rank(c.rank)["mult"]))]
+
+
+## The Champion's Call as an Active-Ability-shaped dict {name, effect, value}.
+func champion_call(c: Hero) -> Dictionary:
+	return GameData.CHAMPION_CALLS.get(champion_role(c), GameData.CHAMPION_CALLS["warrior"])
+
+
+func champion_call_ready(h: Hero) -> bool:
+	return h.is_champion and not run.is_empty() and not bool(run.get("champion_call_used", false))
+
+
+func champion_can_swear() -> bool:
+	return current_champion != null and current_champion.oath >= GameData.CHAMPION_OATH_SEALS and heroes.size() < hero_slot_cap()
+
+
+## The Champion joins the roster for good: a named hero with their level,
+## gear and Skill Points for every level; one of the offers steps up.
+func swear_in_champion() -> String:
+	if not run.is_empty():
+		return "Finish the rift first"
+	if not champion_can_swear():
+		return "Not ready"
+	var c := current_champion
+	var cls := GameData.find_class(c.pool_id)
+	if not c.name.contains(" the "):   # a Champion from before they had names
+		var free: Array = GameData.FIRST_NAMES.filter(func(n): return not heroes.any(func(o): return o.name.begins_with(n + " ")))
+		c.name = "%s the %s" % [(free if not free.is_empty() else GameData.FIRST_NAMES).pick_random(), cls.get("name", c.name)]
+	c.is_champion = false
+	c.cls_id = str(cls.get("role", "warrior"))
+	c.innate_value = Combat.hero_innate_value(cls, GameData.rank_index(c.rank))
+	c.trait_name = Combat.pick_trait_name(c.cls_id)
+	c.skill_points = c.level - 1
+	c.oath = 0
+	heroes.append(c)
+	push_toast(c, "Sworn to the guild", "%s joins your roster for good" % c.name.split(" the ")[0])
+	if champion_offers.is_empty():
+		refresh_champion_offers()
+	current_champion = champion_offers.pop_front()
+	sync_champion_level()
+	current_champion.hp = Combat.max_hp(current_champion)
 	save()
 	state_changed.emit()
 	return ""
@@ -1475,8 +1602,13 @@ func seal_rift() -> void:
 			flavor += " " + line
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
-	current_champion = Combat.generate_champion()
-	_maybe_flag_s_rank(current_champion, "champion")
+	# The Champion stays; standing at the seal counts toward their oath, and a
+	# fresh set of offers arrives if you'd rather swap.
+	if current_champion and current_champion.hp > 0:
+		current_champion.oath += 1
+		if current_champion.oath == GameData.CHAMPION_OATH_SEALS:
+			push_toast(current_champion, "An oath offered", "%s would swear to the guild — see Recruits" % current_champion.name)
+	refresh_champion_offers()
 	# A Rift Map bounty (see resolve_rift_map/start_map_rift) — {} for any
 	# rift not entered from the map, or a mapped rift that didn't roll one.
 	var bounty: Dictionary = run.get("bounty", {})
@@ -2474,6 +2606,8 @@ func item_fits_hero(it: Item, h: Hero) -> bool:
 
 func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -> void:
 	var h := find_hero(hero_id)
+	if not h and current_champion and current_champion.id == hero_id:
+		h = current_champion   # the Champion's gear slots (Recruits tab)
 	if not h:
 		return
 	# Validate the new item first — a rejected equip must not empty the slot.
