@@ -405,12 +405,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 func _render_medical_bay(v: VBoxContainer) -> void:
 	v.add_child(_label("Medical Bay — %d/%d beds occupied" % [GameState.occupied_beds(), GameState.medical_bed_cap()], 16))
 	if GameState.field_triage_available():
-		v.add_child(_icon_button("res://assets/skills/heart.png", "Field Triage (heal whole roster, once per rift cycle)%s" % ("" if not GameState.triage_used_this_cycle else " [used]"), func():
-			var err := GameState.field_triage_action()
-			if err != "":
-				push_warning(err)
-			render()
-		))
+		v.add_child(_wrap_label("Field Triage: once per rift, get a downed hero back up mid-rift.", 12, true))
 
 	var scene_size := Vector2(700, 200)
 	var scene := Control.new()
@@ -795,7 +790,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
 		["Champions", "A free guest fighter joins every rift. Pick one of three offers each cycle (a new set arrives with every seal). They level with your strongest hero, give the whole party their Boon while standing, and have one Champion Call per rift (key 7 on their turn). Seal 3 rifts with the same Champion and they can swear in to your roster for good."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 5 extra points with Coins, or reset a hero's points for 5 Seal Tokens per level (gear they no longer qualify for comes off)."],
-		["Guild Board & Milestones", "Contracts and Dailies are quick rotating objectives paying Coins/Crystals/Tokens/Reputation. Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
+		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -804,35 +799,72 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 
 
 # ---------------- Quests: Guild Board & Milestones ----------------
+const INK := Color("3b2414")
+const INK_SOFT := Color("6b4a2e")
+const QUEST_CATEGORY := {"hunt": "Hunt", "elite": "Hunt", "bounty": "Wanted", "seal_map": "Seal the Rift", "seal_rank": "Seal the Rift",
+	"seal_greater": "Seal the Rift", "trial_small": "Trial", "trial_flawless": "Trial", "trial_hardcore": "Trial", "craft": "Supply", "flawless_win": "Trial"}
+
+
+## The Guild Board: quests pinned as parchment notes on a wooden board —
+## taken ones first (red pin, TAKEN stamp), then this posting's offers.
 func _render_quests(v: VBoxContainer) -> void:
-	v.add_child(_label("Guild Board", 20))
-	v.add_child(_wrap_label("Contracts are quick and modest. Dailies are tougher with bigger rewards, including Reputation — every 20 Reputation arms a guaranteed Epic relic at your next Shop.", 12, true))
+	var board_w: float = v.custom_minimum_size.x
+	var taken: Array = GameState.active_quests()
+	var posted: Array = GameState.guild_board.filter(func(q): return str(q["status"]) == "posted")
+	var failed: Array = GameState.guild_board.filter(func(q): return str(q["status"]) == "failed")
+	var notes: Array = taken + failed + posted
+	var cols := 3
+	var pad_x := roundf(board_w * 0.075)
+	var pad_top := 96.0
+	var gap := 16.0
+	var note_w := floorf((board_w - pad_x * 2.0 - gap * (cols - 1)) / cols)
+	var note_h := 262.0
+	var rows: int = max(1, ceili(notes.size() / float(cols)))
+	var board_h := pad_top + rows * (note_h + gap) + 46.0
+	var board := Control.new()
+	board.custom_minimum_size = Vector2(board_w, board_h)
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.QUEST_BOARD_BG)
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	bg.size = Vector2(board_w, board_h)
+	board.add_child(bg)
+	# The header, chalked onto a plank at the top.
+	var head := _vbox(0)
+	head.position = Vector2(pad_x, 34)
+	head.size = Vector2(board_w - pad_x * 2.0, 60)
+	var title := _label("Guild Board", 22)
+	title.add_theme_color_override("font_color", Color("f1e2c0"))
+	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	title.add_theme_constant_override("shadow_offset_y", 2)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_child(title)
+	var days_left: int = max(0, GameState.board_refresh_day - GameState.day)
+	var sub := _label("Day %d  ·  Taken %d/%d  ·  new postings in %d day%s" % [GameState.day, taken.size(), GameData.QUEST_ACTIVE_MAX, days_left, "" if days_left == 1 else "s"], 13)
+	sub.add_theme_color_override("font_color", Color("e0cfa8"))
+	sub.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	sub.add_theme_constant_override("shadow_offset_y", 1)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.tooltip_text = "A day passes with every rift run or rest. Unaccepted postings are replaced when the board refreshes; quests you've taken stay."
+	sub.mouse_filter = Control.MOUSE_FILTER_STOP
+	head.add_child(sub)
+	board.add_child(head)
+	for i in notes.size():
+		var q: Dictionary = notes[i]
+		var jitter := hash(str(q["id"]))
+		var note := _quest_note(q, note_w, note_h, taken.size())
+		note.position = Vector2(pad_x + (i % cols) * (note_w + gap) + float(jitter % 9) - 4.0, pad_top + (i / cols) * (note_h + gap) + float((jitter / 9) % 9) - 4.0)
+		note.rotation = deg_to_rad(float((jitter / 81) % 7) * 0.7 - 2.1)
+		board.add_child(note)
+	if notes.is_empty():
+		var empty := _label("Nothing posted — new postings in %d day%s." % [days_left, "" if days_left == 1 else "s"], 14)
+		empty.add_theme_color_override("font_color", Color("e0cfa8"))
+		empty.position = Vector2(pad_x, pad_top + 20)
+		board.add_child(empty)
+	v.add_child(board)
+	v.add_child(_wrap_label("Every 20 Reputation arms a guaranteed Epic relic at your next Shop.", 12, true))
 	v.add_child(_hsep())
-	for q in GameState.guild_board:
-		var progress := GameState.quest_progress(q)
-		var target := int(q["target"])
-		var done := progress >= target
-		var text := "[%s] %s\nReward: %s" % [str(q["tier"]).capitalize(), GameState.quest_desc(q), GameState.quest_reward_desc(q["reward"])]
-		# Unfinished: a progress bar. Finished: a Claim button — no greyed
-		# "In Progress" button that read as already done.
-		var status: Control
-		if done:
-			status = _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Claim", func(qid=str(q["id"])):
-				GameState.claim_quest(qid)
-				render()
-			)
-		else:
-			var pv := _vbox(2)
-			pv.custom_minimum_size.x = 140
-			pv.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			var pl := _label("%d / %d" % [min(progress, target), target], 12, true)
-			pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			pv.add_child(pl)
-			pv.add_child(_flat_bar(target, min(progress, target), 140, 6, Palette.VIOLET_BRIGHT))
-			status = pv
-		var actions: Array[Control] = [status]
-		v.add_child(_info_row(text, 13, actions))
-		v.add_child(_hsep())
 
 	v.add_child(_label("Milestones", 16))
 	for m in GameData.MILESTONES:
@@ -843,6 +875,134 @@ func _render_quests(v: VBoxContainer) -> void:
 		var status := "Claimed" if claimed else "%d/%d" % [min(mprogress, mtarget), mtarget]
 		v.add_child(_wrap_label("%s [%s]" % [str(m["label"]), status], 12, claimed))
 	v.add_child(_hsep())
+
+
+## One quest as a pinned parchment note.
+func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control:
+	var status := str(q["status"])
+	var type := str(q["type"])
+	var progress := GameState.quest_progress(q)
+	var target := int(q["target"])
+	var done := status == "active" and progress >= target
+	var note := Control.new()
+	note.custom_minimum_size = Vector2(w, h)
+	note.size = Vector2(w, h)
+	note.pivot_offset = Vector2(w, h) * 0.5
+	var paper := TextureRect.new()
+	var paper_by_cat := {"Hunt": "quest_note_torn", "Wanted": "quest_note_poster"}
+	paper.texture = load("res://assets/ui/%s.png" % paper_by_cat.get(QUEST_CATEGORY.get(type, ""), "quest_note"))
+	paper.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	paper.stretch_mode = TextureRect.STRETCH_SCALE
+	paper.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	paper.size = Vector2(w, h)
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if status == "failed":
+		paper.modulate = Color(0.7, 0.68, 0.66)
+	note.add_child(paper)
+	var col := _vbox(4)
+	col.position = Vector2(18, 24)
+	col.size = Vector2(w - 36, h - 40)
+	var cat := _label(str(QUEST_CATEGORY.get(type, "Quest")).to_upper() if type == "bounty" else str(QUEST_CATEGORY.get(type, "Quest")), 18 if type == "bounty" else 16)
+	cat.add_theme_font_override("font", DISPLAY_FONT)
+	cat.add_theme_color_override("font_color", Color("7a1f14") if type == "bounty" else INK)
+	cat.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(cat)
+	if type == "bounty":
+		var mug := TextureRect.new()
+		mug.texture = load(GameData.sprite_for_monster(str(q["param"])))
+		mug.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		mug.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		mug.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		mug.custom_minimum_size = Vector2(0, 56)
+		col.add_child(mug)
+	var desc := GameState.quest_desc(q)
+	desc = desc.substr(desc.find(": ") + 2) if desc.find(": ") >= 0 else desc
+	var dl := _wrap_label(desc[0].to_upper() + desc.substr(1), 13)
+	dl.add_theme_color_override("font_color", INK)
+	dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(dl)
+	var stars := _label("★".repeat(int(q["diff"])) + "☆".repeat(3 - int(q["diff"])), 13)
+	stars.add_theme_color_override("font_color", Color("9a5a12"))
+	stars.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stars.tooltip_text = "Difficulty"
+	stars.mouse_filter = Control.MOUSE_FILTER_STOP
+	col.add_child(stars)
+	var rl := _wrap_label("Reward: " + GameState.quest_reward_desc(q["reward"]), 12)
+	rl.add_theme_color_override("font_color", INK_SOFT)
+	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(rl)
+	var fill := Control.new()
+	fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(fill)
+	match status:
+		"posted":
+			var full := taken_count >= GameData.QUEST_ACTIVE_MAX
+			var take := _button("Take on", func(id=str(q["id"])):
+				var err := GameState.accept_quest(id)
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			take.disabled = full
+			take.tooltip_text = "You already have %d quests — finish or abandon one first" % GameData.QUEST_ACTIVE_MAX if full else "Only progress made after taking it counts"
+			take.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			col.add_child(take)
+		"active":
+			if done:
+				var claim := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Claim reward", func(id=str(q["id"])):
+					GameState.claim_quest(id)
+					render()
+				)
+				claim.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				col.add_child(claim)
+			else:
+				var pr := _label("%d / %d" % [progress, target], 12)
+				pr.add_theme_color_override("font_color", INK)
+				pr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				col.add_child(pr)
+				var bar := _flat_bar(target, progress, w - 60, 6, Color("8a3a1a"))
+				bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				col.add_child(bar)
+				var ab := _button("Abandon", func(id=str(q["id"])):
+					GameState.abandon_quest(id)
+					render()
+				)
+				ab.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				ab.add_theme_font_size_override("font_size", 12)
+				col.add_child(ab)
+		"failed":
+			var rm := _button("Take it down", func(id=str(q["id"])):
+				GameState.abandon_quest(id)
+				render()
+			)
+			rm.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			col.add_child(rm)
+	note.add_child(col)
+	# The pin: red on quests you've taken, brass on postings.
+	var pin := Panel.new()
+	var ps := StyleBoxFlat.new()
+	ps.bg_color = Color("b3261e") if status == "active" else (Color("777777") if status == "failed" else Color("c89b3c"))
+	ps.set_corner_radius_all(8)
+	ps.border_color = Color(0, 0, 0, 0.55)
+	ps.set_border_width_all(2)
+	pin.add_theme_stylebox_override("panel", ps)
+	pin.size = Vector2(16, 16)
+	pin.position = Vector2(w * 0.5 - 8, 6)
+	pin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note.add_child(pin)
+	# A stamp across the corner for taken / done / failed.
+	var stamp_text := "DONE" if done else ("TAKEN" if status == "active" else ("FAILED" if status == "failed" else ""))
+	if stamp_text != "":
+		var st := _label(stamp_text, 18)
+		st.add_theme_font_override("font", DISPLAY_FONT)
+		st.add_theme_color_override("font_color", Color(0.2, 0.55, 0.2, 0.8) if done else (Color(0.7, 0.12, 0.1, 0.6) if status == "active" else Color(0.25, 0.25, 0.25, 0.75)))
+		st.position = Vector2(14, h - 58) if done else Vector2(10, 30)
+		st.rotation = deg_to_rad(-14)
+		if not done:
+			st.add_theme_font_size_override("font_size", 14)
+		st.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		note.add_child(st)
+	return note
 
 
 func _render_management(v: VBoxContainer) -> void:

@@ -324,6 +324,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(rb_flavor, 12, true))
 	var kind := GameState.current_node_kind()
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	if not GameState.pending_injuries().is_empty():
+		v.add_child(_injury_panel())
 	# The battle screen already shows every hero's HP twice over (arena
 	# nameplates + the action menu) and has its own Retreat button — repeating
 	# a third party-HP list and a second Retreat button above/below it just
@@ -478,11 +480,71 @@ func _hazard_severity_label(dmg_mult: float) -> String:
 	return "Severe"
 
 
+## A hero went down: one row per downed hero with the four choices. The
+## rift doesn't continue until each has one.
+func _injury_panel() -> Control:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelEmber"
+	var col := _vbox(8)
+	var head := _label("Downed — decide before moving on", 16)
+	head.add_theme_color_override("font_color", Palette.HAZARD)
+	col.add_child(head)
+	var idle := GameState.idle_heroes()
+	var healer := GameState.field_healer()
+	for e in GameState.pending_injuries():
+		var h := GameState.find_hero(str(e["id"]))
+		if not h:
+			continue
+		var sev := str(e["severity"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		row.add_child(_icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), 44))
+		var who := _vbox(2)
+		who.custom_minimum_size.x = 150
+		who.add_child(_label(h.name.split(" the ")[0], 14))
+		var sl := _label(sev.capitalize(), 12)
+		sl.add_theme_color_override("font_color", Palette.HAZARD if sev == "critical" else Palette.EMBER_BRIGHT)
+		who.add_child(sl)
+		row.add_child(who)
+		var acts := HFlowContainer.new()
+		acts.add_theme_constant_override("h_separation", 6)
+		acts.add_theme_constant_override("v_separation", 6)
+		acts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var act := func(text: String, tip: String, disabled: bool, cb: Callable) -> void:
+			var b := _button(text, func():
+				var err: String = cb.call()
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			b.disabled = disabled
+			b.tooltip_text = tip
+			acts.add_child(b)
+		act.call("Carry out (+1 day)", "The party carries them home. A day passes: every Rift Map rift counts down and the Guild Board moves on.", false,
+			func(): return GameState.injury_carry(h.id))
+		var need := int(GameData.INJURY_REINFORCEMENTS[sev])
+		var sent: Array = idle.slice(0, need).map(func(x): return x.name.split(" the ")[0])
+		act.call("Send %d from camp" % need,
+			("%s fetch them — away %d run%s." % [" & ".join(sent), int(GameData.INJURY_BUSY_RUNS[sev]), "" if int(GameData.INJURY_BUSY_RUNS[sev]) == 1 else "s"]) if idle.size() >= need else "Needs %d idle hero%s at camp (not in this rift, not recovering)." % [need, "" if need == 1 else "es"],
+			idle.size() < need, func(): return GameState.injury_reinforce(h.id))
+		act.call("Heal (%s)" % healer if healer != "" else "Heal",
+			"Back up at %d%% HP, %d%% less max HP until the rift ends. Once per rift." % [int(GameData.FIELD_HEAL_HP_PCT * 100), int(GameData.BATTERED_HP_PCT * 100)] if healer != "" else "Needs a Rank %s+ Cleric in the party, a Cleric Champion, or Field Triage (Medical) — once per rift." % GameData.FIELD_HEALER_MIN_RANK,
+			healer == "", func(): return GameState.injury_heal(h.id))
+		act.call("Leave them", "They stay in the rift. Seal it and they're found alive; retreat or fall and they're lost for good." if GameState.rifts_sealed >= 3 else "A new guild can't leave anyone behind (seal 3 rifts first).",
+			GameState.rifts_sealed < 3, func(): return GameState.injury_leave(h.id))
+		row.add_child(acts)
+		col.add_child(row)
+	panel.add_child(col)
+	return panel
+
+
 func _node_continue(v: VBoxContainer) -> void:
-	v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+	var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 		GameState.advance_node()
 		render()
-	))
+	)
+	cont.disabled = not GameState.pending_injuries().is_empty()
+	v.add_child(cont)
 
 
 func _node_log(v: VBoxContainer, ns: Dictionary) -> void:
@@ -690,7 +752,9 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	else:
 		for line in ns.get("log", []):
 			v.add_child(_label(str(line), 12))
-		v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+		var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 			GameState.advance_node()
 			render()
-		))
+		)
+		cont.disabled = not GameState.pending_injuries().is_empty()
+		v.add_child(cont)

@@ -845,7 +845,7 @@ func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Lab
 
 ## Champion + the 4 strongest heroes able to go right now.
 func _best_party_power() -> int:
-	var ready: Array = GameState.heroes.filter(func(h): return not h.is_downed())
+	var ready: Array = GameState.heroes.filter(func(h): return h.is_available())
 	ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
 	var party: Array = ready.slice(0, 4)
 	var champ := GameState.ensure_champion()

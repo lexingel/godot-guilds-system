@@ -555,6 +555,15 @@ const RESPEC_TOKENS_PER_LEVEL := 5
 const TONIC_COST := 25
 const TONIC_HEAL_PCT := 0.35
 const TONIC_CAP := 5
+## Downed mid-rift (after a regular/elite fight or a hazard) the player picks:
+## carry them out (+1 day), send idle heroes to fetch them (busy 1-2 runs),
+## heal them back up (once per rift), or leave them in the rift — rescued if
+## the rift is sealed, lost for good if the run ends any other way.
+const INJURY_REINFORCEMENTS := {"wounded": 1, "critical": 2}
+const INJURY_BUSY_RUNS := {"wounded": 1, "critical": 2}
+const FIELD_HEAL_HP_PCT := 0.30
+const BATTERED_HP_PCT := 0.15
+const FIELD_HEALER_MIN_RANK := "B"
 ## Item upkeep: rerolling one stat line costs REFORGE_CRYSTALS x rarity mult,
 ## more each time; salvage returns SALVAGE_CRYSTALS x rarity mult.
 const REFORGE_CRYSTALS := 8
@@ -1666,7 +1675,7 @@ const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "esca
 const BRANCHES := [
 	{"id": "ops", "name": "Operations Branch", "sub": "Hero Roster & Combat Management", "nodes": [
 		{"id": "roster", "name": "Roster Expansion", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Elite Barracks", "cost": 400, "desc": "Set a Guild Mentor — new recruits join one level higher."}},
-		{"id": "medical", "name": "Medical Bay", "max": 5, "cost_base": 25, "cost_step": 18, "cap": {"name": "Field Triage", "cost": 350, "desc": "Once per rift cycle, instantly heal the whole team."}},
+		{"id": "medical", "name": "Medical Bay", "max": 5, "cost_base": 25, "cost_step": 18, "cap": {"name": "Field Triage", "cost": 350, "desc": "Once per rift, get a downed hero back up mid-rift (no healer needed)."}},
 		{"id": "drill", "name": "Tactical Drilling", "max": 5, "cost_base": 35, "cost_step": 22, "cap": {"name": "Vanguard Order", "cost": 450, "desc": "A fight's first strike deals +25% bonus damage."}},
 		{"id": "trait", "name": "Trait Management Office", "max": 3, "cost_base": 40, "cost_step": 30, "cap": {}},
 	]},
@@ -1784,6 +1793,10 @@ const ESCORT_NAMES := ["Wounded Survivor", "Lost Scout", "Stranded Merchant", "F
 ## (bigger target, bigger reward including Reputation) quests. `type` is
 ## looked up against GameState.quest_progress()'s match — kept here only as
 ## the id/label pairing so a new type is a one-line add in both places.
+const QUEST_POSTED := 6
+const QUEST_BOARD_BG := "res://assets/screens/quest_board.png"
+const QUEST_ACTIVE_MAX := 3
+const QUEST_REFRESH_DAYS := 3
 const QUEST_TYPE_LABEL := {
 	"kill_monster": "Defeat %d %s",
 	"seal_rift": "Seal %d Rift%s",

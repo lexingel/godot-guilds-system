@@ -690,7 +690,7 @@ func _roster_row(h: Hero) -> Control:
 	if portrait_path != "":
 		var pi := _icon_trimmed(portrait_path, 48)
 		pi.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if h.is_downed() or h.hp <= 0:
+		if not h.is_available():
 			pi.modulate = Color(0.5, 0.5, 0.5, 0.8)
 		row.add_child(pi)
 	var col := _vbox(2)
@@ -708,7 +708,7 @@ func _roster_row(h: Hero) -> Control:
 		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
 		top.add_child(chip)
 	col.add_child(top)
-	col.add_child(_label("Lv%d %s (%s) · %d/%d HP" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h)], 12, true))
+	col.add_child(_label("Lv%d %s (%s) · %d/%d HP%s" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), (" · away %d run%s" % [h.busy_runs, "" if h.busy_runs == 1 else "s"]) if h.busy_runs > 0 else ""], 12, true))
 	col.add_child(_flat_bar(Combat.max_hp(h), h.hp, 170, 4, _hp_color(float(h.hp) / float(max(1, Combat.max_hp(h))))))
 	row.add_child(col)
 	var needs := h.skill_points > 0

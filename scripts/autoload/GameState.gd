@@ -71,6 +71,9 @@ var flawless_wins: int = 0   # wins where no hero was ever knocked out
 var elites_won: int = 0      # every Elite win, unlike bosses_defeated/monsters_seen which only track distinct names
 var bosses_won: int = 0      # every Boss win, same distinction
 var guild_board: Array[Dictionary] = []    # rotating pool of quest dicts, see roll_quest()
+var day: int = 0   # in-game days: one passes per rift run or rest (see pass_time)
+var board_refresh_day: int = 0   # the day the Guild Board's unaccepted postings are replaced
+var quest_tally: Dictionary = {}   # counters only quests read: boss:<name>, map:<uid>, rank_seals:<i>, *_seals, flawless_rifts
 var milestones_claimed: Array[String] = []  # GameData.MILESTONES ids already granted
 
 
@@ -143,6 +146,8 @@ func recovery_runs() -> int:
 ## down when it ends, so they then miss recovery_runs() whole runs.
 func knock_out(h: Hero) -> void:
 	h.hp = 0
+	if not run.is_empty() and not h.is_champion:
+		run["any_ko"] = true
 	h.down_runs = recovery_runs() + (0 if run.is_empty() else 1)
 
 
@@ -271,6 +276,9 @@ func reset() -> void:
 	elites_won = 0
 	bosses_won = 0
 	guild_board = []
+	day = 0
+	board_refresh_day = 0
+	quest_tally = {}
 	milestones_claimed = []
 	bonds = {}
 
@@ -298,6 +306,8 @@ func _run_for_save() -> Dictionary:
 		"riftbreak_worst_index": run.get("riftbreak_worst_index", 0),
 		"riftbreak_flavor": run.get("riftbreak_flavor", ""),
 		"bounty": run.get("bounty", {}), "champion_call_used": run.get("champion_call_used", false),
+		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
+		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 	}
 
 
@@ -433,7 +443,7 @@ func save() -> void:
 		"reputation": reputation, "monster_kill_counts": monster_kill_counts,
 		"crafts_performed": crafts_performed, "flawless_wins": flawless_wins,
 		"elites_won": elites_won, "bosses_won": bosses_won,
-		"guild_board": guild_board, "milestones_claimed": milestones_claimed,
+		"guild_board": guild_board, "day": day, "board_refresh_day": board_refresh_day, "quest_tally": quest_tally, "milestones_claimed": milestones_claimed,
 		"bonds": bonds,
 	}
 	var f := FileAccess.open(_slot_path(active_slot), FileAccess.WRITE)
@@ -530,6 +540,9 @@ func load_save() -> bool:
 	elites_won = data.get("elites_won", 0)
 	bosses_won = data.get("bosses_won", 0)
 	guild_board.assign(data.get("guild_board", []))
+	day = int(data.get("day", 0))
+	board_refresh_day = int(data.get("board_refresh_day", 0))
+	quest_tally = data.get("quest_tally", {})
 	milestones_claimed.assign(data.get("milestones_claimed", []))
 	bonds = data.get("bonds", {})
 	upgrades = data.get("upgrades", {})
@@ -571,6 +584,8 @@ func load_save() -> bool:
 			"riftbreak_worst_index": run_data.get("riftbreak_worst_index", 0),
 			"riftbreak_flavor": run_data.get("riftbreak_flavor", ""),
 			"bounty": run_data.get("bounty", {}), "champion_call_used": bool(run_data.get("champion_call_used", false)),
+			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
+			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 		}
 	return true
 
@@ -1065,6 +1080,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 					if not bosses_defeated.has(bname):
 						bosses_defeated.append(bname)
 					bosses_won += 1
+					_bump("boss:" + bname)
 				elif kind == "elite":
 					elites_won += 1
 			# Quest tallies — every monster in a won fight is by definition dead,
@@ -1087,6 +1103,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			# affects the fight's own win/loss. Gated the same as every other
 			# reward here: a Riftbreak win is a consequence contained, not an
 			# opportunity, so it grants nothing extra either.
+			if kind != "boss" and not run.get("is_riftbreak", false):
+				_note_injuries("critical" if kind == "elite" else "wounded")
 			var escort: Dictionary = state.get("escort", {})
 			if not run.get("is_riftbreak", false) and not escort.is_empty() and float(escort.get("hp", 0.0)) > 0.0:
 				add_reputation(2)
@@ -1417,6 +1435,7 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 				if h.hp <= 0:
 					knock_out(h)
 			log.append("The hazard deals %d damage across the party." % dmg)
+			_note_injuries("wounded")
 	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
 	if randf() < bonus_chance:
 		var c := randi() % 5 + 2
@@ -1547,6 +1566,8 @@ func tick_ability_cooldowns() -> void:
 
 
 func advance_node() -> void:
+	if not pending_injuries().is_empty():
+		return   # decide what happens to the downed first (see _note_injuries)
 	if not (current_node_kind() in ["combat", "boss", "elite"]):
 		tick_ability_cooldowns()
 	run["pos"] = int(run["pos"]) + 1
@@ -1557,6 +1578,7 @@ func advance_node() -> void:
 
 
 func seal_rift() -> void:
+	_rescue_left_behind()
 	var diff := _diff()
 	var fast_clear: bool = int(run.get("boss_rounds", 99)) <= 6
 	var token_mult: float = (seal_token_bonus() if fast_clear else 1.0) * (1.5 if run.get("hardcore", false) else 1.0)
@@ -1581,6 +1603,19 @@ func seal_rift() -> void:
 	tokens += earned_tokens
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
+	# Guild Board tallies (see _quest_current).
+	if mapped_rank != "":
+		_bump("rank_seals:%d" % GameData.rift_rank_index(mapped_rank))
+	if str(run.get("map_uid", "")) != "":
+		_bump("map:" + str(run["map_uid"]))
+	if str(diff.get("id", "")) == "greater":
+		_bump("greater_seals")
+	if not bool(run.get("any_ko", false)):
+		_bump("flawless_rifts")
+	if (run.get("hero_ids", []) as Array).size() <= 2:
+		_bump("small_seals")
+	if run.get("hardcore", false):
+		_bump("hardcore_seals")
 	var flavor := GameData.narrative_line("fast_clear" if fast_clear else "rift_sealed")
 	if just_unlocked_greater:
 		flavor += " " + GameData.narrative_line("greater_rift_unlocked")
@@ -1650,18 +1685,146 @@ func greater_rift_unlocked() -> bool:
 	return rifts_sealed >= 3
 
 
-func field_triage_action() -> String:
-	if not field_triage_available():
-		return "Unlock Field Triage first"
-	if triage_used_this_cycle:
-		return "Already used this rift cycle"
+# ---------------- Downed mid-rift ----------------
+
+## Adds every roster hero in the party who's down and not yet decided on to
+## run["injured"] — the rift can't continue until each is dealt with.
+func _note_injuries(severity: String) -> void:
+	var injured: Array = run.get("injured", [])
+	for hid in run.get("hero_ids", []):
+		var h := find_hero(str(hid))
+		if h and h.hp <= 0 and not injured.any(func(e): return str(e["id"]) == h.id):
+			injured.append({"id": h.id, "severity": severity})
+	run["injured"] = injured
+
+
+func pending_injuries() -> Array:
+	return run.get("injured", [])
+
+
+func _injury(hero_id: String) -> Dictionary:
+	for e in run.get("injured", []):
+		if str(e["id"]) == hero_id:
+			return e
+	return {}
+
+
+func _resolve_injury(hero_id: String, leave_party: bool) -> void:
+	run["injured"] = (run.get("injured", []) as Array).filter(func(e): return str(e["id"]) != hero_id)
+	if leave_party:
+		run["hero_ids"] = (run.get("hero_ids", []) as Array).filter(func(x): return str(x) != hero_id)
+
+
+## Idle roster heroes who could go fetch someone: not in the rift, not
+## recovering, not already away — the lowest level first.
+func idle_heroes() -> Array[Hero]:
+	var out: Array[Hero] = []
+	var in_rift: Array = run.get("hero_ids", [])
 	for h in heroes:
-		h.down_runs = 0
-		h.hp = Combat.max_hp(h)
-	triage_used_this_cycle = true
+		if not in_rift.has(h.id) and h.is_available():
+			out.append(h)
+	out.sort_custom(func(a, b): return a.level < b.level)
+	return out
+
+
+## Who in the party can patch a downed hero up mid-rift ("" if nobody).
+func field_healer() -> String:
+	if bool(run.get("heal_used", false)):
+		return ""
+	var min_rank := GameData.rank_index(GameData.FIELD_HEALER_MIN_RANK)
+	for hid in run.get("hero_ids", []):
+		var h := find_hero(str(hid))
+		if h and h.hp > 0 and GameData.hero_role(h) == "cleric" and GameData.rank_index(h.rank) >= min_rank:
+			return h.name.split(" the ")[0]
+	if current_champion and current_champion.hp > 0 and champion_role(current_champion) == "cleric":
+		return current_champion.name.split(" the ")[0]
+	if field_triage_available():
+		return "Field Triage"
+	return ""
+
+
+## Carry them out: a day passes (the Rift Map counts down) and they head home.
+func injury_carry(hero_id: String) -> String:
+	if _injury(hero_id).is_empty():
+		return ""
+	_resolve_injury(hero_id, true)
+	pass_time()
 	save()
 	state_changed.emit()
 	return ""
+
+
+func injury_reinforce(hero_id: String) -> String:
+	var e := _injury(hero_id)
+	if e.is_empty():
+		return ""
+	var sev := str(e["severity"])
+	var need := int(GameData.INJURY_REINFORCEMENTS[sev])
+	var idle := idle_heroes()
+	if idle.size() < need:
+		return "Needs %d idle hero%s at camp" % [need, "" if need == 1 else "es"]
+	for i in need:
+		idle[i].busy_runs = int(GameData.INJURY_BUSY_RUNS[sev])
+	_resolve_injury(hero_id, true)
+	save()
+	state_changed.emit()
+	return ""
+
+
+func injury_heal(hero_id: String) -> String:
+	if _injury(hero_id).is_empty():
+		return ""
+	if field_healer() == "":
+		return "No healer can do it"
+	var h := find_hero(hero_id)
+	h.down_runs = 0
+	h.battered = true
+	h.hp = max(1, int(round(Combat.max_hp(h) * GameData.FIELD_HEAL_HP_PCT)))
+	run["heal_used"] = true
+	_resolve_injury(hero_id, false)
+	save()
+	state_changed.emit()
+	return ""
+
+
+func injury_leave(hero_id: String) -> String:
+	if _injury(hero_id).is_empty():
+		return ""
+	if rifts_sealed < 3:
+		return "A new guild can't leave anyone behind"
+	var lb: Array = run.get("left_behind", [])
+	lb.append(hero_id)
+	run["left_behind"] = lb
+	_resolve_injury(hero_id, true)
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Sealing the rift finds everyone left behind alive; they come home to recover.
+func _rescue_left_behind() -> void:
+	for hid in run.get("left_behind", []):
+		var h := find_hero(str(hid))
+		if h:
+			push_toast(h, "Found alive", "%s is carried home from the sealed rift" % h.name.split(" the ")[0])
+	run["left_behind"] = []
+
+
+## The run ended without a seal: anyone left in the rift is lost. Their gear
+## is recovered and returns to the Inventory.
+func _lose_left_behind() -> void:
+	for hid in run.get("left_behind", []):
+		var h := find_hero(str(hid))
+		if not h:
+			continue
+		for it in items:
+			if it.equipped_to == h.id:
+				it.equipped_to = ""
+				it.equipped_idx = -1
+		push_toast(h, "Lost in the rift", "%s was left behind and never came back" % h.name.split(" the ")[0])
+		heroes.erase(h)
+		run["heroes_lost"] = int(run.get("heroes_lost", 0)) + 1
+	run["left_behind"] = []
 
 
 ## True for any hero worth a bed — actually downed, or merely wounded (hp
@@ -1717,7 +1880,13 @@ func resolve_recovery() -> void:
 ## Riftbreak. Replaces the old wall-clock timers, which kept ticking while
 ## the game was closed.
 func pass_time() -> void:
+	day += 1
+	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
 	for h in heroes:
+		if h.busy_runs > 0:
+			h.busy_runs -= 1
+		if in_rift.has(h.id):
+			continue   # a day passing mid-rift (carrying someone out) doesn't rest the party
 		var mx := Combat.max_hp(h)
 		if h.down_runs > 0:
 			h.down_runs -= 1
@@ -1736,6 +1905,7 @@ func pass_time() -> void:
 				pending_riftbreak_ranks.append(str(slot["rank"]))
 				rift_map[i] = {}
 	resolve_rift_map()
+	resolve_guild_board()
 
 
 ## Rest instead of running a rift: time passes (see pass_time) without a
@@ -1762,7 +1932,8 @@ func resolve_rift_map() -> void:
 	for i in rift_map.size():
 		if rift_map[i].is_empty():
 			var rank := Combat.weighted_rift_rank()
-			var slot := {"rank": rank, "runs_left": int(GameData.find_rift_rank(rank)["fuse_runs"])}
+			var slot := {"rank": rank, "runs_left": int(GameData.find_rift_rank(rank)["fuse_runs"]), "uid": "rift%d" % next_id}
+			next_id += 1
 			# ~35% of freshly-rolled rifts carry a bounty, scaled by the same
 			# 0-8 rank severity index Riftbreak already uses — paid out by
 			# seal_rift() once this specific rift is cleared.
@@ -1787,8 +1958,10 @@ func start_map_rift(slot_idx: int, hero_ids: Array[String], starting_relic: Reli
 		return
 	var rank := str(rift_map[slot_idx].get("rank", "F"))
 	var bounty: Dictionary = rift_map[slot_idx].get("bounty", {})
+	var uid := str(rift_map[slot_idx].get("uid", ""))
 	rift_map[slot_idx] = {}
 	start_run("lesser", hero_ids, starting_relic, false, false, rank)
+	run["map_uid"] = uid
 	if not bounty.is_empty():
 		run["bounty"] = bounty
 		save()
@@ -1814,7 +1987,7 @@ func start_riftbreak_encounter() -> void:
 		var idx := GameData.rift_rank_index(str(rank))
 		severity += idx
 		worst_index = max(worst_index, idx)
-	var available: Array[Hero] = heroes.filter(func(h): return not h.is_downed() and h.hp > 0)
+	var available: Array[Hero] = heroes.filter(func(h): return h.is_available())
 	if available.is_empty():
 		coins = max(0, coins - (20 + severity * 10))
 		crystals = max(0, crystals - (5 + severity * 2))
@@ -1956,12 +2129,14 @@ func reinforce_hero(hero_id: String) -> String:
 ## their real max once the buff drops off back at camp.
 func _clamp_hp_to_max() -> void:
 	for h in heroes:
+		h.battered = false   # back at camp, the field patch-up no longer holds them back
 		h.hp = min(h.hp, Combat.max_hp(h))
 	if current_champion:
 		current_champion.hp = min(current_champion.hp, Combat.max_hp(current_champion))
 
 
 func retreat_now() -> void:
+	_lose_left_behind()
 	run = {}
 	active_incense = {}
 	_clamp_hp_to_max()
@@ -1971,6 +2146,7 @@ func retreat_now() -> void:
 
 
 func finish_run() -> void:
+	_lose_left_behind()
 	run = {}
 	active_incense = {}
 	_clamp_hp_to_max()
@@ -2683,82 +2859,172 @@ func add_reputation(amount: int) -> void:
 		pending_shop_boost = true
 
 
-func _roll_quest_reward(tier: String) -> Dictionary:
-	if tier == "daily":
-		return {"coins": 50 + randi() % 60, "crystals": 8 + randi() % 10, "tokens": 2 + randi() % 3, "reputation": 3}
-	return {"coins": 20 + randi() % 30, "crystals": 3 + randi() % 5, "tokens": 0, "reputation": 1}
+## ---------------- Guild Board ----------------
+## QUEST_POSTED quests are posted at a time; accept up to QUEST_ACTIVE_MAX.
+## Every QUEST_REFRESH_DAYS days (a day = one rift run or rest) the unaccepted
+## postings are replaced; accepted ones stay until claimed or abandoned.
+## Progress is read off quest_tally / the all-time counters minus a baseline
+## taken when the quest is accepted, so only work done after accepting counts.
+
+func _quest_reward(diff: int) -> Dictionary:
+	match diff:
+		3:
+			var stone := "D" if greater_rift_unlocked() else "E"
+			return {"coins": 110 + randi() % 50, "crystals": 16 + randi() % 9, "tokens": 6 + randi() % 4, "reputation": 4, "stone": stone}
+		2:
+			return {"coins": 70 + randi() % 40, "crystals": 10 + randi() % 7, "tokens": 3 + randi() % 3, "reputation": 2}
+	return {"coins": 40 + randi() % 30, "crystals": 5 + randi() % 6, "reputation": 1}
 
 
-## Progress for every objective type is a baseline-relative read of an
-## existing all-time tally (monster_kill_counts/rifts_sealed/elites_won/
-## bosses_won/crafts_performed/flawless_wins) rather than its own stored
-## counter — `baseline` (captured once, at roll time) is all a quest needs to
-## remember, so claiming/re-rolling a slot never has to reset any tally.
-func roll_quest(tier: String) -> Dictionary:
-	var types := ["kill_monster", "seal_rift", "win_elite", "win_boss", "craft", "flawless_win"]
+func _tally(key: String) -> int:
+	return int(quest_tally.get(key, 0))
+
+
+func _bump(key: String, n: int = 1) -> void:
+	quest_tally[key] = _tally(key) + n
+
+
+## Rolls one posting of a random type the guild can actually attempt now.
+func roll_quest() -> Dictionary:
+	var types := ["hunt", "hunt", "elite", "bounty", "seal_rank", "trial_small", "trial_flawless", "craft", "flawless_win"]
+	if rift_map.any(func(sl): return sl.has("rank") and sl.has("uid")):
+		types.append_array(["seal_map", "seal_map"])
+	if greater_rift_unlocked():
+		types.append("seal_greater")
+	if rifts_sealed >= 1:
+		types.append("trial_hardcore")
 	var type: String = types[randi() % types.size()]
-	var param := ""
-	var target := 1
-	var baseline := 0
-	match type:
-		"kill_monster":
-			var pool: Array = GameData.MONSTER_NAMES + GameData.ELITE_NAMES
-			param = str(pool[randi() % pool.size()])
-			target = (3 + randi() % 3) if tier == "contract" else (6 + randi() % 4)
-			baseline = int(monster_kill_counts.get(param, 0))
-		"seal_rift":
-			target = 1 if tier == "contract" else (2 + randi() % 2)
-			baseline = rifts_sealed
-		"win_elite":
-			target = 1 if tier == "contract" else 2
-			baseline = elites_won
-		"win_boss":
-			target = 1
-			baseline = bosses_won
-		"craft":
-			target = 1 if tier == "contract" else 2
-			baseline = crafts_performed
-		"flawless_win":
-			target = 1 if tier == "contract" else 2
-			baseline = flawless_wins
-	var id := "quest%d" % next_id
+	var q := {"id": "quest%d" % next_id, "type": type, "param": "", "target": 1, "diff": 1, "status": "posted", "baseline": 0}
 	next_id += 1
-	return {"id": id, "tier": tier, "type": type, "param": param, "target": target, "baseline": baseline, "reward": _roll_quest_reward(tier)}
+	match type:
+		"hunt":
+			var pool: Array = monsters_seen.filter(func(n): return GameData.MONSTER_NAMES.has(n))
+			if pool.size() < 3:
+				pool = GameData.MONSTER_NAMES
+			q["param"] = str(pool[randi() % pool.size()])
+			q["target"] = 4 + randi() % 4
+		"elite":
+			q["target"] = 1 + randi() % 2
+			q["diff"] = q["target"]
+		"bounty":
+			q["param"] = str(GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()])
+			q["diff"] = 2
+		"seal_map":
+			var slots := rift_map.filter(func(sl): return sl.has("rank") and sl.has("uid"))
+			var sl: Dictionary = slots[randi() % slots.size()]
+			q["param"] = str(sl["uid"])
+			q["rank"] = str(sl["rank"])
+			var ri := GameData.rift_rank_index(q["rank"])
+			q["diff"] = 1 if ri <= 1 else (2 if ri <= 3 else 3)
+		"seal_rank":
+			var r: int = clampi(max(best_rift_rank_sealed, 0) + randi() % 2, 1, 5)
+			q["param"] = str(GameData.RIFT_RANKS[r]["id"])
+			q["diff"] = 2 if r <= 3 else 3
+		"seal_greater":
+			q["diff"] = 3
+		"trial_small":
+			q["diff"] = 2
+		"trial_flawless", "trial_hardcore":
+			q["diff"] = 3
+		"craft":
+			q["target"] = 1 + randi() % 2
+		"flawless_win":
+			q["target"] = 1 + randi() % 2
+	q["reward"] = _quest_reward(int(q["diff"]))
+	return q
 
 
-## Called once per render() alongside resolve_rift_map() — only ever seeds
-## the board when empty (a fresh guild, or an old save from before this
-## system existed), never wholesale-replaces it, since that would wipe every
-## slot's baseline-relative progress. A claimed slot refills itself instead
-## (see claim_quest).
-func resolve_guild_board() -> void:
-	if guild_board.is_empty():
-		guild_board = [roll_quest("contract"), roll_quest("contract"), roll_quest("daily"), roll_quest("daily")]
-		save()
+## The all-time count a quest's progress is measured against.
+func _quest_current(q: Dictionary) -> int:
+	match str(q["type"]):
+		"hunt": return int(monster_kill_counts.get(str(q["param"]), 0))
+		"elite": return elites_won
+		"bounty": return _tally("boss:" + str(q["param"]))
+		"seal_map": return _tally("map:" + str(q["param"]))
+		"seal_rank":
+			var n := 0
+			for i in range(GameData.rift_rank_index(str(q["param"])), GameData.RIFT_RANKS.size()):
+				n += _tally("rank_seals:%d" % i)
+			return n
+		"seal_greater": return _tally("greater_seals")
+		"trial_small": return _tally("small_seals")
+		"trial_flawless": return _tally("flawless_rifts")
+		"trial_hardcore": return _tally("hardcore_seals")
+		"craft": return crafts_performed
+		"flawless_win": return flawless_wins
+	return 0
 
 
 func quest_progress(q: Dictionary) -> int:
-	var baseline := int(q.get("baseline", 0))
-	var current := 0
-	match str(q["type"]):
-		"kill_monster": current = int(monster_kill_counts.get(str(q["param"]), 0))
-		"seal_rift": current = rifts_sealed
-		"win_elite": current = elites_won
-		"win_boss": current = bosses_won
-		"craft": current = crafts_performed
-		"flawless_win": current = flawless_wins
-	return min(int(q["target"]), max(0, current - baseline))
+	if str(q.get("status", "")) != "active":
+		return 0
+	return min(int(q["target"]), max(0, _quest_current(q) - int(q.get("baseline", 0))))
+
+
+## Seeds a fresh board (new guild, or a save from the old contract/daily
+## board), refreshes postings when their days are up, and fails any quest
+## whose Rift Map rift broke open before it was sealed.
+func resolve_guild_board() -> void:
+	var changed := false
+	if guild_board.is_empty() or guild_board.any(func(q): return not q.has("status")):
+		guild_board = []
+		board_refresh_day = day
+		changed = true
+	if day >= board_refresh_day:
+		guild_board.assign(guild_board.filter(func(q): return str(q["status"]) == "active"))
+		while guild_board.filter(func(q): return str(q["status"]) == "posted").size() < GameData.QUEST_POSTED:
+			guild_board.append(roll_quest())
+		board_refresh_day = day + GameData.QUEST_REFRESH_DAYS
+		changed = true
+	for q in guild_board:
+		if str(q["type"]) == "seal_map" and str(q["status"]) != "failed" and _tally("map:" + str(q["param"])) == 0 \
+				and not rift_map.any(func(sl): return str(sl.get("uid", "")) == str(q["param"])) \
+				and not (not run.is_empty() and str(run.get("map_uid", "")) == str(q["param"])):
+			q["status"] = "failed"
+			changed = true
+	if changed:
+		save()
+
+
+func active_quests() -> Array:
+	return guild_board.filter(func(q): return str(q["status"]) == "active")
+
+
+func accept_quest(quest_id: String) -> String:
+	if active_quests().size() >= GameData.QUEST_ACTIVE_MAX:
+		return "You can only take %d at a time" % GameData.QUEST_ACTIVE_MAX
+	for q in guild_board:
+		if str(q["id"]) == quest_id and str(q["status"]) == "posted":
+			q["status"] = "active"
+			q["baseline"] = _quest_current(q)
+			save()
+			state_changed.emit()
+			return ""
+	return ""
+
+
+func abandon_quest(quest_id: String) -> void:
+	guild_board.assign(guild_board.filter(func(q): return str(q["id"]) != quest_id))
+	save()
+	state_changed.emit()
 
 
 func quest_desc(q: Dictionary) -> String:
-	var target := int(q["target"])
-	var s := target != 1
-	var fmt: String = GameData.QUEST_TYPE_LABEL.get(str(q["type"]), "???")
+	var t := int(q["target"])
+	var s := "" if t == 1 else "s"
 	match str(q["type"]):
-		"kill_monster": return fmt % [target, str(q["param"])]
-		"seal_rift", "win_elite", "flawless_win": return fmt % [target, "s" if s else ""]
-		"craft": return fmt % [target, "s" if s else "", "s" if s else ""]
-		_: return fmt
+		"hunt": return "Hunt: defeat %s ×%d" % [q["param"], t]
+		"elite": return "Hunt: win %d Elite fight%s" % [t, s]
+		"bounty": return "Bounty: defeat %s" % q["param"]
+		"seal_map": return "Seal: close the Rank %s rift on the Rift Map before it breaks" % q.get("rank", "?")
+		"seal_rank": return "Seal: seal a Rank %s+ Rift Map rift" % q["param"]
+		"seal_greater": return "Seal: seal a Greater Rift"
+		"trial_small": return "Trial: seal a rift with 2 heroes or fewer (plus the Champion)"
+		"trial_flawless": return "Trial: seal a rift without any hero going down"
+		"trial_hardcore": return "Trial: seal a rift in Hardcore Mode"
+		"craft": return "Supply: craft %d item%s or relic%s" % [t, s, s]
+		"flawless_win": return "Trial: win %d fight%s without a hero going down" % [t, s]
+	return "?"
 
 
 func quest_reward_desc(reward: Dictionary) -> String:
@@ -2771,31 +3037,26 @@ func quest_reward_desc(reward: Dictionary) -> String:
 		parts.append("%d Tokens" % int(reward["tokens"]))
 	if int(reward.get("reputation", 0)) > 0:
 		parts.append("%d Reputation" % int(reward["reputation"]))
+	if str(reward.get("stone", "")) != "":
+		parts.append("a Rank %s Evolution Stone" % reward["stone"])
 	return ", ".join(parts)
 
 
-## Grants the reward and immediately re-rolls a fresh quest of the same tier
-## into the same slot — mirrors the Rift Map's own "refill the instant a slot
-## empties" idiom, so the board is never seen sitting on an empty slot.
 func claim_quest(quest_id: String) -> void:
-	var idx := -1
-	for i in guild_board.size():
-		if str(guild_board[i]["id"]) == quest_id:
-			idx = i
-			break
-	if idx < 0:
+	for q in guild_board:
+		if str(q["id"]) != quest_id or quest_progress(q) < int(q["target"]):
+			continue
+		var reward: Dictionary = q["reward"]
+		coins += int(reward.get("coins", 0))
+		crystals += int(reward.get("crystals", 0))
+		tokens += int(reward.get("tokens", 0))
+		add_reputation(int(reward.get("reputation", 0)))
+		if str(reward.get("stone", "")) != "":
+			evolution_stones[reward["stone"]] = int(evolution_stones.get(reward["stone"], 0)) + 1
+		guild_board.erase(q)
+		save()
+		state_changed.emit()
 		return
-	var q: Dictionary = guild_board[idx]
-	if quest_progress(q) < int(q["target"]):
-		return
-	var reward: Dictionary = q["reward"]
-	coins += int(reward.get("coins", 0))
-	crystals += int(reward.get("crystals", 0))
-	tokens += int(reward.get("tokens", 0))
-	add_reputation(int(reward.get("reputation", 0)))
-	guild_board[idx] = roll_quest(str(q["tier"]))
-	save()
-	state_changed.emit()
 
 
 func milestone_progress(m: Dictionary) -> int:

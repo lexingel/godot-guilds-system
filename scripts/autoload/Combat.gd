@@ -35,6 +35,8 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	s += GameState.party_resonance_bonus(kind)
 	s += GameState.party_eclectic_bonus()
 	s += GameState.champion_boon(kind)
+	if h.battered and kind == "hp_pct":
+		s -= GameData.BATTERED_HP_PCT
 	if h.innate_kind == kind:
 		s += h.innate_value
 	# Same one-stage-back retention as the tree above — the innate bonus
@@ -85,6 +87,8 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 	add.call("Party Resonance", GameState.party_resonance_bonus(kind))
 	add.call("Party Eclectic", GameState.party_eclectic_bonus())
 	add.call("Champion Boon", GameState.champion_boon(kind))
+	if h.battered and kind == "hp_pct":
+		add.call("Battered (patched up mid-rift)", -GameData.BATTERED_HP_PCT)
 	if h.innate_kind == kind:
 		add.call("Innate (%s)" % GameData.find_class(h.pool_id).get("name", "class"), h.innate_value)
 	if h.prior_innate_kind == kind:

@@ -689,13 +689,17 @@ func _render_combat_node(v: VBoxContainer) -> void:
 						tw.tween_property(tile, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.45 + 0.18 * ri)
 						tw.tween_property(tile, "modulate", Color.WHITE, 0.45).set_delay(0.6 + 0.18 * ri)
 		else:
-			victory_col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+			var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
 					GameState.seal_rift()
 				else:
 					GameState.advance_node()
 				render()
-			))
+			)
+			cont.disabled = not GameState.pending_injuries().is_empty()
+			if cont.disabled:
+				cont.tooltip_text = "Decide what happens to the downed hero first (above)"
+			victory_col.add_child(cont)
 		v.add_child(victory_frame)
 	elif is_riftbreak and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
 		# Worst merged rank was S/SS/SSS — a forced game over, whether the

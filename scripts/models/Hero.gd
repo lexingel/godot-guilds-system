@@ -40,6 +40,8 @@ var attr_points: int = 0         # unspent attribute points (ATTR_POINTS_PER_LEV
 var attr_trained: int = 0        # points bought at camp (capped at GameData.ATTR_TRAIN_CAP)
 var down_runs: int = 0           # rift runs this hero still sits out while recovering; 0 = not downed (see GameState.pass_time)
 var bedded: bool = false
+var busy_runs: int = 0     # runs away escorting an injured ally home (unavailable meanwhile)
+var battered: bool = false # patched up mid-rift: -BATTERED_HP_PCT max HP until the run ends
 var hp: int = 0
 var is_champion: bool = false
 var oath: int = 0   # rifts sealed together as Champion (see GameData.CHAMPION_OATH_SEALS)
@@ -57,13 +59,18 @@ func is_downed() -> bool:
 	return down_runs > 0
 
 
+## Free to join a party: not recovering and not off escorting someone.
+func is_available() -> bool:
+	return down_runs <= 0 and busy_runs <= 0 and hp > 0
+
+
 func to_dict() -> Dictionary:
 	return {
 		"id": id, "name": name, "cls_id": cls_id, "pool_id": pool_id, "type": type,
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
-		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
+		"down_runs": down_runs, "bedded": bedded, "busy_runs": busy_runs, "battered": battered, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
@@ -118,6 +125,8 @@ static func from_dict(d: Dictionary) -> Hero:
 	if int(d.get("downed_until", 0)) > int(Time.get_unix_time_from_system() * 1000):
 		h.down_runs = max(h.down_runs, 1)
 	h.bedded = d.get("bedded", false)
+	h.busy_runs = int(d.get("busy_runs", 0))
+	h.battered = bool(d.get("battered", false))
 	if d.has("attrs"):
 		h.attrs = d["attrs"]
 		h.attr_points = int(d.get("attr_points", 0))

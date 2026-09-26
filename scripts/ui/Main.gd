@@ -1230,7 +1230,7 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	cv.mouse_filter = Control.MOUSE_FILTER_PASS
 	var top := HBoxContainer.new()
 	top.mouse_filter = Control.MOUSE_FILTER_PASS
-	var downed := h.is_downed()
+	var downed := h.is_downed() or h.busy_runs > 0
 	var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 	if portrait != "":
 		var icon := DragIcon.new()
@@ -1254,7 +1254,7 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 		var boon := _wrap_label(GameState.champion_boon_text(h), 12, true)
 		boon.add_theme_color_override("font_color", Palette.RANK_E)
 		names.add_child(boon)
-	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · out %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"] if downed else ""], 10, true))
+	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), (" · out %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"] if h.down_runs > 0 else " · away %d run%s" % [h.busy_runs, "" if h.busy_runs == 1 else "s"]) if downed else ""], 10, true))
 	if not downed and h.hp < Combat.max_hp(h) * 0.5:
 		var wl := _label("Wounded — %d%% HP" % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)
 		wl.add_theme_color_override("font_color", Palette.HAZARD)
