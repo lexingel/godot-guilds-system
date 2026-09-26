@@ -6,7 +6,12 @@ extends Node
 
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
-var CHAMP_V2 := true   # champion levels with the party, Boon in runs, Call on the boss
+var CHAMP_V2 := true
+# Income tallies (reset per profile): what one run earns on average.
+var _coins := 0.0
+var _crystals := 0.0
+var _tokens := 0.0
+var _loot_value := 0.0   # champion levels with the party, Boon in runs, Call on the boss
 const PROFILES := {
 	# name: [difficulty, hero ranks, level, skill depth, gear rarity ("" = none), relics, relic rarity]
 	"Lesser  | newcomer": ["lesser", ["F", "F"], 1, 0, "", 0, "common"],
@@ -25,6 +30,7 @@ func _ready() -> void:
 
 
 func _profile(name: String, p: Array) -> void:
+	_coins = 0.0; _crystals = 0.0; _tokens = 0.0; _loot_value = 0.0
 	var clears := 0
 	var ko_total := 0
 	var boss_hp := 0.0
@@ -72,6 +78,7 @@ func _profile(name: String, p: Array) -> void:
 			var res := _run_rift(party, diff)
 			if res["cleared"]:
 				clears += 1
+				_tokens += float(diff["token_base"])
 			else:
 				fail_at[res["fail_kind"]] = int(fail_at.get(res["fail_kind"], 0)) + 1
 			if res["boss_hp"] >= 0.0:
@@ -81,6 +88,8 @@ func _profile(name: String, p: Array) -> void:
 			if h.hp <= 0:
 				ko_total += 1
 	print("   %s avg party power %.0f" % [name, power_sum / N])
+	var runs := float(N) if p[0] != "endless" else float(N)   # Endless: per attempt (several cycles)
+	print("   %s income per run: %.0f coins, %.0f crystals, %.1f tokens, loot worth %.0f coins" % [name, _coins / runs, _crystals / runs, _tokens / runs, _loot_value / runs])
 	if p[0] == "endless":
 		cycles.sort()
 		var total := 0
@@ -177,6 +186,11 @@ func _fight(living: Array[Hero], kind: String, diff: Dictionary, pos: int) -> bo
 		var out := Combat.resolve_turn(state)
 		if out["done"]:
 			var won := bool(out["result"]["won"])
+			if won:
+				_coins += float(out["result"].get("coin", 0))
+				_crystals += float(out["result"].get("crystal", 0)) + float(out["result"].get("bonus_crystal", 0))
+				for o in out["result"].get("reward_options", []).slice(0, 1):
+					_loot_value += 15.0 * float(GameData.find_rarity(str(o["obj"].rarity))["mult"]) * 0.85
 			if won and GAINS:
 				for h in living:
 					Combat.auto_spend_attrs(h)

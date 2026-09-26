@@ -603,7 +603,7 @@ const ATTUNE_STEP := 0.04
 const ATTUNE_MAX := 5
 ## Camp training: buy up to ATTR_TRAIN_CAP extra attribute points per hero,
 ## each costing ATTR_TRAIN_COST more Coins than the last.
-const ATTR_TRAIN_CAP := 5
+const ATTR_TRAIN_CAP := 8
 const ATTR_TRAIN_COST := 50
 
 

@@ -638,13 +638,16 @@ func gen_loot(rarity_id: String) -> Dictionary:
 
 func endless_diff_for_cycle(cycle: int) -> Dictionary:
 	var mult := 1.0 + cycle * ENDLESS_CYCLE_GROWTH
+	# Rewards grow slower than the foes (docs/economy.md): at the foes' rate
+	# one Endless attempt paid as much as ~20 Greater runs.
+	var reward_mult := 1.0 + cycle * ENDLESS_REWARD_GROWTH
 	var base := GameData.ENDLESS_BASE
 	return {
 		"id": "endless", "name": "Endless Rift", "floors": 6, "power": "Extreme",
 		"monster_hp": int(round(base["monster_hp"] * mult)), "monster_dmg": int(round(base["monster_dmg"] * mult)),
-		"coin": [int(round(base["coin"][0] * mult)), int(round(base["coin"][1] * mult))],
-		"crystal": [int(round(base["crystal"][0] * mult)), int(round(base["crystal"][1] * mult))],
-		"token_base": int(round(base["token_base"] * mult)), "detector_chance": base["detector_chance"],
+		"coin": [int(round(base["coin"][0] * reward_mult)), int(round(base["coin"][1] * reward_mult))],
+		"crystal": [int(round(base["crystal"][0] * reward_mult)), int(round(base["crystal"][1] * reward_mult))],
+		"token_base": int(round(base["token_base"] * reward_mult)), "detector_chance": base["detector_chance"],
 		"rec_power": int(round(base["rec_power"] * mult)),
 	}
 
@@ -701,6 +704,7 @@ const ELITE_DMG_MULT := 1.6
 const BOSS_HP_MULT := 3.0
 const BOSS_DMG_MULT := 2.0
 const ENDLESS_CYCLE_GROWTH := 0.5
+const ENDLESS_REWARD_GROWTH := 0.2
 
 
 func _biome_background(diff: Dictionary) -> int:
