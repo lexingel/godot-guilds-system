@@ -35,12 +35,14 @@ var evolution_stones: Dictionary = {}   # rank_id ("E".."S") -> count, dropped b
 var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
 var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
 var runestones: Array[Dictionary] = []    # owned, unsocketed: [{"id":..., "runestone_id": "impact"|"aegis"}]
+var tonics: int = 0   # Field Tonics carried (see GameData.TONIC_*)
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
 var best_endless_cycle: int = 0
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
+var best_rift_rank_sealed: int = -1   # highest Rift Map rank sealed (GameData.RIFT_RANKS index) — gates Riftborn nodes
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
@@ -241,12 +243,14 @@ func reset() -> void:
 	consumables = []
 	active_incense = {}
 	runestones = []
+	tonics = 0
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
 	current_champion = null
 	best_endless_cycle = 0
 	rifts_sealed = 0
+	best_rift_rank_sealed = -1
 	triage_used_this_cycle = false
 	pending_shop_boost = false
 	guide_hidden = false
@@ -412,11 +416,11 @@ func save() -> void:
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
 		"detectors": detectors, "evolution_stones": evolution_stones,
-		"consumables": consumables, "active_incense": active_incense, "runestones": runestones,
+		"consumables": consumables, "active_incense": active_incense, "runestones": runestones, "tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"best_endless_cycle": best_endless_cycle,
-		"rifts_sealed": rifts_sealed,
+		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,
@@ -504,6 +508,7 @@ func load_save() -> bool:
 	consumables.assign(data.get("consumables", []))
 	active_incense = data.get("active_incense", {})
 	runestones.assign(data.get("runestones", []))
+	tonics = int(data.get("tonics", 0))
 	rift_map.assign(data.get("rift_map", []))
 	if rift_map.is_empty() and guild_name != "":
 		# Saves from before the Rift Map existed — seed 6 empty slots so
@@ -532,6 +537,7 @@ func load_save() -> bool:
 		migrate_hero_skill_keys(current_champion)
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	rifts_sealed = data.get("rifts_sealed", 0)
+	best_rift_rank_sealed = int(data.get("best_rift_rank_sealed", -1))
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
 	pending_shop_boost = data.get("pending_shop_boost", false)
 	guide_hidden = data.get("guide_hidden", false)
@@ -923,6 +929,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			if not run.get("is_riftbreak", false):
 				coins += int(result["coin"])
 				crystals += int(result["crystal"]) + int(result["bonus_crystal"])
+				_attune_gear(state.get("party", []))
 				if kind == "boss":
 					run["boss_rounds"] = int(result["rounds"])
 					var bname := str(result["monster_name"]).split(",")[0]
@@ -1436,6 +1443,8 @@ func seal_rift() -> void:
 	var got_stone := ""
 	var mapped_rank: String = str(run.get("rift_rank", ""))
 	if mapped_rank != "":
+		best_rift_rank_sealed = max(best_rift_rank_sealed, GameData.rift_rank_index(mapped_rank))
+	if mapped_rank != "":
 		var stone_tier := GameData.stone_tier_for_rift_rank(mapped_rank)
 		if stone_tier != "" and randf() < GameData.EVOLUTION_STONE_DROP_CHANCE:
 			evolution_stones[stone_tier] = int(evolution_stones.get(stone_tier, 0)) + 1
@@ -1866,6 +1875,18 @@ func use_incense(consumable_id: String) -> void:
 			return
 
 
+func buy_tonic() -> String:
+	if tonics >= GameData.TONIC_CAP:
+		return "You can carry %d at most" % GameData.TONIC_CAP
+	if coins < GameData.TONIC_COST:
+		return "Not enough Coins"
+	coins -= GameData.TONIC_COST
+	tonics += 1
+	save()
+	state_changed.emit()
+	return ""
+
+
 func buy_runestone(runestone_id: String) -> String:
 	var def := GameData.find_runestone(runestone_id)
 	if def.is_empty():
@@ -1937,9 +1958,22 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	for excl in n.get("excludes", []):
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			return "Locked out — you already chose the other path"
-	if h.skill_points < int(n["cost"]):
+	if n.has("rift_rank") and best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"])):
+		return "Seal a Rank %s or higher Rift Map rift first" % n["rift_rank"]
+	var stone := ""
+	if n.get("stone", false):
+		for r in GameData.RANKS:
+			if int(evolution_stones.get(r["id"], 0)) > 0:
+				stone = str(r["id"])
+				break
+		if stone == "":
+			return "Needs an Evolution Stone"
+	var cost := skill_node_cost(h, kind, n)
+	if h.skill_points < cost:
 		return "Not enough Skill Points"
-	h.skill_points -= int(n["cost"])
+	h.skill_points -= cost
+	if stone != "":
+		evolution_stones[stone] = int(evolution_stones[stone]) - 1
 	h.skills[key] = true
 	save()
 	state_changed.emit()
@@ -1950,6 +1984,28 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 ## often (see GameData's Ability Awakening doc comment) — a second SP sink
 ## next to the skill tree, not a replacement for it. One-time per hero:
 ## already-awakened is a no-op refusal, not a stacking cooldown reduction.
+## A Tier-3 fork costs 1 SP less (never below 1) for a hero whose trait
+## already leans into its stat, or whose scar the fork would shore up.
+func skill_node_cost(h: Hero, kind: String, n: Dictionary) -> int:
+	var cost := int(n.get("cost", 0))
+	if int(n.get("tier", 0)) == 3 and fork_discounted(h, str(n.get("kind", ""))):
+		cost = max(1, cost - 1)
+	return cost
+
+
+func fork_discounted(h: Hero, stat: String) -> bool:
+	if float(GameData.TRAIT_TABLE.get(h.trait_name, {}).get(stat, 0.0)) > 0.0:
+		return true
+	for tid in h.earned_traits:
+		var t := GameData.find_earned_trait(tid)
+		if t.get("kind", "") == stat and float(t.get("value", 0.0)) > 0.0:
+			return true
+	for scar in h.scars:
+		if float(GameData.SCAR_TABLE.get(scar, {}).get(stat, 0.0)) < 0.0:
+			return true
+	return false
+
+
 func awaken_ability(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
@@ -2025,7 +2081,7 @@ func party_has_other_kind_capstone(exclude_hero_id: String, kind: String) -> boo
 ## `cost`, not just a count of learned nodes (those differ, since Tier-3/4
 ## nodes cost more SP than Tier-1/2 ones — counting nodes instead of summing
 ## cost under-refunded a hero who'd learned any higher-tier node).
-func _skill_keys_sp_cost(keys: Array) -> int:
+func _skill_keys_sp_cost(keys: Array, h: Hero = null) -> int:
 	var total := 0
 	for key in keys:
 		var key_str := str(key)
@@ -2034,7 +2090,8 @@ func _skill_keys_sp_cost(keys: Array) -> int:
 		else:
 			var parts := key_str.split(":", true, 1)
 			if parts.size() == 2:
-				total += int(GameData.find_skill_node(parts[0], parts[1]).get("cost", 0))
+				var n := GameData.find_skill_node(parts[0], parts[1])
+				total += skill_node_cost(h, parts[0], n) if h else int(n.get("cost", 0))
 	return total
 
 
@@ -2050,7 +2107,7 @@ func tree_respec_cost(h: Hero, kind: String = "") -> int:
 	for key in h.skills.keys():
 		if h.skills[key] and (kind == "" or str(key).begins_with("%s:" % kind)):
 			target_keys.append(key)
-	return respec_cost(_skill_keys_sp_cost(target_keys))
+	return respec_cost(_skill_keys_sp_cost(target_keys, h))
 
 
 ## `kind` empty respecs every tree at once (and the universal Tier-1 roots);
@@ -2070,7 +2127,7 @@ func respec_hero(hero_id: String, kind: String = "") -> String:
 			target_keys.append(key)
 	if target_keys.is_empty():
 		return ""
-	var spent_sp := _skill_keys_sp_cost(target_keys)
+	var spent_sp := _skill_keys_sp_cost(target_keys, h)
 	var cost := respec_cost(spent_sp)
 	if coins < cost:
 		return "Need %d Coins" % cost
@@ -2214,6 +2271,84 @@ func craft_relics(type: String, rarity: String) -> void:
 	crafts_performed += 1
 	save()
 	state_changed.emit()
+
+
+## A won fight counts toward every equipped item on the heroes still standing.
+func _attune_gear(party: Array) -> void:
+	for h in party:
+		if h.hp <= 0 or h.is_champion:
+			continue
+		for it in items:
+			if it.equipped_to != h.id or it.attune_level >= GameData.ATTUNE_MAX:
+				continue
+			it.attune_wins += 1
+			if it.attune_wins >= GameData.ATTUNE_WINS * (it.attune_level + 1):
+				it.attune_level += 1
+				var g := 1.0 + GameData.ATTUNE_STEP
+				it.value = snappedf(it.value * g, 0.001)
+				it.secondary_value = snappedf(it.secondary_value * g, 0.001)
+				it.tertiary_value = snappedf(it.tertiary_value * g, 0.001)
+				push_toast(h, "Gear attuned", "%s grows stronger (%d/%d)" % [it.name, it.attune_level, GameData.ATTUNE_MAX])
+
+
+func reforge_cost(it: Item) -> int:
+	return int(round(GameData.REFORGE_CRYSTALS * float(GameData.find_rarity(it.rarity)["mult"]) * (it.reforges + 1)))
+
+
+## Rerolls one stat line (0 primary, 1 secondary, 2 tertiary) of an unequipped
+## generated item: the primary keeps its kind (the name comes from it), the
+## others can land on any kind the item doesn't already have.
+func reforge_item(item_id: String, line: int) -> String:
+	var it: Item = null
+	for x in items:
+		if x.id == item_id:
+			it = x
+	if not it or it.unique_id != "" or it.equipped_to != "":
+		return "Can't reforge this item"
+	var kinds := [it.kind, it.secondary_kind, it.tertiary_kind]
+	if line < 0 or line > 2 or str(kinds[line]) == "":
+		return "No such stat"
+	var cost := reforge_cost(it)
+	if crystals < cost:
+		return "Not enough Crystals"
+	crystals -= cost
+	it.reforges += 1
+	var kind: String = kinds[line]
+	if line > 0:
+		var pool: Array = GameData.ITEM_CATEGORY_KINDS[it.category].filter(func(k): return not kinds.has(k))
+		pool.append(kind)
+		kind = str(pool[randi() % pool.size()])
+	var val := Combat.item_line_value(kind, it.rarity, line, it.item_rank) * pow(1.0 + GameData.ATTUNE_STEP, it.attune_level)
+	match line:
+		0:
+			it.value = val
+		1:
+			it.secondary_kind = kind
+			it.secondary_value = val
+			var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[kind]
+			it.name = "%s %s" % [it.name.split(" of ")[0], str(suffixes[randi() % suffixes.size()])]
+		2:
+			it.tertiary_kind = kind
+			it.tertiary_value = val
+	save()
+	state_changed.emit()
+	return ""
+
+
+func salvage_value(it: Item) -> int:
+	return int(round(GameData.SALVAGE_CRYSTALS * float(GameData.find_rarity(it.rarity)["mult"])))
+
+
+func salvage_item(item_id: String) -> void:
+	if not recycle_unlocked():
+		return
+	for it in items:
+		if it.id == item_id and it.equipped_to == "":
+			crystals += salvage_value(it)
+			items.erase(it)
+			save()
+			state_changed.emit()
+			return
 
 
 func sell_item(item_id: String) -> void:

@@ -789,6 +789,9 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(e.get("arch", "")))])
 	if it.socketed_kind != "":
 		lines.append(_bb(Palette.CRYSTALS, "Socket: " + Combat.describe_skill(it.socketed_kind, it.socketed_value)))
+	if it.attune_level > 0 or it.attune_wins > 0:
+		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else " · %d/%d wins to next" % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
+		lines.append(_bb(Palette.RANK_E, "Attuned %d/%d (+%d%% stats)%s" % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), nxt]))
 	if compare_for != null and it.equipped_to != compare_for.id:
 		if slot == -2:
 			slot = _best_swap_slot(compare_for, it.slot_type())
@@ -1158,9 +1161,9 @@ const MAP_NODE_ICON := {
 	"combat": "res://assets/skills/sword_a.png",
 	"elite": "res://assets/skills/sword_big.png",
 	"shop": "res://assets/ui/icon_coins.png",
-	"hazard": "res://assets/skills/shield_split.png",
+	"hazard": "res://assets/ui/node_hazard.png",
 	"boss": "res://assets/skills/icon_boss_skull.png",
-	"campfire": "res://assets/skills/heart.png",
+	"campfire": "res://assets/ui/node_campfire.png",
 	"event": "res://assets/skills/eye_gem.png",
 	"treasure": "res://assets/dungeon/chest_icon.png",
 }

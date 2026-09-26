@@ -16,7 +16,6 @@ func _sorted_heroes() -> Array[Hero]:
 
 
 func _render_roster(v: VBoxContainer) -> void:
-	v.add_child(_banner(GameData.ROSTER_BG, v.custom_minimum_size.x, 120))
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes recruited yet."))
 		return
@@ -259,6 +258,25 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	gcol.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in GameData.gear_slots(h.rank):
 		gcol.add_child(_equip_slot_frame(h, "gear", i, 58.0))
+	# The next gear slot, locked, with the rank that opens it.
+	for r in range(GameData.rank_index(h.rank) + 1, GameData.RANKS.size()):
+		var rid := str(GameData.RANKS[r]["id"])
+		if GameData.gear_slots(rid) > GameData.gear_slots(h.rank):
+			var locked := _vbox(2)
+			locked.tooltip_text = "Another gear slot opens at rank %s" % rid
+			locked.mouse_filter = Control.MOUSE_FILTER_STOP
+			var fr := _icon(GameData.RARITY_FRAME_PATH["common"], 58)
+			fr.stretch_mode = TextureRect.STRETCH_SCALE
+			fr.modulate = Color(1, 1, 1, 0.3)
+			fr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			fr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			locked.add_child(fr)
+			var ll := _label("Rank %s" % rid, 12, true)
+			ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			ll.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			locked.add_child(ll)
+			gcol.add_child(locked)
+			break
 	doll.add_child(gcol)
 	sheet.add_child(doll)
 
@@ -489,8 +507,11 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	for excl in n.get("excludes", []):
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			locked_out = true
-	var missing_sp: bool = h.skill_points < int(n["cost"])
-	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out
+	var cost := GameState.skill_node_cost(h, kind, n)
+	var missing_sp: bool = h.skill_points < cost
+	var missing_rift: bool = n.has("rift_rank") and GameState.best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"]))
+	var missing_stone: bool = n.get("stone", false) and not GameState.evolution_stones.values().any(func(c): return int(c) > 0)
+	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out and not missing_rift and not missing_stone
 
 	var reason := "Learned"
 	if not learned:
@@ -500,10 +521,16 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 			reason = "Requires Lv%d" % int(n["req_level"])
 		elif missing_prereq:
 			reason = "Needs prerequisite"
+		elif missing_rift:
+			reason = "Seal a Rank %s+ Rift Map rift first" % n["rift_rank"]
+		elif missing_stone:
+			reason = "Needs an Evolution Stone"
 		elif missing_sp:
-			reason = "Needs %d SP" % int(n["cost"])
+			reason = "Needs %d SP" % cost
 		else:
-			reason = "Learn (%d SP)" % int(n["cost"])
+			reason = "Learn (%d SP%s)" % [cost, " + 1 Evolution Stone" if n.get("stone", false) else ""]
+		if cost < int(n["cost"]):
+			reason += "\nCheaper: your trait or scar suits this path"
 
 	var combo_line := ""
 	if n.has("combo_kind"):
@@ -551,7 +578,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	var tier4: Array = tree.filter(func(n): return int(n["tier"]) == 4)
 
 	# 5th column: the tree's keystone (row 0) and the role signature (row 1).
-	var tier5: Array = [GameData.keystone_node(kind), GameData.signature_node(h.cls_id)].filter(func(n): return not n.is_empty())
+	var tier5: Array = ([GameData.keystone_node(kind), GameData.signature_node(h.cls_id)] + GameData.rift_nodes(kind)).filter(func(n): return not n.is_empty())
 
 	var grid := GridContainer.new()
 	grid.columns = 5
@@ -559,7 +586,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	grid.add_theme_constant_override("v_separation", 10)
 	# Column headers are the grid's own first row (they used to be a separate
 	# HBox that spread across the full width and drifted off the columns).
-	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery", "Keystone"]:
+	for col_label in ["Tier 1", "Tier 2", "Path", "Mastery", "Keystone & Rift"]:
 		var lbl := _label(col_label, 11, true)
 		lbl.custom_minimum_size.x = COL_W
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -579,7 +606,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 	var singly_gated_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() == 1)
 	var other_tier2: Array = tier2.filter(func(n): return (n["requires"] as Array).size() != 1)
 	var fork_rows: int = max(tier1.size(), tier3.size())
-	var row_count: int = max(fork_rows, 1) + other_tier2.size()
+	var row_count: int = max(max(fork_rows, 1) + other_tier2.size(), tier5.size())
 
 	for row_i in row_count:
 		if row_i < fork_rows:
@@ -601,7 +628,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 				grid.add_child(cell.call({}))
 		else:
 			grid.add_child(cell.call({}))
-			grid.add_child(cell.call(other_tier2[row_i - fork_rows]))
+			grid.add_child(cell.call(other_tier2[row_i - fork_rows] if row_i - fork_rows < other_tier2.size() else {}))
 			grid.add_child(cell.call({}))
 			grid.add_child(cell.call({}))
 		grid.add_child(cell.call(tier5[row_i] if row_i < tier5.size() else {}))
@@ -614,7 +641,7 @@ func _render_skill_tree_graph(cv: VBoxContainer, h: Hero, kind: String) -> void:
 		var nid := str(n["id"])
 		# The role signature hangs off the Tier-1 roots, which would draw a
 		# line straight across the whole tree — its tooltip says what it needs.
-		if not tiles.has(nid) or nid == "signature":
+		if not tiles.has(nid) or nid in ["signature", "stonebound"]:
 			continue
 		for r in n.get("requires", []) + n.get("requires_any", []):
 			if tiles.has(str(r)):
@@ -855,7 +882,7 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	# the full width instead of sharing one long page.
 	var tab_row := HBoxContainer.new()
 	tab_row.add_theme_constant_override("separation", 4)
-	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.runestones.size())]]:
+	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.runestones.size() + GameState.tonics)]]:
 		var tb := _button(str(td[1]), func(t=str(td[0])):
 			inv_view = t
 			selected_item_id = ""
@@ -919,7 +946,7 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 ## One inventory tile: rarity-framed icon, name, and the attribute it adds.
 func _inv_tile(it: Item) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(112, 128)
+	b.custom_minimum_size = Vector2(112, 146)
 	b.focus_mode = Control.FOCUS_ALL
 	b.pressed.connect(func(id=it.id):
 		selected_item_id = id
@@ -952,7 +979,7 @@ func _inv_tile(it: Item) -> Button:
 	nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT))
 	nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	nl.max_lines_visible = 2
+	nl.max_lines_visible = 3
 	nl.custom_minimum_size.x = 100
 	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(nl)
@@ -1036,6 +1063,26 @@ func _item_modal(it: Item) -> void:
 		cv.add_child(equip_row)
 	if not blocked.is_empty():
 		cv.add_child(_wrap_label("Needs %d %s: %s" % [it.attr_req, GameData.ATTR_LABEL.get(it.attr, it.attr), ", ".join(blocked)], 12, true))
+	if it.unique_id == "":
+		var rcost := GameState.reforge_cost(it)
+		cv.add_child(_label("Reforge — reroll one stat (%d Crystals)" % rcost, 13, true))
+		var ref_row := HFlowContainer.new()
+		ref_row.add_theme_constant_override("h_separation", 6)
+		ref_row.add_theme_constant_override("v_separation", 6)
+		var lines := [it.kind, it.secondary_kind, it.tertiary_kind]
+		for li in lines.size():
+			if str(lines[li]) == "":
+				continue
+			var rb := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], ("Reroll %s value" if li == 0 else "Reroll %s") % _KIND_LABEL.get(lines[li], lines[li]), func(id=it.id, l=li):
+				var err := GameState.reforge_item(id, l)
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			rb.disabled = GameState.crystals < rcost
+			rb.tooltip_text = "The value rerolls; the kind stays." if li == 0 else "Rerolls into any stat this item doesn't already have (or the same one)."
+			ref_row.add_child(rb)
+		cv.add_child(ref_row)
 	cv.add_child(_hsep())
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 8)
@@ -1044,6 +1091,12 @@ func _item_modal(it: Item) -> void:
 		GameState.sell_item(id)
 		render()
 	))
+	if GameState.recycle_unlocked():
+		bottom.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Salvage +%d" % GameState.salvage_value(it), func(id=it.id):
+			selected_item_id = ""
+			GameState.salvage_item(id)
+			render()
+		))
 	var sp := Control.new()
 	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(sp)
@@ -1055,6 +1108,16 @@ func _item_modal(it: Item) -> void:
 
 
 func _render_inventory_supplies(v: VBoxContainer) -> void:
+	v.add_child(_label("Field Tonics — use one in battle to heal an ally (takes the hero's turn)", 16))
+	var tonic_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func():
+		var err := GameState.buy_tonic()
+		if err != "":
+			push_warning(err)
+		render()
+	)
+	tonic_btn.disabled = GameState.tonics >= GameData.TONIC_CAP or GameState.coins < GameData.TONIC_COST
+	v.add_child(_info_row("Field Tonic (%dcr) — heals %d%% HP · carrying %d/%d" % [GameData.TONIC_COST, int(GameData.TONIC_HEAL_PCT * 100), GameState.tonics, GameData.TONIC_CAP], 12, [tonic_btn], _icon("res://assets/ui/icon_tonic.png", 24)))
+	v.add_child(_hsep())
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
 	if not GameState.consumables.is_empty():
 		v.add_child(_label("Owned:", 12, true))

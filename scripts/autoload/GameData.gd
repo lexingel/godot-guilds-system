@@ -550,6 +550,20 @@ const ITEM_ATTR_REQ := {"common": 0, "rare": 7, "epic": 10, "legendary": 13}
 
 ## Resetting a hero's attributes costs this many Seal Tokens per hero level.
 const RESPEC_TOKENS_PER_LEVEL := 5
+## Field Tonic: a battle consumable (Inventory → Supplies). Using one takes the
+## hero's turn and heals one ally.
+const TONIC_COST := 25
+const TONIC_HEAL_PCT := 0.35
+const TONIC_CAP := 5
+## Item upkeep: rerolling one stat line costs REFORGE_CRYSTALS x rarity mult,
+## more each time; salvage returns SALVAGE_CRYSTALS x rarity mult.
+const REFORGE_CRYSTALS := 8
+const SALVAGE_CRYSTALS := 6
+## Attunement: gear grows with its hero — every ATTUNE_WINS won fights while
+## equipped raise its rolled stats by ATTUNE_STEP, up to ATTUNE_MAX times.
+const ATTUNE_WINS := 8
+const ATTUNE_STEP := 0.04
+const ATTUNE_MAX := 5
 ## Camp training: buy up to ATTR_TRAIN_CAP extra attribute points per hero,
 ## each costing ATTR_TRAIN_COST more Coins than the last.
 const ATTR_TRAIN_CAP := 5
@@ -1199,6 +1213,29 @@ const ROLE_SIGNATURES := {
 }
 
 ## The keystone for `kind`'s tree as a full skill node, or {}.
+## Two more Tier-5 nodes in every tree, earned outside SP alone:
+## "stonebound" also spends an Evolution Stone and makes the hero's Active
+## Ability hit harder; "riftborn" needs the guild to have sealed a Rift Map
+## rift of RIFTBORN_MIN_RANK or higher, and adds 40% of the tree's capstone
+## stat. (A skill respec refunds the SP, never the stone.)
+const RIFTBORN_MIN_RANK := "C"
+
+
+static func rift_nodes(kind: String) -> Array:
+	var cap_val := 0.0
+	for n in KIND_SKILL_PACKAGE.get(kind, []):
+		if n["id"] == "cap":
+			cap_val = float(n["value"])
+	return [
+		{"id": "stonebound", "tier": 5, "req_level": 6, "cost": 1, "kind": "ability_power", "value": 0.25,
+			"name": "Stonebound Ability", "requires": [], "requires_any": KEYSTONE_REQUIRES_ANY, "stone": true,
+			"icon": "res://assets/skills/gem_red.png"},
+		{"id": "riftborn", "tier": 5, "req_level": 5, "cost": 1, "kind": kind, "value": snappedf(cap_val * 0.4, 0.01),
+			"name": "Riftborn", "requires": [], "rift_rank": RIFTBORN_MIN_RANK,
+			"icon": "res://assets/skills/eye_gem.png"},
+	]
+
+
 static func keystone_node(kind: String) -> Dictionary:
 	if not KEYSTONES.has(kind):
 		return {}
@@ -1790,7 +1827,6 @@ const CREST_PATH: Array[String] = [
 const CAMP_BG := "res://assets/camp/camp_bg.png"
 const TITLE_BG := "res://assets/screens/title_bg.png"
 const MEDICAL_BG := "res://assets/screens/medical_bg.png"
-const ROSTER_BG := "res://assets/screens/roster_bg.png"
 const MANAGEMENT_BG := "res://assets/screens/management_bg.png"
 const BED_ICON := "res://assets/screens/bed_icon.png"
 const RIFTHALL_BG := "res://assets/screens/rifthall_bg.png"
@@ -2167,6 +2203,9 @@ static func find_skill_node(kind: String, skill_id: String, role: String = "warr
 		return signature_node(role)
 	if skill_id == "keystone":
 		return keystone_node(kind)
+	for n in rift_nodes(kind):
+		if n["id"] == skill_id:
+			return n
 	for n in KIND_SKILL_PACKAGE.get(kind, []):
 		if n["id"] == skill_id:
 			return n

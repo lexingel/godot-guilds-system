@@ -25,6 +25,9 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 				s += n["value"]
 				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
 					s += float(n.get("combo_bonus", 0.0))
+		for n in GameData.rift_nodes(tree_kind):
+			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
+				s += float(n["value"])
 		# A learned keystone's drawback is a plain flat stat.
 		var ks := GameData.keystone_node(tree_kind)
 		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
@@ -72,6 +75,9 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 				add.call("Skill: %s" % n["name"], float(n["value"]))
 				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
 					add.call("Combo: %s" % n["name"], float(n.get("combo_bonus", 0.0)))
+		for n in GameData.rift_nodes(tree_kind):
+			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
+				add.call("Skill: %s" % n["name"], float(n["value"]))
 		var ks := GameData.keystone_node(tree_kind)
 		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
 			add.call("Keystone drawback: %s" % ks["name"], float(ks["value"]))
@@ -482,6 +488,13 @@ func gen_unique_relic() -> Relic:
 ## recipes keep a player's chosen equip-slot category intact across a craft.
 ## `rank` is the item's rift rank (see GameData.ITEM_RANK_MULT); "" means
 ## "wherever the party is right now" (GameState.loot_rank).
+## One rolled stat line's value — gen_item's formula, for rerolls.
+func item_line_value(kind: String, rarity_id: String, line: int, rank: String) -> float:
+	var rank_mult: float = GameData.ITEM_RANK_MULT[GameData.rift_rank_index(rank if rank != "" else "F")]
+	var roll := randf_range(GameData.ITEM_ROLL_RANGE[0], GameData.ITEM_ROLL_RANGE[1]) * rank_mult
+	return snappedf(GameData.ITEM_KIND_BASE[kind] * float(GameData.find_rarity(rarity_id)["mult"]) * GameData.ITEM_AFFIX_VALUE_SHARE[line] * roll, 0.001)
+
+
 func gen_item(rarity_id: String, category_override: String = "", rank: String = "") -> Item:
 	if rarity_id == "legendary":
 		return gen_unique_item()
@@ -1546,6 +1559,17 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			_fire("after_hit", state, h, hit)
 	elif action == "defend":
 		state["_defending"][h.id] = true
+	elif action == "swap":
+		h.formation = "back" if h.formation != "back" else "front"
+		log.append("%s moves to the %s row." % [h.name, h.formation])
+	elif action == "tonic" and GameState.tonics > 0:
+		var patient := _find_party_hero(party, str(act.get("ally", "")))
+		if patient == null or patient.hp <= 0:
+			patient = h
+		GameState.tonics -= 1
+		var healed: int = min(max_hp(patient) - patient.hp, int(round(max_hp(patient) * GameData.TONIC_HEAL_PCT)))
+		patient.hp += healed
+		log.append("%s gives %s a Field Tonic: +%d HP." % [h.name, patient.name, healed])
 	elif action == "guard":
 		# Until the round ends, attacks aimed at the ally hit this hero
 		# instead, 25% weaker (see _resolve_monster_action).

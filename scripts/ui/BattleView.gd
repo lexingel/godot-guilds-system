@@ -756,7 +756,7 @@ var _hero_plates: Dictionary = {}      # hero id -> unit plate (live HP updates 
 var _monster_plates: Dictionary = {}   # monster index -> unit plate
 var _combat_target: int = -1           # the foe Attack / key 1 hits; click a foe or Tab to change
 var _combat_log_open: bool = false
-var _guard_picking: bool = false       # the command bar is asking which ally to guard
+var _ally_pick: String = ""       # "guard"/"tonic": the command bar is asking which ally
 var _guard_picker_for: String = ""     # the hero that picker belongs to
 var _banner_state: Dictionary = {}     # the fight + round whose "Round N" slide-in already played
 var _banner_round: int = -1
@@ -960,7 +960,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			current_hero = candidate
 	var acting_monster: int = int(current_turn["id"]) if str(current_turn.get("type", "")) == "monster" else -1
 	if current_hero == null or current_hero.id != _guard_picker_for:
-		_guard_picking = false
+		_ally_pick = ""
 	_guard_picker_for = current_hero.id if current_hero else ""
 
 	var living_idx: Array[int] = []
@@ -1267,7 +1267,8 @@ func _guard_picker(row: HBoxContainer, state: Dictionary, current_hero: Hero, li
 		if c.get_index() > 0:
 			c.queue_free()
 	_combat_hotkeys.clear()
-	var ask := _label("Guard whom?", 15)
+	var action := _ally_pick
+	var ask := _label("Guard whom?" if action == "guard" else "Tonic for whom?", 15)
 	ask.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	ask.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(ask)
@@ -1281,12 +1282,12 @@ func _guard_picker(row: HBoxContainer, state: Dictionary, current_hero: Hero, li
 	var hid := current_hero.id
 	var n := 0
 	for a in living_heroes:
-		if a == current_hero:
+		if a == current_hero and action == "guard":
 			continue
 		n += 1
 		var pick := func(aid=a.id):
-			_guard_picking = false
-			run_turns.call(func(): GameState.set_hero_action(hid, "guard", 0, aid))
+			_ally_pick = ""
+			run_turns.call(func(): GameState.set_hero_action(hid, action, 0, aid))
 		var text := "%s  %d/%d" % [a.name.split(" the ")[0], a.hp, Combat.max_hp(a)]
 		if incoming.has(a.id):
 			text += "  (%d dmg incoming)" % int(incoming[a.id])
@@ -1296,7 +1297,7 @@ func _guard_picker(row: HBoxContainer, state: Dictionary, current_hero: Hero, li
 		row.add_child(b)
 		_combat_hotkeys[str(n)] = pick
 	var cancel := func():
-		_guard_picking = false
+		_ally_pick = ""
 		render()
 	row.add_child(_button("Cancel", cancel))
 	_combat_hotkeys["Escape"] = cancel
@@ -1373,11 +1374,23 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var start_guard := func():
 				if _combat_animating:
 					return
-				_guard_picking = true
+				_ally_pick = "guard"
 				render()
 			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "4", start_guard, "Guard (4) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker.", last_action == "guard")
 			row.add_child(gb)
 			_combat_hotkeys["4"] = start_guard
+		var to_row := "back" if current_hero.formation != "back" else "front"
+		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
+		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "5", do_swap, "Move (5) — step to the %s row. Front draws attacks; some classes fight better from one row." % to_row, false))
+		_combat_hotkeys["5"] = do_swap
+		if GameState.tonics > 0:
+			var start_tonic := func():
+				if _combat_animating:
+					return
+				_ally_pick = "tonic"
+				render()
+			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonic ×%d" % GameState.tonics, "6", start_tonic, "Field Tonic (6) — heal an ally %d%% HP. Uses this hero's turn." % int(GameData.TONIC_HEAL_PCT * 100), false))
+			_combat_hotkeys["6"] = start_tonic
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
 		var living_idx: Array[int] = []
@@ -1393,7 +1406,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var hint := _label("Target: %s\nSpace repeats your last action" % tgt_name, 12, true)
 		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(hint)
-		if _guard_picking:
+		if _ally_pick != "":
 			_guard_picker(row, state, current_hero, living_heroes, run_turns)
 	else:
 		var l := _label("The party is down." if living_heroes.is_empty() else "Enemy turn…", 14, true)
