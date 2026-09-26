@@ -1295,6 +1295,11 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.tooltip_text = "Key %d" % n
 		row.add_child(b)
+		# A tonic on a hero at full HP would heal nothing.
+		if action == "tonic" and a.hp >= Combat.max_hp(a):
+			b.disabled = true
+			b.tooltip_text = "Already at full HP"
+			continue
 		_combat_hotkeys[str(n)] = pick
 	var cancel := func():
 		_ally_pick = ""
