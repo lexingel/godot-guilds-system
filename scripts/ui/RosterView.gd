@@ -1159,60 +1159,288 @@ func _render_inventory_supplies(v: VBoxContainer) -> void:
 		v.add_child(_info_row("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12, [buy_btn]))
 
 
+## Inventory → Relics: the Relic Altar. Equipped relics sit in the altar's
+## slots, active element sets underneath, and the rest of the collection as a
+## grid of tiles; clicking any relic opens its card in a pop-up.
 func _render_inventory_relics(v: VBoxContainer) -> void:
-	var used := Combat.equipped_relics().size()
+	var equipped := Combat.equipped_relics()
 	var cap := GameState.relic_slot_cap()
-	v.add_child(_label("Relics — %d/%d slots equipped" % [used, cap], 16))
-	if used < cap and GameState.relics.any(func(r): return not r.equipped):
-		var hint := _label("%d slot(s) empty — equipped relics apply to every hero in every rift." % (cap - used), 13)
-		hint.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		v.add_child(hint)
-	v.add_child(_sort_cycle_button(inv_sort, [
-		{"id": "rarity", "label": "Rarity"},
-		{"id": "level", "label": "Level"},
-		{"id": "name", "label": "Name"},
-	], func(new_id): inv_sort = new_id))
-	var relics_sorted: Array[Relic] = []
-	relics_sorted.assign(GameState.relics)
-	match inv_sort:
-		"rarity":
-			relics_sorted.sort_custom(func(a, b): return _rarity_rank(a.rarity) > _rarity_rank(b.rarity))
-		"level", "value":
-			relics_sorted.sort_custom(func(a, b): return a.level > b.level)
-		"name":
-			relics_sorted.sort_custom(func(a, b): return a.name < b.name)
-	for r in relics_sorted:
-		var actions: Array[Control] = []
-		var eq_cb := func(id=r.id):
-			GameState.toggle_equip_relic(id)
-			render()
-		if r.equipped:
-			actions.append(_icon_button(GameData.RELIC_TYPE_ICON_PATH[r.type], "Unequip", eq_cb))
-		else:
-			var eb := _icon_domain_button("ember", GameData.RELIC_TYPE_ICON_PATH[r.type], "Equip", eq_cb)
-			eb.disabled = used >= cap
-			eb.tooltip_text = "All relic slots are full — unequip one first" if used >= cap else ""
-			actions.append(eb)
-		if r.level < GameState.RELIC_MAX_LEVEL:
-			var rar := GameData.find_rarity(r.rarity)
-			var cost := int(round(15.0 * float(rar["mult"]) * r.level))
-			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade — %d" % cost, func(id=r.id):
-				var err := GameState.upgrade_relic(id)
+	var altar := PanelContainer.new()
+	altar.theme_type_variation = &"CardPanelViolet"
+	var av := _vbox(10)
+	av.add_child(_label("Relic Altar — %d/%d slots · every relic empowers the whole party" % [equipped.size(), cap], 16))
+	var slots := HFlowContainer.new()
+	slots.add_theme_constant_override("h_separation", 10)
+	slots.add_theme_constant_override("v_separation", 10)
+	for i in cap:
+		slots.add_child(_relic_slot_card(equipped[i] if i < equipped.size() else null))
+	av.add_child(slots)
+	# Element sets: what's active, and what one more relic would turn on.
+	var sets := Combat.relic_sets()
+	var set_line := HFlowContainer.new()
+	set_line.add_theme_constant_override("h_separation", 14)
+	set_line.add_child(_label("Sets:", 13, true))
+	if sets.is_empty():
+		set_line.add_child(_label("none yet — 2 relics of one element, or 3 different elements, start a set", 12, true))
+	for s in sets:
+		var sl := _label("%s: %s" % [s["name"], Combat.describe_skill(str(s["kind"]), float(s["value"]))], 13)
+		sl.add_theme_color_override("font_color", Palette.RANK_E)
+		set_line.add_child(sl)
+	var hint := _label("ⓘ", 13, true)
+	hint.tooltip_text = "2 of an element: half its bonus · 3: the full bonus · 3 different elements: Prism (+6% damage).\nEmber +15% damage · Frost +12% dodge · Verdant mends 8% · Umbral -15% hazard · Arcane +10% loot odds." + ("\nOptimal Synergy: every set bonus is 50% stronger." if GameState.synergy_unlocked() else "")
+	hint.mouse_filter = Control.MOUSE_FILTER_STOP
+	set_line.add_child(hint)
+	av.add_child(set_line)
+	altar.add_child(av)
+	v.add_child(altar)
+
+	var rest: Array = GameState.relics.filter(func(r): return not r.equipped)
+	rest.sort_custom(func(a, b): return _rarity_rank(a.rarity) > _rarity_rank(b.rarity) or (a.rarity == b.rarity and a.level > b.level))
+	v.add_child(_label("Collection (%d)" % rest.size(), 16))
+	if rest.is_empty():
+		v.add_child(_label("No spare relics — they drop from fights, treasure and shops.", 12, true))
+	var grid := HFlowContainer.new()
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	for r in rest:
+		grid.add_child(_relic_tile(r))
+	v.add_child(grid)
+	var sel: Array = GameState.relics.filter(func(r): return r.id == selected_item_id)
+	if not sel.is_empty():
+		_relic_modal(sel[0])
+
+
+func _relic_effect_lines(r: Relic) -> Array[String]:
+	var out: Array[String] = []
+	if r.unique_id != "":
+		out.append(str(GameData.find_unique_relic(r.unique_id).get("desc", "")))
+	else:
+		for s in r.specials:
+			out.append(str(s["label"]))
+		if not r.trigger.is_empty():
+			out.append(Combat.describe_effect(r.trigger))
+	return out
+
+
+## An altar slot: the equipped relic's icon, name and effects, or an empty socket.
+func _relic_slot_card(r: Relic) -> Control:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(270, 130)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if r == null:
+		b.disabled = true
+		var e := _label("Empty slot — pick a relic from your collection", 12, true)
+		e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		e.custom_minimum_size.x = 220
+		row.add_child(e)
+		b.add_child(row)
+		return b
+	b.pressed.connect(func(id=r.id):
+		selected_item_id = id
+		render()
+	)
+	row.add_child(_relic_icon_box(r, 56))
+	var col := _vbox(2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nm := _label(_loot_display_name(r), 13)
+	nm.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(r.rarity, Palette.TEXT))
+	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nm.custom_minimum_size.x = 170
+	col.add_child(nm)
+	col.add_child(_label("%s · Lv%d%s" % [r.type, r.level, " · Awakened" if r.awakened else ""], 12, true))
+	var lines := _relic_effect_lines(r)
+	for line in lines:
+		var l := _label(("• " if lines.size() > 1 else "") + line, 12)
+		l.custom_minimum_size.x = 190
+		l.clip_text = true
+		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(l)
+	row.add_child(col)
+	b.add_child(row)
+	b.tooltip_text = "%s
+%s
+Click for details" % [_loot_display_name(r), "
+".join(lines)]
+	return b
+
+
+func _relic_icon_box(r: Relic, size: int) -> Control:
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(size, size)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame := _icon(GameData.RARITY_FRAME_PATH.get(r.rarity, GameData.RARITY_FRAME_PATH["common"]), size)
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(frame)
+	var inner := int(size * 0.72)
+	var ic := _icon(GameData.relic_icon(r), inner)
+	ic.position = Vector2((size - inner) * 0.5, (size - inner) * 0.5)
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(ic)
+	var gem := _icon(GameData.RELIC_TYPE_ICON_PATH.get(r.type, ""), 18)
+	gem.position = Vector2(size - 16, size - 16)
+	gem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(gem)
+	return box
+
+
+## A collection tile: framed icon with the element gem, name and level.
+func _relic_tile(r: Relic) -> Button:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(112, 134)
+	b.pressed.connect(func(id=r.id):
+		selected_item_id = id
+		render()
+	)
+	var col := _vbox(3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 6)
+	var box := _relic_icon_box(r, 60)
+	box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(box)
+	var nl := _label(_loot_display_name(r), 12)
+	nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(r.rarity, Palette.TEXT))
+	nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nl.max_lines_visible = 2
+	nl.custom_minimum_size.x = 100
+	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(nl)
+	var ll := _label("Lv%d%s" % [r.level, " ★" if r.awakened else ""], 12, true)
+	ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ll.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(ll)
+	b.add_child(col)
+	b.tooltip_text = "%s — click for details" % _loot_display_name(r)
+	return b
+
+
+## A relic's full card over the screen: effects, level, and every action.
+func _relic_modal(r: Relic) -> void:
+	var close := func():
+		selected_item_id = ""
+		render()
+	_combat_hotkeys["Escape"] = close
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.6)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		dim.set_offset(side, -80)
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		dim.set_offset(side, 80)
+	dim.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed:
+			close.call()
+	)
+	overlay.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelViolet"
+	card.custom_minimum_size.x = 460
+	var cv := _vbox(8)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	top.add_child(_relic_icon_box(r, 76))
+	var tcol := _vbox(3)
+	tcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nm := _label(_loot_display_name(r), 16)
+	nm.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(r.rarity, Palette.TEXT))
+	tcol.add_child(nm)
+	tcol.add_child(_label("%s %s relic · Lv%d/%d%s" % [r.rarity.capitalize(), r.type, r.level, GameState.RELIC_MAX_LEVEL, " · Awakened" if r.awakened else ""], 12, true))
+	tcol.add_child(_label("+%d party damage · +%d rift shield" % [r.dmg, r.hp], 13))
+	top.add_child(tcol)
+	cv.add_child(top)
+	var rcost := GameState.relic_reroll_cost(r)
+	var effects := _vbox(4)
+	if r.unique_id != "":
+		effects.add_child(_wrap_label(str(GameData.find_unique_relic(r.unique_id).get("desc", "")), 13))
+		if r.combo_with != "":
+			var partner := str(GameData.find_unique_relic(r.combo_with).get("name", ""))
+			effects.add_child(_wrap_label("Combo: stronger with %s%s" % [partner, " (active!)" if Combat.party_has_unique_relic(r.combo_with) else ""], 12, true))
+	else:
+		var rows: Array = []
+		for i in r.specials.size():
+			rows.append([str(r.specials[i]["label"]), i])
+		if not r.trigger.is_empty():
+			rows.append([Combat.describe_effect(r.trigger), -1])
+		for row_def in rows:
+			var er := HBoxContainer.new()
+			er.add_theme_constant_override("separation", 8)
+			var el := _wrap_label(("⚡ " if int(row_def[1]) < 0 else "• ") + str(row_def[0]), 13)
+			el.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			er.add_child(el)
+			var rb := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Reroll", func(id=r.id, idx=int(row_def[1])):
+				var err := GameState.reroll_relic(id, idx)
 				if err != "":
 					push_warning(err)
 				render()
-			))
-		if not r.equipped:
-			actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=r.id):
-				GameState.sell_relic(id)
+			)
+			rb.disabled = GameState.crystals < rcost
+			rb.tooltip_text = "Reroll this effect for %d Crystals (each reroll costs more)" % rcost
+			er.add_child(rb)
+			effects.add_child(er)
+		if r.level < GameState.RELIC_MAX_LEVEL and not r.awakened:
+			effects.add_child(_label("Reaches Lv%d: awakens with one more effect." % GameState.RELIC_MAX_LEVEL, 12, true))
+	cv.add_child(effects)
+	cv.add_child(_hsep())
+	var acts := HFlowContainer.new()
+	acts.add_theme_constant_override("h_separation", 6)
+	acts.add_theme_constant_override("v_separation", 6)
+	var used := Combat.equipped_relics().size()
+	if r.equipped:
+		acts.add_child(_icon_button(GameData.relic_icon(r), "Unequip", func(id=r.id):
+			GameState.toggle_equip_relic(id)
+			render()
+		))
+	else:
+		var eb := _icon_domain_button("ember", GameData.relic_icon(r), "Place on the altar", func(id=r.id):
+			GameState.toggle_equip_relic(id)
+			selected_item_id = ""
+			render()
+		)
+		eb.disabled = used >= GameState.relic_slot_cap()
+		eb.tooltip_text = "Every altar slot is full — take a relic off first" if eb.disabled else ""
+		acts.add_child(eb)
+	if r.level < GameState.RELIC_MAX_LEVEL:
+		var ucost := int(round(15.0 * float(GameData.find_rarity(r.rarity)["mult"]) * r.level))
+		var ub := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade — %d" % ucost, func(id=r.id):
+			var err := GameState.upgrade_relic(id)
+			if err != "":
+				push_warning(err)
+			render()
+		)
+		ub.disabled = GameState.crystals < ucost
+		acts.add_child(ub)
+	if not r.equipped:
+		acts.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=r.id):
+			selected_item_id = ""
+			GameState.sell_relic(id)
+			render()
+		))
+		if GameState.recycle_unlocked():
+			acts.add_child(_icon_button("res://assets/skills/ingot_gold.png", "Scrap", func(id=r.id):
+				selected_item_id = ""
+				GameState.scrap_relic(id)
 				render()
 			))
-			if GameState.recycle_unlocked():
-				actions.append(_icon_button("res://assets/skills/ingot_gold.png", "Scrap", func(id=r.id):
-					GameState.scrap_relic(id)
-					render()
-				))
-		v.add_child(_info_row("%s (%s, Lv%d) — %s" % [_loot_display_name(r), r.type, r.level, _loot_desc(r, true)], 12, actions, _icon(GameData.RELIC_TYPE_ICON_PATH[r.type], 20)))
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	acts.add_child(sp)
+	acts.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", close))
+	cv.add_child(acts)
+	card.add_child(cv)
+	center.add_child(card)
+	root.add_child(overlay)
 
 
 func _render_inventory_detectors(v: VBoxContainer) -> void:

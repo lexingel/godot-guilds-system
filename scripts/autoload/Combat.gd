@@ -450,23 +450,58 @@ func gen_relic(rarity_id: String, type_override: String = "") -> Relic:
 	var type: String = type_override if type_override != "" else GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	var rarity := GameData.find_rarity(rarity_id)
 	var noun: String = RARITY_NOUNS[randi() % RARITY_NOUNS.size()]
-	var has_special := randf() < 0.4
 	var r := Relic.new()
 	r.id = "rl" + str(GameState.next_id)
 	GameState.next_id += 1
-	r.name = "%s %s" % [type, noun]
 	r.type = type
 	r.rarity = rarity["id"]
-	r.dmg = round((2.0 if has_special else 3.0) * rarity["mult"])
-	r.hp = round((6.0 if has_special else 9.0) * rarity["mult"])
-	if has_special:
-		var domain := domain_for_type(type)
-		var pool: Array = GameData.RELIC_SPECIALS.filter(func(x): return x["domain"] == domain)
-		var s: Dictionary = pool[randi() % pool.size()]
-		r.special_kind = s["kind"]
-		r.special_value = snappedf(s["value"] * rarity["mult"], 0.001)
-		r.special_label = s["label"]
+	r.dmg = round(2.0 * rarity["mult"])
+	r.hp = round(6.0 * rarity["mult"])
+	# Common: one special. Rare: a special and a trigger. Epic: two and a trigger.
+	r.specials = [roll_relic_special(type, r.rarity, [])]
+	if r.rarity == "epic":
+		r.specials.append(roll_relic_special(type, r.rarity, r.specials.map(func(s): return s["kind"])))
+	if r.rarity != "common":
+		r.trigger = roll_relic_trigger(r.rarity)
+	r.name = "%s %s %s" % [type, noun, GameData.RELIC_SPECIAL_SUFFIX.get(str(r.specials[0]["kind"]), "")]
 	return r
+
+
+## One special for a relic of `type` (60% its element's home domain), never a
+## kind in `exclude`. The label is rebuilt from the scaled value.
+func roll_relic_special(type: String, rarity_id: String, exclude: Array) -> Dictionary:
+	var domain := domain_for_type(type)
+	var pool: Array = GameData.RELIC_SPECIALS.filter(func(x): return x["domain"] == domain and not exclude.has(x["kind"]))
+	if pool.is_empty():
+		pool = GameData.RELIC_SPECIALS.filter(func(x): return not exclude.has(x["kind"]))
+	var s: Dictionary = pool[randi() % pool.size()]
+	var v := snappedf(float(s["value"]) * float(GameData.find_rarity(rarity_id)["mult"]), 0.001)
+	return {"kind": s["kind"], "value": v, "label": relic_special_label(str(s["kind"]), v)}
+
+
+func relic_special_label(kind: String, v: float) -> String:
+	var pct := ("%.1f%%" % (v * 100.0)) if v < 0.1 else ("%d%%" % int(round(v * 100.0)))
+	match kind:
+		"mend_pct": return "Mends %s HP/round" % pct
+		"dodge_pct": return "+%s dodge chance" % pct
+		"escalate_pct": return "+%s dmg/round (stacking)" % pct
+		"hazard_guard_pct": return "-%s hazard severity" % pct
+		"first_round_pct": return "+%s first-strike damage" % pct
+		"loot_rarity_pct": return "+%s odds toward Rare/Epic loot" % pct
+		"wipe_guard": return "Relic ward: survive a wipe at %d%% HP" % int(round(v * 100))
+		"boss_alpha_strike": return "+%d%% opening volley vs Bosses" % int(round(v * 100))
+		"counter_pct": return "+%d%% chance to counter when evading or hit hard" % int(round(v * 100))
+		"cooldown_shave_pct": return "+%d%% chance to cool abilities when evading or hit hard" % int(round(v * 100))
+		"kill_shield_pct": return "On a kill, shield the weakest ally for %d%% of max HP" % int(round(v * 100))
+	return describe_skill(kind, v)
+
+
+func roll_relic_trigger(rarity_id: String) -> Dictionary:
+	var t: Dictionary = GameData.RELIC_TRIGGERS[randi() % GameData.RELIC_TRIGGERS.size()].duplicate()
+	# Triggers scale gentler than stats (sqrt of the rarity mult) — they fire
+	# repeatedly, so a full epic multiplier made them dominate.
+	t["value"] = snappedf(float(t["value"]) * sqrt(float(GameData.find_rarity(rarity_id)["mult"])), 0.001)
+	return t
 
 
 ## A fixed pick from GameData.UNIQUE_RELICS — no rarity-mult scaling, the
@@ -488,9 +523,9 @@ func gen_unique_relic() -> Relic:
 	r.unique_id = str(def["id"])
 	r.combo_with = str(def.get("combo_with", ""))
 	if def.has("special_kind"):
-		r.special_kind = str(def["special_kind"])
-		r.special_value = float(def["special_value"])
-		r.special_label = str(def["desc"])
+		r.specials = [{"kind": str(def["special_kind"]), "value": float(def["special_value"]), "label": relic_special_label(str(def["special_kind"]), float(def["special_value"]))}]
+	if def.has("trigger"):
+		r.trigger = (def["trigger"] as Dictionary).duplicate()
 	if str(def.get("drawback_kind", "")) != "":
 		r.drawback_kind = str(def["drawback_kind"])
 		r.drawback_value = float(def["drawback_value"])
@@ -821,8 +856,19 @@ func relic_dmg_bonus() -> int:
 func relic_special_total(kind: String) -> float:
 	var s := 0.0
 	for r in equipped_relics():
-		if r.special_kind == kind:
-			s += r.special_value
+		for sp in r.specials:
+			if str(sp["kind"]) == kind:
+				s += float(sp["value"])
+	# Mirror Shard: the best other equipped relic's specials count twice.
+	if party_has_unique_relic("mirror_shard"):
+		var best: Relic = null
+		for r in equipped_relics():
+			if r.unique_id != "mirror_shard" and (best == null or GameData.find_rarity(r.rarity)["mult"] > GameData.find_rarity(best.rarity)["mult"] or (r.rarity == best.rarity and r.level > best.level)):
+				best = r
+		if best:
+			for sp in best.specials:
+				if str(sp["kind"]) == kind:
+					s += float(sp["value"])
 	return s
 
 
@@ -996,11 +1042,18 @@ func _cond_ok(cond: Dictionary, h: Hero, state: Dictionary, ctx: Dictionary) -> 
 ## specials, surged mid-fight by abilities like counter_surge) — fired through
 ## the same _fire points as a hero's own effects, just with no condition.
 func _party_effects(state: Dictionary) -> Array[Dictionary]:
-	return [
+	var out: Array[Dictionary] = [
 		{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": float(state["counter"]), "source": "counter"},
 		{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": float(state["cooldown_shave"]), "source": "Chronometer"},
 		{"trigger": "on_kill", "effect": "shield_lowest", "value": float(state["kill_shield"]), "source": "Lantern"},
 	]
+	# Every equipped relic's trigger fires for the whole party.
+	for r in equipped_relics():
+		if not r.trigger.is_empty():
+			var t: Dictionary = r.trigger.duplicate()
+			t["source"] = r.name
+			out.append(t)
+	return out
 
 
 ## Fires trigger point `trigger` for hero `h`: their own effects first, then the
@@ -1072,7 +1125,21 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 			for a in state["party"]:
 				if a.hp > 0:
 					a.hp = min(max_hp(a), a.hp + max(1, int(round(max_hp(a) * value))))
-			log.append("%s's %s mends the party." % [h.name, source])
+			log.append("The %s mends the party." % source)
+			_proc(state, h, source)
+		"nova":
+			var nova: int = max(1, int(round(float(state["team_dmg_base"]) * value)))
+			for mm in state["monsters"]:
+				if float(mm["hp"]) > 0:
+					mm["hp"] = float(mm["hp"]) - nova
+			log.append("The %s strikes every foe for %d!" % [source, nova])
+			_proc(state, h, source)
+		"shield_party":
+			var sh: Dictionary = state["hero_shields"]
+			for a in state["party"]:
+				if a.hp > 0:
+					sh[a.id] = float(sh.get(a.id, 0.0)) + max_hp(a) * value
+			log.append("The %s shields the party." % source)
 			_proc(state, h, source)
 		_:
 			push_error("Unknown effect '%s'" % effect)
@@ -1107,10 +1174,14 @@ func describe_effect(e: Dictionary) -> String:
 			"intercept": what = "%s chance to take the hit for an ally below half HP" % pct.call(v)
 			"weaken_attacker": what = "cut the attacker's damage by %s" % pct.call(v)
 			"mend_party": what = "mend every ally for %s of their max HP" % pct.call(v)
+			"nova": what = "strike every foe for %s of the party's damage" % pct.call(v)
+			"shield_party": what = "shield every ally for %s of their max HP" % pct.call(v)
 		var when := ""
 		match str(e.get("trigger", "")):
 			"after_hit", "before_hit": when = "On hit"
 			"on_kill": when = "On a kill"
+			"round_third": when = "Every third round"
+			"ally_down": when = "When an ally falls"
 			"evade_or_heavy": when = "When dodging or hit hard"
 			"party_mend": when = "Whenever the party mends"
 			"ally_targeted": when = "When an ally is attacked"
@@ -1149,24 +1220,31 @@ func _shield_lowest(state: Dictionary, frac: float) -> Array:
 	return [lowest, amt]
 
 
-func synergy_bonus() -> Dictionary:
-	if not GameState.synergy_unlocked():
-		return {}
+## Active element-set bonuses: [{name, kind, value}] — 2 of a type give half
+## its SYNERGY_BONUS, 3+ the full amount; 3+ different types give the Prism
+## bonus. Optimal Synergy (Theorycrafting) makes them all 50% stronger.
+func relic_sets() -> Array:
 	var counts := {}
 	for r in equipped_relics():
-		counts[r.type] = counts.get(r.type, 0) + 1
+		counts[r.type] = int(counts.get(r.type, 0)) + 1
+	var mult := GameData.SET_UPGRADE_MULT if GameState.synergy_unlocked() else 1.0
+	var out: Array = []
 	for type in counts:
-		if counts[type] >= 3:
+		if int(counts[type]) >= 2 and GameData.SYNERGY_BONUS.has(type):
 			var s: Dictionary = GameData.SYNERGY_BONUS[type]
-			return {"type": type, "kind": s["kind"], "value": s["value"], "label": s["label"]}
-	return {}
+			var v: float = float(s["value"]) * (1.0 if int(counts[type]) >= 3 else 0.5) * mult
+			out.append({"name": "%s ×%d" % [type, min(int(counts[type]), 3)], "kind": s["kind"], "value": v})
+	if counts.size() >= 3:
+		out.append({"name": "Prism", "kind": GameData.PRISM_BONUS["kind"], "value": float(GameData.PRISM_BONUS["value"]) * mult})
+	return out
 
 
 func synergy_value_for(kind: String) -> float:
-	var s := synergy_bonus()
-	if s.has("kind") and s["kind"] == kind:
-		return s["value"]
-	return 0.0
+	var total := 0.0
+	for s in relic_sets():
+		if s["kind"] == kind:
+			total += float(s["value"])
+	return total
 
 
 func drop_rate_bonus() -> float:
@@ -1230,7 +1308,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 
 	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct") + bond_bonus_for(party, "first_round_pct")
 	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct") + synergy_value_for("escalate_pct")
-	var mend: float = min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct"))
+	var mend: float = 0.0 if party_has_unique_relic("bloodpact") else min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct"))
 	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct"))
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard") + relic_drawback_total("wipe_guard") + bond_bonus_for(party, "wipe_guard"))
 	var counter: float = min(0.6, relic_special_total("counter_pct"))
@@ -1490,6 +1568,14 @@ func _start_round(state: Dictionary) -> void:
 			total_missing += max_hp(h3) - h3.hp
 		if total_max > 0.0:
 			attack_mult *= 1.0 + desperation_cap * (total_missing / total_max)
+	if party_has_unique_relic("bloodpact"):
+		attack_mult *= 1.35
+	if party_has_unique_relic("prism_heart"):
+		var elems := {}
+		for h3 in living:
+			if h3.type != "":
+				elems[h3.type] = true
+		attack_mult *= 1.0 + 0.05 * elems.size()
 	if party_has_unique_relic("sable_standard"):
 		var roles_seen := {}
 		for h3 in living:
@@ -1516,6 +1602,8 @@ func _start_round(state: Dictionary) -> void:
 		pending[h.id] = {"action": str(prev.get("action", "attack")), "target": target_idx}
 
 	state["turn_order"] = _compute_turn_order(state)
+	if int(state["round_num"]) % 3 == 0 and not living.is_empty():
+		_fire("round_third", state, living[0])
 	var intents := {}
 	if not living.is_empty():
 		for mi in monsters.size():
@@ -1598,6 +1686,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 		var ab: Dictionary
 		if action == "call":
 			ab = GameState.champion_call(h)
+			GameState.run["champion_calls"] = int(GameState.run.get("champion_calls", 0)) + 1
 			GameState.run["champion_call_used"] = true
 		else:
 			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
@@ -1771,6 +1860,9 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	var round_num: int = int(state["round_num"])
 	var m: Dictionary = monsters[i]
 
+	if round_num == 1 and party_has_unique_relic("stopped_clock"):
+		log.append("%s is frozen in time by the Stopped Clock." % m["name"])
+		return
 	var escort: Dictionary = state.get("escort", {})
 	if not escort.is_empty() and float(escort["hp"]) > 0.0 and randf() < 0.2:
 		var escort_dmg: int = max(1, int(round(float(m["dmg"]) * 0.6)))
@@ -1846,6 +1938,7 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 				log.append("%s drains %d HP from the blow." % [m["name"], drained])
 			if target.hp <= 0:
 				log.append("%s is knocked out!" % target.name)
+				_fire("ally_down", state, target)
 
 
 ## Passive round-cadence effects (monster regen/healer-heal, hero poison tick,
@@ -1935,6 +2028,12 @@ func _check_party_defeated(state: Dictionary) -> Dictionary:
 	for h in state["party"]:
 		if h.hp > 0:
 			return {}
+	if party_has_unique_relic("phoenix_feather") and not GameState.run.is_empty() and not bool(GameState.run.get("phoenix_used", false)):
+		GameState.run["phoenix_used"] = true
+		for h in state["party"]:
+			h.hp = max(1, int(round(max_hp(h) * 0.30)))
+		(state["log"] as Array).append("The Phoenix Feather flares — the party rises from the ashes!")
+		return {}
 	return _finish_combat(state, false, false)
 
 

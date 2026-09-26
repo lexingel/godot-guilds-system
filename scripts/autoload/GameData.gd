@@ -155,6 +155,34 @@ const RELIC_SPECIALS := [
 	{"kind": "kill_shield_pct", "value": 0.2, "domain": "defense", "label": "On a kill, shields the lowest-HP ally for 20% of their max HP"},
 ]
 
+## Relic names: "<Type> <Noun> <suffix>", the suffix from its first special.
+const RELIC_SPECIAL_SUFFIX := {
+	"mend_pct": "of Renewal", "dodge_pct": "of the Wind", "escalate_pct": "of the Pyre", "hazard_guard_pct": "of Warding",
+	"first_round_pct": "of First Light", "wipe_guard": "of the Last Stand", "boss_alpha_strike": "of the Warhorn",
+	"loot_rarity_pct": "of Fortune", "counter_pct": "of Thorns", "cooldown_shave_pct": "of Haste", "kill_shield_pct": "of the Bulwark",
+}
+## Relic triggers (rare+): effects in Combat's hero-effect shape that fire in
+## battle for the whole party. `value` is the common-rarity base, scaled by
+## rarity mult. round_third fires at the start of every 3rd round; ally_down
+## when a hero is knocked out.
+const RELIC_TRIGGERS := [
+	{"trigger": "on_kill", "effect": "mend_party", "value": 0.04},
+	{"trigger": "after_hit", "effect": "lifesteal", "value": 0.06},
+	{"trigger": "before_hit", "effect": "execute_below", "value": 0.08},
+	{"trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.08},
+	{"trigger": "ally_targeted", "effect": "intercept", "value": 0.15},
+	{"trigger": "on_kill", "effect": "shield_lowest", "value": 0.10},
+	{"trigger": "round_third", "effect": "nova", "value": 0.25},
+	{"trigger": "round_third", "effect": "shield_party", "value": 0.08},
+	{"trigger": "ally_down", "effect": "shield_party", "value": 0.15},
+	{"trigger": "ally_down", "effect": "mend_party", "value": 0.10},
+]
+## Element sets: 2 relics of a type give half of SYNERGY_BONUS, 3 the full
+## amount; 3 different types give PRISM_BONUS. Optimal Synergy (Theorycrafting)
+## multiplies every set bonus by SET_UPGRADE_MULT.
+const PRISM_BONUS := {"kind": "dmg_pct", "value": 0.06, "label": "+6% team damage"}
+const SET_UPGRADE_MULT := 1.5
+const RELIC_REROLL_CRYSTALS := 10
 const TYPE_DOMAIN := {
 	"Ember": "damage", "Verdant": "heal", "Frost": "chance",
 	"Umbral": "defense", "Arcane": "droprate",
@@ -746,6 +774,40 @@ const UNIQUE_RELICS := [
 	 "combo_with": "ashes_of_the_fallen",
 	 "special_kind": "escalate_pct", "special_value": 0.02,
 	 "desc": "+2% dmg/round (stacking) on its own. Paired with Ashes of the Fallen, that relic's desperation bonus doubles."},
+	{"id": "phoenix_feather", "name": "Phoenix Feather", "type": "Ember", "effect": "phoenix", "value": 0.30,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "desc": "Once per rift, when the whole party falls, everyone rises again at 30% HP."},
+	{"id": "wardens_seal", "name": "Warden's Seal", "type": "Umbral", "effect": "slow_fuses", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "special_kind": "hazard_guard_pct", "special_value": 0.08,
+	 "desc": "Rift Map rifts skip every third day of their countdown. -8% hazard severity."},
+	{"id": "crown_of_oaths", "name": "Crown of Oaths", "type": "Arcane", "effect": "double_call", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "desc": "The Champion's Call can be used twice per rift."},
+	{"id": "bloodpact", "name": "Bloodpact Dagger", "type": "Umbral", "effect": "bloodpact", "value": 0.35,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "desc": "+35% team damage, but the party never mends between rounds."},
+	{"id": "quartermasters_ledger", "name": "Quartermaster's Ledger", "type": "Arcane", "effect": "quest_bonus", "value": 0.5,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "special_kind": "loot_rarity_pct", "special_value": 0.05,
+	 "desc": "Guild Board quests pay 50% more Coins and Crystals. +5% odds toward Rare/Epic loot."},
+	{"id": "lantern_of_the_lost", "name": "Lantern of the Lost", "type": "Verdant", "effect": "free_carry", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "special_kind": "mend_pct", "special_value": 0.02,
+	 "desc": "Carrying a downed hero out of a rift costs no day. Mends 2% HP/round."},
+	{"id": "stopped_clock", "name": "The Stopped Clock", "type": "Frost", "effect": "frozen_round", "value": 0.0,
+	 "drawback_kind": "first_round_pct", "drawback_value": -0.15, "drawback_label": "-15% first-strike damage", "combo_with": "",
+	 "desc": "Foes can't act in the first round of a fight. -15% first-strike damage."},
+	{"id": "mirror_shard", "name": "Mirror Shard", "type": "Frost", "effect": "mirror", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "desc": "Copies every special of your best other equipped relic."},
+	{"id": "stormcaller_idol", "name": "Stormcaller Idol", "type": "Ember", "effect": "", "value": 0.0,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "trigger": {"trigger": "round_third", "effect": "nova", "value": 0.6},
+	 "desc": "Every third round, lightning strikes every foe for 60% of the party's damage."},
+	{"id": "prism_heart", "name": "Prism Heart", "type": "Arcane", "effect": "prism_heart", "value": 0.05,
+	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
+	 "desc": "+5% team damage for each different element among your standing heroes."},
 ]
 
 static func find_unique_item(unique_id: String) -> Dictionary:
@@ -753,6 +815,18 @@ static func find_unique_item(unique_id: String) -> Dictionary:
 		if u["id"] == unique_id:
 			return u
 	return {}
+
+
+## A relic's icon: a Legendary's own, else its first special's, else its type gem.
+static func relic_icon(r) -> String:
+	var path := ""
+	if r.unique_id != "":
+		path = "res://assets/relics/u_%s.png" % r.unique_id
+	elif not r.specials.is_empty():
+		path = "res://assets/relics/%s.png" % str(r.specials[0]["kind"])
+	if path != "" and ResourceLoader.exists(path):
+		return path
+	return RELIC_TYPE_ICON_PATH.get(r.type, CHEST_ICON_PATH)
 
 
 static func find_unique_relic(unique_id: String) -> Dictionary:
@@ -1693,7 +1767,7 @@ const BRANCHES := [
 	]},
 	{"id": "res", "name": "Research Branch", "sub": "Run Mechanics & Analytics", "nodes": [
 		{"id": "relic", "name": "Relic Storage", "max": 3, "cost_base": 30, "cost_step": 22, "cap": {"name": "Inherited Power", "cost": 380, "desc": "Start every Rift with a Rare Relic instead of Common."}},
-		{"id": "theory", "name": "Theorycrafting Lab", "max": 3, "cost_base": 28, "cost_step": 20, "cap": {"name": "Optimal Synergy", "cost": 400, "desc": "3 equipped Relics of one type grant +15% damage."}},
+		{"id": "theory", "name": "Theorycrafting Lab", "max": 3, "cost_base": 28, "cost_step": 20, "cap": {"name": "Optimal Synergy", "cost": 400, "desc": "Relic element-set bonuses are 50% stronger."}},
 		{"id": "recycle", "name": "Relic Recycling", "max": 3, "cost_base": 22, "cost_step": 14, "cap": {}},
 		{"id": "cart", "name": "Arcane Cartography", "max": 3, "cost_base": 26, "cost_step": 16, "cap": {}},
 		{"id": "vault", "name": "Relic Vault", "max": 2, "cost_base": 50, "cost_step": 40, "cap": {}},

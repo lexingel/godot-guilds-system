@@ -296,7 +296,7 @@ func _run_bar(in_combat: bool) -> Control:
 		var rrow := HBoxContainer.new()
 		rrow.add_theme_constant_override("separation", 3)
 		for r in relics:
-			var ricon := _icon(GameData.RELIC_TYPE_ICON_PATH.get(r.type, GameData.CHEST_ICON_PATH), 22)
+			var ricon := _icon(GameData.relic_icon(r), 22)
 			ricon.mouse_filter = Control.MOUSE_FILTER_PASS
 			ricon.tooltip_text = "%s — %s" % [_loot_display_name(r), _loot_desc(r, true)]
 			rrow.add_child(ricon)
@@ -422,7 +422,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		var is_relic: bool = off["loot_type"] == "relic"
 		var desc: String = _loot_desc(obj, is_relic)
 		var bought: bool = off.get("bought", false)
-		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.item_icon(obj)
+		var icon_path: String = GameData.relic_icon(obj) if is_relic else GameData.item_icon(obj)
 
 		var card := PanelContainer.new()
 		card.theme_type_variation = &"CardPanelViolet"
@@ -623,7 +623,7 @@ func _render_treasure_node(v: VBoxContainer) -> void:
 		var opt: Dictionary = options[i]
 		var obj = opt["obj"]
 		var is_relic: bool = opt["loot_type"] == "relic"
-		var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.item_icon(obj)
+		var icon_path: String = GameData.relic_icon(obj) if is_relic else GameData.item_icon(obj)
 		var note := _loot_fit_note(obj, is_relic, GameState.current_party())
 		row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), _loot_desc(obj, is_relic), func(idx=i):
 			GameState.pick_treasure(idx)

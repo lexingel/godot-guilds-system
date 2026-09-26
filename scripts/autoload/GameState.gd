@@ -308,6 +308,7 @@ func _run_for_save() -> Dictionary:
 		"bounty": run.get("bounty", {}), "champion_call_used": run.get("champion_call_used", false),
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
+		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 	}
 
 
@@ -586,6 +587,7 @@ func load_save() -> bool:
 			"bounty": run_data.get("bounty", {}), "champion_call_used": bool(run_data.get("champion_call_used", false)),
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
+			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 		}
 	return true
 
@@ -810,7 +812,10 @@ func champion_call(c: Hero) -> Dictionary:
 
 
 func champion_call_ready(h: Hero) -> bool:
-	return h.is_champion and not run.is_empty() and not bool(run.get("champion_call_used", false))
+	if not h.is_champion or run.is_empty():
+		return false
+	var allowed := 2 if Combat.party_has_unique_relic("crown_of_oaths") else 1
+	return int(run.get("champion_calls", 0)) < allowed
 
 
 func champion_can_swear() -> bool:
@@ -1748,7 +1753,8 @@ func injury_carry(hero_id: String) -> String:
 	if _injury(hero_id).is_empty():
 		return ""
 	_resolve_injury(hero_id, true)
-	pass_time()
+	if not Combat.party_has_unique_relic("lantern_of_the_lost"):
+		pass_time()
 	save()
 	state_changed.emit()
 	return ""
@@ -1900,6 +1906,8 @@ func pass_time() -> void:
 	for i in rift_map.size():
 		var slot: Dictionary = rift_map[i]
 		if slot.has("rank"):
+			if Combat.party_has_unique_relic("wardens_seal") and day % 3 == 0:
+				continue   # the Warden's Seal holds the fuses for a day
 			slot["runs_left"] = int(slot.get("runs_left", 1)) - 1
 			if int(slot["runs_left"]) <= 0:
 				pending_riftbreak_ranks.append(str(slot["rank"]))
@@ -2814,6 +2822,49 @@ func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -
 	state_changed.emit()
 
 
+func relic_reroll_cost(r: Relic) -> int:
+	return int(round(GameData.RELIC_REROLL_CRYSTALS * float(GameData.find_rarity(r.rarity)["mult"]) * (r.rerolls + 1)))
+
+
+## Rerolls one effect of a normal relic: special `idx`, or its trigger (idx -1).
+func reroll_relic(relic_id: String, idx: int) -> String:
+	for r in relics:
+		if r.id != relic_id:
+			continue
+		if r.unique_id != "":
+			return "Legendaries can't be rerolled"
+		var cost := relic_reroll_cost(r)
+		if crystals < cost:
+			return "Not enough Crystals"
+		if idx < 0:
+			if r.trigger.is_empty():
+				return "No trigger"
+			crystals -= cost
+			var lvl_mult := pow(1.1, r.level - 1)
+			r.trigger = Combat.roll_relic_trigger(r.rarity)
+			r.trigger["value"] = snappedf(float(r.trigger["value"]) * lvl_mult, 0.001)
+		else:
+			if idx >= r.specials.size():
+				return "No such effect"
+			crystals -= cost
+			var others: Array = []
+			for i in r.specials.size():
+				if i != idx:
+					others.append(r.specials[i]["kind"])
+			var s := Combat.roll_relic_special(r.type, r.rarity, others)
+			s["value"] = snappedf(float(s["value"]) * pow(1.12, r.level - 1), 0.001)
+			s["label"] = Combat.relic_special_label(str(s["kind"]), float(s["value"]))
+			r.specials[idx] = s
+			if idx == 0:
+				var words := r.name.split(" of ")[0]
+				r.name = "%s %s" % [words, GameData.RELIC_SPECIAL_SUFFIX.get(str(s["kind"]), "")]
+		r.rerolls += 1
+		save()
+		state_changed.emit()
+		return ""
+	return ""
+
+
 func upgrade_relic(relic_id: String) -> String:
 	for r in relics:
 		if r.id != relic_id:
@@ -2828,16 +2879,16 @@ func upgrade_relic(relic_id: String) -> String:
 		r.dmg = int(round(r.dmg * 1.15))
 		r.hp = int(round(r.hp * 1.15))
 		var next_lvl := r.level + 1
-		if r.has_special():
-			var growth := 1.30 if r.level >= 3 else 1.15
-			r.special_value = snappedf(r.special_value * growth, 0.001)
-		elif next_lvl >= 3 and r.unique_id == "":
-			var domain := Combat.domain_for_type(r.type)
-			var pool: Array = GameData.RELIC_SPECIALS.filter(func(x): return x["domain"] == domain)
-			var s: Dictionary = pool[randi() % pool.size()]
-			r.special_kind = s["kind"]
-			r.special_value = snappedf(s["value"] * float(rar["mult"]), 0.001)
-			r.special_label = s["label"]
+		for sp in r.specials:
+			sp["value"] = snappedf(float(sp["value"]) * 1.12, 0.001)
+			sp["label"] = Combat.relic_special_label(str(sp["kind"]), float(sp["value"]))
+		if not r.trigger.is_empty():
+			r.trigger["value"] = snappedf(float(r.trigger["value"]) * 1.1, 0.001)
+		# Level 5 awakens a normal relic: one more special.
+		if next_lvl >= RELIC_MAX_LEVEL and r.unique_id == "" and not r.awakened:
+			r.awakened = true
+			r.specials.append(Combat.roll_relic_special(r.type, r.rarity, r.specials.map(func(x): return x["kind"])))
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Relic awakened", "text": "%s gains a new power" % r.name})
 		r.level = next_lvl
 		save()
 		state_changed.emit()
@@ -3047,8 +3098,9 @@ func claim_quest(quest_id: String) -> void:
 		if str(q["id"]) != quest_id or quest_progress(q) < int(q["target"]):
 			continue
 		var reward: Dictionary = q["reward"]
-		coins += int(reward.get("coins", 0))
-		crystals += int(reward.get("crystals", 0))
+		var ledger := 1.5 if Combat.party_has_unique_relic("quartermasters_ledger") else 1.0
+		coins += int(round(int(reward.get("coins", 0)) * ledger))
+		crystals += int(round(int(reward.get("crystals", 0)) * ledger))
 		tokens += int(reward.get("tokens", 0))
 		add_reputation(int(reward.get("reputation", 0)))
 		if str(reward.get("stone", "")) != "":
