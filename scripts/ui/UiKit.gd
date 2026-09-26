@@ -111,6 +111,12 @@ func _clear_root() -> void:
 		c.queue_free()
 
 
+## True on the portrait (760-wide) canvas — rows that sit side by side on
+## desktop stack or wrap instead.
+func _narrow() -> bool:
+	return get_viewport().get_visible_rect().size.x < 1000.0
+
+
 func _vbox(gap: int = 10) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", gap)

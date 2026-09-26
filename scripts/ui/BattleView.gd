@@ -769,7 +769,7 @@ const UNIT_PLATE_H := 44.0   # name/HP row + bar + status row
 ## pixel art up past readability.
 func _battle_width() -> float:
 	var vw: float = get_viewport().get_visible_rect().size.x
-	return clampf(vw - 72.0, 700.0, 1180.0)
+	return clampf(vw - 72.0, minf(700.0, vw - 32.0), 1180.0)
 
 
 ## A compact unit plate: name and HP on one line, an HP bar with a trailing
@@ -1262,7 +1262,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 
 ## Replaces the command buttons with "Guard whom?": one button per ally
 ## (keys 1-4) showing the damage already headed their way, and Cancel.
-func _guard_picker(row: HBoxContainer, state: Dictionary, current_hero: Hero, living_heroes: Array[Hero], run_turns: Callable) -> void:
+func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living_heroes: Array[Hero], run_turns: Callable) -> void:
 	for c in row.get_children():
 		if c.get_index() > 0:
 			c.queue_free()
@@ -1324,8 +1324,11 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 	st.set_corner_radius_all(8)
 	st.set_content_margin_all(10)
 	panel.add_theme_stylebox_override("panel", st)
-	var row := HBoxContainer.new()
+	# Wraps on the narrow (portrait) canvas instead of running off the side.
+	var row: Container = HFlowContainer.new() if _narrow() else HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("h_separation", 10)
+	row.add_theme_constant_override("v_separation", 8)
 	panel.add_child(row)
 
 	if current_hero:

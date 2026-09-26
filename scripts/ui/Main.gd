@@ -16,6 +16,11 @@ func _ready() -> void:
 	AudioManager.set_sfx_volume(GameState.sfx_volume)
 	_apply_resolution(GameState.resolution_idx)
 	get_tree().root.content_scale_factor = GameState.ui_scale
+	_fit_to_window()
+	get_tree().root.size_changed.connect(func():
+		if _fit_to_window():
+			render()
+	)
 	# Deliberately doesn't load_save()/reset() or route past "title" here —
 	# every boot lands on the title screen now (New Game/Load Game/Credits/
 	# Quit) regardless of whether the active slot has a guild in it, matching
@@ -62,6 +67,19 @@ func _apply_resolution(idx: int) -> void:
 	# previously had no visible effect once the window had been maximized.
 	get_window().mode = Window.MODE_WINDOWED
 	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
+
+
+## A portrait window (a phone held upright) lays the UI out on a 760-wide
+## canvas instead of 1280, so it scales up ~1.7x instead of shrinking to a
+## third; screens that sit side by side on desktop stack there (see _narrow).
+## Returns whether the canvas size changed.
+func _fit_to_window() -> bool:
+	var win := get_tree().root
+	var want := Vector2i(760, 800) if win.size.x < win.size.y * 0.9 else Vector2i(1280, 800)
+	if win.content_scale_size == want:
+		return false
+	win.content_scale_size = want
+	return true
 
 
 var _toast_box: VBoxContainer
@@ -378,9 +396,11 @@ func _quick_go(id: String) -> void:
 
 
 func _quick_nav() -> Control:
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 6)
-	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	# Wraps to two rows on the narrow (portrait) canvas.
+	var bar := HFlowContainer.new()
+	bar.add_theme_constant_override("h_separation", 6)
+	bar.add_theme_constant_override("v_separation", 6)
+	bar.alignment = FlowContainer.ALIGNMENT_CENTER
 	var badges := _camp_badges()
 	var current := _quick_nav_current()
 	for i in QUICK_NAV.size():
@@ -466,8 +486,8 @@ func _column_width() -> float:
 	if screen == "rift_run":
 		return _battle_width()
 	if screen == "terminal" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory", "bestiary"]):
-		return clampf(avail, 760.0, 1180.0)
-	return clampf(avail, 700.0, 860.0)
+		return clampf(avail, minf(760.0, avail), 1180.0)
+	return clampf(avail, minf(700.0, avail), 860.0)
 
 
 func _topbar(container: Control, breadcrumb: String = "") -> void:
@@ -497,7 +517,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
 	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_lbl)
-	if breadcrumb != "":
+	if breadcrumb != "" and not _narrow():
 		var crumb := _label("›  " + breadcrumb, 16)
 		crumb.add_theme_color_override("font_color", Palette.MUTED)
 		crumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -712,9 +732,16 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	# One card per rift: what it is, how your strongest party measures up,
 	# and the button to go.
 	var best := _best_party_power()
-	var cards := HBoxContainer.new()
+	var cards: Container
+	if _narrow():
+		cards = HFlowContainer.new()
+		cards.alignment = FlowContainer.ALIGNMENT_CENTER
+	else:
+		cards = HBoxContainer.new()
+		cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	cards.add_theme_constant_override("separation", 10)
-	cards.alignment = BoxContainer.ALIGNMENT_CENTER
+	cards.add_theme_constant_override("h_separation", 10)
+	cards.add_theme_constant_override("v_separation", 10)
 	var card_defs := [
 		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
 		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),

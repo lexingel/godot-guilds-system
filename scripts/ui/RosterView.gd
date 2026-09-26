@@ -25,11 +25,18 @@ func _render_roster(v: VBoxContainer) -> void:
 	if still_here.is_empty():
 		selected_hero_id = ""
 
-	# Two panes: the hero list on the left, the selected hero's card on the right.
-	var split := HBoxContainer.new()
+	# Two panes: the hero list on the left, the selected hero's card on the
+	# right — stacked on the narrow canvas, with the list wrapping into rows.
+	var split: BoxContainer = VBoxContainer.new() if _narrow() else HBoxContainer.new()
 	split.add_theme_constant_override("separation", 14)
-	var left := _vbox(6)
-	left.custom_minimum_size.x = 300
+	var left: Container
+	if _narrow():
+		left = HFlowContainer.new()
+		left.add_theme_constant_override("h_separation", 6)
+		left.add_theme_constant_override("v_separation", 6)
+	else:
+		left = _vbox(6)
+		left.custom_minimum_size.x = 300
 	var right := _vbox(8)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(left)
@@ -224,7 +231,7 @@ func _render_roster(v: VBoxContainer) -> void:
 ## right), attributes and every stat beside it, and the gear this hero can
 ## use underneath — equip by clicking a slot or dragging a tile onto it.
 func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) -> void:
-	var sheet := HBoxContainer.new()
+	var sheet: BoxContainer = VBoxContainer.new() if _narrow() else HBoxContainer.new()
 	sheet.add_theme_constant_override("separation", 18)
 	var doll := HBoxContainer.new()
 	doll.add_theme_constant_override("separation", 10)
