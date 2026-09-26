@@ -52,7 +52,7 @@ var pending_s_rank_reveal: Dictionary = {}
 var pending_toasts: Array = []   # UI-only, never saved: [{cls_id, pool_id, title, text}] for Main's portrait pop-ups
 var bonds: Dictionary = {}   # "<hero_id>|<hero_id>" (sorted) -> rifts sealed together; see GameData.BOND_LEVEL_RIFTS
 var run: Dictionary = {}   # {} = no active run
-var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String,"expires_at":int}] or [{}] (empty, refilled lazily)
+var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String, "runs_left":int, "bounty"?}] or [{}] (empty, refilled lazily)
 var pending_riftbreak_ranks: Array[String] = []   # ranks that broke since the last Terminal visit, merged into one encounter
 var monsters_seen: Array[String] = []      # bestiary — every monster/elite/boss name ever encountered
 var bosses_defeated: Array[String] = []    # bestiary — boss names ever defeated
@@ -125,8 +125,16 @@ func medical_recovery_reduction() -> float:
 	return min(0.5, 0.10 * lvl("ops.medical"))
 
 
-func recovery_ms() -> int:
-	return int(round(120000.0 * (1.0 - medical_recovery_reduction())))
+## Runs a downed hero sits out (Medical upgrades bring it down to 1).
+func recovery_runs() -> int:
+	return max(1, int(round(GameData.DOWNED_RECOVERY_RUNS * (1.0 - medical_recovery_reduction()))))
+
+
+## A hero knocked out during a run: +1 because the run it happened in counts
+## down when it ends, so they then miss recovery_runs() whole runs.
+func knock_out(h: Hero) -> void:
+	h.hp = 0
+	h.down_runs = recovery_runs() + (0 if run.is_empty() else 1)
 
 
 func medical_bed_cap() -> int:
@@ -606,7 +614,7 @@ func ensure_champion() -> Hero:
 		current_champion = Combat.generate_champion()
 		_maybe_flag_s_rank(current_champion, "champion")
 	current_champion.hp = Combat.max_hp(current_champion)
-	current_champion.downed_until = 0
+	current_champion.down_runs = 0
 	return current_champion
 
 
@@ -1058,7 +1066,7 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 			for h in party:
 				h.hp = max(0, int(round(h.hp - per)))
 				if h.hp <= 0:
-					h.downed_until = int(Time.get_unix_time_from_system() * 1000) + recovery_ms()
+					knock_out(h)
 			log.append("The hazard deals %d damage across the party." % dmg)
 	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
 	if randf() < bonus_chance:
@@ -1292,7 +1300,7 @@ func field_triage_action() -> String:
 	if triage_used_this_cycle:
 		return "Already used this rift cycle"
 	for h in heroes:
-		h.downed_until = 0
+		h.down_runs = 0
 		h.hp = Combat.max_hp(h)
 	triage_used_this_cycle = true
 	save()
@@ -1314,16 +1322,10 @@ func assign_to_bed(hero_id: String) -> void:
 		return
 	if occupied_beds() >= medical_bed_cap():
 		return
-	var now := int(Time.get_unix_time_from_system() * 1000)
+	# A bed takes one run off a downed hero's recovery (never below one), and
+	# heals a wounded one fully the next time time passes (see pass_time).
 	if h.is_downed():
-		var remaining := h.downed_until - now
-		h.downed_until = now + int(round(remaining * 0.4))
-	else:
-		if h.heal_until <= 0:
-			var missing := 1.0 - float(h.hp) / float(Combat.max_hp(h))
-			h.heal_until = now + int(recovery_ms() * missing)
-		var remaining2 := h.heal_until - now
-		h.heal_until = now + int(round(remaining2 * 0.4))
+		h.down_runs = max(1, h.down_runs - 1)
 	h.bedded = true
 	save()
 	state_changed.emit()
@@ -1337,66 +1339,74 @@ func occupied_beds() -> int:
 	return n
 
 
-## Lazily resolves every hero's recovery timers against wall-clock time —
-## called once per render() the same way is_downed() already lazily compares
-## against Time.get_unix_time_from_system(). Closes a real gap: previously a
-## downed hero's `downed_until` elapsing never actually restored their HP,
-## and a merely-wounded hero (survived a fight below max HP) had no recovery
-## timer at all, so Medical Bay's "recovering passively" label was aspirational.
+## Safety net, run once per render(): a hero at 0 HP who somehow isn't
+## counting down (older saves) starts recovering, and a bed held by someone
+## who no longer needs it is freed.
 func resolve_recovery() -> void:
-	var now := int(Time.get_unix_time_from_system() * 1000)
 	var changed := false
 	for h in heroes:
-		if h.hp <= 0 and h.downed_until <= 0:
-			# Safety net for saves from before the per-hero knockout fix: a
-			# hero could reach 0 HP mid-fight (party kept fighting and won)
-			# with no downed_until ever set, permanently invisible to
-			# needs_recovery()/Medical Bay. Give them a timer retroactively.
-			h.downed_until = now + recovery_ms()
+		if h.hp <= 0 and h.down_runs <= 0:
+			knock_out(h)
 			changed = true
-		elif h.downed_until > 0 and now >= h.downed_until:
-			h.downed_until = 0
-			h.heal_until = 0
+		elif h.bedded and not needs_recovery(h):
 			h.bedded = false
-			h.hp = Combat.max_hp(h)
-			changed = true
-		elif h.hp > 0 and h.hp < Combat.max_hp(h) and not h.is_downed():
-			if h.heal_until <= 0:
-				var missing := 1.0 - float(h.hp) / float(Combat.max_hp(h))
-				h.heal_until = now + int(recovery_ms() * missing)
-				changed = true
-			elif now >= h.heal_until:
-				h.hp = Combat.max_hp(h)
-				h.heal_until = 0
-				h.bedded = false
-				changed = true
-		elif h.heal_until != 0:
-			h.heal_until = 0
 			changed = true
 	if changed:
 		save()
 
 
-## Lazily resolves the Rift Map's countdowns — same "compare a stored
-## timestamp against now, once per render()" idiom as resolve_recovery()
-## above. An expired slot's rank moves into pending_riftbreak_ranks (merged
-## into one forced encounter next time the player reaches the Terminal) and
-## the slot refills immediately with a fresh roll, so a slot only reads
-## "empty" for the instant between those two steps, never on screen.
-func resolve_rift_map() -> void:
-	var now := int(Time.get_unix_time_from_system() * 1000)
-	var changed := false
+## Guild time moves one step whenever a rift run ends (or the guild rests
+## instead): downed heroes count down their recovery, wounded ones heal, and
+## every rift on the map counts down — one that runs out spills out as a
+## Riftbreak. Replaces the old wall-clock timers, which kept ticking while
+## the game was closed.
+func pass_time() -> void:
+	for h in heroes:
+		var mx := Combat.max_hp(h)
+		if h.down_runs > 0:
+			h.down_runs -= 1
+			if h.down_runs == 0:
+				h.hp = mx
+				h.bedded = false
+		elif h.hp > 0 and h.hp < mx:
+			h.hp = mx if h.bedded else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
+			if h.hp >= mx:
+				h.bedded = false
 	for i in rift_map.size():
 		var slot: Dictionary = rift_map[i]
-		if slot.has("rank") and now >= int(slot.get("expires_at", 0)):
-			pending_riftbreak_ranks.append(str(slot["rank"]))
-			rift_map[i] = {}
+		if slot.has("rank"):
+			slot["runs_left"] = int(slot.get("runs_left", 1)) - 1
+			if int(slot["runs_left"]) <= 0:
+				pending_riftbreak_ranks.append(str(slot["rank"]))
+				rift_map[i] = {}
+	resolve_rift_map()
+
+
+## Rest instead of running a rift: time passes (see pass_time) without a
+## fight — heroes recover, but the map's rifts count down too.
+func rest_guild() -> void:
+	if not run.is_empty():
+		return
+	pass_time()
+	save()
+	state_changed.emit()
+
+
+## Refills empty Rift Map slots with fresh rolls (run once per render();
+## expiry itself happens in pass_time). Also moves any wall-clock-era slot
+## onto the run countdown.
+func resolve_rift_map() -> void:
+	var changed := false
+	for i in rift_map.size():
+		var old: Dictionary = rift_map[i]
+		if old.has("rank") and not old.has("runs_left"):
+			old["runs_left"] = int(GameData.find_rift_rank(str(old["rank"]))["fuse_runs"])
+			old.erase("expires_at")
 			changed = true
 	for i in rift_map.size():
 		if rift_map[i].is_empty():
 			var rank := Combat.weighted_rift_rank()
-			var fuse_minutes := int(GameData.find_rift_rank(rank)["fuse_minutes"])
-			var slot := {"rank": rank, "expires_at": now + fuse_minutes * 60000}
+			var slot := {"rank": rank, "runs_left": int(GameData.find_rift_rank(rank)["fuse_runs"])}
 			# ~35% of freshly-rolled rifts carry a bounty, scaled by the same
 			# 0-8 rank severity index Riftbreak already uses — paid out by
 			# seal_rift() once this specific rift is cleared.
@@ -1598,6 +1608,7 @@ func retreat_now() -> void:
 	run = {}
 	active_incense = {}
 	_clamp_hp_to_max()
+	pass_time()
 	save()
 	state_changed.emit()
 
@@ -1606,6 +1617,7 @@ func finish_run() -> void:
 	run = {}
 	active_incense = {}
 	_clamp_hp_to_max()
+	pass_time()
 	save()
 	state_changed.emit()
 

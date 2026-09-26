@@ -324,7 +324,6 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	var bed_w := 64.0
 	var bed_h := 40.0
 	var gap: float = (scene_size.x - cap * bed_w) / (cap + 1)
-	var now_ms := int(Time.get_unix_time_from_system() * 1000)
 	for i in cap:
 		var bx: float = gap + i * (bed_w + gap)
 		var by := scene_size.y - bed_h - 24.0
@@ -336,12 +335,10 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 			var h: Hero = bedded[i]
 			bed_rect.modulate = Color(0.8, 0.85, 1.0)
 			scene.add_child(bed_wrap)
-			var until: int = h.downed_until if h.is_downed() else h.heal_until
-			var secs: int = max(0, int((until - now_ms) / 1000.0))
-			var name_label := _label(h.name, 10, true)
+			var name_label := _label(h.name.split(" the ")[0], 10, true)
 			name_label.position = Vector2(bx - 10, by + bed_h + 2)
 			scene.add_child(name_label)
-			var time_label := _label("%ds" % secs, 10, true)
+			var time_label := _label(_recovery_text(h, true), 10, true)
 			time_label.position = Vector2(bx - 10, by + bed_h + 16)
 			scene.add_child(time_label)
 		else:
@@ -384,9 +381,29 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 		v.add_child(picker)
 
 	if medical_picker_bed == -1 and not waiting.is_empty():
-		v.add_child(_label("Recovering without a bed (slower):", 12, true))
+		v.add_child(_label("Recovering without a bed (slower) — click an empty bed to assign one:", 12, true))
 		for h in waiting:
-			v.add_child(_label("%s — %d/%d HP" % [h.name, h.hp, Combat.max_hp(h)], 12))
+			v.add_child(_label("%s — %d/%d HP · %s" % [h.name, h.hp, Combat.max_hp(h), _recovery_text(h, false)], 12))
+
+	# Time only passes when a run ends — resting passes it without one.
+	v.add_child(_hsep())
+	var rest := _icon_button("res://assets/skills/heart.png", "Rest the guild (pass one run's time)", func():
+		GameState.rest_guild()
+		render()
+	)
+	rest.tooltip_text = "Heroes recover as if a run had ended. The Rift Map's rifts count down too — one that closes spills out as a Riftbreak."
+	rest.disabled = not GameState.run.is_empty()
+	v.add_child(rest)
+	v.add_child(_wrap_label("Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed)." % [GameState.recovery_runs(), int(GameData.WOUND_HEAL_PER_RUN * 100)], 12, true))
+
+
+## "back in 2 runs" / "full after next run" — recovery in runs, not seconds.
+func _recovery_text(h: Hero, bedded: bool) -> String:
+	if h.is_downed():
+		return "back in %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"]
+	if bedded:
+		return "full after next run"
+	return "+%d%% HP per run" % int(GameData.WOUND_HEAL_PER_RUN * 100)
 
 
 ## Plays a short "pop into existence" reveal on a freshly-appended icon

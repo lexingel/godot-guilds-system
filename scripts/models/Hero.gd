@@ -35,8 +35,7 @@ var base_dmg: int
 var base_spd: int = 10   # turn-order speed — role-based at generation, not level-scaled; see Combat.spd_of
 var trait_name: String = ""      # "" means no trait ("Steadfast")
 var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
-var downed_until: int = 0        # msec timestamp, 0 = not downed
-var heal_until: int = 0          # msec timestamp, 0 = not scheduled (full HP, or downed instead)
+var down_runs: int = 0           # rift runs this hero still sits out while recovering; 0 = not downed (see GameState.pass_time)
 var bedded: bool = false
 var hp: int = 0
 var is_champion: bool = false
@@ -48,7 +47,7 @@ var earned_traits: Array[String] = []     # GameData.EARNED_TRAITS ids this hero
 
 
 func is_downed() -> bool:
-	return downed_until > 0 and downed_until > Time.get_unix_time_from_system() * 1000
+	return down_runs > 0
 
 
 func to_dict() -> Dictionary:
@@ -57,7 +56,7 @@ func to_dict() -> Dictionary:
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
-		"downed_until": downed_until, "heal_until": heal_until, "bedded": bedded, "hp": hp, "is_champion": is_champion,
+		"down_runs": down_runs, "bedded": bedded, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
@@ -106,8 +105,11 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.base_spd = d.get("base_spd", 10)
 	h.trait_name = d.get("trait_name", "")
 	h.scars.assign(d.get("scars", []))
-	h.downed_until = d.get("downed_until", 0)
-	h.heal_until = d.get("heal_until", 0)
+	h.down_runs = int(d.get("down_runs", 0))
+	# Saves from the wall-clock era: a hero still inside their old recovery
+	# window sits out one run.
+	if int(d.get("downed_until", 0)) > int(Time.get_unix_time_from_system() * 1000):
+		h.down_runs = max(h.down_runs, 1)
 	h.bedded = d.get("bedded", false)
 	h.hp = d.get("hp", 0)
 	h.is_champion = d.get("is_champion", false)

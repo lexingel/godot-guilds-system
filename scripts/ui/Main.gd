@@ -30,11 +30,16 @@ func _ready() -> void:
 	add_child(toast_layer)
 	_toast_box = VBoxContainer.new()
 	_toast_box.add_theme_constant_override("separation", 6)
+	# Bottom-right, stacking upward — clear of the header and the quick-travel bar.
 	_toast_box.anchor_left = 1.0
 	_toast_box.anchor_right = 1.0
+	_toast_box.anchor_top = 1.0
+	_toast_box.anchor_bottom = 1.0
 	_toast_box.offset_left = -300
 	_toast_box.offset_right = -12
-	_toast_box.offset_top = 84
+	_toast_box.offset_top = -400
+	_toast_box.offset_bottom = -12
+	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
 	render()
@@ -728,7 +733,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 
 func _render_rift_map_hub(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Map", 20))
-	v.add_child(_wrap_label("Rifts open at random ranks and stay for a limited time. Leave one unaddressed and its threat spills out as a forced fight next time you're back at the Terminal.", 12, true))
+	v.add_child(_wrap_label("Rifts open at random ranks and stay open for a few runs. Each time a run ends (or the guild rests) they count down; leave one until it closes and its threat spills out as a forced fight at the Terminal.", 12, true))
 
 	var scene_size := Vector2(700, 200)
 	var scene := Control.new()
@@ -744,7 +749,6 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 	scene.add_child(bg)
 
 	var map_scale := Vector2(scene_size.x / 320.0, scene_size.y / 200.0)
-	var now := int(Time.get_unix_time_from_system() * 1000)
 	var icon_size := 32.0
 	var best := _best_party_power()
 	# The map only carries a numbered marker per rift (captions here used to
@@ -757,7 +761,7 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 			continue
 		n += 1
 		var rank := str(slot.get("rank", "F"))
-		var remain_s: int = max(0, int(slot.get("expires_at", 0)) - now) / 1000
+		var runs_left := int(slot.get("runs_left", 1))
 		var enter := func(idx=i, r=rank):
 			pending_party.clear()
 			pending_relic_options.clear()
@@ -785,9 +789,11 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 		rl.add_theme_color_override("font_color", Palette.rank_color(rank))
 		rl.custom_minimum_size.x = 76
 		row.add_child(rl)
-		var tl := _label("closes in %d:%02d" % [remain_s / 60, remain_s % 60], 13, true)
-		tl.custom_minimum_size.x = 120
-		tl.tooltip_text = "Real time. An unaddressed rift spills out as a forced fight."
+		var tl := _label("closes after %d run%s" % [runs_left, "" if runs_left == 1 else "s"], 13, true)
+		if runs_left <= 1:
+			tl.add_theme_color_override("font_color", Palette.HAZARD)
+		tl.custom_minimum_size.x = 140
+		tl.tooltip_text = "Counts down each time a run ends (or the guild rests). An unaddressed rift spills out as a forced fight."
 		row.add_child(tl)
 		var bounty: Dictionary = slot.get("bounty", {})
 		var bl := _label("Bounty +%dc, +%d Rep" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))] if not bounty.is_empty() else "", 13)
@@ -1166,7 +1172,7 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	var names := _vbox(0)
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
 	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
-	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · downed" if downed else ""], 10, true))
+	names.add_child(_label("Lv%d %s · %d/%d HP%s" % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), " · out %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"] if downed else ""], 10, true))
 	var power_line := "Power %d" % Combat.power_of(h)
 	var arch := _main_arch(h)
 	names.add_child(_rich_line(power_line + ("  " + _arch_chip(arch) if arch != "" else ""), 10, true))

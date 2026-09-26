@@ -1285,20 +1285,25 @@ static func rank_odds_text() -> String:
 ## Rift Map ranks — reuses the hero-rank vocabulary (F-S) extended with two
 ## rarer tiers (SS/SSS) for the map's random rift rolls. Weights preserve the
 ## exact same relative odds as hero RANKS for F-S (just rescaled ×10 for the
-## finer granularity SS/SSS need); fuse_minutes is the real-time countdown
-## before an unaddressed rift Riftbreaks — shorter at higher rank, so a rare
-## S/SS/SSS sighting is genuinely fleeting. First-draft numbers, tunable after
-## the map is playable.
+## finer granularity SS/SSS need); fuse_runs is how many rift runs (or rests)
+## a rift stays open before an unaddressed one Riftbreaks — shorter at higher
+## rank, so a rare S/SS/SSS sighting is genuinely fleeting.
+## Recovery in rift runs rather than real time: a downed hero sits out this
+## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
+## hero regains this share of max HP each time a run ends (all of it in a bed).
+const DOWNED_RECOVERY_RUNS := 2
+const WOUND_HEAL_PER_RUN := 0.5
+
 const RIFT_RANKS := [
-	{"id": "F", "weight": 1000, "fuse_minutes": 45},
-	{"id": "E", "weight": 600, "fuse_minutes": 40},
-	{"id": "D", "weight": 350, "fuse_minutes": 35},
-	{"id": "C", "weight": 200, "fuse_minutes": 30},
-	{"id": "B", "weight": 100, "fuse_minutes": 25},
-	{"id": "A", "weight": 40, "fuse_minutes": 20},
-	{"id": "S", "weight": 10, "fuse_minutes": 15},
-	{"id": "SS", "weight": 3, "fuse_minutes": 10},
-	{"id": "SSS", "weight": 1, "fuse_minutes": 6},
+	{"id": "F", "weight": 1000, "fuse_runs": 5},
+	{"id": "E", "weight": 600, "fuse_runs": 4},
+	{"id": "D", "weight": 350, "fuse_runs": 4},
+	{"id": "C", "weight": 200, "fuse_runs": 3},
+	{"id": "B", "weight": 100, "fuse_runs": 3},
+	{"id": "A", "weight": 40, "fuse_runs": 2},
+	{"id": "S", "weight": 10, "fuse_runs": 2},
+	{"id": "SS", "weight": 3, "fuse_runs": 1},
+	{"id": "SSS", "weight": 1, "fuse_runs": 1},
 ]
 
 static func find_rift_rank(rank_id: String) -> Dictionary:

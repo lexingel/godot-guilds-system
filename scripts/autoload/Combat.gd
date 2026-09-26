@@ -1874,10 +1874,9 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 		# fighting and ultimately won, or before a retreat) still needs a
 		# recovery timer — not just the whole-party-wiped case above, or
 		# they'd sit at 0 HP forever, invisible to needs_recovery()/Medical Bay.
-		var now := int(Time.get_unix_time_from_system() * 1000)
 		for h in party:
-			if h.hp <= 0 and h.downed_until <= 0:
-				h.downed_until = now + GameState.recovery_ms()
+			if h.hp <= 0 and h.down_runs <= 0:
+				GameState.knock_out(h)
 				h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
 				# A freshly-knocked-out roster hero has a chance to pick up a
 				# lasting scar, capped at 2 — champions are regenerated fresh
