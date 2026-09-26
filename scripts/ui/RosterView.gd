@@ -809,23 +809,42 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 
 
 func _render_inventory_items(v: VBoxContainer) -> void:
+	var loose: Array = GameState.items.filter(func(it): return it.equipped_to == "")
+	# Gear | Supplies — the gear grid and the incense/runestone shop each get
+	# the full width instead of sharing one long page.
+	var tab_row := HBoxContainer.new()
+	tab_row.add_theme_constant_override("separation", 4)
+	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.runestones.size())]]:
+		var tb := _button(str(td[1]), func(t=str(td[0])):
+			inv_view = t
+			selected_item_id = ""
+			render()
+		)
+		tb.toggle_mode = true
+		tb.button_pressed = inv_view == td[0]
+		tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab_row.add_child(tb)
+	v.add_child(tab_row)
+	if inv_view == "supplies":
+		_render_inventory_supplies(v)
+		return
+
 	var unequipped_items: Array[Item] = []
-	unequipped_items.assign(GameState.items.filter(func(it): return it.equipped_to == "" and (inv_filter == "all" or it.category == inv_filter)))
+	unequipped_items.assign(loose.filter(func(it): return inv_filter == "all" or it.category == inv_filter))
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
-	head.add_child(_label("Items (%d)" % unequipped_items.size(), 20))
-	# Category filter chips.
 	for f in [["all", "All"], ["weapon", "Weapons"], ["armor", "Armor"], ["focus", "Focus"]]:
-		var n: int = GameState.items.filter(func(it): return it.equipped_to == "" and (f[0] == "all" or it.category == f[0])).size()
+		var n: int = loose.filter(func(it): return f[0] == "all" or it.category == f[0]).size()
 		var chip := _button("%s %d" % [f[1], n], func(id=str(f[0])):
 			inv_filter = id
-			selected_item_id = ""
 			render()
 		)
 		chip.toggle_mode = true
 		chip.button_pressed = inv_filter == f[0]
-		chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		head.add_child(chip)
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(sp)
 	head.add_child(_sort_cycle_button(inv_sort, [
 		{"id": "rarity", "label": "Rarity"},
 		{"id": "value", "label": "Value"},
@@ -840,70 +859,161 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 		"name":
 			unequipped_items.sort_custom(func(a, b): return a.name < b.name)
 	if unequipped_items.is_empty():
-		v.add_child(_label("No unequipped items.", 12))
-	elif not unequipped_items.any(func(it): return it.id == selected_item_id):
-		selected_item_id = unequipped_items[0].id
-	# Two panes: a grid of item tiles, and the selected item's card + actions.
-	var split := HBoxContainer.new()
-	split.add_theme_constant_override("separation", 14)
+		v.add_child(_label("No unequipped items here — loot drops in rifts.", 13, true))
+		return
+	v.add_child(_label("Click an item to see it and equip it.  + fills someone's empty slot.", 12, true))
 	var grid := HFlowContainer.new()
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
-	grid.custom_minimum_size.x = 460
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var detail := _vbox(8)
-	detail.custom_minimum_size.x = 380
-	if not unequipped_items.is_empty():
-		split.add_child(grid)
-		split.add_child(detail)
-		v.add_child(split)
 	for it in unequipped_items:
-		var tile := _action_slot(GameData.item_icon(it), "", it.id == selected_item_id, false, func(id=it.id):
-			selected_item_id = id
-			render()
-		, 56.0, "", GameData.RARITY_FRAME_PATH.get(it.rarity, ""), _loot_display_name(it))
-		# A green dot: fills an empty slot on someone who can use it.
-		var note := _loot_fit_note(it, false, GameState.heroes)
-		if str(note[0]).begins_with("Fills"):
-			var dot := _count_badge("+", str(note[0]))
-			dot.position = Vector2(40, -4)
-			(dot.get_theme_stylebox("panel") as StyleBoxFlat).bg_color = Palette.RANK_E
-			tile.add_child(dot)
-		grid.add_child(tile)
-		if it.id != selected_item_id:
+		grid.add_child(_inv_tile(it))
+	v.add_child(grid)
+	var sel: Array = unequipped_items.filter(func(it): return it.id == selected_item_id)
+	if sel.is_empty():
+		selected_item_id = ""
+	else:
+		_item_modal(sel[0])
+
+
+## One inventory tile: rarity-framed icon, name, and the attribute it adds.
+func _inv_tile(it: Item) -> Button:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(112, 128)
+	b.focus_mode = Control.FOCUS_ALL
+	b.pressed.connect(func(id=it.id):
+		selected_item_id = id
+		render()
+	)
+	var col := _vbox(3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 6)
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(60, 60)
+	box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame := _icon(GameData.RARITY_FRAME_PATH.get(it.rarity, GameData.RARITY_FRAME_PATH["common"]), 60)
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(frame)
+	var ic := _icon(GameData.item_icon(it), 44)
+	ic.position = Vector2(8, 8)
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(ic)
+	var note := _loot_fit_note(it, false, GameState.heroes)
+	if str(note[0]).begins_with("Fills"):
+		var dot := _count_badge("+", str(note[0]))
+		dot.position = Vector2(46, -6)
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		(dot.get_theme_stylebox("panel") as StyleBoxFlat).bg_color = Palette.RANK_E
+		box.add_child(dot)
+	col.add_child(box)
+	var nl := _label(_loot_display_name(it), 12)
+	nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT))
+	nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nl.max_lines_visible = 2
+	nl.custom_minimum_size.x = 100
+	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(nl)
+	if it.attr != "" and it.attr_bonus > 0:
+		var al := _label("+%d %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr]], 12, true)
+		al.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		al.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(al)
+	b.add_child(col)
+	b.tooltip_text = "%s — click for details" % _loot_display_name(it)
+	return b
+
+
+## The selected item as a pop-up over the screen: its full card, who can
+## equip it, and Sell. Esc, Close or a click outside dismisses it.
+func _item_modal(it: Item) -> void:
+	var close := func():
+		selected_item_id = ""
+		render()
+	_combat_hotkeys["Escape"] = close
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.6)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		dim.set_offset(side, -80)   # past root's page margins
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		dim.set_offset(side, 80)
+	dim.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed:
+			close.call()
+	)
+	overlay.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelViolet"
+	card.custom_minimum_size.x = 440
+	var cv := _vbox(10)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(72, 72)
+	var frame := _icon(GameData.RARITY_FRAME_PATH.get(it.rarity, GameData.RARITY_FRAME_PATH["common"]), 72)
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	box.add_child(frame)
+	var ic := _icon(GameData.item_icon(it), 54)
+	ic.position = Vector2(9, 9)
+	box.add_child(ic)
+	top.add_child(box)
+	var desc := _rich_line(_item_card(it), 13)
+	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desc.custom_minimum_size.x = 340
+	top.add_child(desc)
+	cv.add_child(top)
+	var slot := it.slot_type()
+	var equip_row := HFlowContainer.new()
+	equip_row.add_theme_constant_override("h_separation", 6)
+	equip_row.add_theme_constant_override("v_separation", 6)
+	var blocked: Array[String] = []
+	for h2 in GameState.heroes:
+		if not GameState.item_fits_hero(it, h2):
 			continue
-		var actions: Array[Control] = []
-		for h2 in GameState.heroes:
-			var slot := it.slot_type()
-			if not GameState.item_fits_hero(it, h2):
-				continue
-			var target_idx := _best_swap_slot(h2, slot)
-			if target_idx < 0 or not GameState.attr_req_met(it, h2):
-				continue
-			var is_free := _first_free_slot(h2, slot) >= 0
-			var verb := "Equip → %s" if is_free else "Swap → %s"
-			actions.append(_icon_button(GameData.item_icon(it), verb % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, s=slot, idx=target_idx):
-				GameState.equip_item(hid, s, idx, iid)
-				render()
-			))
-		actions.append(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
-			GameState.sell_item(id)
+		var target_idx := _best_swap_slot(h2, slot)
+		if target_idx < 0:
+			continue
+		if not GameState.attr_req_met(it, h2):
+			blocked.append(h2.name.split(" the ")[0])
+			continue
+		var verb := "Equip → %s" if _first_free_slot(h2, slot) >= 0 else "Swap → %s"
+		equip_row.add_child(_icon_button(GameData.item_icon(it), verb % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, idx=target_idx):
+			selected_item_id = ""
+			GameState.equip_item(hid, slot, idx, iid)
 			render()
 		))
-		var card := PanelContainer.new()
-		card.theme_type_variation = &"CardPanelViolet"
-		var cv := _vbox(10)
-		cv.add_child(_rich_line(_item_card(it), 13))
-		var act_flow := HFlowContainer.new()
-		act_flow.add_theme_constant_override("h_separation", 6)
-		act_flow.add_theme_constant_override("v_separation", 6)
-		for a in actions:
-			act_flow.add_child(a)
-		cv.add_child(act_flow)
-		card.add_child(cv)
-		detail.add_child(card)
+	if equip_row.get_child_count() > 0:
+		cv.add_child(_label("Equip on", 13, true))
+		cv.add_child(equip_row)
+	if not blocked.is_empty():
+		cv.add_child(_wrap_label("Needs %d %s: %s" % [it.attr_req, GameData.ATTR_LABEL.get(it.attr, it.attr), ", ".join(blocked)], 12, true))
+	cv.add_child(_hsep())
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 8)
+	bottom.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=it.id):
+		selected_item_id = ""
+		GameState.sell_item(id)
+		render()
+	))
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom.add_child(sp)
+	bottom.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", close))
+	cv.add_child(bottom)
+	card.add_child(cv)
+	center.add_child(card)
+	root.add_child(overlay)
 
-	v.add_child(_hsep())
+
+func _render_inventory_supplies(v: VBoxContainer) -> void:
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
 	if not GameState.consumables.is_empty():
 		v.add_child(_label("Owned:", 12, true))

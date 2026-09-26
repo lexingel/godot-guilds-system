@@ -97,9 +97,10 @@ var _last_render_key: String = ""              # screen+term_tab as of the last 
 
 var _last_scroll_y: float = 0.0
 var _revealed_rewards: Array = []   # the reward_options array whose flip-reveal already played (by reference)
-var selected_item_id: String = ""   # the Inventory item whose card shows in the right pane
+var selected_item_id: String = ""   # the Inventory item open in the pop-up ("" = closed)
 var _confirm_retreat: bool = false   # the run bar's Retreat asks once before ending the run
 var inv_filter: String = "all"   # Inventory item filter: all | weapon | armor | focus
+var inv_view: String = "gear"   # Inventory items page: gear | supplies
 var roster_tab: String = "hero"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
