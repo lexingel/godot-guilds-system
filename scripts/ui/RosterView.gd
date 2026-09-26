@@ -346,31 +346,6 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		var auto := _button("Auto", func(id=h.id): GameState.auto_assign_attrs(id); render())
 		auto.tooltip_text = "Spend them the %s way" % GameData.hero_role(h).capitalize()
 		head.add_child(auto)
-	var refund := GameState.attr_points_spent(h)
-	if refund > 0 and not h.is_champion:
-		var cost := GameState.attr_respec_cost(h)
-		if h.attr_points <= 0:
-			var sp3 := Control.new()
-			sp3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			head.add_child(sp3)
-		var reset: Button
-		if _confirm_respec_id == h.id:
-			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Confirm — %d" % cost, func(id=h.id):
-				_confirm_respec_id = ""
-				var err := GameState.respec_attrs(id)
-				if err != "":
-					push_warning(err)
-				render()
-			)
-			head.add_child(_button("Keep", func(): _confirm_respec_id = ""; render()))
-		else:
-			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Reset %d" % cost, func(id=h.id):
-				_confirm_respec_id = id
-				render()
-			)
-			reset.disabled = GameState.tokens < cost
-		reset.tooltip_text = "Refund all %d spent points for %d Seal Tokens (you have %d)" % [refund, cost, GameState.tokens]
-		head.add_child(reset)
 	v.add_child(head)
 	for a in GameData.ATTRIBUTES:
 		var row := HBoxContainer.new()
@@ -407,6 +382,47 @@ func _attr_panel(h: Hero) -> PanelContainer:
 			plus.tooltip_text = "+1 %s" % GameData.ATTR_LABEL[a]
 			row.add_child(plus)
 		v.add_child(row)
+	# Camp training (Coins) and a full reset (Seal Tokens).
+	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override("separation", 8)
+	if not h.is_champion:
+		var tcost := GameState.attr_train_cost(h)
+		var maxed := h.attr_trained >= GameData.ATTR_TRAIN_CAP
+		var train := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Trained %d/%d" % [h.attr_trained, GameData.ATTR_TRAIN_CAP] if maxed else "Train +1 — %d" % tcost, func(id=h.id):
+			var err := GameState.train_attr(id)
+			if err != "":
+				push_warning(err)
+			render()
+		)
+		train.disabled = maxed or GameState.coins < tcost
+		train.tooltip_text = "Buy an attribute point with Coins (%d/%d trained; each costs %d more)" % [h.attr_trained, GameData.ATTR_TRAIN_CAP, GameData.ATTR_TRAIN_COST]
+		foot.add_child(train)
+	var fsp := Control.new()
+	fsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	foot.add_child(fsp)
+	var refund := GameState.attr_points_spent(h)
+	if refund > 0 and not h.is_champion:
+		var cost := GameState.attr_respec_cost(h)
+		var reset: Button
+		if _confirm_respec_id == h.id:
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Confirm — %d" % cost, func(id=h.id):
+				_confirm_respec_id = ""
+				var err := GameState.respec_attrs(id)
+				if err != "":
+					push_warning(err)
+				render()
+			)
+			foot.add_child(_button("Keep", func(): _confirm_respec_id = ""; render()))
+		else:
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Reset %d" % cost, func(id=h.id):
+				_confirm_respec_id = id
+				render()
+			)
+			reset.disabled = GameState.tokens < cost
+		reset.tooltip_text = "Refund all %d spent points for %d Seal Tokens (you have %d)" % [refund, cost, GameState.tokens]
+		foot.add_child(reset)
+	if foot.get_child_count() > 1:
+		v.add_child(foot)
 	panel.add_child(v)
 	return panel
 

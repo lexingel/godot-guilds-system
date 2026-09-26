@@ -550,6 +550,10 @@ const ITEM_ATTR_REQ := {"common": 0, "rare": 7, "epic": 10, "legendary": 13}
 
 ## Resetting a hero's attributes costs this many Seal Tokens per hero level.
 const RESPEC_TOKENS_PER_LEVEL := 5
+## Camp training: buy up to ATTR_TRAIN_CAP extra attribute points per hero,
+## each costing ATTR_TRAIN_COST more Coins than the last.
+const ATTR_TRAIN_CAP := 5
+const ATTR_TRAIN_COST := 50
 
 
 static func role_attrs(role: String) -> Dictionary:
@@ -826,11 +830,11 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 # (below, via ENDLESS_BASE) is a separate infinite-scaling mode. Ascendant
 # isn't its own selectable tier — ENDLESS_BASE just reuses its numbers.
 const DIFFICULTIES := [
-	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 70},
+	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 85},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
 	# Guild Management currency — sits between Lesser and the Ascendant-
 	# equivalent ENDLESS_BASE below. First-draft numbers, tunable after playing.
-	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "token_base": 18, "detector_chance": 0.14, "power": "Medium", "rec_power": 150},
+	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "token_base": 18, "detector_chance": 0.14, "power": "Medium", "rec_power": 155},
 ]
 
 # Endless Rift scales forever off these base stats (matches the HTML

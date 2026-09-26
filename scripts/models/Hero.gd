@@ -37,6 +37,7 @@ var trait_name: String = ""      # "" means no trait ("Steadfast")
 var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
 var attrs: Dictionary = {}       # "might"/"agility"/"focus" -> base value (items add on top; see Combat.hero_attr)
 var attr_points: int = 0         # unspent attribute points (ATTR_POINTS_PER_LEVEL per level-up)
+var attr_trained: int = 0        # points bought at camp (capped at GameData.ATTR_TRAIN_CAP)
 var down_runs: int = 0           # rift runs this hero still sits out while recovering; 0 = not downed (see GameState.pass_time)
 var bedded: bool = false
 var hp: int = 0
@@ -61,7 +62,7 @@ func to_dict() -> Dictionary:
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
-		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "hp": hp, "is_champion": is_champion,
+		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
@@ -119,6 +120,7 @@ static func from_dict(d: Dictionary) -> Hero:
 	if d.has("attrs"):
 		h.attrs = d["attrs"]
 		h.attr_points = int(d.get("attr_points", 0))
+		h.attr_trained = int(d.get("attr_trained", 0))
 	else:
 		# From before attributes: the role's starting spread, the per-level
 		# growth scaled back from 8% to the new 5%, and every level's points

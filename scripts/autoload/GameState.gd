@@ -126,8 +126,13 @@ func medical_recovery_reduction() -> float:
 	return min(0.5, 0.10 * lvl("ops.medical"))
 
 
-## Runs a downed hero sits out (Medical upgrades bring it down to 1).
+## Runs a downed hero sits out (Medical upgrades bring it down to 1). A new
+## guild (fewer than 3 rifts sealed, i.e. before Greater Rifts open) only ever
+## loses a hero for 1 run: early wipes are common and a small roster otherwise
+## sits idle while the Rift Map counts down.
 func recovery_runs() -> int:
+	if rifts_sealed < 3:
+		return 1
 	return max(1, int(round(GameData.DOWNED_RECOVERY_RUNS * (1.0 - medical_recovery_reduction()))))
 
 
@@ -264,13 +269,11 @@ func reset() -> void:
 	bonds = {}
 
 
-## Only run's primitive/ID-based fields survive a save — node_state can hold
-## live Hero/Item/Relic references mid-node (an in-progress fight, rolled shop
-## offers), which JSON can't round-trip. Rather than building a full recursive
-## serializer for that, node_state is always saved empty: on load, the run
-## resumes at the right floor/party, but whatever single node was mid-progress
-## just re-rolls fresh, the same as arriving at it for the first time (every
-## node renderer already has that "nothing started yet" branch).
+## node_state is saved through _pack (Items/Relics as dicts) minus the live
+## fight, which holds Hero references: a reload mid-fight restarts that fight
+## (same monsters — engage_node seeds from the run's seed), while shops, events,
+## treasure, campfires, hazards and a finished fight's result come back exactly
+## as they were, so reloading can't re-roll or re-pay a node.
 func _run_for_save() -> Dictionary:
 	if run.is_empty():
 		return {}
@@ -280,7 +283,7 @@ func _run_for_save() -> Dictionary:
 		"layers": run.get("layers", []), "pos": run.get("pos", 0),
 		"chosen": run.get("chosen", {}), "hero_ids": run.get("hero_ids", []),
 		"shield": run.get("shield", 0), "boss_rounds": run.get("boss_rounds", 0),
-		"node_kind": run.get("node_kind", ""), "node_state": {},
+		"node_kind": run.get("node_kind", ""), "node_state": _pack(_saveable_node_state()), "seed": run.get("seed", 0),
 		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
 		"start_coins": run.get("start_coins", coins), "start_crystals": run.get("start_crystals", crystals),
 		"start_tokens": run.get("start_tokens", tokens), "heroes_lost": run.get("heroes_lost", 0),
@@ -290,6 +293,45 @@ func _run_for_save() -> Dictionary:
 		"riftbreak_flavor": run.get("riftbreak_flavor", ""),
 		"bounty": run.get("bounty", {}),
 	}
+
+
+func _saveable_node_state() -> Dictionary:
+	var ns: Dictionary = run.get("node_state", {}).duplicate()
+	if ns.has("combat_state"):
+		ns.erase("combat_state")
+		if not ns.has("result"):
+			ns.erase("type")   # mid-fight: back to "an encounter awaits"
+	return ns
+
+
+static func _pack(v: Variant) -> Variant:
+	if v is Item:
+		return {"__item": v.to_dict()}
+	if v is Relic:
+		return {"__relic": v.to_dict()}
+	if v is Dictionary:
+		var d := {}
+		for k in v:
+			d[k] = _pack(v[k])
+		return d
+	if v is Array:
+		return v.map(func(x): return _pack(x))
+	return v
+
+
+static func _unpack(v: Variant) -> Variant:
+	if v is Dictionary:
+		if v.has("__item"):
+			return Item.from_dict(v["__item"])
+		if v.has("__relic"):
+			return Relic.from_dict(v["__relic"])
+		var d := {}
+		for k in v:
+			d[k] = _unpack(v[k])
+		return d
+	if v is Array:
+		return v.map(func(x): return _unpack(x))
+	return v
 
 
 func _slot_path(slot: int) -> String:
@@ -510,7 +552,7 @@ func load_save() -> bool:
 			"layers": run_data.get("layers", []), "pos": run_data.get("pos", 0),
 			"chosen": chosen_fixed, "hero_ids": run_data.get("hero_ids", []),
 			"shield": run_data.get("shield", 0), "boss_rounds": run_data.get("boss_rounds", 0),
-			"node_kind": run_data.get("node_kind", ""), "node_state": {},
+			"node_kind": run_data.get("node_kind", ""), "node_state": _unpack(run_data.get("node_state", {})), "seed": int(run_data.get("seed", randi())),
 			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
 			"start_coins": run_data.get("start_coins", coins), "start_crystals": run_data.get("start_crystals", crystals),
 			"start_tokens": run_data.get("start_tokens", tokens), "heroes_lost": run_data.get("heroes_lost", 0),
@@ -720,7 +762,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
 		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
-		"rift_rank": rift_rank,
+		"rift_rank": rift_rank, "seed": randi(),
 	}
 	ensure_champion()
 	auto_resolve_single_option()
@@ -819,7 +861,9 @@ func engage_node() -> void:
 	if party.is_empty():
 		return
 	var kind := current_node_kind()
+	seed(hash([int(run.get("seed", 0)), int(run.get("cycle", 0)), int(run["pos"])]))
 	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
+	randomize()
 	var prior_bg_idx := int(run["node_state"].get("bg_idx", -1))
 	if prior_bg_idx >= 0:
 		state["background_idx"] = prior_bg_idx
@@ -985,7 +1029,7 @@ func pick_combat_reward(idx: int) -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var result: Dictionary = ns.get("result", {})
 	var options: Array = result.get("reward_options", [])
-	if idx < 0 or idx >= options.size():
+	if ns.get("reward_chosen", false) or idx < 0 or idx >= options.size():
 		return
 	var opt: Dictionary = options[idx]
 	if opt["loot_type"] == "item":
@@ -1646,6 +1690,7 @@ func start_riftbreak_encounter() -> void:
 		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
 		"rift_rank": "", "is_riftbreak": true, "riftbreak_severity": severity,
 		"riftbreak_worst_index": worst_index, "riftbreak_flavor": GameData.narrative_line("riftbreak_begins"),
+		"seed": randi(),
 	}
 	ensure_champion()
 	auto_resolve_single_option()
@@ -2225,8 +2270,9 @@ func attr_respec_cost(h: Hero) -> int:
 	return h.level * GameData.RESPEC_TOKENS_PER_LEVEL
 
 
-## Refunds every spent attribute point for Seal Tokens. Equipped gear stays on
-## even if its requirement is no longer met; the requirement gates equipping.
+## Refunds every spent attribute point for Seal Tokens. Gear whose requirement
+## the hero no longer meets comes off (otherwise a reset could keep gear on
+## that the new build couldn't equip).
 func respec_attrs(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h or h.is_champion:
@@ -2240,6 +2286,32 @@ func respec_attrs(hero_id: String) -> String:
 	tokens -= cost
 	h.attrs = GameData.role_attrs(GameData.hero_role(h))
 	h.attr_points += refund
+	for it in items:
+		if it.equipped_to == h.id and not attr_req_met(it, h):
+			it.equipped_to = ""
+			it.equipped_idx = -1
+	save()
+	state_changed.emit()
+	return ""
+
+
+func attr_train_cost(h: Hero) -> int:
+	return GameData.ATTR_TRAIN_COST * (h.attr_trained + 1)
+
+
+## Buys one attribute point with Coins (see ATTR_TRAIN_CAP).
+func train_attr(hero_id: String) -> String:
+	var h := find_hero(hero_id)
+	if not h or h.is_champion:
+		return "Can't train this hero"
+	if h.attr_trained >= GameData.ATTR_TRAIN_CAP:
+		return "Fully trained"
+	var cost := attr_train_cost(h)
+	if coins < cost:
+		return "Not enough Coins"
+	coins -= cost
+	h.attr_trained += 1
+	h.attr_points += 1
 	save()
 	state_changed.emit()
 	return ""

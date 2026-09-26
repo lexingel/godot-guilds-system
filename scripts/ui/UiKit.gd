@@ -822,12 +822,13 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 
 
 ## "Party power 142 / Recommended 150 — Even fight", colored like a traffic
-## light. Bands match the tuned difficulty curve: under ~1.1x the rift wins
-## more often than not, ~1.1-1.5x is a real fight, 1.5x+ is comfortable.
+## light. rec_power is where a party clears about half its runs (full-run sim,
+## Sep 2026): under 0.9x clears under ~15%, 0.9-1.0x well under half,
+## 1.0-1.25x roughly half to most, 1.25x+ nearly always.
 func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Label:
 	var ratio := float(power) / float(max(1, rec))
-	var verdict := "Risky" if ratio < 1.1 else ("Even fight" if ratio < 1.5 else "Favored")
-	var color: Color = Palette.HAZARD if ratio < 1.1 else (Palette.COINS if ratio < 1.5 else Palette.RANK_E)
+	var verdict := "Deadly" if ratio < 0.9 else ("Risky" if ratio < 1.0 else ("Even fight" if ratio < 1.25 else "Favored"))
+	var color: Color = Palette.HAZARD if ratio < 1.0 else (Palette.COINS if ratio < 1.25 else Palette.RANK_E)
 	var l := _label("%s %d / Recommended %d — %s" % [prefix, power, rec, verdict], 13)
 	l.add_theme_color_override("font_color", color)
 	return l

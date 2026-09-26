@@ -735,7 +735,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
 		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
-		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Reset a hero's points for 5 Seal Tokens per level."],
+		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 5 extra points with Coins, or reset a hero's points for 5 Seal Tokens per level (gear they no longer qualify for comes off)."],
 		["Guild Board & Milestones", "Contracts and Dailies are quick rotating objectives paying Coins/Crystals/Tokens/Reputation. Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]
 	for entry in entries:
