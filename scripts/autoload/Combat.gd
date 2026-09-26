@@ -710,7 +710,9 @@ func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	var hp: int = round(diff["monster_hp"] * scale * hp_mult)
 	var dmg: int = round(diff["monster_dmg"] * scale * dmg_mult)
 	var name: String
-	if kind == "boss":
+	if kind == "boss" and diff.has("boss_name"):
+		name = str(diff["boss_name"])   # a campaign finale's named foe
+	elif kind == "boss":
 		name = "%s, %s Warden" % [GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()], diff["name"].split(" ")[0]]
 	elif kind == "elite":
 		name = GameData.ELITE_NAMES[randi() % GameData.ELITE_NAMES.size()]

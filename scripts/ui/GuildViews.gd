@@ -24,9 +24,23 @@ func _render_terminal(v: VBoxContainer) -> void:
 	tier_row.add_child(_label(tier_line, 12, true))
 
 	if term_tab == "camp":
+		if GameState.heroes.is_empty():
+			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero at Hero Recruits (key 2), then head to the Rift Gate to seal a rift.")
+		elif GameState.runs_started >= 1 and GameState.run.is_empty():
+			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
 		v.add_child(tier_row)
+		if GameState.feature_unlocked("quests") or GameState.rifts_sealed > 0 or not GameState.current_act().is_empty():
+			var act := GameState.current_act()
+			var act_text := "Campaign complete — the Ashen Crown is shattered" if act.is_empty() else "Act %s — %s · %d/%d objectives%s" % [GameState._roman(int(act["act"])), act["name"], (act["objectives"] as Array).filter(func(o): return GameState.campaign_objective_met(o)).size(), (act["objectives"] as Array).size(), " · the finale is open at the Rift Gate!" if GameState.finale_ready() else ""]
+			var al := _label(act_text, 13)
+			al.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if GameState.finale_ready() else Palette.MUTED)
+			v.add_child(al)
 		_render_getting_started(v)
+		return
+	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management"}.get(term_tab, "")
+	if tab_feature != "" and not GameState.feature_unlocked(tab_feature):
+		_locked_feature(v, tab_feature)
 		return
 
 	match term_tab:
@@ -263,8 +277,16 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	v.add_child(_label(title, 18))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
+	var entry_feature := {"Guild Management": "management", "Rift Map": "rift_map", "Inventory": "inventory", "Crafting Hall": "crafting", "Bestiary": "bestiary", "Guild Board": "quests"}
 	for entry in entries:
-		row.add_child(_hub_card(entry[0], entry[1], entry[2]))
+		var fid: String = entry_feature.get(str(entry[1]), "")
+		if fid != "" and not GameState.feature_unlocked(fid):
+			var card := _hub_card(entry[0], "%s (locked)" % entry[1], func(): pass)
+			card.modulate = Color(1, 1, 1, 0.45)
+			card.tooltip_text = GameData.FEATURE_UNLOCKS[fid]["hint"]
+			row.add_child(card)
+		else:
+			row.add_child(_hub_card(entry[0], entry[1], entry[2]))
 	v.add_child(row)
 
 
@@ -322,6 +344,7 @@ func _champion_card(c: Hero, current: bool, offer_idx: int = -1) -> PanelContain
 
 
 func _render_recruits(v: VBoxContainer) -> void:
+	_coach(v, "recruits", "Hiring heroes", "Your Champion joins every rift for free. Below it, hire heroes with Recruit — higher ranks are stronger. A party can take up to 4 heroes plus the Champion.")
 	var champ := GameState.ensure_champion()
 	v.add_child(_label("Champion — joins every rift for free", 16))
 	v.add_child(_champion_card(champ, true))
@@ -788,6 +811,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
 		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
+		["Campaign", "Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift."],
 		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). 2 relics of one element start a set, 3 complete it, and 3 different elements make a Prism. Level a relic to 5 to awaken a new effect, or reroll any effect for Crystals. Legendary relics have unique powers."],
 		["Champions", "A free guest fighter joins every rift. Pick one of three offers each cycle (a new set arrives with every seal). They level with your strongest hero, give the whole party their Boon while standing, and have one Champion Call per rift (key 7 on their turn). Seal 3 rifts with the same Champion and they can swear in to your roster for good."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 5 extra points with Coins, or reset a hero's points for 5 Seal Tokens per level (gear they no longer qualify for comes off)."],

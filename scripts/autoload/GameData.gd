@@ -1867,6 +1867,45 @@ const ESCORT_NAMES := ["Wounded Survivor", "Lost Scout", "Stranded Merchant", "F
 ## (bigger target, bigger reward including Reputation) quests. `type` is
 ## looked up against GameState.quest_progress()'s match — kept here only as
 ## the id/label pairing so a new type is a one-line add in both places.
+## Features open up as the guild grows instead of all at once. Each entry:
+## what unlocks it (checked by GameState.feature_unlocked) and the toast that
+## announces it. Roster, Recruits, Rift Hall and the Codex are always open.
+const FEATURE_UNLOCKS := {
+	"inventory": {"name": "Inventory", "hint": "Opens once you find your first item or relic", "news": "Loot you find is kept here — equip items on the Roster's Hero tab."},
+	"medical": {"name": "Medical Tent", "hint": "Opens after your first rift run", "news": "Wounded and downed heroes recover faster in a bed."},
+	"bestiary": {"name": "Bestiary", "hint": "Opens after your first fight", "news": "Every foe you meet is recorded here."},
+	"crafting": {"name": "Crafting Hall", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
+	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for coins, crystals and Evolution Stones."},
+	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Crystals on lasting guild upgrades."},
+	"rift_map": {"name": "Rift Map", "hint": "Opens after you seal 2 rifts", "news": "Ranked rifts appear on the map — seal them before they break open."},
+}
+## The very first rift is a shorter, gentler training rift.
+## The campaign: three acts, each a region with a named foe. Meet an act's
+## objectives (GameState.campaign_objective_progress) to open its finale — a
+## harder rift whose boss is the act's foe. Sealing it completes the act,
+## pays its reward and opens the next tier (Act I: Greater Rifts, Act II:
+## Endless). After Act III the campaign is over and the rest is post-game.
+const CAMPAIGN := [
+	{"act": 1, "name": "The Shattered Vale", "foe": "Vaelith", "boss": "Vaelith, the Vale-Render",
+	 "finale": "Vaelith's Breach", "tier": "lesser", "mult": 1.15, "opens": "Greater Rifts",
+	 "intro": "The Vale split open in a single night. Rifts bleed monsters into the farmland, and the old guilds are gone. Yours is all that stands between the villages and whatever Vaelith is pouring through the largest breach.",
+	 "outro": "Vaelith falls back through the Breach, and it seals behind her. The Vale breathes again — but the rifts beyond it only grow deeper. Greater Rifts are open to your guild.",
+	 "objectives": [{"type": "rifts_sealed", "target": 2, "label": "Seal 2 rifts"}, {"type": "heroes", "target": 3, "label": "Have 3 heroes in the guild"}],
+	 "reward": {"crystals": 60, "tokens": 20}},
+	{"act": 2, "name": "The Drowned Marches", "foe": "Nyxara", "boss": "Nyxara, Queen of the Drowned",
+	 "finale": "The Drowned Spire", "tier": "greater", "mult": 1.2, "opens": "the Endless Rift",
+	 "intro": "South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",
+	 "outro": "The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.",
+	 "objectives": [{"type": "greater_seals", "target": 2, "label": "Seal 2 Greater Rifts"}, {"type": "reputation", "target": 20, "label": "Reach 20 Reputation"}, {"type": "map_rank", "target": 3, "label": "Seal a Rank C or higher Rift Map rift"}],
+	 "reward": {"crystals": 120, "tokens": 40}},
+	{"act": 3, "name": "The Ashen Crown", "foe": "Sythrane", "boss": "Sythrane, the Ashen Crown",
+	 "finale": "The Heart of the Rift", "tier": "greater", "mult": 1.45, "opens": "",
+	 "intro": "Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",
+	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the Rift Map and the Guild Board carry on.)",
+	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B or higher Rift Map rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 Guild Board quests"}],
+	 "reward": {"crystals": 200, "tokens": 80}},
+]
+const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}
 const QUEST_POSTED := 6
 const QUEST_BOARD_BG := "res://assets/screens/quest_board.png"
 const QUEST_ACTIVE_MAX := 3

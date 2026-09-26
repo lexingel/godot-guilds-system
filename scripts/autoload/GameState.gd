@@ -9,6 +9,11 @@ signal state_changed
 
 const RELIC_MAX_LEVEL := 5
 const SLOT_COUNT := 3
+## Bumped whenever the save's shape changes. load_save() runs
+## _migrate_save() on anything older before reading it. (Older, per-field
+## fallbacks still live in the model from_dicts: Hero attrs, Item attrs,
+## Relic specials, the Guild Board's old contract/daily format.)
+const SAVE_VERSION := 2
 const ACTIVE_SLOT_PATH := "user://active_slot.cfg"
 const SETTINGS_PATH := "user://settings.json"
 
@@ -72,6 +77,12 @@ var elites_won: int = 0      # every Elite win, unlike bosses_defeated/monsters_
 var bosses_won: int = 0      # every Boss win, same distinction
 var guild_board: Array[Dictionary] = []    # rotating pool of quest dicts, see roll_quest()
 var day: int = 0   # in-game days: one passes per rift run or rest (see pass_time)
+var runs_started: int = 0   # the first one is a training rift (GameData.TRAINING_RIFT)
+var campaign_act: int = 1   # the act in progress (GameData.CAMPAIGN); CAMPAIGN.size()+1 = campaign complete
+var pending_stories: Array = []   # story cards Main shows before anything else: {title, subtitle, text}
+var features_seen: Array = []   # unlocked features already announced (see check_feature_unlocks)
+var hints_seen: Array = []   # coach tips dismissed
+var tips_off: bool = false
 var board_refresh_day: int = 0   # the day the Guild Board's unaccepted postings are replaced
 var quest_tally: Dictionary = {}   # counters only quests read: boss:<name>, map:<uid>, rank_seals:<i>, *_seals, flawless_rifts
 var milestones_claimed: Array[String] = []  # GameData.MILESTONES ids already granted
@@ -277,6 +288,12 @@ func reset() -> void:
 	bosses_won = 0
 	guild_board = []
 	day = 0
+	runs_started = 0
+	campaign_act = 1
+	pending_stories = [_act_intro_card(1)]
+	features_seen = []
+	hints_seen = []
+	tips_off = false
 	board_refresh_day = 0
 	quest_tally = {}
 	milestones_claimed = []
@@ -309,6 +326,7 @@ func _run_for_save() -> Dictionary:
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
+		"finale": run.get("finale", 0), "training": run.get("training", false),
 	}
 
 
@@ -422,6 +440,7 @@ func save() -> void:
 	if guild_name == "":
 		return
 	var data := {
+		"save_version": SAVE_VERSION,
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
 		"crystals": crystals, "tokens": tokens,
 		"heroes": heroes.map(func(h): return h.to_dict()),
@@ -444,7 +463,7 @@ func save() -> void:
 		"reputation": reputation, "monster_kill_counts": monster_kill_counts,
 		"crafts_performed": crafts_performed, "flawless_wins": flawless_wins,
 		"elites_won": elites_won, "bosses_won": bosses_won,
-		"guild_board": guild_board, "day": day, "board_refresh_day": board_refresh_day, "quest_tally": quest_tally, "milestones_claimed": milestones_claimed,
+		"guild_board": guild_board, "day": day, "runs_started": runs_started, "campaign_act": campaign_act, "features_seen": features_seen, "hints_seen": hints_seen, "tips_off": tips_off, "board_refresh_day": board_refresh_day, "quest_tally": quest_tally, "milestones_claimed": milestones_claimed,
 		"bonds": bonds,
 	}
 	var f := FileAccess.open(_slot_path(active_slot), FileAccess.WRITE)
@@ -474,6 +493,41 @@ func migrate_hero_skill_keys(h: Hero) -> void:
 		h.skills = migrated
 
 
+## Brings a save dict up to SAVE_VERSION, one step at a time. Version 1 is
+## every save written before versioning existed; its missing fields are all
+## handled by per-model defaults, so 1 -> 2 only stamps the version.
+func _migrate_save(data: Dictionary) -> Dictionary:
+	var v := int(data.get("save_version", 1))
+	if v > SAVE_VERSION:
+		push_warning("Save is from a newer version (%d > %d)" % [v, SAVE_VERSION])
+	# if v < 3: ...next migration goes here, then v = 3
+	data["save_version"] = max(v, SAVE_VERSION)
+	return data
+
+
+## The active slot's save as text, for backing up or moving to another device.
+func export_save_text() -> String:
+	save()
+	if not FileAccess.file_exists(_slot_path(active_slot)):
+		return ""
+	return FileAccess.get_file_as_string(_slot_path(active_slot))
+
+
+## Replaces `slot` with an exported save. Returns "" or why it was refused.
+func import_save_text(text: String, slot: int) -> String:
+	var parsed = JSON.parse_string(text.strip_edges())
+	if typeof(parsed) != TYPE_DICTIONARY or String(parsed.get("guild_name", "")) == "":
+		return "That doesn't look like a Guild System save"
+	if int(parsed.get("save_version", 1)) > SAVE_VERSION:
+		return "That save is from a newer version of the game"
+	var f := FileAccess.open(_slot_path(slot), FileAccess.WRITE)
+	if not f:
+		return "Couldn't write the save slot"
+	f.store_string(JSON.stringify(parsed))
+	f.close()
+	return ""
+
+
 func load_save() -> bool:
 	if not FileAccess.file_exists(_slot_path(active_slot)):
 		return false
@@ -481,7 +535,7 @@ func load_save() -> bool:
 	var parsed = JSON.parse_string(f.get_as_text())
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false
-	var data: Dictionary = parsed
+	var data: Dictionary = _migrate_save(parsed)
 	# A save file can exist on disk for a slot that was never actually
 	# founded (e.g. a stray write while "Name Your Guild" was still open) —
 	# slot_summary() already treats a blank guild_name as "empty" for slot
@@ -556,6 +610,20 @@ func load_save() -> bool:
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	rifts_sealed = data.get("rifts_sealed", 0)
 	best_rift_rank_sealed = int(data.get("best_rift_rank_sealed", -1))
+	runs_started = int(data.get("runs_started", 0 if rifts_sealed == 0 and monsters_seen.is_empty() else 1))
+	pending_stories = []
+	if data.has("campaign_act"):
+		campaign_act = int(data["campaign_act"])
+	else:
+		# A guild from before the campaign keeps what it had unlocked.
+		campaign_act = 3 if best_endless_cycle > 0 else (2 if rifts_sealed >= 3 else 1)
+	hints_seen = data.get("hints_seen", [])
+	tips_off = bool(data.get("tips_off", false))
+	if data.has("features_seen"):
+		features_seen = data["features_seen"]
+	else:
+		# A guild from before staged unlocks: everything it already has is old news.
+		features_seen = GameData.FEATURE_UNLOCKS.keys().filter(func(f): return feature_unlocked(f))
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
 	pending_shop_boost = data.get("pending_shop_boost", false)
 	guide_hidden = data.get("guide_hidden", false)
@@ -588,6 +656,7 @@ func load_save() -> bool:
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
+			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)),
 		}
 	return true
 
@@ -909,14 +978,22 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 			if d["id"] == diff_id:
 				diff = d
 	diff = _apply_rift_rank_modifiers(diff, rift_rank)
+	var training := runs_started == 0 and not endless and rift_rank == ""
+	if training:
+		diff = _apply_training(diff)
+	runs_started += 1
 	run = {
 		"diff_id": diff_id, "endless": endless, "cycle": 0, "hardcore": hardcore,
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
 		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
-		"rift_rank": rift_rank, "seed": randi(),
+		"rift_rank": rift_rank, "seed": randi(), "training": training,
 	}
+	if training:
+		# No elites in the training rift — a campfire takes their place.
+		for layer in run["layers"]:
+			layer["options"] = (layer["options"] as Array).map(func(o): return "campfire" if o == "elite" else o)
 	ensure_champion()
 	auto_resolve_single_option()
 	save()
@@ -950,7 +1027,60 @@ func _diff() -> Dictionary:
 				diff = d
 	if run.get("is_riftbreak", false):
 		return _apply_riftbreak_severity(diff, int(run.get("riftbreak_severity", 0)))
-	return _apply_rift_rank_modifiers(diff, str(run.get("rift_rank", "")))
+	diff = _apply_rift_rank_modifiers(diff, str(run.get("rift_rank", "")))
+	if int(run.get("finale", 0)) > 0:
+		return _apply_finale(diff)
+	return _apply_training(diff) if run.get("training", false) else diff
+
+
+func _apply_training(diff: Dictionary) -> Dictionary:
+	var out := diff.duplicate(true)
+	var t: Dictionary = GameData.TRAINING_RIFT
+	out["floors"] = int(t["floors"])
+	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(t["monster_hp_mult"])))
+	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(t["monster_dmg_mult"])))
+	return out
+
+
+## Whether a staged feature (GameData.FEATURE_UNLOCKS) is open yet; anything
+## not in the table is always open.
+func feature_unlocked(id: String) -> bool:
+	match id:
+		"inventory": return not items.is_empty() or not relics.is_empty() or rifts_sealed > 0
+		"medical": return runs_started > 1 or (runs_started == 1 and run.is_empty()) or rifts_sealed > 0
+		"bestiary": return not monsters_seen.is_empty()
+		"crafting", "quests", "management": return rifts_sealed >= 1
+		"rift_map": return rifts_sealed >= 2
+	return true
+
+
+## Announces each feature the first time it unlocks (once per render, like
+## check_milestones). Returns the ids newly announced.
+func check_feature_unlocks() -> Array:
+	var fresh: Array = []
+	for f in GameData.FEATURE_UNLOCKS:
+		if not features_seen.has(f) and feature_unlocked(f):
+			features_seen.append(f)
+			fresh.append(f)
+	if fresh.size() == 1:
+		var def: Dictionary = GameData.FEATURE_UNLOCKS[fresh[0]]
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "New: %s" % def["name"], "text": str(def["news"])})
+	elif fresh.size() > 1:
+		# Several at once (e.g. the first seal): one toast, not a stack.
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "New at camp", "text": ", ".join(fresh.map(func(f): return GameData.FEATURE_UNLOCKS[f]["name"])) + " — check the tabs above."})
+	if not fresh.is_empty():
+		save()
+	return fresh
+
+
+func hint_pending(id: String) -> bool:
+	return not tips_off and not hints_seen.has(id)
+
+
+func dismiss_hint(id: String) -> void:
+	if not hints_seen.has(id):
+		hints_seen.append(id)
+	save()
 
 
 ## Scales a Riftbreak encounter's difficulty by the summed severity index of
@@ -1584,6 +1714,8 @@ func advance_node() -> void:
 
 func seal_rift() -> void:
 	_rescue_left_behind()
+	if int(run.get("finale", 0)) > 0 and int(run["finale"]) == campaign_act:
+		_complete_act(campaign_act)
 	var diff := _diff()
 	var fast_clear: bool = int(run.get("boss_rounds", 99)) <= 6
 	var token_mult: float = (seal_token_bonus() if fast_clear else 1.0) * (1.5 if run.get("hardcore", false) else 1.0)
@@ -1687,7 +1819,104 @@ func continue_endless() -> void:
 ## Earned by playing (sealing 3 rifts, lesser/greater/endless all count),
 ## not by spending Guild Management currency like every other unlock today.
 func greater_rift_unlocked() -> bool:
-	return rifts_sealed >= 3
+	return campaign_act >= 2
+
+
+func endless_unlocked() -> bool:
+	return campaign_act >= 3
+
+
+# ---------------- Campaign ----------------
+
+func campaign_done() -> bool:
+	return campaign_act > GameData.CAMPAIGN.size()
+
+
+func current_act() -> Dictionary:
+	return {} if campaign_done() else GameData.CAMPAIGN[campaign_act - 1]
+
+
+func campaign_objective_progress(o: Dictionary) -> int:
+	var t := str(o["type"])
+	if t.begins_with("boss:"):
+		return int(quest_tally.get(t, 0))
+	match t:
+		"rifts_sealed": return rifts_sealed
+		"heroes": return heroes.size()
+		"greater_seals": return int(quest_tally.get("greater_seals", 0))
+		"reputation": return reputation
+		"map_rank": return best_rift_rank_sealed + 1 if best_rift_rank_sealed >= int(o["target"]) else 0
+		"quests_done": return int(quest_tally.get("quests_done", 0))
+	return 0
+
+
+func campaign_objective_met(o: Dictionary) -> bool:
+	if str(o["type"]) == "map_rank":
+		return best_rift_rank_sealed >= int(o["target"])
+	return campaign_objective_progress(o) >= int(o["target"])
+
+
+func finale_ready() -> bool:
+	var act := current_act()
+	return not act.is_empty() and (act["objectives"] as Array).all(func(o): return campaign_objective_met(o))
+
+
+func finale_recommended_power() -> int:
+	var act := current_act()
+	if act.is_empty():
+		return 0
+	return int(round(Combat.recommended_power(str(act["tier"]), false) * float(act["mult"])))
+
+
+## Starts the current act's finale rift: its tier's rift, tougher by the act's
+## mult, ending in the act's named foe.
+func start_finale(hero_ids: Array[String], starting_relic: Relic) -> void:
+	if not finale_ready():
+		return
+	var act := current_act()
+	start_run(str(act["tier"]), hero_ids, starting_relic, false, false)
+	run["finale"] = int(act["act"])
+	run["training"] = false
+	run["layers"] = Combat.build_layers(_diff())
+	save()
+
+
+func _apply_finale(diff: Dictionary) -> Dictionary:
+	var act: Dictionary = GameData.CAMPAIGN[int(run["finale"]) - 1]
+	var out := diff.duplicate(true)
+	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(act["mult"])))
+	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(act["mult"])))
+	out["boss_name"] = str(act["boss"])
+	out["boss_double_mechanic"] = int(act["act"]) >= 3
+	return out
+
+
+## Sealing a finale: the act's reward, a Legendary relic, the next act.
+func _complete_act(act_num: int) -> void:
+	var act: Dictionary = GameData.CAMPAIGN[act_num - 1]
+	var reward: Dictionary = act["reward"]
+	crystals += int(reward.get("crystals", 0))
+	tokens += int(reward.get("tokens", 0))
+	var relic := Combat.gen_unique_relic()
+	relics.append(relic)
+	campaign_act = act_num + 1
+	var subtitle := "Act %s complete — +%d Crystals, +%d Seal Tokens, %s" % [_roman(act_num), int(reward.get("crystals", 0)), int(reward.get("tokens", 0)), relic.name]
+	if str(act["opens"]) != "":
+		subtitle += " · %s unlocked" % act["opens"]
+	pending_stories.append({"title": act["finale"] + " — sealed", "subtitle": subtitle, "text": str(act["outro"])})
+	if campaign_done():
+		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, clear the Rift Map, and take on the Guild Board for as long as rifts keep opening."})
+	else:
+		pending_stories.append(_act_intro_card(campaign_act))
+
+
+func _act_intro_card(act_num: int) -> Dictionary:
+	var act: Dictionary = GameData.CAMPAIGN[act_num - 1]
+	return {"title": "Act %s — %s" % [_roman(act_num), act["name"]], "subtitle": "Foe: %s" % act["foe"], "text": str(act["intro"])}
+
+
+static func _roman(n: int) -> String:
+	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
 
 
 # ---------------- Downed mid-rift ----------------
@@ -1905,7 +2134,7 @@ func pass_time() -> void:
 				h.bedded = false
 	for i in rift_map.size():
 		var slot: Dictionary = rift_map[i]
-		if slot.has("rank"):
+		if slot.has("rank") and feature_unlocked("rift_map"):
 			if Combat.party_has_unique_relic("wardens_seal") and day % 3 == 0:
 				continue   # the Warden's Seal holds the fuses for a day
 			slot["runs_left"] = int(slot.get("runs_left", 1)) - 1
@@ -1930,6 +2159,8 @@ func rest_guild() -> void:
 ## expiry itself happens in pass_time). Also moves any wall-clock-era slot
 ## onto the run countdown.
 func resolve_rift_map() -> void:
+	if not feature_unlocked("rift_map"):
+		return
 	var changed := false
 	for i in rift_map.size():
 		var old: Dictionary = rift_map[i]
@@ -3106,6 +3337,7 @@ func claim_quest(quest_id: String) -> void:
 		if str(reward.get("stone", "")) != "":
 			evolution_stones[reward["stone"]] = int(evolution_stones.get(reward["stone"], 0)) + 1
 		guild_board.erase(q)
+		_bump("quests_done")
 		save()
 		state_changed.emit()
 		return

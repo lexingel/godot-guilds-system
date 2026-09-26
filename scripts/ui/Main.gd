@@ -133,6 +133,8 @@ func render() -> void:
 	GameState.resolve_recovery()
 	GameState.resolve_rift_map()
 	GameState.resolve_guild_board()
+	if GameState.guild_name != "":
+		GameState.check_feature_unlocks()
 	var newly_claimed := GameState.check_milestones()
 	if not newly_claimed.is_empty():
 		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
@@ -203,10 +205,18 @@ func render() -> void:
 		"credits": _render_credits(v)
 		"onboard": _render_onboard(v)
 		"rift_hall": _render_rift_hall(v)
-		"rift_map": _render_rift_map_hub(v)
+		"rift_map":
+			if GameState.feature_unlocked("rift_map"):
+				_render_rift_map_hub(v)
+			else:
+				_locked_feature(v, "rift_map")
 		"party_assembly": _render_party_assembly(v)
 		"rift_run": _render_rift_run(v)
-		"crafting_hall": _render_crafting_hall(v)
+		"crafting_hall":
+			if GameState.feature_unlocked("crafting"):
+				_render_crafting_hall(v)
+			else:
+				_locked_feature(v, "crafting")
 		"settings": _render_settings(v)
 		"terminal": _render_terminal(v)
 	_update_screen_music()
@@ -215,10 +225,57 @@ func render() -> void:
 	# above) fades the new screen in from transparent instead of just
 	# snapping into place, so moving between hubs reads as one continuous
 	# world instead of a slideshow of unrelated pages.
+	if not GameState.pending_stories.is_empty() and screen not in ["title", "load_game", "credits", "onboard"]:
+		_story_overlay(GameState.pending_stories[0])
 	if is_navigation:
 		root.modulate = Color(1, 1, 1, 0)
 		var fade_tw := create_tween()
 		fade_tw.tween_property(root, "modulate:a", 1.0, 0.18).set_ease(Tween.EASE_OUT)
+
+
+## A campaign story card over the screen (act intros, finale outros, the
+## ending). Continue shows the next queued card or returns to the game.
+func _story_overlay(card_data: Dictionary) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.78)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		dim.set_offset(side, -80)
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		dim.set_offset(side, 80)
+	overlay.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelEmber"
+	card.custom_minimum_size.x = minf(560.0, get_viewport().get_visible_rect().size.x - 40.0)
+	var cv := _vbox(10)
+	var title := _label(str(card_data.get("title", "")), 24)
+	title.add_theme_color_override("font_color", Palette.RANK_S)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cv.add_child(title)
+	if str(card_data.get("subtitle", "")) != "":
+		var sub := _wrap_label(str(card_data["subtitle"]), 13, true)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cv.add_child(sub)
+	cv.add_child(_hsep())
+	var body := _wrap_label(str(card_data.get("text", "")), 15)
+	cv.add_child(body)
+	var cont := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
+		GameState.pending_stories.pop_front()
+		GameState.save()
+		render()
+	)
+	cont.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	cv.add_child(cont)
+	_combat_hotkeys = {"Space": cont.pressed.emit, "Escape": cont.pressed.emit}
+	card.add_child(cv)
+	center.add_child(card)
+	root.add_child(overlay)
 
 
 ## Only 2 music tracks are planned for now (combat, camp — see the Suno plan
@@ -408,12 +465,18 @@ func _quick_nav() -> Control:
 		var id: String = e[0]
 		var key := str((i + 1) % 10) if i < 10 else ""
 		var go := _quick_go.bind(id)
+		var feature_id: String = {"crafting": "crafting", "rift_map": "rift_map", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}.get(id, "")
+		var locked := feature_id != "" and not GameState.feature_unlocked(feature_id)
 		var b := _button("", go)
 		b.custom_minimum_size = Vector2(76, 54)
 		b.toggle_mode = true
 		b.button_pressed = id == current
 		b.tooltip_text = "%s%s" % [e[1], "  (key %s)" % key if key != "" else ""]
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		if locked:
+			b.disabled = true
+			b.modulate = Color(1, 1, 1, 0.45)
+			b.tooltip_text = "%s — %s" % [e[1], GameData.FEATURE_UNLOCKS[feature_id]["hint"]]
 		var tile := VBoxContainer.new()
 		tile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tile.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -428,7 +491,8 @@ func _quick_nav() -> Control:
 		tile.add_child(nl)
 		b.add_child(tile)
 		if key != "":
-			_combat_hotkeys[key] = go
+			if not locked:
+				_combat_hotkeys[key] = go
 			var kl := _label(key, 12)
 			kl.add_theme_color_override("font_color", Palette.MUTED)
 			kl.position = Vector2(3, 0)
@@ -609,6 +673,7 @@ func _render_title(v: VBoxContainer) -> void:
 func _render_load_game(v: VBoxContainer) -> void:
 	v.add_child(_label("Load Game", 20))
 	_render_slot_list(v)
+	_render_save_backup(v)
 	v.add_child(_hsep())
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
 		screen = "title"
@@ -683,8 +748,57 @@ func _render_onboard(v: VBoxContainer) -> void:
 ## since there's nothing else to decide here, unlike Guild Management/
 ## Inventory's hubs. The chained third gateway in the art gets a hotspot too
 ## once GameState.greater_rift_unlocked() — inert (no hotspot at all) before that.
+## The current act: its foe, objectives with progress, and the finale — open
+## once every objective is met.
+func _render_campaign_panel(v: VBoxContainer) -> void:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelEmber"
+	var cv := _vbox(6)
+	if GameState.campaign_done():
+		cv.add_child(_label("The campaign is complete", 16))
+		cv.add_child(_wrap_label("The Ashen Crown is shattered. Rifts still open — push the Endless Rift, clear the Rift Map, and take on the Guild Board.", 12, true))
+		panel.add_child(cv)
+		v.add_child(panel)
+		return
+	var act := GameState.current_act()
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	var foe_icon := _icon(GameData.sprite_for_monster(str(act["boss"])), 44)
+	head.add_child(foe_icon)
+	var hv := _vbox(2)
+	hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var t := _label("Act %s — %s" % [GameState._roman(int(act["act"])), act["name"]], 17)
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	hv.add_child(t)
+	hv.add_child(_label("Foe: %s" % act["foe"], 12, true))
+	head.add_child(hv)
+	cv.add_child(head)
+	for o in act["objectives"]:
+		var met := GameState.campaign_objective_met(o)
+		var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [min(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
+		var ol := _label("%s %s%s" % ["✓" if met else "○", o["label"], prog], 13)
+		ol.add_theme_color_override("font_color", Palette.RANK_E if met else Palette.TEXT)
+		cv.add_child(ol)
+	var ready := GameState.finale_ready()
+	var fb := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Face the finale: %s" % act["finale"], func():
+		pending_party.clear()
+		screen = "party_assembly"
+		_pending_diff_id = str(act["tier"])
+		_pending_endless = false
+		_pending_finale = true
+		render()
+	)
+	fb.disabled = not ready
+	fb.tooltip_text = "Recommended power %d" % GameState.finale_recommended_power() if ready else "Complete every objective above first"
+	fb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cv.add_child(fb)
+	panel.add_child(cv)
+	v.add_child(panel)
+
+
 func _render_rift_hall(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Hall", 20))
+	_coach(v, "rift_hall", "Choosing a rift", "Start with the Lesser Rift. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
 
 	var scene_size := Vector2(700, 340)
 	var scene := Control.new()
@@ -708,11 +822,14 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		screen = "party_assembly"
 		_pending_diff_id = diff_id
 		_pending_endless = endless
+		_pending_finale = false
 		render()
+	var endless_open := GameState.endless_unlocked()
 	var gate_entries := [
 		["Lesser Rift", Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(str(lesser["id"]), false)],
-		["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("endless", true)],
 	]
+	if endless_open:
+		gate_entries.append(["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("endless", true)])
 	# The chained, rubble-blocked archway stays inert until
 	# GameState.greater_rift_unlocked() (earned by sealing rifts).
 	if unlocked:
@@ -727,7 +844,13 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		var lock_plaque := _camp_plaque("Greater Rift — locked")
 		lock_plaque.position = Vector2(470 + (230 - lock_plaque.size.x) * 0.5, 340 - lock_plaque.size.y - 6)
 		scene.add_child(lock_plaque)
+	if not endless_open:
+		var endless_plaque := _camp_plaque("Endless Rift — locked")
+		endless_plaque.position = Vector2(230 + (240 - endless_plaque.size.x) * 0.5, 340 - endless_plaque.size.y - 6)
+		scene.add_child(endless_plaque)
 	v.add_child(scene)
+
+	_render_campaign_panel(v)
 
 	# One card per rift: what it is, how your strongest party measures up,
 	# and the button to go.
@@ -745,8 +868,9 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var card_defs := [
 		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
 		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),
-			"" if unlocked else "Seal %d more rift(s) to unlock (%d/3)" % [3 - GameState.rifts_sealed, GameState.rifts_sealed]],
-		["Endless Rift", "Late-game challenge — scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true), ""],
+			"" if unlocked else "Opens when you complete Act I"],
+		["Endless Rift", "Late-game challenge — scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true),
+			"" if endless_open else "Opens when you complete Act II"],
 	]
 	for cd in card_defs:
 		var card := PanelContainer.new()
@@ -856,7 +980,12 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
-	v.add_child(_label("Assemble Party (up to 4 + the Champion)", 20))
+	if _pending_finale and not GameState.current_act().is_empty():
+		v.add_child(_label("Finale — %s" % GameState.current_act()["finale"], 20))
+		v.add_child(_wrap_label("A harder %s Rift that ends in %s. Up to 4 heroes and the Champion." % [str(GameState.current_act()["tier"]).capitalize(), GameState.current_act()["boss"]], 12, true))
+	else:
+		v.add_child(_label("Assemble Party (up to 4 + the Champion)", 20))
+	_coach(v, "party", "Pick your party", "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less. Your Champion always comes along for free.")
 	var champ := GameState.ensure_champion()
 	# Formation slots (Darkest Dungeon style): the party sits in a Front and a
 	# Back row. Drag a portrait into a row (from the roster below, or between
@@ -1030,8 +1159,8 @@ func _party_launch_bar(champ: Hero) -> Control:
 		if pending_party.has(h.id):
 			going.append(h)
 	var map_run := _pending_map_slot_idx >= 0
-	var pr := _power_readout(Combat.party_power(going),
-		Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank))
+	var rec_power: int = GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)
+	var pr := _power_readout(Combat.party_power(going), rec_power)
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(pr)
 	var hurt: Array = going.filter(func(h): return h.hp < Combat.max_hp(h) * 0.5)
@@ -1051,10 +1180,13 @@ func _party_launch_bar(champ: Hero) -> Control:
 		if pending_incense_id != "":
 			GameState.use_incense(pending_incense_id)
 			pending_incense_id = ""
-		if _pending_rift_rank != "":
+		if _pending_finale:
+			GameState.start_finale(ids, chosen)
+		elif _pending_rift_rank != "":
 			GameState.start_map_rift(_pending_map_slot_idx, ids, chosen)
 		else:
 			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
+		_pending_finale = false
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_hardcore = false
@@ -1164,8 +1296,103 @@ func _render_settings(v: VBoxContainer) -> void:
 		))
 
 	v.add_child(_hsep())
+	v.add_child(_label("Tips", 15))
+	var tips_row := HBoxContainer.new()
+	tips_row.add_theme_constant_override("separation", 8)
+	tips_row.add_child(_button("Tips: %s" % ("off" if GameState.tips_off else "on"), func():
+		GameState.tips_off = not GameState.tips_off
+		GameState.save()
+		render()
+	))
+	tips_row.add_child(_button("Show all tips again", func():
+		GameState.hints_seen = []
+		GameState.tips_off = false
+		GameState.save()
+		render()
+	))
+	v.add_child(tips_row)
+
+	v.add_child(_hsep())
 	v.add_child(_label("Save Slots", 15))
 	_render_slot_list(v)
+	_render_save_backup(v)
+
+
+var _backup_msg := ""
+var _import_open := false
+var _import_text := ""
+var _js_file_cb   # keeps the browser file-picker callback alive
+
+
+## Export the active save (clipboard, plus a download on the web) or import
+## one — pasted, or picked from a file on the web — into the active slot.
+## Browser storage can be wiped by clearing site data; this is the backup.
+func _render_save_backup(v: VBoxContainer) -> void:
+	v.add_child(_hsep())
+	v.add_child(_label("Backup", 15))
+	v.add_child(_wrap_label("Saves live in this browser/device only. Export one to keep a copy or move it to another device.", 12, true))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var exp := _icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Export save", func():
+		var text := GameState.export_save_text()
+		if text == "":
+			_backup_msg = "Nothing to export in this slot yet."
+		else:
+			DisplayServer.clipboard_set(text)
+			if OS.has_feature("web"):
+				JavaScriptBridge.download_buffer(text.to_utf8_buffer(), "guild_save_%s.json" % GameState.guild_name.to_snake_case(), "application/json")
+				_backup_msg = "Downloaded, and copied to the clipboard."
+			else:
+				_backup_msg = "Copied to the clipboard — paste it somewhere safe."
+		render()
+	)
+	exp.disabled = GameState.guild_name == ""
+	row.add_child(exp)
+	row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], "Import save…" if not _import_open else "Cancel import", func():
+		_import_open = not _import_open
+		_import_text = ""
+		_backup_msg = ""
+		render()
+	))
+	v.add_child(row)
+	if _import_open:
+		var slot := GameState.active_slot
+		v.add_child(_wrap_label("Paste an exported save below%s. It replaces Slot %d%s." % [" or pick the file" if OS.has_feature("web") else "", slot + 1, " (%s)" % GameState.guild_name if GameState.guild_name != "" else ""], 12))
+		if OS.has_feature("web"):
+			v.add_child(_button("Choose file…", func(): _web_pick_save_file()))
+		var te := TextEdit.new()
+		te.custom_minimum_size = Vector2(0, 90)
+		te.placeholder_text = "{\"guild_name\": ...}"
+		te.text = _import_text
+		te.text_changed.connect(func(): _import_text = te.text)
+		v.add_child(te)
+		var go := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Replace Slot %d with this save" % (slot + 1), func():
+			var err := GameState.import_save_text(_import_text, slot)
+			if err != "":
+				_backup_msg = err
+				render()
+				return
+			_import_open = false
+			_import_text = ""
+			_backup_msg = "Save imported."
+			_switch_slot(slot)
+		)
+		go.disabled = _import_text.strip_edges() == ""
+		v.add_child(go)
+	if _backup_msg != "":
+		v.add_child(_label(_backup_msg, 12, true))
+
+
+func _web_pick_save_file() -> void:
+	if not OS.has_feature("web"):
+		return
+	_js_file_cb = JavaScriptBridge.create_callback(func(args):
+		_import_text = str(args[0])
+		render()
+	)
+	JavaScriptBridge.get_interface("window").godotSaveImportCb = _js_file_cb
+	JavaScriptBridge.eval("""(function(){var i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+		i.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){window.godotSaveImportCb(r.result);};r.readAsText(f);};i.click();})();""", true)
 
 
 ## Shared by Settings' "Save Slots" section and the title screen's Load Game

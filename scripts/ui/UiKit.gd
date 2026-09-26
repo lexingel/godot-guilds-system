@@ -1135,6 +1135,7 @@ var _pending_diff_id: String = "lesser"
 
 
 var _pending_endless: bool = false
+var _pending_finale: bool = false   # Party Assembly is for the current act's finale
 
 
 var _pending_hardcore: bool = false
@@ -1197,6 +1198,53 @@ const ABILITY_BUCKET_COLOR := {
 ## and victory screens already use) rather than a plain row button — same
 ## layered visual+click-catcher composition as _camp_area_hotspot (a Panel
 ## for looks, a flat Button on top for the actual click).
+## A one-time coach tip: shown until dismissed (or tips are turned off in
+## Settings). `id` is remembered per guild in GameState.hints_seen.
+func _coach(v: Control, id: String, title: String, text: String) -> void:
+	if not GameState.hint_pending(id) or GameState.guild_name == "":
+		return
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelEmber"
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.add_child(_icon(GameData.CAMP_HUB_ICON_PATH["compendium"], 28))
+	var col := _vbox(2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var t := _label(title, 14)
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(t)
+	col.add_child(_wrap_label(text, 12))
+	row.add_child(col)
+	var got := _button("Got it", func():
+		GameState.dismiss_hint(id)
+		render()
+	)
+	got.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(got)
+	var off := _button("No tips", func():
+		GameState.tips_off = true
+		GameState.save()
+		render()
+	)
+	off.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	off.tooltip_text = "Turn every tip off (Settings can turn them back on)"
+	row.add_child(off)
+	panel.add_child(row)
+	v.add_child(panel)
+
+
+## Shown in place of a feature that hasn't unlocked yet.
+func _locked_feature(v: VBoxContainer, id: String) -> void:
+	var def: Dictionary = GameData.FEATURE_UNLOCKS.get(id, {})
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelViolet"
+	var col := _vbox(6)
+	col.add_child(_label("%s — locked" % def.get("name", id.capitalize()), 18))
+	col.add_child(_wrap_label("%s." % def.get("hint", "Not open yet"), 13, true))
+	panel.add_child(col)
+	v.add_child(panel)
+
+
 func _hub_card(icon_path: String, label_text: String, cb: Callable) -> Control:
 	const CARD_SIZE := Vector2(164, 104)
 	var wrap := Control.new()

@@ -324,6 +324,17 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(rb_flavor, 12, true))
 	var kind := GameState.current_node_kind()
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	if GameState.run.get("training", false):
+		var tb := _label("Training rift — shorter and gentler than a real one. Beat the boss at the end to seal it.", 12)
+		tb.add_theme_color_override("font_color", Palette.RANK_E)
+		v.add_child(tb)
+	var ns_tip: Dictionary = GameState.run.get("node_state", {})
+	if kind == "":
+		_coach(v, "path", "Choosing a path", "Each floor offers a choice. Fights give coins and loot; elites hit harder and pay more; shops, campfires, events and treasure help in other ways. The last floor is the boss.")
+	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result"):
+		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows who it will hit next — Defend (3) halves damage, Guard (4) takes a hit for an ally. Click a foe to target it; Space repeats your last action.")
+	elif ns_tip.has("result") and bool(ns_tip["result"].get("won", false)) and not ns_tip.get("reward_chosen", false):
+		_coach(v, "reward", "Picking loot", "Choose one reward. Items are worn by one hero (equip them on the Roster's Hero tab); relics go on the Relic Altar and help the whole party.")
 	if not GameState.pending_injuries().is_empty():
 		v.add_child(_injury_panel())
 	# The battle screen already shows every hero's HP twice over (arena
