@@ -38,6 +38,7 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 	if h.prior_innate_kind == kind:
 		s += h.prior_innate_value
 	s += hero_item_total(h, kind)
+	s += attr_kind_total(h, kind)
 	if GameData.TRAIT_TABLE.has(h.trait_name):
 		s += GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)
 	for scar in h.scars:
@@ -88,6 +89,10 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 				if pair[0] == kind:
 					v += float(pair[1])
 			add.call(it.name, v)
+	for a in GameData.ATTRIBUTES:
+		var per: float = float(GameData.ATTR_EFFECTS[a].get(kind, 0.0))
+		if per != 0.0:
+			add.call("%s %d" % [GameData.ATTR_LABEL[a], hero_attr(h, a)], (hero_attr(h, a) - GameData.ATTR_BASELINE) * per)
 	if GameData.TRAIT_TABLE.has(h.trait_name):
 		add.call("Trait: %s" % h.trait_name, float(GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)))
 	for scar in h.scars:
@@ -100,6 +105,37 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 	if GameState.active_incense.get("kind", "") == kind:
 		add.call("Incense: %s" % GameState.active_incense.get("name", "active"), float(GameState.active_incense["value"]))
 	return out
+
+
+## A hero's attribute: their own points plus what their equipped items add.
+func hero_attr(h: Hero, a: String) -> int:
+	var v: int = int(h.attrs.get(a, GameData.ATTR_BASELINE))
+	for it in GameState.items:
+		if it.equipped_to == h.id and it.attr == a:
+			v += it.attr_bonus
+	return v
+
+
+## What a hero's attributes add to one stat kind (see GameData.ATTR_EFFECTS).
+func attr_kind_total(h: Hero, kind: String) -> float:
+	var s := 0.0
+	for a in GameData.ATTRIBUTES:
+		var per: float = float(GameData.ATTR_EFFECTS[a].get(kind, 0.0))
+		if per != 0.0:
+			s += (hero_attr(h, a) - GameData.ATTR_BASELINE) * per
+	return s
+
+
+## Spends a hero's unspent points the way their role would (recruits, the
+## Champion, simulations).
+func auto_spend_attrs(h: Hero) -> void:
+	var spread: Array = GameData.ROLE_ATTR_SPREAD.get(GameData.hero_role(h), ["might", "agility", "focus"])
+	var i := 0
+	while h.attr_points > 0:
+		var a := str(spread[i % spread.size()])
+		h.attrs[a] = int(h.attrs.get(a, GameData.ATTR_BASELINE)) + 1
+		h.attr_points -= 1
+		i += 1
 
 
 func max_hp(h: Hero) -> int:
@@ -153,9 +189,12 @@ func gain_xp(h: Hero, amount: int) -> void:
 	while h.level < 10 and h.xp >= xp_to_next(h.level):
 		h.xp -= xp_to_next(h.level)
 		h.level += 1
-		h.base_hp = round(h.base_hp * 1.08)
-		h.base_dmg = round(h.base_dmg * 1.08)
+		h.base_hp = round(h.base_hp * (1.0 + GameData.LEVEL_GROWTH))
+		h.base_dmg = round(h.base_dmg * (1.0 + GameData.LEVEL_GROWTH))
 		h.skill_points += 1
+		h.attr_points += GameData.ATTR_POINTS_PER_LEVEL
+		if h.is_champion:
+			auto_spend_attrs(h)
 
 
 ## Negative values (traits like Frail, scars, drawbacks) read as a penalty —
@@ -173,6 +212,7 @@ func describe_skill(kind: String, value: float) -> String:
 		"hazard_guard_pct": return "%s%d%% hazard severity" % [down, pct]
 		"dodge_pct": return ("%d%% chance to block a retaliation" if value >= 0.0 else "-%d%% chance to block a retaliation") % pct
 		"speed_pct": return "%s%d%% turn speed" % [up, pct]
+		"ability_power": return "%s%d%% ability power" % [up, pct]
 		"wipe_guard": return ("Once per rift, survive a wipe at %d%% HP" if value >= 0.0 else "-%d%% HP on a survived wipe") % pct
 		"boss_alpha_strike": return "Opens every Boss fight with a free strike"
 		_: return ""
@@ -334,12 +374,16 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	h.innate_kind = cls["kind"]
 	h.innate_value = hero_innate_value(cls, rank_idx)
 	h.level = level_hint
-	var s := 1.0 + 0.08 * (level_hint - 1)
+	var s := 1.0 + GameData.LEVEL_GROWTH * (level_hint - 1)
 	h.base_hp = round(role_cls["base_hp"] * cls["hp_ratio"] * rank["mult"] * s)
 	h.base_dmg = round(role_cls["base_dmg"] * cls["dmg_ratio"] * rank["mult"] * s)
 	h.base_spd = round(float(role_cls["base_spd"]) * float(rank["mult"]))
 	h.trait_name = pick_trait_name(cls["role"])
 	h.formation = str(GameData.ROLE_POSITION.get(cls["role"], {}).get("row", "front"))
+	# Recruits arrive with their levels' points already spent by role.
+	h.attrs = GameData.role_attrs(cls["role"])
+	h.attr_points = (level_hint - 1) * GameData.ATTR_POINTS_PER_LEVEL
+	auto_spend_attrs(h)
 	h.hp = max_hp(h)
 	return h
 
@@ -371,6 +415,7 @@ func generate_champion() -> Hero:
 	var champ_role_cls := GameData.find_role(str(cls["role"]))
 	champ.base_spd = int(round(float(champ_role_cls["base_spd"]) * float(rank["mult"])))
 	champ.formation = str(GameData.ROLE_POSITION.get(str(cls["role"]), {}).get("row", "front"))
+	champ.attrs = GameData.role_attrs(str(cls["role"]))
 	champ.hp = max_hp(champ)
 	return champ
 
@@ -487,6 +532,9 @@ func gen_item(rarity_id: String, category_override: String = "", rank: String = 
 		var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[it.secondary_kind]
 		name += " %s" % str(suffixes[randi() % suffixes.size()])
 	it.name = name
+	it.attr = str(GameData.ITEM_BASE_ATTR.get(noun, "might"))
+	it.attr_bonus = int(GameData.ITEM_ATTR_BONUS[rarity_id])
+	it.attr_req = int(GameData.ITEM_ATTR_REQ[rarity_id])
 	return it
 
 
@@ -513,6 +561,9 @@ func gen_unique_item() -> Item:
 	it.locked_role = str(def.get("locked_role", ""))
 	var subs: Array = def.get("locked_subclasses", [])
 	it.locked_subclasses.assign(subs)
+	it.attr = GameData.item_attr_for(it)
+	it.attr_bonus = int(GameData.ITEM_ATTR_BONUS["legendary"])
+	it.attr_req = int(GameData.ITEM_ATTR_REQ["legendary"])
 	return it
 
 
@@ -1510,6 +1561,17 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 		var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 		var eff: String = ab["effect"]
 		var val: float = float(ab["value"])
+		# Focus: ability power strengthens the effect — a damage-cutting
+		# debuff cuts deeper, a damage multiplier grows, the rest scale up.
+		var ap := hero_skill_total(h, "ability_power")
+		if ap != 0.0:
+			match eff:
+				"monster_dmg_mult", "debuff_lowest":
+					val = maxf(0.2, 1.0 - (1.0 - val) * (1.0 + ap))
+				"team_dmg_mult":
+					val = 1.0 + (val - 1.0) * (1.0 + ap)
+				_:
+					val *= 1.0 + ap
 		log.append("%s uses %s%s!" % [h.name, ab["name"], " (Awakened)" if h.ability_awakened else ""])
 		var living: Array[Hero] = []
 		living.assign(party.filter(func(hh): return hh.hp > 0))

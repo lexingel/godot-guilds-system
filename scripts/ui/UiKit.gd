@@ -99,7 +99,8 @@ var _last_scroll_y: float = 0.0
 var _revealed_rewards: Array = []   # the reward_options array whose flip-reveal already played (by reference)
 var selected_item_id: String = ""   # the Inventory item whose card shows in the right pane
 var _confirm_retreat: bool = false   # the run bar's Retreat asks once before ending the run
-var roster_tab: String = "overview"   # overview | gear | skills | history — the hero card's open tab
+var inv_filter: String = "all"   # Inventory item filter: all | weapon | armor | focus
+var roster_tab: String = "hero"   # overview | gear | skills | history — the hero card's open tab
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
 
@@ -419,9 +420,30 @@ func _icon(path: String, size: int = 24) -> TextureRect:
 ## Same visual as _icon(), but for an unequipped Item on the Roster's "drag to
 ## equip" strip: a DragIcon carrying {"kind": "inventory_item", "item_id",
 ## "slot_type"} so a matching _equip_slot_frame's drop_target can accept it.
+## An inventory tile: the item's own icon in its rarity frame, draggable onto
+## an equip slot; dimmed (and not draggable) while `compare_for` lacks the
+## attribute it needs.
+func _item_tile(it: Item, size: int = 44, compare_for: Hero = null) -> Control:
+	var wrap := Control.new()
+	wrap.custom_minimum_size = Vector2(size, size)
+	var frame := _icon(GameData.RARITY_FRAME_PATH.get(it.rarity, GameData.RARITY_FRAME_PATH["common"]), size)
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wrap.add_child(frame)
+	var inner := int(size * 0.72)
+	var d := _draggable_item_icon(it, inner, compare_for)
+	d.position = Vector2((size - inner) * 0.5, (size - inner) * 0.5)
+	wrap.add_child(d)
+	if compare_for != null and not GameState.attr_req_met(it, compare_for):
+		d.drag_payload = null
+		d.modulate = Color(0.45, 0.45, 0.5)
+		d.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
+	return wrap
+
+
 func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) -> DragIcon:
 	var t := DragIcon.new()
-	t.texture = load(GameData.ITEM_CATEGORY_ICON_PATH[it.category])
+	t.texture = load(GameData.item_icon(it))
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.custom_minimum_size = Vector2(size, size)
 	t.size = Vector2(size, size)
@@ -548,6 +570,8 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	var text := ", ".join(parts)
 	if it.implicit_kind != "":
 		text = "Base: %s · %s" % [Combat.describe_skill(it.implicit_kind, it.implicit_value), text]
+	if it.attr != "":
+		text = "+%d %s%s · %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr], (" (needs %d)" % it.attr_req) if it.attr_req > 0 else "", text]
 	if it.item_rank != "":
 		text = "Rank %s · %s" % [it.item_rank, text]
 	return text
@@ -740,6 +764,12 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 	if it.item_rank != "":
 		sub += " · Rank %s" % it.item_rank
 	lines.append(_bb(Palette.MUTED, sub))
+	if it.attr != "":
+		lines.append(_bb(Palette.EMBER_BRIGHT, "+%d %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr]]))
+		if it.attr_req > 0:
+			var met := compare_for == null or GameState.attr_req_met(it, compare_for)
+			var have := ("  (%s has %d)" % [compare_for.name.split(" the ")[0], Combat.hero_attr(compare_for, it.attr)]) if compare_for != null else ""
+			lines.append(_bb(Palette.MUTED if met else Palette.HAZARD, "Requires %d %s%s" % [it.attr_req, GameData.ATTR_LABEL[it.attr], have]))
 	if it.implicit_kind != "":
 		lines.append(_bb(Palette.MUTED, "Base: " + Combat.describe_skill(it.implicit_kind, it.implicit_value)))
 	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value]]:
@@ -772,6 +802,11 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 				# hazard guard reads inverted ("-8% hazard severity" is good), so
 				# judge better/worse by the raw delta, not the text's sign.
 				lines.append(_bb(Palette.RANK_E if d > 0 else Palette.HAZARD, ("▲ " if d > 0 else "▼ ") + Combat.describe_skill(kind, d)))
+				any = true
+		for at in GameData.ATTRIBUTES:
+			var da: int = (it.attr_bonus if it.attr == at else 0) - ((current.attr_bonus if current.attr == at else 0) if current else 0)
+			if da != 0:
+				lines.append(_bb(Palette.RANK_E if da > 0 else Palette.HAZARD, ("▲ " if da > 0 else "▼ ") + "%+d %s" % [da, GameData.ATTR_LABEL[at]]))
 				any = true
 		if current:
 			var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
@@ -888,6 +923,10 @@ func _loot_fit_note(obj, is_relic: bool, party: Array) -> Array:
 	var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
 	if fits.is_empty():
 		return ["No one in this party can use it", Palette.HAZARD, null]
+	var able: Array = fits.filter(func(h): return GameState.attr_req_met(obj, h))
+	if able.is_empty():
+		return ["Needs %d %s — no one here has that yet" % [obj.attr_req, GameData.ATTR_LABEL.get(obj.attr, "")], Palette.HAZARD, fits[0]]
+	fits = able
 	var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
 	if not free.is_empty():
 		return ["Fills an empty slot on %s" % free[0].name.split(" the ")[0], Palette.RANK_E, free[0]]
@@ -1385,7 +1424,7 @@ var _crafting_animating: bool = false
 const _KIND_LABEL := {
 	"dmg_pct": "Damage", "hp_pct": "HP", "first_round_pct": "First-Strike Damage",
 	"escalate_pct": "Escalating Damage", "mend_pct": "Mend (HP over time)",
-	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance",
+	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance", "ability_power": "Ability Power",
 	"wipe_guard": "Wipe Guard (survive a wipe)", "boss_alpha_strike": "Boss Alpha Strike",
 	"loot_rarity_pct": "Loot Rarity", "counter_pct": "Counter-Attack Chance",
 	"cooldown_shave_pct": "Ability Cooldown Shave", "kill_shield_pct": "On-Kill Shield",

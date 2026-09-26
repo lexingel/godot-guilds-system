@@ -268,9 +268,9 @@ const ITEM_CATEGORY_KINDS := {
 	"focus": ["dodge_pct", "speed_pct", "mend_pct", "hp_pct"],
 }
 const ITEM_NOUNS := {
-	"weapon": ["Blade", "Bow", "Staff", "Mace", "Dagger"],
-	"armor": ["Plate", "Guard", "Bracer", "Greaves", "Mail"],
-	"focus": ["Ring", "Amulet", "Charm", "Band", "Talisman"],
+	"weapon": ["Blade", "Bow", "Staff", "Mace", "Dagger", "Axe", "Spear", "Wand"],
+	"armor": ["Plate", "Guard", "Bracer", "Greaves", "Mail", "Robe", "Helm"],
+	"focus": ["Ring", "Amulet", "Charm", "Band", "Talisman", "Tome", "Orb"],
 }
 const ITEM_KIND_BASE := {
 	"dmg_pct": 0.12, "hp_pct": 0.12, "first_round_pct": 0.15, "escalate_pct": 0.04,
@@ -482,7 +482,82 @@ const ITEM_BASE_IMPLICIT := {
 	"Charm": {"kind": "dodge_pct", "value": 0.04},
 	"Band": {"kind": "first_round_pct", "value": 0.06},
 	"Talisman": {"kind": "hazard_guard_pct", "value": 0.06},
+	"Axe": {"kind": "dmg_pct", "value": 0.05},
+	"Spear": {"kind": "first_round_pct", "value": 0.08},
+	"Wand": {"kind": "mend_pct", "value": 0.02},
+	"Robe": {"kind": "mend_pct", "value": 0.02},
+	"Helm": {"kind": "hp_pct", "value": 0.06},
+	"Tome": {"kind": "escalate_pct", "value": 0.015},
+	"Orb": {"kind": "dodge_pct", "value": 0.04},
 }
+
+## Every base type and Legendary has its own icon (assets/items/).
+static func item_base(it) -> String:
+	if it.unique_id != "":
+		return ""
+	for word in str(it.name).split(" "):
+		if ITEM_BASE_IMPLICIT.has(word):
+			return word
+	return ""
+
+
+static func item_icon(it) -> String:
+	var path := "res://assets/items/%s.png" % (("u_" + str(it.unique_id)) if it.unique_id != "" else item_base(it).to_lower())
+	return path if ResourceLoader.exists(path) else ITEM_CATEGORY_ICON_PATH.get(str(it.category), ITEM_CATEGORY_ICON_PATH["weapon"])
+
+
+# ---------------- Attributes ----------------
+## Three hero attributes. Every point above the baseline adds the stats
+## below (a point under it costs them); heroes start with a role spread and
+## get ATTR_POINTS_PER_LEVEL to spend at each level-up, on top of a smaller
+## automatic growth (LEVEL_GROWTH). Items roll a bonus to their base type's
+## attribute and, from Rare up, need some of it to equip.
+const ATTRIBUTES := ["might", "agility", "focus"]
+const ATTR_LABEL := {"might": "Might", "agility": "Agility", "focus": "Focus"}
+const ATTR_BASELINE := 5
+const ATTR_POINTS_PER_LEVEL := 3
+const LEVEL_GROWTH := 0.05   # base HP and damage per level (was 8% with no attributes)
+const ATTR_EFFECTS := {
+	"might": {"dmg_pct": 0.02, "hp_pct": 0.015},
+	"agility": {"speed_pct": 0.02, "dodge_pct": 0.008, "first_round_pct": 0.02},
+	"focus": {"ability_power": 0.04, "mend_pct": 0.002},
+}
+const ATTR_DESC := {
+	"might": "+2% damage and +1.5% HP per point above 5",
+	"agility": "+2% speed, +0.8% dodge and +2% first-strike per point above 5",
+	"focus": "+4% ability power and +0.2% mend per point above 5",
+}
+## Starting attributes per role [might, agility, focus] and how an automatic
+## level-up spends its points (recruits, the Champion and old saves).
+const ROLE_ATTRS := {
+	"warrior": [8, 5, 3], "rogue": [5, 8, 3], "ranger": [4, 8, 4],
+	"mage": [3, 4, 9], "cleric": [4, 3, 9],
+}
+const ROLE_ATTR_SPREAD := {
+	"warrior": ["might", "might", "agility"], "rogue": ["agility", "agility", "might"],
+	"ranger": ["agility", "agility", "focus"], "mage": ["focus", "focus", "agility"],
+	"cleric": ["focus", "focus", "might"],
+}
+const ITEM_BASE_ATTR := {
+	"Blade": "might", "Mace": "might", "Axe": "might", "Plate": "might", "Mail": "might", "Helm": "might", "Guard": "might",
+	"Bow": "agility", "Dagger": "agility", "Spear": "agility", "Bracer": "agility", "Greaves": "agility", "Band": "agility", "Charm": "agility",
+	"Staff": "focus", "Wand": "focus", "Robe": "focus", "Ring": "focus", "Amulet": "focus", "Talisman": "focus", "Tome": "focus", "Orb": "focus",
+}
+const UNIQUE_ARCH_ATTR := {"executioner": "might", "attrition": "might", "guardian": "might", "opener": "agility", "evasion": "agility", "sustain": "focus"}
+const ITEM_ATTR_BONUS := {"common": 1, "rare": 2, "epic": 3, "legendary": 4}
+const ITEM_ATTR_REQ := {"common": 0, "rare": 7, "epic": 10, "legendary": 13}
+
+
+static func role_attrs(role: String) -> Dictionary:
+	var v: Array = ROLE_ATTRS.get(role, [ATTR_BASELINE, ATTR_BASELINE, ATTR_BASELINE])
+	return {"might": int(v[0]), "agility": int(v[1]), "focus": int(v[2])}
+
+
+## The attribute an item trains / needs.
+static func item_attr_for(it) -> String:
+	if it.unique_id != "":
+		return str(UNIQUE_ARCH_ATTR.get(str(find_unique_item(it.unique_id).get("arch", "")), "might"))
+	return str(ITEM_BASE_ATTR.get(item_base(it), "might"))
 
 ## Item rank = the rank of the rift it dropped in (GameState.loot_rank), and
 ## scales every rolled number on it — so higher-rank rifts are worth the risk
@@ -1513,7 +1588,7 @@ const CLASS_POOL := [
 ]
 
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
-const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "wipe_guard", "boss_alpha_strike"]
+const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "ability_power", "wipe_guard", "boss_alpha_strike"]
 
 # Guild Management: 4 branches x 4-5 nodes each. Each node's display effect
 # string is computed by Combat.describe_node_effect(node_id, level) — a

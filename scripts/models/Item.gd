@@ -29,6 +29,9 @@ var drawback_kind: String = ""  # "" = no drawback; a Legendary's cost, same BUI
 var drawback_value: float = 0.0 # stored negative
 var locked_role: String = ""    # "" = fits any role; else only that role's heroes can equip
 var locked_subclasses: Array[String] = []   # empty = no subclass restriction
+var attr: String = ""           # the attribute it trains / needs (GameData.ITEM_BASE_ATTR)
+var attr_bonus: int = 0         # + that attribute while equipped
+var attr_req: int = 0           # that attribute needed to equip (0 = none)
 
 
 func slot_type() -> String:
@@ -46,6 +49,7 @@ func to_dict() -> Dictionary:
 		"socketed_kind": socketed_kind, "socketed_value": socketed_value,
 		"unique_id": unique_id, "drawback_kind": drawback_kind, "drawback_value": drawback_value,
 		"locked_role": locked_role, "locked_subclasses": locked_subclasses,
+		"attr": attr, "attr_bonus": attr_bonus, "attr_req": attr_req,
 	}
 
 
@@ -75,4 +79,13 @@ static func from_dict(d: Dictionary) -> Item:
 	it.locked_role = d.get("locked_role", "")
 	var subs: Array = d.get("locked_subclasses", [])
 	it.locked_subclasses.assign(subs)
+	if d.has("attr"):
+		it.attr = str(d["attr"])
+		it.attr_bonus = int(d.get("attr_bonus", 0))
+		it.attr_req = int(d.get("attr_req", 0))
+	else:
+		# Items from before attributes: they get their bonus, but no
+		# requirement, so nothing already equipped falls off.
+		it.attr = GameData.item_attr_for(it)
+		it.attr_bonus = int(GameData.ITEM_ATTR_BONUS.get(it.rarity, 1))
 	return it

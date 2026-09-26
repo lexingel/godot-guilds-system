@@ -438,7 +438,11 @@ func load_save() -> bool:
 	coins = data.get("coins", 60)
 	crystals = data.get("crystals", 15)
 	tokens = data.get("tokens", 0)
+	Hero.attrs_migrated = 0
 	heroes.assign(data.get("heroes", []).map(func(d): return Hero.from_dict(d)))
+	if Hero.attrs_migrated > 0:
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Heroes have attributes now",
+			"text": "Might, Agility and Focus — each hero has points from their past levels to spend (Roster > Hero)."})
 	recruit_pool.assign(data.get("recruit_pool", []).map(func(d): return Hero.from_dict(d)))
 	for h in heroes:
 		migrate_hero_skill_keys(h)
@@ -2194,6 +2198,30 @@ func item_slot_type_of(it: Item) -> String:
 ## A Legendary item's locked_role/locked_subclasses restricts who can equip
 ## it — empty on both means no restriction (every normal item, and most
 ## Legendaries).
+## Has this hero enough of the item's attribute to equip it?
+func attr_req_met(it: Item, h: Hero) -> bool:
+	return it.attr_req <= 0 or Combat.hero_attr(h, it.attr) - (it.attr_bonus if it.equipped_to == h.id else 0) >= it.attr_req
+
+
+func auto_assign_attrs(hero_id: String) -> void:
+	var h := find_hero(hero_id)
+	if not h or h.attr_points <= 0:
+		return
+	Combat.auto_spend_attrs(h)
+	save()
+	state_changed.emit()
+
+
+func spend_attr_point(hero_id: String, a: String) -> void:
+	var h := find_hero(hero_id)
+	if not h or h.attr_points <= 0 or not GameData.ATTRIBUTES.has(a):
+		return
+	h.attrs[a] = int(h.attrs.get(a, GameData.ATTR_BASELINE)) + 1
+	h.attr_points -= 1
+	save()
+	state_changed.emit()
+
+
 func item_fits_hero(it: Item, h: Hero) -> bool:
 	if it.locked_role != "" and h.cls_id != it.locked_role:
 		return false
@@ -2206,25 +2234,27 @@ func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -
 	var h := find_hero(hero_id)
 	if not h:
 		return
+	# Validate the new item first — a rejected equip must not empty the slot.
+	var target: Item = null
+	if item_id != "":
+		for it in items:
+			if it.id == item_id:
+				target = it
+				break
+		if not target or target.slot_type() != slot_type:
+			return
+		if not item_fits_hero(target, h) or not attr_req_met(target, h):
+			return
+		var cap := GameData.weapon_slots(h.pool_id) if slot_type == "weapon" else GameData.gear_slots(h.rank)
+		if idx >= cap:
+			return
 	for it in items:
 		if it.equipped_to == hero_id and it.slot_type() == slot_type and it.equipped_idx == idx:
 			it.equipped_to = ""
 			it.equipped_idx = -1
-	if item_id == "":
+	if target == null:
 		save()
 		state_changed.emit()
-		return
-	var target: Item = null
-	for it in items:
-		if it.id == item_id:
-			target = it
-			break
-	if not target or target.slot_type() != slot_type:
-		return
-	if not item_fits_hero(target, h):
-		return
-	var cap := GameData.weapon_slots(h.pool_id) if slot_type == "weapon" else GameData.gear_slots(h.rank)
-	if idx >= cap:
 		return
 	target.equipped_to = hero_id
 	target.equipped_idx = idx

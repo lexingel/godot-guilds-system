@@ -660,7 +660,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				var obj = opt["obj"]
 				var is_relic: bool = opt["loot_type"] == "relic"
 				var desc: String = _loot_desc(obj, is_relic)
-				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.ITEM_CATEGORY_ICON_PATH[obj.category]
+				var icon_path: String = GameData.RELIC_TYPE_ICON_PATH[obj.type] if is_relic else GameData.item_icon(obj)
 				var note := _loot_fit_note(obj, is_relic, GameState.current_party())
 				reward_row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), desc, func(idx=i, legendary=(obj.rarity == "legendary")):
 					GameState.pick_combat_reward(idx)

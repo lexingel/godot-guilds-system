@@ -35,6 +35,8 @@ var base_dmg: int
 var base_spd: int = 10   # turn-order speed — role-based at generation, not level-scaled; see Combat.spd_of
 var trait_name: String = ""      # "" means no trait ("Steadfast")
 var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
+var attrs: Dictionary = {}       # "might"/"agility"/"focus" -> base value (items add on top; see Combat.hero_attr)
+var attr_points: int = 0         # unspent attribute points (ATTR_POINTS_PER_LEVEL per level-up)
 var down_runs: int = 0           # rift runs this hero still sits out while recovering; 0 = not downed (see GameState.pass_time)
 var bedded: bool = false
 var hp: int = 0
@@ -44,6 +46,9 @@ var formation: String = "front"  # "front" or "back" — biases monster retaliat
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
 var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds GameData.EARNED_TRAITS
 var earned_traits: Array[String] = []     # GameData.EARNED_TRAITS ids this hero has unlocked through play
+
+
+static var attrs_migrated := 0   # heroes converted from a pre-attribute save this session (for a one-off notice)
 
 
 func is_downed() -> bool:
@@ -56,7 +61,7 @@ func to_dict() -> Dictionary:
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
-		"down_runs": down_runs, "bedded": bedded, "hp": hp, "is_champion": is_champion,
+		"down_runs": down_runs, "bedded": bedded, "attrs": attrs, "attr_points": attr_points, "hp": hp, "is_champion": is_champion,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
@@ -111,6 +116,21 @@ static func from_dict(d: Dictionary) -> Hero:
 	if int(d.get("downed_until", 0)) > int(Time.get_unix_time_from_system() * 1000):
 		h.down_runs = max(h.down_runs, 1)
 	h.bedded = d.get("bedded", false)
+	if d.has("attrs"):
+		h.attrs = d["attrs"]
+		h.attr_points = int(d.get("attr_points", 0))
+	else:
+		# From before attributes: the role's starting spread, the per-level
+		# growth scaled back from 8% to the new 5%, and every level's points
+		# handed back unspent to allocate.
+		h.attrs = GameData.role_attrs(GameData.find_class(h.pool_id).get("role", h.cls_id))
+		var lv: int = int(d.get("level", 1))
+		var k: float = (1.0 + GameData.LEVEL_GROWTH * (lv - 1)) / (1.0 + 0.08 * (lv - 1))
+		h.base_hp = max(1, int(round(float(d.get("base_hp", 10)) * k)))
+		h.base_dmg = max(1, int(round(float(d.get("base_dmg", 1)) * k)))
+		if not bool(d.get("is_champion", false)):
+			h.attr_points = (lv - 1) * GameData.ATTR_POINTS_PER_LEVEL
+		attrs_migrated += 1
 	h.hp = d.get("hp", 0)
 	h.is_champion = d.get("is_champion", false)
 	h.ability_cooldown = d.get("ability_cooldown", 0)
