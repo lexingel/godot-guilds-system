@@ -478,7 +478,7 @@ func _banner(path: String, width: float, height: float) -> Control:
 	t.custom_minimum_size = Vector2(width, height)
 	t.size = Vector2(width, height)
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip.add_child(t)
 	return clip

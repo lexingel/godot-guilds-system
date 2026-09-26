@@ -372,13 +372,28 @@ func _render_rift_run(v: VBoxContainer) -> void:
 func _render_shop_node(v: VBoxContainer) -> void:
 	GameState.ensure_shop_offers()
 	var ns: Dictionary = GameState.run["node_state"]
-	v.add_child(_banner(GameData.SHOP_BG, 700, 190))
-	v.add_child(_label("Rift Hallway Shop"))
+	v = _node_split(v, GameData.SHOP_BG)
 	var offers: Array = ns["offers"]
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	head.add_child(_label("Rift Hallway Shop", 18))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(spacer)
+	var cost := GameState.shop_reroll_cost()
+	var reroll := _icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll offers (%dc)" % cost, func():
+		GameState.reroll_shop()
+		render()
+	)
+	reroll.tooltip_text = "Replace every offer you haven't bought. Costs more each time."
+	reroll.disabled = GameState.coins < cost or offers.all(func(o): return o.get("bought", false))
+	head.add_child(reroll)
+	v.add_child(head)
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
+	var party := GameState.current_party()
 	for i in offers.size():
 		var off: Dictionary = offers[i]
 		var obj = off["obj"]
@@ -389,22 +404,50 @@ func _render_shop_node(v: VBoxContainer) -> void:
 
 		var card := PanelContainer.new()
 		card.theme_type_variation = &"CardPanelViolet"
-		card.custom_minimum_size.x = 200
-		if not is_relic:
-			_rich_tip(card, _item_card(obj))
+		card.custom_minimum_size.x = 260
 		var cv := _vbox(4)
 		var icon_wrap := CenterContainer.new()
 		icon_wrap.add_child(_icon(icon_path, 40))
 		cv.add_child(icon_wrap)
-		cv.add_child(_label(_loot_display_name(obj), 12))
-		cv.add_child(_wrap_label(desc, 11, true))
+		var nl := _label(_loot_display_name(obj), 14)
+		nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(str(obj.rarity), Palette.TEXT))
+		cv.add_child(nl)
+		cv.add_child(_wrap_label(desc, 12, true))
+		# Who it's for: an item names the party member it helps (hover for the
+		# full comparison); a relic says whether a slot is free.
+		var fit_text := ""
+		var fit_color: Color = Palette.MUTED
+		if is_relic:
+			var used := Combat.equipped_relics().size()
+			var cap := GameState.relic_slot_cap()
+			fit_text = "Relic slots %d/%d — %s" % [used, cap, "equips right away" if used < cap else "goes to your Inventory"]
+		else:
+			var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
+			if fits.is_empty():
+				fit_text = "No one in this party can use it"
+				fit_color = Palette.HAZARD
+				_rich_tip(card, _item_card(obj))
+			else:
+				var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
+				var who: Hero = free[0] if not free.is_empty() else fits[0]
+				_rich_tip(card, _item_card(obj, who))
+				if not free.is_empty():
+					fit_text = "Fills an empty slot on %s" % who.name.split(" the ")[0]
+					fit_color = Palette.RANK_E
+				else:
+					fit_text = "For %s — hover to compare" % ", ".join(fits.map(func(h): return h.name.split(" the ")[0]))
+		var fl := _wrap_label(fit_text, 12)
+		fl.add_theme_color_override("font_color", fit_color)
+		cv.add_child(fl)
 		if bought:
 			cv.add_child(_label("Bought", 12, true))
 		else:
-			cv.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy (%dc)" % int(off["price"]), func(idx=i):
+			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Buy — %dc" % int(off["price"]), func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
-			))
+			)
+			buy.disabled = GameState.coins < int(off["price"])
+			cv.add_child(buy)
 		card.add_child(cv)
 		grid.add_child(card)
 	v.add_child(grid)
@@ -432,6 +475,53 @@ func _hazard_severity_label(dmg_mult: float) -> String:
 	elif dmg_mult <= 1.15:
 		return "Moderate"
 	return "Severe"
+
+
+## Shop and hazard nodes: the node's art on the left at its own 320x200
+## shape, the choices beside it — everything on screen without scrolling.
+## Returns the right-hand column to build into.
+func _node_split(v: VBoxContainer, art_path: String) -> VBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var art := _banner(art_path, 320, 200)
+	art.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(art)
+	var right := _vbox(10)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(right)
+	v.add_child(row)
+	return right
+
+
+func _hazard_damage_text(pv: Dictionary) -> String:
+	if pv["anchor"]:
+		return "Your Anchor Artifact blocks it — no damage"
+	if int(pv["total"]) <= 0:
+		return "No damage (fully warded)"
+	var t := "%d damage, about %d per hero" % [int(pv["total"]), int(pv["per_hero"])]
+	if int(pv["absorbed"]) > 0:
+		t += " (wards absorb %d)" % int(pv["absorbed"])
+	return t
+
+
+## One hazard choice: its button, what it does, and a red warning naming
+## anyone it would knock out.
+func _hazard_option(icon_path: String, title: String, lines: Array, downs: Array, cb: Callable, disabled: bool = false) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.custom_minimum_size.x = 260
+	var cv := _vbox(6)
+	var b := _icon_button(icon_path, title, cb)
+	b.size_flags_horizontal = Control.SIZE_FILL
+	b.disabled = disabled
+	cv.add_child(b)
+	for line in lines:
+		cv.add_child(_wrap_label(str(line), 12, disabled))
+	if not downs.is_empty():
+		var w := _wrap_label("Knocks out: %s" % ", ".join(downs), 12)
+		w.add_theme_color_override("font_color", Palette.HAZARD)
+		cv.add_child(w)
+	card.add_child(cv)
+	return card
 
 
 ## "Gear Up" toggle on non-combat rift nodes (shop/hazard/fork) — same
@@ -474,7 +564,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	var hz: Dictionary = ns["hazard"]
 	var bg_path: String = GameData.HAZARD_BG.get(str(hz["id"]), "")
 	if bg_path != "":
-		v.add_child(_banner(bg_path, 700, 190))
+		v = _node_split(v, bg_path)
 
 	var dmg_mult: float = float(hz["dmg_mult"])
 	var name_row := HBoxContainer.new()
@@ -486,22 +576,23 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	v.add_child(name_row)
 
 	if not ns.get("resolved", false):
+		# Each choice spells out exactly what it does (the damage is fixed,
+		# so GameState.hazard_preview is the real number, not an estimate).
+		var bonus_pct := int(round(float(hz["bonus_chance"]) * 100.0))
+		var bonus_kind := "Coins" if str(hz["bonus_type"]) == "coins" else "Crystals"
+		var push := GameState.hazard_preview(1.0)
+		var risk := GameState.hazard_preview(2.0)
 		var choice_row := HBoxContainer.new()
-		choice_row.add_theme_constant_override("separation", 8)
-		choice_row.add_child(_icon_button("res://assets/skills/boots.png", "Push Through", func():
-			GameState.push_through_hazard()
-			render()
-		))
-		var bypass_btn := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass (%d Crystals)" % GameState.HAZARD_BYPASS_COST, func():
-			GameState.bypass_hazard()
-			render()
-		)
-		bypass_btn.disabled = not GameState.can_afford_hazard_bypass()
-		choice_row.add_child(bypass_btn)
-		choice_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot", func():
-			GameState.risk_hazard()
-			render()
-		))
+		choice_row.add_theme_constant_override("separation", 10)
+		choice_row.add_child(_hazard_option("res://assets/skills/boots.png", "Push Through",
+			[_hazard_damage_text(push), "%d%% chance of 2-6 %s" % [bonus_pct, bonus_kind]], push["downs"],
+			func(): GameState.push_through_hazard(); render()))
+		choice_row.add_child(_hazard_option(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass",
+			["No damage, no reward", "Costs %d Crystals (you have %d)" % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
+			func(): GameState.bypass_hazard(); render(), not GameState.can_afford_hazard_bypass()))
+		choice_row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot",
+			[_hazard_damage_text(risk), "Guaranteed 2-6 %s" % bonus_kind], risk["downs"],
+			func(): GameState.risk_hazard(); render()))
 		v.add_child(choice_row)
 	else:
 		for line in ns.get("log", []):

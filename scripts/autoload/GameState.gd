@@ -1014,36 +1014,52 @@ func ensure_hazard() -> void:
 ## damage roll (1.0 = unchanged), `bonus_chance_override` replaces the
 ## hazard's own bonus_chance when >= 0.0 (a negative value means "use the
 ## hazard's own chance unmodified").
-func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
-	var diff := _diff()
+## What a hazard choice would do, without doing it: the hazard's damage is
+## fixed (no roll), so this is exact. `dmg_scale` is 1.0 to push through, 2.0
+## to risk it. {anchor, total, absorbed, per_hero, downs: [hero names]}.
+## _apply_hazard uses the same numbers, so the preview can't drift from it.
+func hazard_preview(dmg_scale: float) -> Dictionary:
+	ensure_hazard()
 	var party: Array[Hero] = []
 	party.assign(current_party().filter(func(h): return not h.is_downed() and h.hp > 0))
-	ensure_hazard()
+	if not run.get("anchor_used", false) and anchor_artifact():
+		return {"anchor": true, "total": 0, "absorbed": 0, "per_hero": 0, "downs": [], "party": party}
+	var hz: Dictionary = run["node_state"]["hazard"]
+	var dmg: float = (6.0 + int(_diff()["floors"]) * 2.0) * float(hz["dmg_mult"]) * dmg_scale
+	var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct") + Combat.bond_bonus_for(party, "hazard_guard_pct"))
+	dmg = round(dmg * (1.0 - guard))
+	var absorbed: int = min(int(run.get("shield", 0)), int(dmg))
+	dmg -= absorbed
+	var per: float = dmg / party.size() if party.size() > 0 else 0.0
+	var downs: Array[String] = []
+	for h in party:
+		if dmg > 0 and int(round(h.hp - per)) <= 0:
+			downs.append(h.name.split(" the ")[0])
+	return {"anchor": false, "total": int(dmg), "absorbed": absorbed, "per_hero": int(round(per)), "downs": downs, "party": party}
+
+
+func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
+	var pv := hazard_preview(dmg_scale)
+	var party: Array[Hero] = pv["party"]
 	var ns: Dictionary = run["node_state"]
 	var hz: Dictionary = ns["hazard"]
 	var log: Array[String] = []
-	var dmg: float = (6.0 + int(diff["floors"]) * 2.0) * float(hz["dmg_mult"]) * dmg_scale
-	if not run.get("anchor_used", false) and anchor_artifact():
+	if pv["anchor"]:
 		run["anchor_used"] = true
 		log.append("The Anchor Artifact snuffs the hazard before it strikes.")
-		dmg = 0.0
 	else:
-		var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct") + Combat.bond_bonus_for(party, "hazard_guard_pct"))
-		dmg = round(dmg * (1.0 - guard))
-		var shield: int = run.get("shield", 0)
-		var abs_amt: int = min(shield, int(dmg))
-		shield -= abs_amt
-		dmg -= abs_amt
-		run["shield"] = shield
-		if abs_amt > 0:
-			log.append("Relic wards absorb %d of the hazard." % abs_amt)
+		var absorbed: int = pv["absorbed"]
+		run["shield"] = int(run.get("shield", 0)) - absorbed
+		if absorbed > 0:
+			log.append("Relic wards absorb %d of the hazard." % absorbed)
+		var dmg: int = pv["total"]
 		if dmg > 0 and party.size() > 0:
-			var per := dmg / party.size()
+			var per: float = float(dmg) / party.size()
 			for h in party:
 				h.hp = max(0, int(round(h.hp - per)))
 				if h.hp <= 0:
 					h.downed_until = int(Time.get_unix_time_from_system() * 1000) + recovery_ms()
-			log.append("The hazard deals %d damage across the party." % int(dmg))
+			log.append("The hazard deals %d damage across the party." % dmg)
 	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
 	if randf() < bonus_chance:
 		var c := randi() % 5 + 2
@@ -1099,17 +1115,40 @@ func ensure_shop_offers() -> void:
 	var boosted := pending_shop_boost
 	var offers: Array = []
 	for i in 3:
-		var force_epic := boosted and i == 0
-		var rarity := "epic" if force_epic else Combat.weighted_rarity()
-		var loot: Dictionary = {"loot_type": "relic", "obj": Combat.gen_relic(rarity)} if force_epic else Combat.gen_loot(rarity)
-		var rar := GameData.find_rarity(rarity)
-		var price: int = max(4, int(round((10.0 + 15.0 * float(rar["mult"])) * (1.0 - merchant_price_reduction()))))
-		loot["price"] = price
-		loot["bought"] = false
-		offers.append(loot)
+		offers.append(_gen_shop_offer(boosted and i == 0))
 	if boosted:
 		pending_shop_boost = false
-	run["node_state"] = {"type": "shop", "offers": offers}
+	run["node_state"] = {"type": "shop", "offers": offers, "rerolls": 0}
+
+
+func _gen_shop_offer(force_epic: bool = false) -> Dictionary:
+	var rarity := "epic" if force_epic else Combat.weighted_rarity()
+	var loot: Dictionary = {"loot_type": "relic", "obj": Combat.gen_relic(rarity)} if force_epic else Combat.gen_loot(rarity)
+	var rar := GameData.find_rarity(rarity)
+	loot["price"] = max(4, int(round((10.0 + 15.0 * float(rar["mult"])) * (1.0 - merchant_price_reduction()))))
+	loot["bought"] = false
+	return loot
+
+
+## Rerolling a shop costs more each time in the same shop.
+func shop_reroll_cost() -> int:
+	return 8 + 6 * int(run.get("node_state", {}).get("rerolls", 0))
+
+
+## Replaces every offer not yet bought with a fresh one.
+func reroll_shop() -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var cost := shop_reroll_cost()
+	if ns.get("type") != "shop" or coins < cost:
+		return
+	coins -= cost
+	var offers: Array = ns["offers"]
+	for i in offers.size():
+		if not offers[i].get("bought", false):
+			offers[i] = _gen_shop_offer()
+	ns["rerolls"] = int(ns.get("rerolls", 0)) + 1
+	save()
+	state_changed.emit()
 
 
 func buy_shop_offer(idx: int) -> void:

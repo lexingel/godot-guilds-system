@@ -238,7 +238,7 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color, big: boo
 ## never awaited, so it can't hold up the turn's own animation chain.
 ## Combat hotkeys (see _combat_hotkeys, filled while the action bar builds).
 func _unhandled_input(event: InputEvent) -> void:
-	if screen != "rift_run" or not (event is InputEventKey) or not event.pressed or event.echo:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	var key := OS.get_keycode_string(event.keycode)
 	if _combat_hotkeys.has(key):

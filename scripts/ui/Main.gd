@@ -152,6 +152,11 @@ func render() -> void:
 	root.add_child(outer)
 	if screen not in ["title", "load_game", "credits", "onboard"]:
 		_topbar(outer, _breadcrumb_for_screen())
+		var back := _header_back()
+		if not back.is_empty():
+			_combat_hotkeys["Escape"] = back[0]
+		if screen in ["terminal", "crafting_hall", "rift_hall", "rift_map"]:
+			outer.add_child(_quick_nav())
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
 
@@ -314,6 +319,93 @@ func _count_label(key: String, value: int, size: int) -> Label:
 		tw.parallel().tween_property(l, "modulate", Palette.RANK_S if value > from else Palette.HAZARD, 0.1)
 		tw.tween_property(l, "modulate", Color.WHITE, 0.4)
 	return l
+
+
+## Every camp destination, reachable from any camp-side screen in one click
+## or one key (1-9, 0), instead of Camp -> building -> picker -> screen.
+## [id, label, camp building whose attention badge it shares]
+const QUICK_NAV := [
+	["roster", "Roster", "Command Tent"],
+	["recruits", "Recruits", "Hero Recruits"],
+	["medical", "Medical", "Medical Tent"],
+	["inventory", "Inventory", ""],
+	["crafting", "Crafting", "Trading Post"],
+	["quests", "Quests", "Scholar's Lodge"],
+	["rift", "Rift Hall", "Rift Gate"],
+	["rift_map", "Rift Map", ""],
+	["management", "Manage", ""],
+	["bestiary", "Bestiary", ""],
+	["compendium", "Codex", ""],
+]
+
+
+func _quick_nav_current() -> String:
+	match screen:
+		"crafting_hall": return "crafting"
+		"rift_hall": return "rift"
+		"rift_map": return "rift_map"
+		"terminal": return "" if term_tab == "camp" else term_tab
+	return ""
+
+
+func _quick_go(id: String) -> void:
+	hub_cluster = ""
+	inv_category = ""
+	mgmt_branch = ""
+	medical_picker_bed = -1
+	match id:
+		"crafting": screen = "crafting_hall"
+		"rift": screen = "rift_hall"
+		"rift_map": screen = "rift_map"
+		_:
+			screen = "terminal"
+			term_tab = id
+	render()
+
+
+func _quick_nav() -> Control:
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 6)
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	var badges := _camp_badges()
+	var current := _quick_nav_current()
+	for i in QUICK_NAV.size():
+		var e: Array = QUICK_NAV[i]
+		var id: String = e[0]
+		var key := str((i + 1) % 10) if i < 10 else ""
+		var go := _quick_go.bind(id)
+		var b := _button("", go)
+		b.custom_minimum_size = Vector2(76, 54)
+		b.toggle_mode = true
+		b.button_pressed = id == current
+		b.tooltip_text = "%s%s" % [e[1], "  (key %s)" % key if key != "" else ""]
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var tile := VBoxContainer.new()
+		tile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		tile.alignment = BoxContainer.ALIGNMENT_CENTER
+		tile.add_theme_constant_override("separation", 1)
+		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var ic := _icon(GameData.CAMP_HUB_ICON_PATH[id], 26)
+		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tile.add_child(ic)
+		var nl := _label(str(e[1]), 12)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tile.add_child(nl)
+		b.add_child(tile)
+		if key != "":
+			_combat_hotkeys[key] = go
+			var kl := _label(key, 12)
+			kl.add_theme_color_override("font_color", Palette.MUTED)
+			kl.position = Vector2(3, 0)
+			b.add_child(kl)
+		var badge: Array = badges.get(str(e[2]), [])
+		if not badge.is_empty():
+			var chip := _count_badge(str(badge[0]), str(badge[1]))
+			chip.position = Vector2(58, -6)
+			b.add_child(chip)
+		bar.add_child(b)
+	return bar
 
 
 ## The header's back button for this screen: [callback, destination name],
