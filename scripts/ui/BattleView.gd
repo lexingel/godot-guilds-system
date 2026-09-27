@@ -915,21 +915,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var log_party: Array[Hero] = GameState.current_party()
 		v.add_child(_log_richtext(result["log"], log_party, [{"name": result["monster_name"]}]))
 
-	var is_riftbreak: bool = GameState.run.get("is_riftbreak", false)
 	if result["won"] and result.has("tower"):
 		v.add_child(_tower_victory(result))
 		return
 	if result["won"]:
-		if is_riftbreak:
-			# A Riftbreak is a consequence, not an opportunity — no loot, no
-			# reward choice, straight back to the Terminal.
-			v.add_child(_label("Threat repelled. The rift's spillover is contained — no loot from a fight like this."))
-			v.add_child(_icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
-				GameState.finish_run()
-				screen = "terminal"
-				render()
-			))
-			return
 		# A single violet-domain banner frame for the whole victory moment
 		# (heading + currency gained + reward cards) instead of plain stacked
 		# labels — the same "wrap it in one bordered panel" treatment the
@@ -1025,20 +1014,6 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				cont.tooltip_text = "Decide what happens to the downed hero first (above)"
 			victory_col.add_child(cont)
 		v.add_child(victory_frame)
-	elif is_riftbreak and int(GameState.run.get("riftbreak_worst_index", 0)) >= 6:
-		# Worst merged rank was S/SS/SSS — a forced game over, whether the
-		# fight was lost outright or the player retreated from it. Either way
-		# the rift's threat was never actually contained, so both carry the
-		# same consequence. Fires immediately with no confirm step (unlike
-		# the voluntary "Reset Guild" button) since this is a consequence,
-		# not a choice.
-		v.add_child(_label("Due to the rift break, a large portion of the world is in struggle now. Your guild has been erased."))
-		v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found a New Guild", func():
-			GameState.reset()
-			GameState.save()
-			screen = "onboard"
-			render()
-		))
 	else:
 		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
 		if GameState.run.has("tower"):
@@ -1051,8 +1026,6 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var reasons: Array = result.get("defeat_reasons", [])
 		if not reasons.is_empty():
 			v.add_child(_defeat_card(reasons))
-		if result.has("riftbreak_compensation_coins"):
-			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Gold, -%d Essence)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
 		if str(result.get("flavor", "")) != "":
 			v.add_child(_label(str(result["flavor"]), 12, true))
 		var in_tower := GameState.run.has("tower")
@@ -1223,8 +1196,7 @@ func _tower_victory(result: Dictionary) -> Control:
 ## A short recap for the two screens a run can end on (sealed or wiped/
 ## retreated) — floor reached, net currency change this run (Gold/Essence
 ## can be spent as well as earned mid-run, e.g. at a shop, so "net
-## change" is the honest framing, not "earned"), and heroes lost to Hardcore
-## if any. Deliberately reads only numbers that already exist or are a cheap
+## change" is the honest framing, not "earned"), and heroes lost if any. Deliberately reads only numbers that already exist or are a cheap
 ## snapshot diff — no new combat-hot-path instrumentation.
 func _run_summary_lines() -> Array[String]:
 	var lines: Array[String] = []

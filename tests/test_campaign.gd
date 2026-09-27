@@ -44,7 +44,7 @@ func run() -> void:
 	check(GameState.pending_stories.size() == 2 and str(GameState.pending_stories[1]["title"]).contains("Act II"), "outro card then the Act II intro")
 	GameState.finish_run()
 	# A normal seal doesn't complete an act.
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.seal_rift()
 	check(GameState.campaign_act == 2, "a normal rift seal doesn't advance the campaign")
 	GameState.finish_run()

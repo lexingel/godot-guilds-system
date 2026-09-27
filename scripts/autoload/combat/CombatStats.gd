@@ -7,7 +7,7 @@ extends Node
 ##
 ## Guild Management bonuses (tactical_bonus, crystal_yield_bonus, has_cap
 ## gates, etc.) are read straight from GameState rather than duplicated here.
-## Elite encounters, Hardcore Mode, and the Champion system are all live —
+## Elite encounters and the Champion system are all live —
 ## `kind` is "combat"/"elite"/"boss".
 
 const RARITY_NOUNS := ["Sigil", "Charm", "Shard", "Idol", "Emblem"]
@@ -157,18 +157,20 @@ func power_of(h: Hero) -> int:
 	return dmg_of(h) * 2 + round(max_hp(h) / 3.0)
 
 
-## The power a party should bring to a rift: its difficulty's rec_power
-## (Endless = cycle 0), nudged up by a mapped rift's rank modifiers. The
-## difficulty curve was tuned against this ratio — see MONSTER_FLOOR_SCALE.
+## The power a party should bring to a rift: its difficulty's rec_power,
+## scaled by a ladder rank's foe multipliers (a rank also picks its own base).
+## The difficulty curve was tuned against this ratio — see MONSTER_FLOOR_SCALE.
 func recommended_power(diff_id: String, rift_rank: String = "") -> int:
 	if diff_id == "endless":
 		return GameData.ENDLESS_REC_POWER
+	var mods: Dictionary = GameData.find_rift_rank(rift_rank) if rift_rank != "" else {}
+	if not mods.is_empty():
+		diff_id = str(mods["base"])
 	var diff: Dictionary = GameData.DIFFICULTIES[0]
 	for d in GameData.DIFFICULTIES:
 		if d["id"] == diff_id:
 			diff = d
-	var mods: Dictionary = GameData.RIFT_RANK_MODIFIERS.get(rift_rank, {})
-	return int(round(float(diff["rec_power"]) * sqrt(float(mods.get("monster_hp_mult", 1.0)) * float(mods.get("monster_dmg_mult", 1.0)))))
+	return int(round(float(diff["rec_power"]) * sqrt(float(mods.get("hp", 1.0)) * float(mods.get("dmg", 1.0)))))
 
 
 ## Summed power_of for a party (the Champion included by the caller).

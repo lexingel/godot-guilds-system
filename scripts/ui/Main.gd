@@ -136,7 +136,6 @@ func render() -> void:
 	# day/night drift) always run at normal speed.
 	Engine.time_scale = minf(GameState.combat_speed, 3.0) if screen == "rift_run" else 1.0
 	GameState.resolve_recovery()
-	GameState.resolve_rift_map()
 	GameState.resolve_guild_board()
 	if GameState.guild_name != "":
 		if not GameState.check_feature_unlocks().is_empty():
@@ -156,10 +155,6 @@ func render() -> void:
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "", "text": _flavor_toast})
 		_flavor_toast = ""
 	_drain_toasts()
-	if screen == "terminal" and GameState.run.is_empty() and not GameState.pending_riftbreak_ranks.is_empty():
-		GameState.start_riftbreak_encounter()
-		if not GameState.run.is_empty():
-			screen = "rift_run"
 	if not GameState.pending_s_rank_reveal.is_empty() and _s_rank_celebration.is_empty():
 		_s_rank_celebration = GameState.pending_s_rank_reveal
 		GameState.pending_s_rank_reveal = {}
@@ -193,7 +188,7 @@ func render() -> void:
 		var back := _header_back()
 		if not back.is_empty():
 			_combat_hotkeys["Escape"] = back[0]
-		if screen in ["terminal", "crafting_hall", "rift_hall", "rift_map"]:
+		if screen in ["terminal", "crafting_hall", "rift_hall"]:
 			outer.add_child(_quick_nav())
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
@@ -218,11 +213,6 @@ func render() -> void:
 		"credits": _render_credits(v)
 		"onboard": _render_onboard(v)
 		"rift_hall": _render_rift_hall(v)
-		"rift_map":
-			if GameState.feature_unlocked("rift_map"):
-				_render_rift_map_hub(v)
-			else:
-				_locked_feature(v, "rift_map")
 		"party_assembly": _render_party_assembly(v)
 		"tower":
 			if GameState.feature_unlocked("tower"):
@@ -321,7 +311,6 @@ func _update_screen_music() -> void:
 func _breadcrumb_for_screen() -> String:
 	match screen:
 		"rift_hall": return "Rift Hall"
-		"rift_map": return "Rift Map"
 		"tower": return "Tower of Trials"
 		"party_assembly": return "Party Assembly"
 		"rift_run" when GameState.run.has("tower"): return "Tower of Trials — Floor %d" % int(GameState.run["tower"])
@@ -444,7 +433,6 @@ const QUICK_NAV := [
 	["crafting", "Crafting", "Trading Post"],
 	["quests", "Quests", "Scholar's Lodge"],
 	["rift", "Rift Hall", "Rift Gate"],
-	["rift_map", "Rift Map", ""],
 	["management", "Manage", ""],
 	["bestiary", "Bestiary", ""],
 	["compendium", "Codex", ""],
@@ -455,7 +443,6 @@ func _quick_nav_current() -> String:
 	match screen:
 		"crafting_hall": return "crafting"
 		"rift_hall": return "rift"
-		"rift_map": return "rift_map"
 		"terminal": return "" if term_tab == "camp" else term_tab
 	return ""
 
@@ -468,7 +455,6 @@ func _quick_go(id: String) -> void:
 	match id:
 		"crafting": screen = "crafting_hall"
 		"rift": screen = "rift_hall"
-		"rift_map": screen = "rift_map"
 		_:
 			screen = "terminal"
 			term_tab = id
@@ -488,7 +474,7 @@ func _quick_nav() -> Control:
 		var id: String = e[0]
 		var key := str((i + 1) % 10) if i < 10 else ""
 		var go := _quick_go.bind(id)
-		var feature_id: String = {"crafting": "crafting", "rift_map": "rift_map", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}.get(id, "")
+		var feature_id: String = {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}.get(id, "")
 		var locked := feature_id != "" and not GameState.feature_unlocked(feature_id)
 		var b := _button("", go)
 		b.custom_minimum_size = Vector2(76, 54)
@@ -549,7 +535,7 @@ func _header_back() -> Array:
 				return [func(): mgmt_branch = ""; render(), "Management"]
 			if term_tab != "camp" or hub_cluster != "":
 				return [to_camp, "Camp"]
-		"rift_hall", "rift_map", "crafting_hall":
+		"rift_hall", "crafting_hall":
 			return [to_camp, "Camp"]
 		"tower":
 			return [func(): screen = "rift_hall"; render(), "Rift Hall"]
@@ -558,15 +544,13 @@ func _header_back() -> Array:
 				return [func(): _pending_tower = false; screen = "tower"; render(), "Tower"]
 			if _pending_daily:
 				return [func(): _pending_daily = false; screen = "rift_hall"; render(), "Rift Hall"]
-			var from_map := _pending_rift_rank != ""
 			return [func():
-				screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
+				screen = "rift_hall"
 				_pending_rift_rank = ""
-				_pending_map_slot_idx = -1
 				render()
-			, "Rift Map" if from_map else "Rift Hall"]
+			, "Rift Hall"]
 		"settings":
-			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "rift_map": "Rift Map", "tower": "Tower",
+			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "tower": "Tower",
 				"party_assembly": "Party Assembly", "crafting_hall": "Crafting Hall"}
 			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
 	return []
@@ -791,7 +775,7 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 	var cv := _vbox(6)
 	if GameState.campaign_done():
 		cv.add_child(_label("The campaign is complete", 16))
-		cv.add_child(_wrap_label("The Ashen Crown is shattered. Rifts still open — push the Endless Rift, clear the Rift Map, and take on the Guild Board.", 12, true))
+		cv.add_child(_wrap_label("The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on the Guild Board.", 12, true))
 		panel.add_child(cv)
 		v.add_child(panel)
 		return
@@ -819,6 +803,7 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 		pending_party.clear()
 		screen = "party_assembly"
 		_pending_diff_id = str(act["tier"])
+		_pending_rift_rank = ""
 		_pending_endless = false
 		_pending_finale = true
 		render()
@@ -833,7 +818,9 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 
 func _render_rift_hall(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Hall", 20))
-	_coach(v, "rift_hall", "Choosing a rift", "Start with the Lesser Rift. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
+	_coach(v, "rift_hall", "Choosing a rift", "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
+	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
+		_ladder_pick = GameState.highest_open_rank()
 
 	var scene_size := Vector2(700, 340)
 	var scene := Control.new()
@@ -849,28 +836,37 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	scene.add_child(bg)
 
 	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
-	var lesser: Dictionary = GameData.DIFFICULTIES[0]
-	var greater: Dictionary = GameData.DIFFICULTIES[1]
 	var unlocked := GameState.greater_rift_unlocked()
-	var go := func(diff_id: String, endless: bool):
+	var go := func(rank_id: String, endless: bool):
 		pending_party.clear()
+		pending_relic_options.clear()
+		pending_relic_choice = -1
 		_pending_tower = false
 		_pending_daily = false
 		screen = "party_assembly"
-		_pending_diff_id = diff_id
+		_pending_rift_rank = rank_id
+		_pending_diff_id = "endless" if endless else str(GameData.find_rift_rank(rank_id)["base"])
 		_pending_endless = endless
 		_pending_finale = false
 		render()
+	# The two rift gates in the art: the Lesser ranks (F-D) on the left, the
+	# Greater ranks (C-SSS) on the chained archway once Act II opens them.
+	var best_of := func(base: String) -> String:
+		var out := ""
+		for r in GameData.RIFT_RANKS:
+			if str(r["base"]) == base and GameState.ladder_rank_lock(str(r["id"])) == "":
+				out = str(r["id"])
+		return out
+	var lesser_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "lesser" else best_of.call("lesser")
 	var endless_open := GameState.endless_unlocked()
 	var gate_entries := [
-		["Lesser Rift", Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(str(lesser["id"]), false)],
+		["Rank %s Rift" % lesser_pick, Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(lesser_pick, false)],
 	]
 	if endless_open:
-		gate_entries.append(["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("endless", true)])
-	# The chained, rubble-blocked archway stays inert until
-	# GameState.greater_rift_unlocked() (earned by sealing rifts).
+		gate_entries.append(["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("", true)])
 	if unlocked:
-		gate_entries.append(["Greater Rift", Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(str(greater["id"]), false)])
+		var greater_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "greater" else best_of.call("greater")
+		gate_entries.append(["Rank %s Rift" % greater_pick, Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(greater_pick, false)])
 	for entry in gate_entries:
 		var native_rect: Rect2 = entry[2]
 		var glow_rect := Rect2(native_rect.position * camp_scale, native_rect.size * camp_scale)
@@ -878,7 +874,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		hotspot.position = (entry[1] as Rect2).position
 		scene.add_child(hotspot)
 	if not unlocked:
-		var lock_plaque := _camp_plaque("Greater Rift — locked")
+		var lock_plaque := _camp_plaque("Ranks C-SSS — locked")
 		lock_plaque.position = Vector2(470 + (230 - lock_plaque.size.x) * 0.5, 340 - lock_plaque.size.y - 6)
 		scene.add_child(lock_plaque)
 	if not endless_open:
@@ -889,18 +885,17 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 
 	_render_campaign_panel(v)
 
-	# One card per rift: what it is, how your strongest party measures up,
-	# and the button to go.
 	var best := _best_party_power()
-	var cards := HFlowContainer.new()   # four cards: two rows when the column is narrower than all of them
+	v.add_child(_ladder_card(best, go))
+
+	# The other modes: what each is, how your strongest party measures up,
+	# and the button to go.
+	var cards := HFlowContainer.new()
 	cards.alignment = FlowContainer.ALIGNMENT_CENTER
 	cards.add_theme_constant_override("h_separation", 10)
 	cards.add_theme_constant_override("v_separation", 10)
 	var card_defs := [
-		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser"), go.bind(str(lesser["id"]), false), ""],
-		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater"), go.bind(str(greater["id"]), false),
-			"" if unlocked else "Opens when you complete Act I"],
-		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("endless", true),
+		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("", true),
 			"" if endless_open else "Opens when you complete Act II"],
 		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
@@ -925,6 +920,56 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		card.add_child(cv)
 		cards.add_child(card)
 	v.add_child(cards)
+
+
+## The rift ladder: one button per rank (locked ones say why), and the picked
+## rank's floors, foes, rewards, extra rules and power readout.
+func _ladder_card(best: int, go: Callable) -> Control:
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelEmber"
+	var cv := _vbox(8)
+	cv.add_child(_label("Rift Ladder", 17))
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 6)
+	for r in GameData.RIFT_RANKS:
+		var rid := str(r["id"])
+		var lock := GameState.ladder_rank_lock(rid)
+		var b := _button(rid, func(): _ladder_pick = rid; render())
+		b.custom_minimum_size = Vector2(52, 40)
+		b.toggle_mode = true
+		b.button_pressed = rid == _ladder_pick
+		b.add_theme_color_override("font_color", Palette.rank_color(rid))
+		if lock != "":
+			b.disabled = true
+			b.modulate = Color(1, 1, 1, 0.45)
+			b.tooltip_text = "Rank %s — %s" % [rid, lock]
+		elif GameState.best_rift_rank_sealed >= GameData.rift_rank_index(rid):
+			b.tooltip_text = "Rank %s — sealed" % rid
+		row.add_child(b)
+	cv.add_child(row)
+	var rank: Dictionary = GameData.find_rift_rank(_ladder_pick)
+	var base: Dictionary = GameData.DIFFICULTIES[0]
+	for d in GameData.DIFFICULTIES:
+		if d["id"] == rank["base"]:
+			base = d
+	var rules: Array[String] = []
+	for k in GameData.RIFT_RANK_RULE_TEXT:
+		if rank.get(k, false):
+			rules.append(str(GameData.RIFT_RANK_RULE_TEXT[k]))
+	var t := _label("Rank %s · %d floors" % [_ladder_pick, int(base["floors"])], 15)
+	t.add_theme_color_override("font_color", Palette.rank_color(_ladder_pick))
+	cv.add_child(t)
+	var foes := "Foes: base" if float(rank["hp"]) == 1.0 else "Foes: ×%s health, ×%s damage" % [str(rank["hp"]), str(rank["dmg"])]
+	cv.add_child(_wrap_label("%s%s · Rewards ×%s%s" % [base["name"] + " · ", foes, str(rank["reward"]), (" · " + ", ".join(rules)) if not rules.is_empty() else ""], 12, true))
+	var pr := _power_readout(best, Combat.recommended_power("", _ladder_pick), "Your best party")
+	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cv.add_child(pr)
+	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party", go.bind(_ladder_pick, false))
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cv.add_child(b)
+	card.add_child(cv)
+	return card
 
 
 # ---------------- Tower of Trials ----------------
@@ -1088,94 +1133,10 @@ func _daily_card_def() -> Array:
 		_pending_tower = false
 		_pending_finale = false
 		_pending_diff_id = str(info["diff_id"])
+		_pending_rift_rank = ""
 		_pending_endless = false
 		screen = "party_assembly"
 		render(), lock, "Assemble party"]
-
-
-func _render_rift_map_hub(v: VBoxContainer) -> void:
-	v.add_child(_label("Rift Map", 20))
-	v.add_child(_wrap_label("Rifts open at random ranks and stay open for a few runs. Each time a run ends (or the guild rests) they count down; leave one until it closes and its threat spills out as a forced fight at the Terminal.", 12, true))
-
-	var scene_size := Vector2(700, 200)
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.RIFTMAP_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
-
-	var map_scale := Vector2(scene_size.x / 320.0, scene_size.y / 200.0)
-	var icon_size := 32.0
-	var best := _best_party_power()
-	# The map only carries a numbered marker per rift (captions here used to
-	# pile on top of each other); the details live in the list below it.
-	var rows := _vbox(6)
-	var n := 0
-	for i in GameState.rift_map.size():
-		var slot: Dictionary = GameState.rift_map[i]
-		if slot.is_empty():
-			continue
-		n += 1
-		var rank := str(slot.get("rank", "F"))
-		var runs_left := int(slot.get("runs_left", 1))
-		var enter := func(idx=i, r=rank):
-			pending_party.clear()
-			pending_relic_options.clear()
-			pending_relic_choice = -1
-			_pending_rift_rank = r
-			_pending_map_slot_idx = idx
-			screen = "party_assembly"
-			render()
-		var hotspot := _camp_hotspot(GameData.CAMP_HUB_ICON_PATH["rift"], icon_size, "", enter)
-		var marker: Vector2 = RIFT_MAP_MARKER_POS[i % RIFT_MAP_MARKER_POS.size()]
-		hotspot.position = Vector2(marker.x * map_scale.x, marker.y * map_scale.y) - Vector2(icon_size, icon_size) / 2.0
-		(hotspot.get_child(0) as Control).tooltip_text = "Rank %s rift" % rank
-		scene.add_child(hotspot)
-		var num := _count_badge(str(n), "Rank %s rift" % rank)
-		num.position = hotspot.position + Vector2(icon_size - 10, -8)
-		scene.add_child(num)
-
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		var row_badge := _count_badge(str(n), "")
-		row_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row_badge.custom_minimum_size.x = 24
-		row.add_child(row_badge)
-		var rl := _label("Rank %s" % rank, 15)
-		rl.add_theme_color_override("font_color", Palette.rank_color(rank))
-		rl.custom_minimum_size.x = 76
-		row.add_child(rl)
-		var tl := _label("closes after %d run%s" % [runs_left, "" if runs_left == 1 else "s"], 13, true)
-		if runs_left <= 1:
-			tl.add_theme_color_override("font_color", Palette.HAZARD)
-		tl.custom_minimum_size.x = 140
-		tl.tooltip_text = "Counts down each time a run ends (or the guild rests). An unaddressed rift spills out as a forced fight."
-		row.add_child(tl)
-		var bounty: Dictionary = slot.get("bounty", {})
-		var bl := _label("Bounty +%d Gold, +%d Renown" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))] if not bounty.is_empty() else "", 13)
-		bl.add_theme_color_override("font_color", Palette.COINS)
-		bl.custom_minimum_size.x = 160
-		row.add_child(bl)
-		var pr := _power_readout(best, Combat.recommended_power("lesser", rank), "Your best")
-		pr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(pr)
-		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter", enter))
-		rows.add_child(row)
-
-	v.add_child(scene)
-	if n == 0:
-		v.add_child(_label("No rifts are open right now — new ones appear over time.", 13, true))
-	v.add_child(rows)
-
-	if not GameState.pending_riftbreak_ranks.is_empty():
-		v.add_child(_hsep())
-		v.add_child(_label("A Riftbreak is looming — %d unaddressed rift(s) will spill out next time you return to the Terminal." % GameState.pending_riftbreak_ranks.size(), 12, true))
 
 
 # ---------------- Party Assembly ----------------
@@ -1299,7 +1260,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			# (which normally bumps a rolled Common up to Rare) for this
 			# starting-relic roll specifically, so an S+ rift's starting pick
 			# can't lean on that safety net the way a normal run's can.
-			var floor_suppressed: bool = _pending_rift_rank != "" and bool(GameData.RIFT_RANK_MODIFIERS.get(_pending_rift_rank, {}).get("relic_rarity_floor_down", 0))
+			var floor_suppressed: bool = _pending_rift_rank != "" and bool(GameData.find_rift_rank(_pending_rift_rank).get("relic_rarity_floor_down", false))
 			for i in choice_count:
 				var rarity := "rare" if (GameState.inherited_power() and not floor_suppressed and Combat.weighted_rarity() == "common") else Combat.weighted_rarity()
 				pending_relic_options.append(Combat.gen_relic(rarity))
@@ -1327,20 +1288,6 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			)
 			v.add_child(_info_row("%s — %s" % [def["name"], def["desc"]], 14, [], ib))
 
-	v.add_child(_hsep())
-	if _pending_tower or _pending_daily:
-		pass
-	elif _pending_rift_rank == "":
-		var hc_toggle := CheckButton.new()
-		hc_toggle.text = "Hardcore Mode — ×1.5 rewards, a loss removes your heroes for good"
-		hc_toggle.button_pressed = _pending_hardcore
-		hc_toggle.toggled.connect(func(on: bool):
-			_pending_hardcore = on
-			render()
-		)
-		v.add_child(hc_toggle)
-	else:
-		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
 	var launch := _party_launch_bar()
 	v.add_child(launch)
@@ -1367,8 +1314,7 @@ func _party_launch_bar() -> Control:
 	for h in GameState.heroes:
 		if pending_party.has(h.id):
 			going.append(h)
-	var map_run := _pending_map_slot_idx >= 0
-	var rec_power: int = GameState.tower_recommended_power(GameState.tower_next_floor()) if _pending_tower else GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_rift_rank)
+	var rec_power: int = GameState.tower_recommended_power(GameState.tower_next_floor()) if _pending_tower else GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power(_pending_diff_id, _pending_rift_rank)
 	var pr := _power_readout(Combat.party_power(going), rec_power)
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(pr)
@@ -1403,17 +1349,15 @@ func _party_launch_bar() -> Control:
 		elif _pending_finale:
 			GameState.start_finale(ids, chosen)
 		elif _pending_rift_rank != "":
-			GameState.start_map_rift(_pending_map_slot_idx, ids, chosen)
+			GameState.start_ladder_rift(_pending_rift_rank, ids, chosen)
 		else:
-			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore)
+			GameState.start_run(_pending_diff_id, ids, chosen)
 		_pending_finale = false
 		_pending_tower = false
 		_pending_daily = false
 		pending_relic_options.clear()
 		pending_relic_choice = -1
-		_pending_hardcore = false
 		_pending_rift_rank = ""
-		_pending_map_slot_idx = -1
 		screen = "rift_run"
 		render()
 		_play_rift_entry_flash()

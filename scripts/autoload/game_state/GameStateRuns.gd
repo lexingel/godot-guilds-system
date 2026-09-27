@@ -2,13 +2,10 @@ extends "res://scripts/autoload/game_state/GameStateModes.gd"
 ## GameState, part 6: rift runs — nodes, fights, events, shops, hazards, sealing, recovery, the Endless Rift payout.
 
 
-## `rift_rank` is "" for every existing caller (Rift Hall's Lesser/Endless
-## picker) — only GameState.start_map_rift() passes a real rank, applying
-## RIFT_RANK_MODIFIERS on top of the normal Lesser Rift difficulty.
-## relic_rarity_floor_down is read directly against Main.gd's
-## _pending_rift_rank at Party Assembly's starting-relic roll (that roll
-## happens before a `diff`/run even exists, so it can't flow through here).
-func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, hardcore: bool, rift_rank: String = "") -> void:
+## `rift_rank` is a ladder rank (start_ladder_rift) or "" for unranked runs
+## (daily, finale). relic_rarity_floor_down is read by Party Assembly's
+## starting-relic roll, which happens before the run exists.
+func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, rift_rank: String = "") -> void:
 	var shield := 0
 	for r in Combat.equipped_relics():
 		shield += r.hp
@@ -23,12 +20,12 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		if d["id"] == diff_id:
 			diff = d
 	diff = _apply_rift_rank_modifiers(diff, rift_rank)
-	var training := runs_started == 0 and rift_rank == ""
+	var training := runs_started == 0 and rift_rank in ["", "F"]
 	if training:
 		diff = _apply_training(diff)
 	runs_started += 1
 	run = {
-		"diff_id": diff_id, "hardcore": hardcore,
+		"diff_id": diff_id,
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
@@ -45,8 +42,8 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 
 
 ## The rift rank newly generated items drop at (GameData.ITEM_RANK_MULT): a
-## Rift Map rift's own rank; Greater Rift reads as D; Lesser and anything
-## outside a run (shop restock etc.) is F.
+## ladder rift's own rank; an unranked Greater run reads as C; Lesser and
+## anything outside a run (shop restock etc.) is F.
 func loot_rank() -> String:
 	if run.is_empty():
 		return "F"
@@ -54,7 +51,7 @@ func loot_rank() -> String:
 	if mapped != "":
 		return mapped
 	if run.get("diff_id", "") == "greater":
-		return "D"
+		return "C"
 	return "F"
 
 
@@ -66,7 +63,6 @@ func feature_unlocked(id: String) -> bool:
 		"medical": return runs_started > 1 or (runs_started == 1 and run.is_empty()) or rifts_sealed > 0
 		"bestiary": return not monsters_seen.is_empty()
 		"crafting", "quests", "management": return rifts_sealed >= 1
-		"rift_map": return rifts_sealed >= 2
 		"tower": return campaign_act >= 2
 	return true
 
@@ -228,29 +224,24 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			if result["won"]:
 				result["tower"] = _complete_tower_floor(int(run["tower"]))
 		var kind := current_node_kind()
-		var hardcore: bool = run.get("hardcore", false)
 		if result["won"]:
-			# A Riftbreak win is a consequence contained, not an opportunity —
-			# no Coin/Crystal reward, no reward-choice screen (Main.gd skips
-			# straight to "Return to Terminal" for this case).
-			if not run.get("is_riftbreak", false):
-				coins += int(result["coin"])
-				crystals += int(result["crystal"]) + int(result["bonus_crystal"])
-				_attune_gear(state.get("party", []))
-				if kind == "boss":
-					run["boss_rounds"] = int(result["rounds"])
-					var bname := str(result["monster_name"]).split(",")[0]
-					if not bosses_defeated.has(bname):
-						bosses_defeated.append(bname)
-					bosses_won += 1
-					_bump("boss:" + bname)
-				elif kind == "elite":
-					elites_won += 1
-					if not run.has("tower"):
-						result["boon_offer"] = roll_boon_offer()
+			coins += int(result["coin"])
+			crystals += int(result["crystal"]) + int(result["bonus_crystal"])
+			_attune_gear(state.get("party", []))
+			if kind == "boss":
+				run["boss_rounds"] = int(result["rounds"])
+				var bname := str(result["monster_name"]).split(",")[0]
+				if not bosses_defeated.has(bname):
+					bosses_defeated.append(bname)
+				bosses_won += 1
+				_bump("boss:" + bname)
+			elif kind == "elite":
+				elites_won += 1
+				if not run.has("tower"):
+					result["boon_offer"] = roll_boon_offer()
 			# Quest tallies — every monster in a won fight is by definition dead,
 			# so state["monsters"] (still the pre-cleanup fight roster) is a
-			# reliable "what did we just kill" list regardless of Riftbreak.
+			# reliable "what did we just kill" list.
 			for m in state.get("monsters", []):
 				var mname := str(m.get("name", ""))
 				if mname != "":
@@ -265,46 +256,14 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			# An escort NPC (start_combat's ~25% chance on a "combat" node) pays
 			# out a small bonus only if it survived the whole fight — dying
 			# mid-fight is a softer failure than a party wipe, so it never
-			# affects the fight's own win/loss. Gated the same as every other
-			# reward here: a Riftbreak win is a consequence contained, not an
-			# opportunity, so it grants nothing extra either.
-			if kind != "boss" and not run.get("is_riftbreak", false) and not run.has("tower"):
+			# affects the fight's own win/loss.
+			if kind != "boss" and not run.has("tower"):
 				_note_injuries("critical" if kind == "elite" else "wounded")
 			var escort: Dictionary = state.get("escort", {})
-			if not run.get("is_riftbreak", false) and not escort.is_empty() and float(escort.get("hp", 0.0)) > 0.0:
+			if not escort.is_empty() and float(escort.get("hp", 0.0)) > 0.0:
 				add_reputation(2)
 				crystals += 1
 				result["escort_saved"] = str(escort["name"])
-		elif hardcore and not bool(result.get("retreated", false)):
-			var party: Array[Hero] = state["party"]
-			var lost := 0
-			for h in party:
-				lost += 1
-				_memorialize(h, "Fell in a Hardcore %s against %s" % [_run_label(), str(result.get("monster_name", "the rift")).split(",")[0]])
-				heroes.erase(h)
-			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
-			if lost > 0:
-				result["flavor"] = GameData.narrative_line("hardcore_hero_lost")
-		# A Riftbreak that ends any way other than a win — a real loss OR a
-		# retreat — means the rift's threat wasn't actually contained, so both
-		# carry the same consequence. At/below Rank A that's a Coin/Crystal
-		# "compensation" penalty on top of the normal downing (retreating
-		# skips the downing itself, just not this penalty) — the game-over
-		# branch (Rank S+) is handled entirely in Main.gd's result rendering,
-		# before finish_run() is ever called, so it doesn't belong here.
-		# Stashed on `result` (not applied here as a live coins/crystals
-		# mutation) so Main.gd can render the exact amount without
-		# re-computing it, and so this stays a pure one-time effect of the
-		# round transitioning to "done" rather than something a render()
-		# could accidentally repeat.
-		if run.get("is_riftbreak", false) and not result["won"] and int(run.get("riftbreak_worst_index", 0)) <= 5:
-			var sev := int(run.get("riftbreak_severity", 0))
-			var comp_coins: int = min(coins, 20 + sev * 10)
-			var comp_crystals: int = min(crystals, 5 + sev * 2)
-			coins -= comp_coins
-			crystals -= comp_crystals
-			result["riftbreak_compensation_coins"] = comp_coins
-			result["riftbreak_compensation_crystals"] = comp_crystals
 		# Hero history (kills/knockouts are tallied inside Combat as they
 		# happen; boss/elite wins are only known here) and any traits it earns.
 		if result["won"] and kind in ["boss", "elite"]:
@@ -325,7 +284,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 ## living hero's pending action, or a living monster's retaliation). Once it
 ## reports the fight done, applies the same roster-level bookkeeping
 ## engage_node used to do in one shot (coin/crystal gain, boss_rounds
-## tracking, hardcore hero removal on a real loss — not a retreat).
+## tracking).
 func resolve_turn_now() -> void:
 	var ns: Dictionary = run.get("node_state", {})
 	var state: Dictionary = ns.get("combat_state", {})
@@ -791,7 +750,7 @@ func seal_rift() -> void:
 		_complete_act(campaign_act)
 	var diff := _diff()
 	var fast_clear: bool = int(run.get("boss_rounds", 99)) <= 6
-	var seal_mult: float = seal_bonus_mult() * (1.5 if run.get("hardcore", false) else 1.0)
+	var seal_mult: float = seal_bonus_mult()
 	var earned := int(round(float(diff["seal_essence"]) * seal_mult))
 	crystals += earned
 	var cache := 0
@@ -806,16 +765,12 @@ func seal_rift() -> void:
 	# Guild Board tallies (see _quest_current).
 	if mapped_rank != "":
 		_bump("rank_seals:%d" % GameData.rift_rank_index(mapped_rank))
-	if str(run.get("map_uid", "")) != "":
-		_bump("map:" + str(run["map_uid"]))
 	if str(diff.get("id", "")) == "greater":
 		_bump("greater_seals")
 	if not bool(run.get("any_ko", false)):
 		_bump("flawless_rifts")
 	if (run.get("hero_ids", []) as Array).size() <= 2:
 		_bump("small_seals")
-	if run.get("hardcore", false):
-		_bump("hardcore_seals")
 	var flavor := GameData.narrative_line("fast_clear" if fast_clear else "rift_sealed")
 	if just_unlocked_greater:
 		flavor += " " + GameData.narrative_line("greater_rift_unlocked")
@@ -838,13 +793,7 @@ func seal_rift() -> void:
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
 	refresh_champion_offers()   # new Champions for hire
-	# A Rift Map bounty (see resolve_rift_map/start_map_rift) — {} for any
-	# rift not entered from the map, or a mapped rift that didn't roll one.
-	var bounty: Dictionary = run.get("bounty", {})
-	if not bounty.is_empty():
-		coins += int(bounty.get("coins", 0))
-		add_reputation(int(bounty.get("reputation", 0)))
-	run["sealed"] = {"essence": earned, "fast_clear": fast_clear, "cache": cache, "flavor": flavor, "bounty": bounty}
+	run["sealed"] = {"essence": earned, "fast_clear": fast_clear, "cache": cache, "flavor": flavor}
 	if run.has("daily"):
 		run["sealed"]["daily"] = _complete_daily()
 	save()
@@ -941,7 +890,7 @@ func field_healer() -> String:
 	return ""
 
 
-## Carry them out: a day passes (the Rift Map counts down) and they head home.
+## Carry them out: a day passes and they head home.
 func injury_carry(hero_id: String) -> String:
 	if _injury(hero_id).is_empty():
 		return ""
@@ -1075,10 +1024,7 @@ func resolve_recovery() -> void:
 
 
 ## Guild time moves one step whenever a rift run ends (or the guild rests
-## instead): downed heroes count down their recovery, wounded ones heal, and
-## every rift on the map counts down — one that runs out spills out as a
-## Riftbreak. Replaces the old wall-clock timers, which kept ticking while
-## the game was closed.
+## instead): downed heroes count down their recovery and wounded ones heal.
 func pass_time() -> void:
 	day += 1
 	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
@@ -1097,21 +1043,11 @@ func pass_time() -> void:
 			h.hp = mx if h.bedded or full_heal_between_runs() else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
 			if h.hp >= mx:
 				h.bedded = false
-	for i in rift_map.size():
-		var slot: Dictionary = rift_map[i]
-		if slot.has("rank") and feature_unlocked("rift_map"):
-			if Combat.party_has_unique_relic("wardens_seal") and day % 3 == 0:
-				continue   # the Warden's Seal holds the fuses for a day
-			slot["runs_left"] = int(slot.get("runs_left", 1)) - 1
-			if int(slot["runs_left"]) <= 0:
-				pending_riftbreak_ranks.append(str(slot["rank"]))
-				rift_map[i] = {}
-	resolve_rift_map()
 	resolve_guild_board()
 
 
 ## Rest instead of running a rift: time passes (see pass_time) without a
-## fight — heroes recover, but the map's rifts count down too.
+## fight — heroes recover.
 func rest_guild() -> void:
 	if not run.is_empty():
 		return
@@ -1120,102 +1056,28 @@ func rest_guild() -> void:
 	state_changed.emit()
 
 
-## Refills empty Rift Map slots with fresh rolls (run once per render();
-## expiry itself happens in pass_time). Also moves any wall-clock-era slot
-## onto the run countdown.
-func resolve_rift_map() -> void:
-	if not feature_unlocked("rift_map"):
-		return
-	var changed := false
-	for i in rift_map.size():
-		var old: Dictionary = rift_map[i]
-		if old.has("rank") and not old.has("runs_left"):
-			old["runs_left"] = int(GameData.find_rift_rank(str(old["rank"]))["fuse_runs"])
-			old.erase("expires_at")
-			changed = true
-	for i in rift_map.size():
-		if rift_map[i].is_empty():
-			var rank := Combat.weighted_rift_rank()
-			var slot := {"rank": rank, "runs_left": int(GameData.find_rift_rank(rank)["fuse_runs"]), "uid": "rift%d" % next_id}
-			next_id += 1
-			# ~35% of freshly-rolled rifts carry a bounty, scaled by the same
-			# 0-8 rank severity index Riftbreak already uses — paid out by
-			# seal_rift() once this specific rift is cleared.
-			if randf() < 0.35:
-				var sev := GameData.rift_rank_index(rank)
-				slot["bounty"] = {"coins": 15 * (sev + 1), "reputation": 1 + sev}
-			rift_map[i] = slot
-			changed = true
-	if changed:
-		save()
+## "" when a ladder rank can be entered, else why not: each rank opens once
+## the one below it is sealed, and C and up need the Greater Rift (Act II).
+func ladder_rank_lock(rank_id: String) -> String:
+	var idx := GameData.rift_rank_index(rank_id)
+	if str(GameData.RIFT_RANKS[idx]["base"]) == "greater" and not greater_rift_unlocked():
+		return "Opens when you complete Act I"
+	if idx > best_rift_rank_sealed + 1:
+		return "Seal a Rank %s rift first" % GameData.RIFT_RANKS[idx - 1]["id"]
+	return ""
 
 
-## Enters a mapped rift chosen from the Rift Map hub. Builds a normal run
-## exactly like start_run() already does (same Party Assembly flow, same
-## build_layers pipeline) but folds the slot's rank into RIFT_RANK_MODIFIERS
-## via start_run()'s own rift_rank param, and forces hardcore off — Hardcore
-## Mode is retired from mapped rifts for now. Clears the slot immediately
-## (claimed the moment the player steps in, regardless of how the run ends);
-## start_run()'s own save() at the end covers this mutation too.
-func start_map_rift(slot_idx: int, hero_ids: Array[String], starting_relic: Relic) -> void:
-	if slot_idx < 0 or slot_idx >= rift_map.size():
-		return
-	var rank := str(rift_map[slot_idx].get("rank", "F"))
-	var bounty: Dictionary = rift_map[slot_idx].get("bounty", {})
-	var uid := str(rift_map[slot_idx].get("uid", ""))
-	rift_map[slot_idx] = {}
-	start_run("lesser", hero_ids, starting_relic, false, rank)
-	run["map_uid"] = uid
-	if not bounty.is_empty():
-		run["bounty"] = bounty
-		save()
+## The highest rank the guild can enter right now.
+func highest_open_rank() -> String:
+	var out := "F"
+	for r in GameData.RIFT_RANKS:
+		if ladder_rank_lock(str(r["id"])) == "":
+			out = str(r["id"])
+	return out
 
 
-## Called from Main.gd's render() right after resolve_rift_map(), only when
-## idle at the Terminal with no run already active. Merges every rank in
-## pending_riftbreak_ranks into a single forced fight by building a "fake"
-## single-node run shaped exactly like start_run() already produces (see the
-## Phase 11 plan's "fake single-node run" trick) — this lets the entire
-## existing rift_run/combat_node/_play_round pipeline drive the fight
-## completely unchanged (difficulty scaling happens in _diff(), which checks
-## run["is_riftbreak"]). Draws from the whole roster, not current_party() —
-## there's no Party Assembly step for a forced encounter, every healthy hero
-## on hand gets pulled in. Falls back to a direct resource penalty if no
-## hero is available to fight at all.
-func start_riftbreak_encounter() -> void:
-	if pending_riftbreak_ranks.is_empty():
-		return
-	var severity := 0
-	var worst_index := 0
-	for rank in pending_riftbreak_ranks:
-		var idx := GameData.rift_rank_index(str(rank))
-		severity += idx
-		worst_index = max(worst_index, idx)
-	var available: Array[Hero] = heroes.filter(func(h): return h.is_available())
-	if available.is_empty():
-		coins = max(0, coins - (20 + severity * 10))
-		crystals = max(0, crystals - (5 + severity * 2))
-		pending_riftbreak_ranks.clear()
-		save()
-		state_changed.emit()
-		return
-	var hero_ids: Array[String] = []
-	for h in available:
-		hero_ids.append(h.id)
-	run = {
-		"diff_id": "lesser", "hardcore": false,
-		"layers": [{"options": ["combat"]}], "pos": 0, "chosen": {},
-		"hero_ids": hero_ids, "shield": 0, "boss_rounds": 0,
-		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
-		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
-		"rift_rank": "", "is_riftbreak": true, "riftbreak_severity": severity,
-		"riftbreak_worst_index": worst_index, "riftbreak_flavor": GameData.narrative_line("riftbreak_begins"),
-		"seed": randi(),
-	}
-	auto_resolve_single_option()
-	pending_riftbreak_ranks.clear()
-	save()
-	state_changed.emit()
+func start_ladder_rift(rank_id: String, hero_ids: Array[String], starting_relic: Relic) -> void:
+	start_run(str(GameData.find_rift_rank(rank_id)["base"]), hero_ids, starting_relic, rank_id)
 
 
 func retreat_now() -> void:

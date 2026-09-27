@@ -533,7 +533,7 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		elif missing_prereq:
 			reason = "Needs prerequisite"
 		elif missing_rift:
-			reason = "Seal a Rank %s+ Rift Map rift first" % n["rift_rank"]
+			reason = "Seal a Rank %s+ rift first" % n["rift_rank"]
 		elif missing_stone:
 			reason = "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS
 		elif missing_sp:

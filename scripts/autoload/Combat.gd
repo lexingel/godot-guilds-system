@@ -27,7 +27,6 @@ extends "res://scripts/autoload/combat/CombatGen.gd"
 func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx: int) -> Dictionary:
 	var is_boss := kind == "boss"
 	var is_elite := kind == "elite"
-	var hardcore: bool = GameState.run.get("hardcore", false)
 	var monsters := gen_monsters(diff, floor_idx, kind)
 
 	var raw_sum := 0.0
@@ -92,7 +91,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	# resolve_round's retaliation loop). {} = no escort this fight, the same
 	# "empty dict = not present" contract mechanic/mechanic2 already use.
 	var escort: Dictionary = {}
-	if kind == "combat" and not GameState.run.get("is_riftbreak", false) and not GameState.run.has("tower") and randf() < 0.25:
+	if kind == "combat" and not GameState.run.has("tower") and randf() < 0.25:
 		var avg_hp := 0.0
 		for h in party:
 			avg_hp += max_hp(h)
@@ -109,7 +108,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		hp_max += max_hp(h)
 	var state := {
 		"_start_hp_pct": hp_now / maxf(1.0, hp_max),
-		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx, "hardcore": hardcore,
+		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx,
 		"is_boss": is_boss, "is_elite": is_elite,
 		"monsters": monsters, "background_idx": _biome_background(diff),
 		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
@@ -1035,29 +1034,25 @@ func retreat_combat(state: Dictionary) -> Dictionary:
 func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary:
 	var party: Array[Hero] = state["party"]
 	var log: Array[String] = state["log"]
-	var hardcore: bool = state["hardcore"]
 	var full_loss := not won and not retreated
-	if full_loss and hardcore:
-		log.append("Your party is overwhelmed... and lost for good.")
-	else:
-		if full_loss:
-			log.append("Your party is overwhelmed...")
-		# Any hero knocked out mid-fight (hp hit 0 while the party kept
-		# fighting and ultimately won, or before a retreat) still needs a
-		# recovery timer — not just the whole-party-wiped case above, or
-		# they'd sit at 0 HP forever, invisible to needs_recovery()/Medical Bay.
-		for h in party:
-			if h.hp <= 0 and h.down_runs <= 0:
-				GameState.knock_out(h)
-				h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
-				# A freshly-knocked-out roster hero may pick up a scar quirk
-				# (up to GameData.SCARS_MAX).
-				if not GameState.run.has("tower") and randf() < 0.5:
-					var scar := roll_scar(h)
-					if scar != "":
-						h.quirks.append(scar)
-						log.append("%s is left with a lasting scar: %s." % [h.name, scar])
-						log.append(GameData.narrative_line("scar_gained"))
+	if full_loss:
+		log.append("Your party is overwhelmed...")
+	# Any hero knocked out mid-fight (hp hit 0 while the party kept
+	# fighting and ultimately won, or before a retreat) still needs a
+	# recovery timer — not just the whole-party-wiped case above, or
+	# they'd sit at 0 HP forever, invisible to needs_recovery()/Medical Bay.
+	for h in party:
+		if h.hp <= 0 and h.down_runs <= 0:
+			GameState.knock_out(h)
+			h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
+			# A freshly-knocked-out roster hero may pick up a scar quirk
+			# (up to GameData.SCARS_MAX).
+			if not GameState.run.has("tower") and randf() < 0.5:
+				var scar := roll_scar(h)
+				if scar != "":
+					h.quirks.append(scar)
+					log.append("%s is left with a lasting scar: %s." % [h.name, scar])
+					log.append(GameData.narrative_line("scar_gained"))
 
 	var result := {
 		"won": won, "retreated": retreated, "log": log, "rounds": int(state["round_num"]), "monster_name": state["monsters"][0]["name"],
@@ -1068,7 +1063,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 		var is_elite: bool = state["is_elite"]
 		var diff: Dictionary = state["diff"]
 		var floor_idx: int = state["floor_idx"]
-		var reward_mult: float = (1.4 if is_elite else 1.0) * (1.5 if hardcore else 1.0)
+		var reward_mult: float = 1.4 if is_elite else 1.0
 		var depth_mult: float = 1.0 + floor_idx * 0.05
 		result["coin"] = round(randf_range(diff["coin"][0], diff["coin"][1]) * reward_mult * depth_mult)
 		var base_crystal: float = round(randf_range(diff["crystal"][0], diff["crystal"][1]) * reward_mult * depth_mult)

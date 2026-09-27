@@ -361,7 +361,7 @@ const ROLE_SIGNATURES := {
 ## The keystone for `kind`'s tree as a full skill node, or {}.
 ## Two more Tier-5 nodes in every tree, earned outside SP alone:
 ## "stonebound" also costs Crystals (STONEBOUND_CRYSTALS) and makes the hero's Active
-## Ability hit harder; "riftborn" needs the guild to have sealed a Rift Map
+## Ability hit harder; "riftborn" needs the guild to have sealed a ranked
 ## rift of RIFTBORN_MIN_RANK or higher, and adds 40% of the tree's capstone
 ## stat. (A skill respec refunds the SP, never the stone.)
 const RIFTBORN_MIN_RANK := "C"

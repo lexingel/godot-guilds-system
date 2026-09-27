@@ -115,12 +115,6 @@ const DIFFICULTIES := [
 ## The power the Rift Hall compares against for the Endless Rift (survivors).
 const ENDLESS_REC_POWER := 280
 
-## Rift Map ranks — reuses the hero-rank vocabulary (F-S) extended with two
-## rarer tiers (SS/SSS) for the map's random rift rolls. Weights preserve the
-## exact same relative odds as hero RANKS for F-S (just rescaled ×10 for the
-## finer granularity SS/SSS need); fuse_runs is how many rift runs (or rests)
-## a rift stays open before an unaddressed one Riftbreaks — shorter at higher
-## rank, so a rare S/SS/SSS sighting is genuinely fleeting.
 ## Recovery in rift runs rather than real time: a downed hero sits out this
 ## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
 ## hero regains this share of max HP each time a run ends (all of it in a bed).
@@ -267,17 +261,27 @@ const CAMPFIRE_HEAL_PCT := 0.25
 const CAMPFIRE_TRAIN_XP := 15
 const DOWNED_RECOVERY_RUNS := 2
 const WOUND_HEAL_PER_RUN := 0.5
+## The rift ladder, F to SSS. Each rank sits on a base difficulty (Lesser for
+## F-D, Greater from C) scaled by its own foe multipliers and reward
+## multiplier, plus the rules it adds. Sealing a rank opens the next; C and up
+## also need the Greater Rift (Act II).
 const RIFT_RANKS := [
-	{"id": "F", "weight": 1000, "fuse_runs": 5},
-	{"id": "E", "weight": 600, "fuse_runs": 4},
-	{"id": "D", "weight": 350, "fuse_runs": 4},
-	{"id": "C", "weight": 200, "fuse_runs": 3},
-	{"id": "B", "weight": 100, "fuse_runs": 3},
-	{"id": "A", "weight": 40, "fuse_runs": 2},
-	{"id": "S", "weight": 10, "fuse_runs": 2},
-	{"id": "SS", "weight": 3, "fuse_runs": 1},
-	{"id": "SSS", "weight": 1, "fuse_runs": 1},
+	{"id": "F", "base": "lesser", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
+	{"id": "E", "base": "lesser", "hp": 1.5, "dmg": 1.4, "reward": 1.3},
+	{"id": "D", "base": "lesser", "hp": 2.4, "dmg": 2.0, "reward": 1.6},
+	{"id": "C", "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
+	{"id": "B", "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
+	{"id": "A", "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
+	{"id": "S", "base": "greater", "hp": 3.0, "dmg": 2.2, "reward": 2.2, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true},
+	{"id": "SS", "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "SSS", "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
 ]
+
+## What each rank's extra rules read as on the Rift Hall.
+const RIFT_RANK_RULE_TEXT := {
+	"elite_chance_up": "more elites", "hazard_severity_up": "harsher hazards", "shop_chance_down": "fewer shops",
+	"relic_rarity_floor_down": "no rarity floor on the starting relic", "boss_double_mechanic": "bosses use two mechanics",
+}
 
 
 static func find_rift_rank(rank_id: String) -> Dictionary:
@@ -287,31 +291,12 @@ static func find_rift_rank(rank_id: String) -> Dictionary:
 	return RIFT_RANKS[0]
 
 
-## 0-8 severity index for a Rift Rank id — used both to scale a Riftbreak
-## encounter's difficulty (summed across every merged pending rank) and to
-## decide the loss-consequence branch (index >= 6, i.e. S/SS/SSS, is the
-## game-ending branch; below that is the Coin/Crystal compensation branch).
+## 0-8 index of a rift rank (F..SSS).
 static func rift_rank_index(rank_id: String) -> int:
 	for i in RIFT_RANKS.size():
 		if RIFT_RANKS[i]["id"] == rank_id:
 			return i
 	return 0
-
-## Cumulative modifiers a mapped rift's rank folds into the fight/run — each
-## rank includes every modifier below it plus its own. Applied by
-## GameState.start_map_rift() to a copy of DIFFICULTIES[0], not by mutating
-## the base difficulty table itself. First-draft values, tunable later.
-const RIFT_RANK_MODIFIERS := {
-	"F": {},
-	"E": {"monster_hp_mult": 1.10},
-	"D": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10},
-	"C": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1},
-	"B": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true},
-	"A": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true},
-	"S": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1},
-	"SS": {"monster_hp_mult": 1.10, "monster_dmg_mult": 1.10, "hazard_severity_up": 1, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1, "boss_double_mechanic": true},
-	"SSS": {"monster_hp_mult": 1.35, "monster_dmg_mult": 1.35, "hazard_severity_up": 2, "elite_chance_up": true, "shop_chance_down": true, "relic_rarity_floor_down": 1, "boss_double_mechanic": true},
-}
 
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
 const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "ability_power", "wipe_guard", "boss_alpha_strike"]
@@ -441,13 +426,13 @@ const CAMPAIGN := [
 	 "finale": "The Drowned Spire", "tier": "greater", "mult": 1.2, "opens": "the Endless Rift",
 	 "intro": "South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",
 	 "outro": "The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.",
-	 "objectives": [{"type": "greater_seals", "target": 2, "label": "Seal 2 Greater Rifts"}, {"type": "reputation", "target": 20, "label": "Reach 20 Renown"}, {"type": "map_rank", "target": 3, "label": "Seal a Rank C or higher Rift Map rift"}],
+	 "objectives": [{"type": "greater_seals", "target": 2, "label": "Seal 2 rifts of Rank C or higher"}, {"type": "reputation", "target": 20, "label": "Reach 20 Renown"}, {"type": "map_rank", "target": 3, "label": "Seal a Rank C rift"}],
 	 "reward": {"crystals": 160}},
 	{"act": 3, "name": "The Ashen Crown", "foe": "Sythrane", "boss": "Sythrane, the Ashen Crown",
 	 "finale": "The Heart of the Rift", "tier": "greater", "mult": 1.45, "opens": "",
 	 "intro": "Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",
-	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the Rift Map and the Guild Board carry on.)",
-	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B or higher Rift Map rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 Guild Board quests"}],
+	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the Guild Board carry on.)",
+	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 Guild Board quests"}],
 	 "reward": {"crystals": 280}},
 ]
 const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}
@@ -475,7 +460,7 @@ const MILESTONES := [
 	{"id": "artisan", "label": "Artisan — craft 3 items or relics", "type": "crafts_performed", "target": 3, "reward": {"crystals": 30}},
 	{"id": "full_roster", "label": "Full Roster — fill every hero slot", "type": "full_roster", "target": 1, "reward": {"reputation": 10}},
 	{"id": "renowned", "label": "Renowned Guild — reach Renowned Guild tier", "type": "guild_tier_renowned", "target": 1, "reward": {"reputation": 15}},
-	{"id": "greater_threat", "label": "Greater Threat — unlock the Greater Rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
+	{"id": "greater_threat", "label": "Greater Threat — open the Rank C rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
 	{"id": "act_one", "label": "The Vale Holds — complete Act I", "type": "campaign_act", "target": 2, "reward": {"crystals": 25}},
 	{"id": "act_two", "label": "Out of the Marshes — complete Act II", "type": "campaign_act", "target": 3, "reward": {"crystals": 40}},
 	{"id": "act_three", "label": "Crownbreaker — complete the campaign", "type": "campaign_act", "target": 4, "reward": {"crystals": 70}},

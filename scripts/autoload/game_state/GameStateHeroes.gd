@@ -327,7 +327,7 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	return ""
 
 
-## B/A/S evolutions need a rift of that rank sealed once (Rift Map); "" if met.
+## B/A/S evolutions need a rift of that rank sealed once; "" if met.
 func evolve_rank_gate(rank_id: String) -> String:
 	if rank_id in ["B", "A", "S"] and best_rift_rank_sealed < GameData.rift_rank_index(rank_id):
 		return "Seal a Rank %s rift first" % rank_id
@@ -365,7 +365,7 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
 			return "Locked out — you already chose the other path"
 	if n.has("rift_rank") and best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"])):
-		return "Seal a Rank %s or higher Rift Map rift first" % n["rift_rank"]
+		return "Seal a Rank %s or higher rift first" % n["rift_rank"]
 	if n.get("stone", false) and crystals < GameData.STONEBOUND_CRYSTALS:
 		return "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS
 	var cost := skill_node_cost(h, kind, n)

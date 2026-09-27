@@ -143,7 +143,7 @@ func _hamlet_targets() -> Dictionary:
 		"infirmary": func(): term_tab = "medical"; render(),
 		"drill": func(): term_tab = "roster"; roster_tab = "skills"; render(),
 		"board": func(): term_tab = "quests"; render(),
-		"gate": func(): hub_cluster = "rift_gate"; render(),
+		"gate": func(): screen = "rift_hall"; render(),
 		"market": func(): term_tab = "inventory"; inv_category = "items"; render(),
 		"vault": func(): term_tab = "inventory"; inv_category = "relics"; render(),
 	}
@@ -236,14 +236,6 @@ func _guild_status_lines() -> Array:
 					var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [mini(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
 					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
 					break
-	if GameState.feature_unlocked("rift_map"):
-		var soon: Dictionary = {}
-		for slot in GameState.rift_map:
-			if slot.has("rank") and (soon.is_empty() or int(slot.get("runs_left", 9)) < int(soon.get("runs_left", 9))):
-				soon = slot
-		if not soon.is_empty():
-			var rl := int(soon.get("runs_left", 1))
-			out.append(["Rank %s rift closes after %d run%s" % [soon["rank"], rl, "" if rl == 1 else "s"], Palette.HAZARD if rl <= 1 else Palette.MUTED, go_screen.call("rift_map")])
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty() and GameState.feature_unlocked("quests"):
 		out.append(["%d quest%s ready to claim" % [claimable.size(), "" if claimable.size() == 1 else "s"], Palette.RANK_E, go_term.call("quests")])
@@ -516,8 +508,6 @@ func _camp_badges() -> Dictionary:
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty():
 		out["Quest Board"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
-	if not GameState.pending_riftbreak_ranks.is_empty():
-		out["Rift Gate"] = ["!", "A rift has broken open — a Riftbreak fight is waiting"]
 	return out
 
 
@@ -548,12 +538,6 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting Hall", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
 				[GameData.CAMP_HUB_ICON_PATH["bestiary"], "Bestiary", func(): hub_cluster = ""; term_tab = "bestiary"; render()],
 			]
-		"rift_gate":
-			title = "Rift Gate"
-			entries = [
-				[GameData.CAMP_HUB_ICON_PATH["rift"], "Rift Hall", func(): hub_cluster = ""; screen = "rift_hall"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["rift_map"], "Rift Map", func(): hub_cluster = ""; screen = "rift_map"; render()],
-			]
 		"trading_post":
 			title = "Trading Post"
 			entries = [
@@ -570,7 +554,7 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	v.add_child(_label(title, 18))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	var entry_feature := {"Guild Management": "management", "Rift Map": "rift_map", "Inventory": "inventory", "Crafting Hall": "crafting", "Bestiary": "bestiary", "Guild Board": "quests"}
+	var entry_feature := {"Guild Management": "management", "Inventory": "inventory", "Crafting Hall": "crafting", "Bestiary": "bestiary", "Guild Board": "quests"}
 	for entry in entries:
 		var fid: String = entry_feature.get(str(entry[1]), "")
 		if fid != "" and not GameState.feature_unlocked(fid):
@@ -779,7 +763,7 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 		GameState.rest_guild()
 		render()
 	)
-	rest.tooltip_text = "Heroes recover as if a run had ended. The Rift Map's rifts count down too — one that closes spills out as a Riftbreak."
+	rest.tooltip_text = "Heroes recover as if a run had ended."
 	rest.disabled = not GameState.run.is_empty()
 	v.add_child(rest)
 	v.add_child(_wrap_label("Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed)." % [GameState.recovery_runs(), int(GameData.WOUND_HEAL_PER_RUN * 100)], 12, true))
@@ -1062,10 +1046,10 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Endless Rift", "A real-time survival run. You steer the first hero you pick (WASD, arrows, or drag); the rest follow and every hero attacks on their own, with Abilities firing on a timer. Foes pour in from every side and get tougher each minute; a ring closes in every 45 seconds, an elite comes each minute and a warden every 5 minutes (it calls the horde at half health). Collect shards to level up and pick 1 of 3 upgrades. Fallen companions get back up after 15 seconds; the run ends when your lead falls. Pays gold, essence and XP for time and kills, plus loot for elites and wardens."],
 		["Hero voices", "A hero's trait sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."],
 		["Boss phases", "Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn."],
-		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). B-rank+ mapped rifts give them two. Hover the badges on their plate to read them."],
+		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Rank B+ rifts give them two. Hover the badges on their plate to read them."],
 		["Boons", "Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower."],
 		["Guild Orders", "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."],
-		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],
+		["Rift Ladder", "Rifts come in ranks, F to SSS. F-D are Lesser rifts, C and up Greater rifts (open after Act I). Each rank hits harder than the last and pays more; from B up they add rules (more elites, harsher hazards, fewer shops, bosses with two mechanics). Seal a rank to open the next. Gear drops at the rank of the rift it came from."],
 		["Hero Bonds", "Certain subclass pairs (e.g. Duelist + Blade-Dancer) grant a bonus while both are alive in the active party — shown in Party Assembly when both halves are picked."],
 		["Party Synergy", "Resonance: 2+ party members currently building the same skill kind reinforce each other. Eclectic: a 3+ party with no kind repeated gets a small universal bonus instead. Never both at once — shown in Party Assembly."],
 		["Ability Awakening", "Spend Skill Points once to grant a hero's Active Ability a secondary effect (varies by ability — a shorter cooldown, a lingering debuff, a party dodge boost, a self-shield, or a small permanent damage stack) instead of only ever growing the skill tree's numbers."],
@@ -1080,7 +1064,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). 2 relics of one element start a set, 3 complete it, and 3 different elements make a Prism. Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."],
 		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
-		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
+		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -1091,8 +1075,8 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 # ---------------- Quests: Guild Board & Milestones ----------------
 const INK := Color("3b2414")
 const INK_SOFT := Color("6b4a2e")
-const QUEST_CATEGORY := {"hunt": "Hunt", "elite": "Hunt", "bounty": "Wanted", "seal_map": "Seal the Rift", "seal_rank": "Seal the Rift",
-	"seal_greater": "Seal the Rift", "trial_small": "Trial", "trial_flawless": "Trial", "trial_hardcore": "Trial", "craft": "Supply", "flawless_win": "Trial"}
+const QUEST_CATEGORY := {"hunt": "Hunt", "elite": "Hunt", "bounty": "Wanted", "seal_rank": "Seal the Rift",
+	"seal_greater": "Seal the Rift", "trial_small": "Trial", "trial_flawless": "Trial", "craft": "Supply", "flawless_win": "Trial"}
 
 
 ## The Guild Board: quests pinned as parchment notes on a wooden board —

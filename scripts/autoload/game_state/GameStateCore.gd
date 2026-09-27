@@ -57,7 +57,7 @@ var tower_best: int = 0          # highest Tower of Trials floor ever cleared
 var tower_week: int = 0          # tower_week_id() the weekly ladder progress belongs to
 var tower_week_cleared: int = 0  # ladder floors (91+) cleared this week
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
-var best_rift_rank_sealed: int = -1   # highest Rift Map rank sealed (GameData.RIFT_RANKS index) — gates Riftborn nodes
+var best_rift_rank_sealed: int = -1   # highest ladder rank sealed (GameData.RIFT_RANKS index) — opens the next rank
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
@@ -71,13 +71,11 @@ var pending_s_rank_reveal: Dictionary = {}
 var pending_toasts: Array = []   # UI-only, never saved: [{cls_id, pool_id, title, text}] for Main's portrait pop-ups
 var bonds: Dictionary = {}   # "<hero_id>|<hero_id>" (sorted) -> rifts sealed together; see GameData.BOND_LEVEL_RIFTS
 var run: Dictionary = {}   # {} = no active run
-var rift_map: Array[Dictionary] = []   # 6 slots: [{"rank":String, "runs_left":int, "bounty"?}] or [{}] (empty, refilled lazily)
-var pending_riftbreak_ranks: Array[String] = []   # ranks that broke since the last Terminal visit, merged into one encounter
 var monsters_seen: Array[String] = []      # bestiary — every monster/elite/boss name ever encountered
 var bosses_defeated: Array[String] = []    # bestiary — boss names ever defeated
 var hazards_seen: Array[String] = []       # bestiary — hazard type ids ever rolled
 
-# --- Quests (Guild Board contracts/dailies, Milestones, Rift Map bounties,
+# --- Quests (Guild Board contracts/dailies, Milestones,
 # escort quests folded into combat, Reputation currency) ---
 var reputation: int = 0
 var monster_kill_counts: Dictionary = {}   # monster/elite/boss name -> all-time kill count
@@ -141,7 +139,7 @@ func medical_recovery_reduction() -> float:
 ## Runs a downed hero sits out (Medical upgrades bring it down to 1). A new
 ## guild (fewer than 3 rifts sealed, i.e. before Greater Rifts open) only ever
 ## loses a hero for 1 run: early wipes are common and a small roster otherwise
-## sits idle while the Rift Map counts down.
+## sits idle.
 func recovery_runs() -> int:
 	if rifts_sealed < 3:
 		return 1
@@ -324,7 +322,6 @@ func _run_for_save() -> Dictionary:
 		return {}
 	var out := {
 		"diff_id": run.get("diff_id", ""),
-		"hardcore": run.get("hardcore", false),
 		"layers": run.get("layers", []), "pos": run.get("pos", 0),
 		"chosen": run.get("chosen", {}), "hero_ids": run.get("hero_ids", []),
 		"shield": run.get("shield", 0), "boss_rounds": run.get("boss_rounds", 0),
@@ -332,13 +329,9 @@ func _run_for_save() -> Dictionary:
 		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
 		"start_coins": run.get("start_coins", coins), "start_crystals": run.get("start_crystals", crystals),
 		"heroes_lost": run.get("heroes_lost", 0),
-		"rift_rank": run.get("rift_rank", ""), "is_riftbreak": run.get("is_riftbreak", false),
-		"riftbreak_severity": run.get("riftbreak_severity", 0),
-		"riftbreak_worst_index": run.get("riftbreak_worst_index", 0),
-		"riftbreak_flavor": run.get("riftbreak_flavor", ""),
-		"bounty": run.get("bounty", {}), "champion_call_used": run.get("champion_call_used", false),
+		"rift_rank": run.get("rift_rank", ""), "champion_call_used": run.get("champion_call_used", false),
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
-		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
+		"any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
 		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []), "events_seen": run.get("events_seen", []), "daily": run.get("daily", -1),
@@ -517,7 +510,7 @@ func save() -> void:
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,
 		"run": _run_for_save(),
-		"rift_map": rift_map, "pending_riftbreak_ranks": pending_riftbreak_ranks,
+		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
 		"reputation": reputation, "monster_kill_counts": monster_kill_counts,
 		"crafts_performed": crafts_performed, "flawless_wins": flawless_wins,

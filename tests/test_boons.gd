@@ -22,7 +22,7 @@ func run() -> void:
 		GameState.heroes.append(h)
 		ids.append(h.id)
 	GameState.runs_started = 3
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	var offer := GameState.roll_boon_offer()
 	check(offer.size() == 3 and offer.all(func(x): return not GameData.find_boon(str(x)).is_empty()), "an offer is 3 real boons")
 
@@ -61,7 +61,7 @@ func run() -> void:
 	check(Combat.boon_total("mend_pct") == 0.0, "boons end with the rift")
 
 	# A real elite win rolls an offer; a Tower elite doesn't.
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.run["layers"][0]["options"] = ["elite"]
 	GameState.run["chosen"] = {}
 	GameState.choose_node_type("elite")

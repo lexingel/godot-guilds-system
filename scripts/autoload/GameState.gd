@@ -41,10 +41,6 @@ func reset() -> void:
 	pending_shop_boost = false
 	guide_hidden = false
 	run = {}
-	rift_map = []
-	for i in 6:
-		rift_map.append({})
-	pending_riftbreak_ranks = []
 	monsters_seen = []
 	bosses_defeated = []
 	hazards_seen = []
@@ -104,9 +100,7 @@ func load_save() -> bool:
 	# slot_summary() already treats a blank guild_name as "empty" for slot
 	# selection, so this has to agree: otherwise _switch_slot()'s "if not
 	# load_save(): reset()" skips reset() for a slot that looks reusable,
-	# and every field reset() seeds (rift_map among them) is left at its
-	# bare class default — an empty array here, permanently, since nothing
-	# else ever grows it back to size.
+	# and every field reset() seeds is left at its bare class default.
 	if String(data.get("guild_name", "")) == "":
 		return false
 	guild_name = data.get("guild_name", "")
@@ -136,14 +130,6 @@ func load_save() -> bool:
 	consumables.assign(data.get("consumables", []))
 	active_incense = data.get("active_incense", {})
 	tonics = int(data.get("tonics", 0))
-	rift_map.assign(data.get("rift_map", []))
-	if rift_map.is_empty() and guild_name != "":
-		# Saves from before the Rift Map existed — seed 6 empty slots so
-		# resolve_rift_map() fills them with real rifts on the next render(),
-		# same fallback shape as the recruit_pool fix above.
-		for i in 6:
-			rift_map.append({})
-	pending_riftbreak_ranks.assign(data.get("pending_riftbreak_ranks", []))
 	monsters_seen.assign(data.get("monsters_seen", []))
 	bosses_defeated.assign(data.get("bosses_defeated", []))
 	hazards_seen.assign(data.get("hazards_seen", []))
@@ -217,7 +203,7 @@ func load_save() -> bool:
 		for k in chosen_raw:
 			chosen_fixed[int(k)] = chosen_raw[k]
 		run = {
-			"diff_id": run_data.get("diff_id", ""), "hardcore": run_data.get("hardcore", false),
+			"diff_id": run_data.get("diff_id", ""),
 			"layers": run_data.get("layers", []), "pos": run_data.get("pos", 0),
 			"chosen": chosen_fixed, "hero_ids": run_data.get("hero_ids", []),
 			"shield": run_data.get("shield", 0), "boss_rounds": run_data.get("boss_rounds", 0),
@@ -225,13 +211,9 @@ func load_save() -> bool:
 			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
 			"start_coins": run_data.get("start_coins", coins), "start_crystals": run_data.get("start_crystals", crystals),
 			"heroes_lost": run_data.get("heroes_lost", 0),
-			"rift_rank": run_data.get("rift_rank", ""), "is_riftbreak": run_data.get("is_riftbreak", false),
-			"riftbreak_severity": run_data.get("riftbreak_severity", 0),
-			"riftbreak_worst_index": run_data.get("riftbreak_worst_index", 0),
-			"riftbreak_flavor": run_data.get("riftbreak_flavor", ""),
-			"bounty": run_data.get("bounty", {}), "champion_call_used": bool(run_data.get("champion_call_used", false)),
+			"rift_rank": run_data.get("rift_rank", ""), "champion_call_used": bool(run_data.get("champion_call_used", false)),
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
-			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
+			"any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []), "events_seen": run_data.get("events_seen", []),
@@ -250,7 +232,7 @@ func start_finale(hero_ids: Array[String], starting_relic: Relic) -> void:
 	if not finale_ready():
 		return
 	var act := current_act()
-	start_run(str(act["tier"]), hero_ids, starting_relic, false)
+	start_run(str(act["tier"]), hero_ids, starting_relic)
 	run["finale"] = int(act["act"])
 	run["training"] = false
 	run["biome"] = str(GameData.ACT_BIOME[int(act["act"])])
@@ -262,7 +244,7 @@ func start_daily(hero_ids: Array[String]) -> void:
 	if not daily_available():
 		return
 	var info := daily_info()
-	start_run(str(info["diff_id"]), hero_ids, null, false)
+	start_run(str(info["diff_id"]), hero_ids, null)
 	run["daily"] = int(info["day"])
 	run["training"] = false
 	run["seed"] = int(info["seed"])
@@ -374,7 +356,7 @@ func start_tower(hero_ids: Array[String]) -> void:
 	for r in Combat.equipped_relics():
 		shield += r.hp
 	run = {
-		"diff_id": "tower", "hardcore": false,
+		"diff_id": "tower",
 		"layers": [{"options": [info["kind"]]}], "pos": 0, "chosen": {},
 		"hero_ids": ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,

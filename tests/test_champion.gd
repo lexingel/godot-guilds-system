@@ -34,7 +34,7 @@ func run() -> void:
 	var b: Dictionary = GameData.CHAMPION_BOONS[GameState.champion_role(c)]
 	var h0: Hero = GameState.find_hero(ids[0])
 	check(GameState.champion_boon(str(b["kind"])) == 0.0, "no boon outside a run")
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	check(GameState.champion_boon(str(b["kind"])) > 0.0, "boon %s active in a run" % b["kind"])
 	check(Combat.hero_skill_sources(h0, str(b["kind"])).any(func(p): return p[0] == "Champion Boon"), "boon shows in the stat breakdown")
 	c.hp = 0

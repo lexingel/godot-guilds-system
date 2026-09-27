@@ -203,7 +203,7 @@ func _render_rift_map(v: VBoxContainer) -> void:
 
 # ---------------- Rift Run ----------------
 ## The strip at the top of every rift screen (StS/Hades-style run HUD):
-## rift name, node pips, run tags (Hardcore, incense, rank, relic ward),
+## rift name, node pips, run tags (incense, rank, relic ward),
 ## then — outside combat, where the arena already shows HP — every party
 ## member's portrait with an HP bar, and the equipped relics (hover for
 ## what each does). HP carries across nodes, so this is the number that
@@ -241,8 +241,6 @@ func _run_bar(in_combat: bool) -> Control:
 	var rank: String = str(GameState.run.get("rift_rank", ""))
 	if rank != "":
 		tags.append("Rank %s" % rank)
-	if GameState.run.get("hardcore", false):
-		tags.append("Hardcore")
 	if not GameState.active_incense.is_empty():
 		tags.append(str(GameState.active_incense["name"]))
 	if int(GameState.run.get("shield", 0)) > 0:
@@ -342,13 +340,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		screen = "terminal"
 		render()
 		return
-	if GameState.run.get("is_riftbreak", false):
-		var rb_label := _label("⚠ Riftbreak! An unaddressed rift's threat has spilled out and forced this fight.", 14)
-		rb_label.add_theme_color_override("font_color", Palette.HAZARD)
-		v.add_child(rb_label)
-		var rb_flavor := str(GameState.run.get("riftbreak_flavor", ""))
-		if rb_flavor != "":
-			v.add_child(_label(rb_flavor, 12, true))
 	var kind := GameState.current_node_kind()
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
 	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
@@ -372,7 +363,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			rl.add_theme_color_override("font_color", Palette.HAZARD)
 			v.add_child(rl)
 	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
-	if not biome.is_empty() and not GameState.run.get("is_riftbreak", false):
+	if not biome.is_empty():
 		var bl := _label(str(biome["name"]), 12, true)
 		bl.tooltip_text = "This rift's region sets which foes you'll meet."
 		bl.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -416,9 +407,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			var dl := _label("Daily Rift sealed! +%d Essence · streak %d" % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
 			dl.add_theme_color_override("font_color", Palette.RANK_S)
 			v.add_child(dl)
-		var bounty: Dictionary = sealed_dict.get("bounty", {})
-		if not bounty.is_empty():
-			v.add_child(_label("Bounty claimed: +%d Gold, +%d Renown" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))
 		if str(sealed_dict.get("flavor", "")) != "":
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		for line in _run_summary_lines():
@@ -584,7 +572,7 @@ func _injury_panel() -> Control:
 			b.disabled = disabled
 			b.tooltip_text = tip
 			acts.add_child(b)
-		act.call("Carry out (+1 day)", "The party carries them home. A day passes: every Rift Map rift counts down and the Guild Board moves on.", false,
+		act.call("Carry out (+1 day)", "The party carries them home. A day passes and the Guild Board moves on.", false,
 			func(): return GameState.injury_carry(h.id))
 		var need := int(GameData.INJURY_REINFORCEMENTS[sev])
 		var sent: Array = idle.slice(0, need).map(func(x): return x.name.split(" the ")[0])

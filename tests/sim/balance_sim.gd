@@ -3,6 +3,7 @@ extends Node
 ## heroes sit out, the Champion joins (levelled, Boon, Call on the boss), and
 ## loot/XP/attribute gains inside a run are modelled. Never saves. ~1 min:
 ##   godot --headless --path . res://tests/sim/balance_sim.tscn
+## (`-- ranks`: only the ladder-rank profiles; `-- tower`, `-- survivors`)
 
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
@@ -19,7 +20,18 @@ const PROFILES := {
 	"Greater | underleveled": ["greater", ["E", "D", "D"], 4, 1, "common", 1, "common"],
 	"Greater | invested": ["greater", ["D", "C", "C", "C"], 7, 2, "rare", 2, "rare"],
 	"Endless | endgame": ["endless", ["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
+	# Ladder ranks (a rank id instead of a difficulty): a party roughly where
+	# a player reaches that rank.
+	"Rank E  | invested": ["E", ["E", "D", "D"], 4, 1, "common", 1, "common"],
+	"Rank D  | invested": ["D", ["E", "D", "D", "D"], 6, 2, "rare", 1, "rare"],
+	"Rank B  | invested": ["B", ["D", "C", "C", "C"], 8, 2, "rare", 2, "rare"],
+	"Rank A  | endgame": ["A", ["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
+	"Rank S  | endgame": ["S", ["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
+	"Rank SS | endgame": ["SS", ["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
+	"Rank SSS| endgame": ["SSS", ["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
 }
+
+const MODES := ["lesser", "greater", "endless"]
 
 
 var TOWER_ONLY := false   # `-- tower` on the command line: skip the rift profiles
@@ -30,16 +42,17 @@ func _ready() -> void:
 	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
 	if OS.get_cmdline_user_args().has("survivors"):
 		for name in PROFILES:
-			if PROFILES[name][0] != "lesser":   # Endless opens in Act III
+			if PROFILES[name][0] in ["greater", "endless"]:   # Endless opens in Act III
 				_survivors(name, PROFILES[name])
 		get_tree().quit()
 		return
 	if not TOWER_ONLY:
 		for name in PROFILES:
-			if PROFILES[name][0] != "endless":   # Endless is a survival run: `-- survivors`
+			if PROFILES[name][0] != "endless" and (not OS.get_cmdline_user_args().has("ranks") or not PROFILES[name][0] in MODES):   # Endless is a survival run: `-- survivors`
 				_profile(name, PROFILES[name])
 	for name in PROFILES:
-		_tower(name, PROFILES[name])
+		if PROFILES[name][0] in MODES:
+			_tower(name, PROFILES[name])
 	get_tree().quit()
 
 
@@ -109,7 +122,7 @@ func _profile(name: String, p: Array) -> void:
 		var party := _build_party(p)
 		for h in party:
 			power_sum += Combat.power_of(h)
-		var diff: Dictionary = GameData.DIFFICULTIES[0 if p[0] == "lesser" else 1]
+		var diff: Dictionary = _diff_for(str(p[0]))
 		var res := _run_rift(party, diff)
 		if res["cleared"]:
 			clears += 1
@@ -127,6 +140,13 @@ func _profile(name: String, p: Array) -> void:
 	print("   %s income per run: %.0f gold, %.0f essence, loot worth %.0f gold" % [name, _coins / runs, _crystals / runs, _loot_value / runs])
 	print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
 		name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
+
+
+func _diff_for(id: String) -> Dictionary:
+	if id in MODES:
+		return GameData.DIFFICULTIES[0 if id == "lesser" else 1]
+	var base: Dictionary = GameData.DIFFICULTIES[0 if str(GameData.find_rift_rank(id)["base"]) == "lesser" else 1]
+	return GameState._apply_rift_rank_modifiers(base, id)
 
 
 ## A fresh party for a profile (Champion first), gear and relics equipped.

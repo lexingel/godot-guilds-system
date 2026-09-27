@@ -13,7 +13,7 @@ func _party(n_idle: int) -> Array[String]:
 		GameState.heroes.append(h)
 		if i < 3:
 			ids.append(h.id)
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	return ids
 
 
@@ -117,15 +117,20 @@ func run() -> void:
 	GameState.accept_quest(str(bq["id"]))
 	GameState._bump("boss:Korrath")
 	check(GameState.quest_progress(bq) == 1, "bounty progress from boss tally")
-	# seal_map fails if the rift breaks.
-	GameState.rifts_sealed = 3   # the Rift Map is open
-	GameState.resolve_rift_map()
-	var slot: Dictionary = GameState.rift_map.filter(func(s): return s.has("uid"))[0]
-	var mq := GameState.roll_quest()
-	mq["type"] = "seal_map"; mq["param"] = str(slot["uid"]); mq["rank"] = str(slot["rank"])
-	GameState.guild_board.append(mq)
-	for i in GameState.rift_map.size():
-		if GameState.rift_map[i].get("uid", "") == slot["uid"]:
-			GameState.rift_map[i] = {}
-	GameState.resolve_guild_board()
-	check(mq["status"] == "failed", "map quest fails when its rift is gone unsealed")
+	# The rift ladder: each rank opens once the one below is sealed; C+ needs Act II.
+	GameState.finish_run()
+	GameState.best_rift_rank_sealed = -1
+	check(GameState.ladder_rank_lock("F") == "" and GameState.ladder_rank_lock("E") != "", "only Rank F is open at first")
+	GameState.best_rift_rank_sealed = GameData.rift_rank_index("D")
+	GameState.campaign_act = 1
+	check(GameState.ladder_rank_lock("C") != "" and GameState.highest_open_rank() == "D", "Rank C waits for Act II")
+	GameState.campaign_act = 2
+	check(GameState.highest_open_rank() == "C", "Rank C opens with Act II")
+	check(Combat.recommended_power("", "E") > Combat.recommended_power("", "F") and Combat.recommended_power("", "SSS") > Combat.recommended_power("", "S"), "recommended power climbs the ladder")
+	var lids: Array[String] = []
+	lids.assign(GameState.heroes.slice(0, 3).map(func(h): return h.id))
+	GameState.start_ladder_rift("B", lids, null)
+	var d := GameState._diff()
+	check(d["id"] == "greater" and float(d["monster_hp"]) > float(GameData.DIFFICULTIES[1]["monster_hp"]) and int(d["seal_essence"]) > int(GameData.DIFFICULTIES[1]["seal_essence"]) and bool(d.get("elite_chance_up", false)), "Rank B: Greater base, tougher foes, bigger rewards, more elites")
+	check(GameState.loot_rank() == "B", "loot drops at the rift's rank")
+	GameState.finish_run()

@@ -67,7 +67,6 @@ const FEATURE_UNLOCKS := {
 	"crafting": {"name": "Crafting Hall", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
 	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
 	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
-	"rift_map": {"name": "Rift Map", "hint": "Opens after you seal 2 rifts", "news": "Ranked rifts appear on the map — seal them before they break open."},
 	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
 }
 
@@ -135,7 +134,6 @@ const MEDICAL_BG := "res://assets/screens/medical_bg.png"
 const MANAGEMENT_BG := "res://assets/screens/management_bg.png"
 const BED_ICON := "res://assets/screens/bed_icon.png"
 const RIFTHALL_BG := "res://assets/screens/rifthall_bg.png"
-const RIFTMAP_BG := "res://assets/screens/riftmap_bg.png"
 const INVENTORY_BG := "res://assets/screens/inventory_bg.png"
 const CRAFTING_BG := "res://assets/screens/crafting_bg.png"
 const SHOP_BG := "res://assets/screens/shop_bg.png"
@@ -153,7 +151,6 @@ const CAMP_HUB_ICON_PATH := {
 	"medical": "res://assets/camp/icon_medical.png",
 	"management": "res://assets/camp/icon_management.png",
 	"rift": "res://assets/camp/icon_rift.png",
-	"rift_map": "res://assets/camp/icon_rift_map.png",
 	"bestiary": "res://assets/camp/icon_bestiary.png",
 	"crafting": "res://assets/camp/icon_crafting.png",
 	"settings": "res://assets/skills/gear.png",

@@ -2,22 +2,20 @@ extends "res://scripts/autoload/game_state/GameStateQuests.gd"
 ## GameState, part 5: rift difficulty and the modes built on runs — campaign, Daily Rift, Tower hooks, boons, records.
 
 
-## Folds a mapped rift's RIFT_RANK_MODIFIERS into a copy of `diff` — shared by
-## start_run() (so the *initial* build_layers() call already sees the biased
-## elite/shop pool) and _diff() (so every later call, e.g. Combat.start_combat
-## at each node and ensure_hazard's severity roll, sees the same modified
-## numbers too — _diff() re-derives its base diff fresh from GameData.DIFFICULTIES
-## on every call, so a one-off modified copy from start_run alone wouldn't
-## actually apply for the rest of the run).
+## Folds a ladder rank (GameData.RIFT_RANKS) into a copy of its base `diff`:
+## foe multipliers, reward multiplier and extra rules. Shared by start_run()
+## (the first build_layers() call) and _diff() (every later lookup).
 func _apply_rift_rank_modifiers(diff: Dictionary, rift_rank: String) -> Dictionary:
 	if rift_rank == "":
 		return diff
-	var mods: Dictionary = GameData.RIFT_RANK_MODIFIERS.get(rift_rank, {})
-	if mods.is_empty():
-		return diff
+	var mods: Dictionary = GameData.find_rift_rank(rift_rank)
 	var out := diff.duplicate(true)
-	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(mods.get("monster_hp_mult", 1.0))))
-	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(mods.get("monster_dmg_mult", 1.0))))
+	out["monster_hp"] = float(out["monster_hp"]) * float(mods["hp"])
+	out["monster_dmg"] = float(out["monster_dmg"]) * float(mods["dmg"])
+	var rw := float(mods["reward"])
+	out["coin"] = [int(round(float(out["coin"][0]) * rw)), int(round(float(out["coin"][1]) * rw))]
+	out["crystal"] = [int(round(float(out["crystal"][0]) * rw)), int(round(float(out["crystal"][1]) * rw))]
+	out["seal_essence"] = int(round(float(out["seal_essence"]) * rw))
 	out["hazard_severity_up"] = int(mods.get("hazard_severity_up", 0))
 	out["elite_chance_up"] = bool(mods.get("elite_chance_up", false))
 	out["shop_chance_down"] = bool(mods.get("shop_chance_down", false))
@@ -32,10 +30,8 @@ func _diff() -> Dictionary:
 	for d in GameData.DIFFICULTIES:
 		if d["id"] == run["diff_id"]:
 			diff = d
-	if run.get("is_riftbreak", false):
-		return _apply_riftbreak_severity(diff, int(run.get("riftbreak_severity", 0)))
 	diff = _apply_rift_rank_modifiers(diff, str(run.get("rift_rank", "")))
-	if not run.is_empty() and not run.get("is_riftbreak", false):
+	if not run.is_empty():
 		diff = diff.duplicate()
 		diff["biome"] = run_biome()
 	if run.has("daily"):
@@ -51,21 +47,6 @@ func _apply_training(diff: Dictionary) -> Dictionary:
 	out["floors"] = int(t["floors"])
 	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(t["monster_hp_mult"])))
 	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(t["monster_dmg_mult"])))
-	return out
-
-
-## Scales a Riftbreak encounter's difficulty by the summed severity index of
-## every merged pending rank (capped at 3x so a large backlog doesn't produce
-## an unwinnable fight) — mirrors _apply_rift_rank_modifiers's shape but keyed
-## off a raw severity number rather than a single rank id, since a Riftbreak
-## can merge several different ranks into one fight.
-func _apply_riftbreak_severity(diff: Dictionary, severity: int) -> Dictionary:
-	if severity <= 0:
-		return diff
-	var mult: float = min(3.0, 1.0 + 0.15 * float(severity))
-	var out := diff.duplicate(true)
-	out["monster_hp"] = int(round(float(out["monster_hp"]) * mult))
-	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * mult))
 	return out
 
 
@@ -146,7 +127,7 @@ func _complete_act(act_num: int) -> void:
 		subtitle += " · %s unlocked" % act["opens"]
 	pending_stories.append({"title": act["finale"] + " — sealed", "subtitle": subtitle, "text": str(act["outro"])})
 	if campaign_done():
-		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, clear the Rift Map, and take on the Guild Board for as long as rifts keep opening."})
+		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on the Guild Board for as long as rifts keep opening."})
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
 
@@ -219,7 +200,7 @@ func _run_label() -> String:
 
 ## Appends the run that's ending to run_history (newest first).
 func _record_run(outcome: String) -> void:
-	if run.is_empty() or run.has("tower") or run.get("is_riftbreak", false):
+	if run.is_empty() or run.has("tower"):
 		return
 	var names: Array = []
 	for h in current_party():
@@ -245,7 +226,7 @@ func _run_outcome() -> String:
 	return "Left"
 
 
-## Remembers a hero lost for good (Hardcore, or left behind in a rift).
+## Remembers a hero lost for good (left behind in a rift).
 func _memorialize(h: Hero, cause: String) -> void:
 	fallen.push_front({"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "rank": h.rank, "level": h.level,
 		"day": day, "cause": cause, "rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0))})

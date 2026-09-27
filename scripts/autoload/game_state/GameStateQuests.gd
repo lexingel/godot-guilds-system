@@ -43,12 +43,8 @@ func _bump(key: String, n: int = 1) -> void:
 ## Rolls one posting of a random type the guild can actually attempt now.
 func roll_quest() -> Dictionary:
 	var types := ["hunt", "hunt", "elite", "bounty", "seal_rank", "trial_small", "trial_flawless", "craft", "flawless_win"]
-	if rift_map.any(func(sl): return sl.has("rank") and sl.has("uid")):
-		types.append_array(["seal_map", "seal_map"])
 	if greater_rift_unlocked():
 		types.append("seal_greater")
-	if rifts_sealed >= 1:
-		types.append("trial_hardcore")
 	var type: String = types[randi() % types.size()]
 	var q := {"id": "quest%d" % next_id, "type": type, "param": "", "target": 1, "diff": 1, "status": "posted", "baseline": 0}
 	next_id += 1
@@ -65,13 +61,6 @@ func roll_quest() -> Dictionary:
 		"bounty":
 			q["param"] = str(GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()])
 			q["diff"] = 2
-		"seal_map":
-			var slots := rift_map.filter(func(sl): return sl.has("rank") and sl.has("uid"))
-			var sl: Dictionary = slots[randi() % slots.size()]
-			q["param"] = str(sl["uid"])
-			q["rank"] = str(sl["rank"])
-			var ri := GameData.rift_rank_index(q["rank"])
-			q["diff"] = 1 if ri <= 1 else (2 if ri <= 3 else 3)
 		"seal_rank":
 			var r: int = clampi(max(best_rift_rank_sealed, 0) + randi() % 2, 1, 5)
 			q["param"] = str(GameData.RIFT_RANKS[r]["id"])
@@ -80,7 +69,7 @@ func roll_quest() -> Dictionary:
 			q["diff"] = 3
 		"trial_small":
 			q["diff"] = 2
-		"trial_flawless", "trial_hardcore":
+		"trial_flawless":
 			q["diff"] = 3
 		"craft":
 			q["target"] = 1 + randi() % 2
@@ -96,7 +85,6 @@ func _quest_current(q: Dictionary) -> int:
 		"hunt": return int(monster_kill_counts.get(str(q["param"]), 0))
 		"elite": return elites_won
 		"bounty": return _tally("boss:" + str(q["param"]))
-		"seal_map": return _tally("map:" + str(q["param"]))
 		"seal_rank":
 			var n := 0
 			for i in range(GameData.rift_rank_index(str(q["param"])), GameData.RIFT_RANKS.size()):
@@ -105,7 +93,6 @@ func _quest_current(q: Dictionary) -> int:
 		"seal_greater": return _tally("greater_seals")
 		"trial_small": return _tally("small_seals")
 		"trial_flawless": return _tally("flawless_rifts")
-		"trial_hardcore": return _tally("hardcore_seals")
 		"craft": return crafts_performed
 		"flawless_win": return flawless_wins
 	return 0
@@ -118,8 +105,7 @@ func quest_progress(q: Dictionary) -> int:
 
 
 ## Seeds a fresh board (new guild, or a save from the old contract/daily
-## board), refreshes postings when their days are up, and fails any quest
-## whose Rift Map rift broke open before it was sealed.
+## board) and refreshes postings when their days are up.
 func resolve_guild_board() -> void:
 	var changed := false
 	if guild_board.is_empty() or guild_board.any(func(q): return not q.has("status")):
@@ -132,12 +118,6 @@ func resolve_guild_board() -> void:
 			guild_board.append(roll_quest())
 		board_refresh_day = day + GameData.QUEST_REFRESH_DAYS
 		changed = true
-	for q in guild_board:
-		if str(q["type"]) == "seal_map" and str(q["status"]) != "failed" and _tally("map:" + str(q["param"])) == 0 \
-				and not rift_map.any(func(sl): return str(sl.get("uid", "")) == str(q["param"])) \
-				and not (not run.is_empty() and str(run.get("map_uid", "")) == str(q["param"])):
-			q["status"] = "failed"
-			changed = true
 	if changed:
 		save()
 
@@ -172,12 +152,10 @@ func quest_desc(q: Dictionary) -> String:
 		"hunt": return "Hunt: defeat %s ×%d" % [q["param"], t]
 		"elite": return "Hunt: win %d Elite fight%s" % [t, s]
 		"bounty": return "Bounty: defeat %s" % q["param"]
-		"seal_map": return "Seal: close the Rank %s rift on the Rift Map before it breaks" % q.get("rank", "?")
-		"seal_rank": return "Seal: seal a Rank %s+ Rift Map rift" % q["param"]
-		"seal_greater": return "Seal: seal a Greater Rift"
+		"seal_rank": return "Seal: seal a Rank %s+ rift" % q["param"]
+		"seal_greater": return "Seal: seal a Rank C+ rift"
 		"trial_small": return "Trial: seal a rift with 2 heroes or fewer (plus the Champion)"
 		"trial_flawless": return "Trial: seal a rift without any hero going down"
-		"trial_hardcore": return "Trial: seal a rift in Hardcore Mode"
 		"craft": return "Supply: craft %d item%s or relic%s" % [t, s, s]
 		"flawless_win": return "Trial: win %d fight%s without a hero going down" % [t, s]
 	return "?"

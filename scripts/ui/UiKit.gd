@@ -14,7 +14,7 @@ const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
 
 
-var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | rift_map | party_assembly | rift_run | terminal | crafting_hall | settings
+var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | party_assembly | rift_run | terminal | crafting_hall | settings
 
 
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests
@@ -1113,19 +1113,6 @@ func _play_rift_entry_flash() -> void:
 	flash_tw.tween_callback(flash.queue_free)
 
 
-## 6 real hotspots positioned directly on the rift-marker glows already
-## visible in riftmap_bg.png, matching Rift Hall's own gate-hotspot pattern —
-## each a small portal icon (reusing icon_rift.png, the same purple-swirl
-## icon Rift Hall's own gate uses) with a persistent "Rank X — mm:ss" caption
-## instead of a fixed label, since that's live per-render info a player needs
-## to see without hovering. First-draft marker coordinates (native 320x200
-## image space, adjustable after a visual check like every other hand-placed
-## hotspot this project has added), scaled the same way every other scene's
-## hotspots already are.
-const RIFT_MAP_MARKER_POS: Array[Vector2] = [
-	Vector2(90, 60), Vector2(190, 55), Vector2(60, 100),
-	Vector2(160, 90), Vector2(240, 95), Vector2(110, 130),
-]
 
 
 var _pending_diff_id: String = "lesser"
@@ -1146,20 +1133,13 @@ var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_actio
 var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 
 
-var _pending_hardcore: bool = false
-
-
 var pending_incense_id: String = ""
 
 
-## Non-empty only when Party Assembly was entered from the Rift Map hub
-## (rather than Rift Hall) — routes "Enter the Rift" to start_map_rift()
-## instead of start_run(), hides the Hardcore toggle (retired from mapped
-## rifts), and sends "Back" to the map instead of the hall.
+## The ladder rank Party Assembly launches (start_ladder_rift); "" for the
+## other modes.
 var _pending_rift_rank: String = ""
-
-
-var _pending_map_slot_idx: int = -1
+var _ladder_pick: String = ""   # the rank picked on the Rift Hall's ladder
 
 
 const MAP_NODE_COLOR := {

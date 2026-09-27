@@ -34,7 +34,7 @@ func run() -> void:
 	for i in 40:
 		seen[GameState.pick_biome()] = true
 	check(seen.size() == 3, "Act III rifts roll every biome")
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.run["biome"] = "ashen"
 	var d := GameState._diff()
 	var pool: Array = GameData.BIOMES["ashen"]["monsters"]
@@ -134,7 +134,7 @@ func run() -> void:
 
 	# Auto policy and Quick fight.
 	GameState.campaign_act = 1
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	var st2 := _fight(ids)
 	var ha: Hero = (st2["party"] as Array).filter(func(h): return not h.is_champion)[0]
 	st2["monsters"][0]["_charged"] = true

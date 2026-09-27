@@ -41,18 +41,6 @@ func weighted_rank() -> String:
 	return "F"
 
 
-func weighted_rift_rank() -> String:
-	var total := 0
-	for r in GameData.RIFT_RANKS:
-		total += int(r["weight"])
-	var roll := randi() % total
-	for r in GameData.RIFT_RANKS:
-		if roll < int(r["weight"]):
-			return r["id"]
-		roll -= int(r["weight"])
-	return "F"
-
-
 ## Guild Management node display strings — a match on node id since the HTML
 ## version used a per-node JS closure that doesn't translate to static data.
 func describe_node_effect(node_id: String, level: int) -> String:

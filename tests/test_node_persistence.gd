@@ -19,7 +19,7 @@ func run() -> void:
 		GameState.next_id += 1
 		GameState.heroes.append(h)
 		ids.append(h.id)
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 
 	# Shop: offers survive, bought flags survive.
 	GameState.run["node_state"] = {}

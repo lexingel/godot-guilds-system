@@ -13,7 +13,7 @@ func _equip_only(rs: Array) -> void:
 
 
 func _fight_party(ids: Array[String]) -> Dictionary:
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.run["node_state"] = {}
 	GameState.choose_node_type("combat")
 	GameState.engage_node()
@@ -128,7 +128,7 @@ func run() -> void:
 	_equip_only([crown])
 	var champ := Combat.generate_champion()
 	champ.is_champion = true
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.run["champion_calls"] = 1
 	check(GameState.champion_call_ready(champ), "Crown: a second Call")
 	GameState.run["champion_calls"] = 2
@@ -142,12 +142,7 @@ func run() -> void:
 
 	var ws := _uniq("wardens_seal")
 	_equip_only([ws])
-	GameState.resolve_rift_map()
-	var fuse0: Array = GameState.rift_map.map(func(s): return int(s.get("runs_left", 0)))
-	GameState.day = 2   # pass_time makes it 3 → held
-	GameState.pass_time()
-	var fuse1: Array = GameState.rift_map.map(func(s): return int(s.get("runs_left", 0)))
-	check(fuse0 == fuse1, "Warden's Seal holds fuses on every third day")
+	check(is_equal_approx(Combat.relic_special_total("hazard_guard_pct"), 0.2), "Warden's Seal guards against hazards")
 
 	# Awaken + reroll.
 	var up := Combat.gen_relic("rare")

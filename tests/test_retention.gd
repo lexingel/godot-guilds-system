@@ -61,17 +61,17 @@ func run() -> void:
 	GameState.finish_run()
 
 	# Run history: a retreat, and the cap.
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.retreat_now()
 	check(GameState.run_history[0]["result"] == "Retreated", "a retreat is recorded")
 	for i in 40:
-		GameState.start_run("lesser", ids, null, false)
+		GameState.start_run("lesser", ids, null)
 		GameState.retreat_now()
 	check(GameState.run_history.size() == GameData.RUN_HISTORY_MAX, "history is capped")
 
 	# Memorial.
 	var h := GameState.find_hero(ids[0])
-	GameState.start_run("lesser", ids, null, false)
+	GameState.start_run("lesser", ids, null)
 	GameState.run["left_behind"] = [h.id]
 	GameState.finish_run()
 	check(GameState.find_hero(ids[0]) == null and GameState.fallen.size() == 1 and str(GameState.fallen[0]["name"]) == h.name and GameState.heroes_lost_total == 1, "a hero left behind goes on the memorial")

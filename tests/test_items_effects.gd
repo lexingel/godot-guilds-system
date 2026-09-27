@@ -86,7 +86,7 @@ func run() -> void:
 	check(Combat.hero_effects(a).any(func(e): return e.get("source", "") == "Haunted"), "scar upside active")
 	var ids: Array[String] = [a.id, b.id]
 	for r in 5:
-		GameState.start_run("lesser", ids, null, false)
+		GameState.start_run("lesser", ids, null)
 		GameState.seal_rift()
 		GameState.run = {}
 	check(GameState.bond_rifts(a.id, b.id) == 5 and GameData.bond_level(5) == 2, "bond grows with shared rifts")

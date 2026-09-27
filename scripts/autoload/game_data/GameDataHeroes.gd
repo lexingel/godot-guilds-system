@@ -214,10 +214,6 @@ const NARRATIVE_LINES := {
 		"openers": ["Something in the wreckage doesn't belong to this floor at all.", "The rift doesn't usually give things like this away.", "Buried under the ordinary, something extraordinary.", "Not every rift hides a find like this."],
 		"closers": ["Luck, or the Rift wanted rid of it.", "The guild will be talking about this one.", "Worth every wound it took to find it.", "Some things are worth the risk of coming back for."],
 	},
-	"hardcore_hero_lost": {
-		"openers": ["No recovery this time.", "The Rift doesn't give this one back.", "Some doors only open one way.", "The guild loses more than a name today."],
-		"closers": ["The guild remembers the ones it couldn't bring home.", "Hardcore Mode has no mercy, and neither did this fight.", "Grief is the price of that kind of risk.", "Not every hero makes it out of the Rift's reach."],
-	},
 	"guild_founded": {
 		"openers": ["A name, a crest, and nothing else yet.", "Every guild starts as an empty ledger.", "The banner goes up before anyone's earned it.", "No history yet. Just intent."],
 		"closers": ["That's how it always starts.", "The Rift doesn't care how you began, only how you end.", "Everything after this gets written the hard way.", "Whatever comes next, it starts here."],
@@ -225,10 +221,6 @@ const NARRATIVE_LINES := {
 	"scar_gained": {
 		"openers": ["The rift left its mark.", "Some wounds don't close all the way.", "Not every scar shows on the skin.", "The fight is over. The fear isn't."],
 		"closers": ["Quiet about how it happened.", "A price paid for coming back at all.", "The rift takes more than HP sometimes.", "Not every cost gets fully repaid."],
-	},
-	"riftbreak_begins": {
-		"openers": ["The threat you left to fester finally comes looking for you.", "No warning this time.", "What you didn't finish, finishes coming for you.", "The rift you ignored didn't ignore you back."],
-		"closers": ["The spillover is already at the gates.", "This one isn't optional.", "You don't get to choose when this bill comes due.", "Whatever's coming, it's already arrived."],
 	},
 	"greater_rift_unlocked": {
 		"openers": ["The Rift Hall's third gate finally answers.", "Three rifts sealed, and the chains on the old gateway snap loose.", "The rubble in the doorway stops mattering.", "Something the guild wasn't ready for, until now it is."],
