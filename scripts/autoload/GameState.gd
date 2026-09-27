@@ -394,7 +394,7 @@ func _run_for_save() -> Dictionary:
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
-		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []),
+		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []), "events_seen": run.get("events_seen", []),
 	}
 	if run.has("tower"):
 		out["tower"] = run["tower"]
@@ -746,7 +746,7 @@ func load_save() -> bool:
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
-			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []),
+			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []), "events_seen": run_data.get("events_seen", []),
 		}
 		if run_data.has("tower"):
 			run["tower"] = int(run_data["tower"])
@@ -1501,7 +1501,13 @@ func ensure_event() -> void:
 	if ns.has("event"):
 		return
 	ns["type"] = "event"
-	ns["event"] = GameData.RIFT_EVENTS[randi() % GameData.RIFT_EVENTS.size()]
+	var seen: Array = run.get("events_seen", [])
+	var fresh: Array = GameData.RIFT_EVENTS.filter(func(e): return not seen.has(e["id"]))
+	if fresh.is_empty():
+		fresh = GameData.RIFT_EVENTS
+	ns["event"] = fresh[randi() % fresh.size()]
+	seen.append(str(ns["event"]["id"]))
+	run["events_seen"] = seen
 	ns["resolved"] = false
 	run["node_state"] = ns
 
@@ -1524,7 +1530,13 @@ func resolve_event(choice_idx: int) -> void:
 	coins -= int(cost.get("coins", 0))
 	crystals -= int(cost.get("crystals", 0))
 	var log: Array[String] = []
-	if c.has("gamble"):
+	if c.has("check"):
+		var chk: Dictionary = c["check"]
+		var info := event_check(chk)
+		var passed := randf() < float(info["chance"])
+		log.append("%s check (%s, %d vs %d): %s." % [GameData.ATTR_LABEL[chk["attr"]], info["hero"], int(info["value"]), int(info["target"]), "passed" if passed else "failed"])
+		log.append_array(_apply_event_effect(chk["win"] if passed else chk["lose"]))
+	elif c.has("gamble"):
 		var g: Dictionary = c["gamble"]
 		var won := randf() < float(g["chance"])
 		log.append("Luck is with you." if won else "Luck is not with you.")
@@ -1538,6 +1550,25 @@ func resolve_event(choice_idx: int) -> void:
 	run["node_state"] = ns
 	save()
 	state_changed.emit()
+
+
+## An event attribute check: the party member with the best score, that
+## score, the target, and the chance to pass.
+func event_check(chk: Dictionary) -> Dictionary:
+	var attr := str(chk["attr"])
+	var party := current_party().filter(func(h): return h.hp > 0)
+	var avg_lv := 1.0
+	if not party.is_empty():
+		avg_lv = party.reduce(func(acc, h): return acc + h.level, 0) / float(party.size())
+	# Attributes grow ~3 points a level, so the bar rises with the party.
+	var target := int(chk["target"]) + int(round(GameData.EVENT_CHECK_PER_LEVEL * avg_lv)) + (0 if str(run.get("diff_id", "lesser")) == "lesser" and str(run.get("rift_rank", "")) == "" else 3)
+	var best: Hero = null
+	for h in current_party():
+		if h.hp > 0 and (best == null or Combat.hero_attr(h, attr) > Combat.hero_attr(best, attr)):
+			best = h
+	var value := Combat.hero_attr(best, attr) if best else GameData.ATTR_BASELINE
+	var chance := clampf(GameData.EVENT_CHECK_BASE + GameData.EVENT_CHECK_PER_POINT * (value - target), 0.1, 0.95)
+	return {"hero": best.name.split(" the ")[0] if best else "nobody", "value": value, "target": target, "chance": chance}
 
 
 func _event_amount(v) -> int:
@@ -1575,6 +1606,24 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 		for h in party:
 			h.ability_cooldown = 0
 		log.append("Every ability is ready.")
+	if e.has("tokens"):
+		tokens += int(e["tokens"])
+		log.append("+%d Seal Tokens." % int(e["tokens"]))
+	if e.has("tonic"):
+		var add := mini(int(e["tonic"]), GameData.TONIC_CAP - tonics)
+		tonics += add
+		log.append("+%d Field Tonic." % add if add > 0 else "You can't carry another tonic.")
+	if e.has("shield"):
+		run["shield"] = int(run.get("shield", 0)) + int(e["shield"])
+		log.append("A %d-point shield against hazards." % int(e["shield"]))
+	for kind in ["item", "relic"]:
+		if e.has(kind):
+			var rr := Combat.weighted_rarity()
+			if _rarity_order(rr) < _rarity_order(str(e[kind])):
+				rr = str(e[kind])
+			var lt: Dictionary = {"loot_type": "item", "obj": Combat.gen_item(rr)} if kind == "item" else {"loot_type": "relic", "obj": Combat.gen_relic(rr)}
+			_grant_loot(lt)
+			log.append("You receive: %s (%s)." % [lt["obj"].name, rr.capitalize()])
 	if e.has("loot"):
 		var rarity := Combat.weighted_rarity()
 		if _rarity_order(rarity) < _rarity_order(str(e["loot"])):

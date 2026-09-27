@@ -138,6 +138,7 @@ func run() -> void:
 	var st2 := _fight(ids)
 	var ha: Hero = (st2["party"] as Array).filter(func(h): return not h.is_champion)[0]
 	st2["monsters"][0]["_charged"] = true
+	st2["monsters"][0]["_winding"] = false   # a random wind-up roll would mask the blow
 	st2["intents"] = {0: ha.id}
 	st2["turn_order"] = []
 	st2["turn_idx"] = 0

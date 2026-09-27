@@ -661,6 +661,9 @@ func _render_event_node(v: VBoxContainer) -> void:
 		var c: Dictionary = choices[i]
 		var afford := GameState.can_afford(c.get("cost", {}))
 		var lines: Array = [str(c["desc"])]
+		if c.has("check"):
+			var info := GameState.event_check(c["check"])
+			lines.append("%d%% — %s has %s %d (needs %d)" % [int(round(float(info["chance"]) * 100)), info["hero"], GameData.ATTR_LABEL[c["check"]["attr"]], int(info["value"]), int(info["target"])])
 		if not afford:
 			lines.append("You can't afford this")
 		row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"] if c.has("gamble") else GameData.BUTTON_ICON_PATH["confirm"], str(c["label"]),

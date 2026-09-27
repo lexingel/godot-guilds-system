@@ -1706,7 +1706,104 @@ const RIFT_EVENTS := [
 			{"label": "Pray", "desc": "Every hero heals 20% HP", "effect": {"heal_pct": 0.20}},
 			{"label": "Take the offerings", "desc": "+6-12 Crystals · -1 Reputation", "effect": {"crystals": [6, 12], "reputation": -1}},
 		]},
+	{"id": "armory", "name": "Collapsed Armory", "text": "A rack of weapons lies pinned under fallen stone. Something good might still be under there.",
+		"choices": [
+			{"label": "Lift the rubble", "desc": "Might check · pass: a Rare-or-better item · fail: everyone loses 10% HP", "check": {"attr": "might", "target": 9, "win": {"item": "rare"}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "tome", "name": "Whispering Tome", "text": "A book floats open in the dark, murmuring techniques in a language almost like yours.",
+		"choices": [
+			{"label": "Read it", "desc": "Focus check · pass: every hero gains 40 XP · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"xp_all": 40}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Burn it", "desc": "+6 Crystals", "effect": {"crystals": 6}},
+		]},
+	{"id": "bridge", "name": "Frayed Rope Bridge", "text": "A rope bridge sways over a chasm. On the far side, a dead scout's pack.",
+		"choices": [
+			{"label": "Cross quickly", "desc": "Agility check · pass: +20-35 Coins · fail: everyone loses 15% HP", "check": {"attr": "agility", "target": 8, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Go around", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "ember_pit", "name": "Ember Pit", "text": "Something glints at the bottom of a pit of still-glowing coals.",
+		"choices": [
+			{"label": "Reach in", "desc": "Everyone loses 15% HP · a Rare-or-better relic", "effect": {"hurt_pct": 0.15, "relic": "rare"}},
+			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "frozen_knight", "name": "Frozen Knight", "text": "A knight from another guild, frozen mid-stride in rift-ice. Still breathing.",
+		"choices": [
+			{"label": "Thaw them out", "desc": "Costs 15 Coins · +3 Reputation · every ability ready", "cost": {"coins": 15}, "effect": {"reputation": 3, "ready": true}},
+			{"label": "Take their shield", "desc": "A Rare-or-better item · -2 Reputation", "effect": {"item": "rare", "reputation": -2}},
+			{"label": "Move on", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "blood_pool", "name": "Crimson Pool", "text": "A pool of something thick and red. Drinking it would teach you things. Painful things.",
+		"choices": [
+			{"label": "Drink", "desc": "Everyone loses 20% HP · every hero gains 40 XP", "effect": {"hurt_pct": 0.20, "xp_all": 40}},
+			{"label": "Bottle some", "desc": "+1 Field Tonic", "effect": {"tonic": 1}},
+		]},
+	{"id": "anvil", "name": "Singing Anvil", "text": "An anvil that rings on its own. A smith's ghost offers to work it, for a price.",
+		"choices": [
+			{"label": "Pay the smith", "desc": "Costs 25 Coins · an Epic item", "cost": {"coins": 25}, "effect": {"item": "epic"}},
+			{"label": "Sell the scrap", "desc": "+12 Coins", "effect": {"coins": 12}},
+		]},
+	{"id": "storm_totem", "name": "Storm Totem", "text": "A totem crackles with trapped lightning. Channelled right, it could charge your party.",
+		"choices": [
+			{"label": "Channel it", "desc": "Focus check · pass: +12-20 Crystals, every ability ready · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"crystals": [12, 20], "ready": true}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "shade", "name": "A Hungry Shade", "text": "A shade drifts toward you, hungry for anything bright: coin, light, warmth.",
+		"choices": [
+			{"label": "Feed it coins", "desc": "Costs 20 Coins · +3 Seal Tokens", "cost": {"coins": 20}, "effect": {"tokens": 3}},
+			{"label": "Drive it off", "desc": "Everyone loses 10% HP · +10 Crystals", "effect": {"hurt_pct": 0.10, "crystals": 10}},
+			{"label": "Flee", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "chapel", "name": "Ruined Chapel", "text": "Half a chapel, the other half somewhere in the rift. The altar still holds warmth.",
+		"choices": [
+			{"label": "Restore the altar", "desc": "Costs 20 Coins · every hero heals 50% HP · +2 Reputation", "cost": {"coins": 20}, "effect": {"heal_pct": 0.5, "reputation": 2}},
+			{"label": "Rest a while", "desc": "Every hero heals 20% HP", "effect": {"heal_pct": 0.20}},
+		]},
+	{"id": "peddler", "name": "Ghostly Peddler", "text": "A translucent merchant lays out wares that flicker in and out of existence.",
+		"choices": [
+			{"label": "Buy a curiosity", "desc": "Costs 30 Coins · an Epic item or relic", "cost": {"coins": 30}, "effect": {"loot": "epic"}},
+			{"label": "Trade stories", "desc": "Every hero gains 12 XP", "effect": {"xp_all": 12}},
+		]},
+	{"id": "caged_beast", "name": "Caged Beast", "text": "A rift beast in a cage of runes, whimpering. The rune-lock is simple enough.",
+		"choices": [
+			{"label": "Free it", "desc": "55%: it bounds off grateful · +4 Reputation, +2 Seal Tokens · 45%: it lashes out, everyone loses 15% HP", "gamble": {"chance": 0.55, "win": {"reputation": 4, "tokens": 2}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "mirror", "name": "Rift Mirror", "text": "Your reflection moves a moment after you do. It seems to be showing you something.",
+		"choices": [
+			{"label": "Study it", "desc": "Focus check · pass: every ability ready, +25 XP each · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"ready": true, "xp_all": 25}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Smash it", "desc": "+8 Crystals", "effect": {"crystals": 8}},
+		]},
+	{"id": "golem", "name": "Sleeping Golem", "text": "A stone golem dozes on top of a treasure chest. Its snores shake the floor.",
+		"choices": [
+			{"label": "Sneak the chest out", "desc": "Agility check · pass: +30-45 Coins and a Rare-or-better item or relic · fail: everyone loses 20% HP", "check": {"attr": "agility", "target": 10, "win": {"coins": [30, 45], "loot": "rare"}, "lose": {"hurt_pct": 0.20}}},
+			{"label": "Let it sleep", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "lost_recruit", "name": "Lost Recruit", "text": "A young recruit from a village guild, lost and terrified, clutching a rusted sword.",
+		"choices": [
+			{"label": "Escort them out", "desc": "Every hero loses 5% HP · +4 Reputation, +1 Seal Token", "effect": {"hurt_pct": 0.05, "reputation": 4, "tokens": 1}},
+			{"label": "Point the way", "desc": "+1 Reputation", "effect": {"reputation": 1}},
+		]},
+	{"id": "fungus", "name": "Glowing Fungus", "text": "Pale mushrooms pulse with soft light. They smell faintly of mint and ozone.",
+		"choices": [
+			{"label": "Eat some", "desc": "60%: every hero heals 30% HP and gains 15 XP · 40%: everyone loses 10% HP", "gamble": {"chance": 0.6, "win": {"heal_pct": 0.3, "xp_all": 15}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Harvest them", "desc": "+6 Crystals", "effect": {"crystals": 6}},
+		]},
+	{"id": "crossroads", "name": "Rift Crossroads", "text": "Two paths: one dives deeper into raw rift energy, one leads to a quiet alcove.",
+		"choices": [
+			{"label": "Push deeper", "desc": "Everyone loses 8% HP · +10-16 Crystals", "effect": {"hurt_pct": 0.08, "crystals": [10, 16]}},
+			{"label": "Regroup", "desc": "Every hero heals 15% HP · every ability ready", "effect": {"heal_pct": 0.15, "ready": true}},
+		]},
+	{"id": "banner", "name": "Fallen Banner", "text": "A guild banner lies in the dust, its bearer long gone. The cloth is still good.",
+		"choices": [
+			{"label": "Raise it", "desc": "+3 Reputation · a 20-point shield against the next hazard", "effect": {"reputation": 3, "shield": 20}},
+			{"label": "Salvage it", "desc": "+10 Coins", "effect": {"coins": 10}},
+		]},
 ]
+## Attribute checks in events: the party's best score in the attribute vs
+## the target (+3 outside Lesser rifts) sets the chance to pass.
+const EVENT_CHECK_BASE := 0.5
+const EVENT_CHECK_PER_POINT := 0.1
+const EVENT_CHECK_PER_LEVEL := 1.4   # target rises with the party's average level
 
 ## Campfire: heal share for Rest, XP for Train.
 const CAMPFIRE_HEAL_PCT := 0.25
