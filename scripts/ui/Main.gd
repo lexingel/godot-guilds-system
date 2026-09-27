@@ -28,6 +28,11 @@ func _ready() -> void:
 	# Game both route through _switch_slot(), which is what actually loads
 	# (or resets) a slot's state once the player picks one.
 	GameState.state_changed.connect(render)
+	if OS.has_feature("web"):
+		# Ask the browser not to evict the saves when it runs low on space.
+		JavaScriptBridge.eval("navigator.storage && navigator.storage.persist && navigator.storage.persist();", true)
+	if OS.get_cmdline_user_args().has("bench-survivors") or (OS.has_feature("web") and str(JavaScriptBridge.eval("location.search", true)).contains("bench=survivors")):
+		_start_bench.call_deferred()
 	# Portrait pop-ups live on their own CanvasLayer so render()'s
 	# _clear_root() never wipes one mid-fade.
 	var toast_layer := CanvasLayer.new()
@@ -142,6 +147,11 @@ func render() -> void:
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Achievement earned", "text": str(m["label"])})
 	elif newly_claimed.size() > 1:
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "%d achievements earned" % newly_claimed.size(), "text": "See Records in the Guild Hall."})
+	# Once, on the web, after a guild has something worth losing.
+	if OS.has_feature("web") and GameState.guild_name != "" and GameState.last_export_day < 0 and GameState.rifts_sealed >= 3 and not GameState.hints_seen.has("backup_nudge"):
+		GameState.hints_seen.append("backup_nudge")
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Back up your guild",
+			"text": "It lives in this browser only. Settings > Backup > Export save keeps a copy."})
 	if _flavor_toast != "":
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "", "text": _flavor_toast})
 		_flavor_toast = ""
@@ -1422,6 +1432,29 @@ func _party_launch_bar(champ: Hero) -> Control:
 	return bar
 
 
+## Performance check (`?bench=survivors` on the web build, or `-- bench-survivors`):
+## a self-steering Endless run fast-forwarded to 6:00 that logs FPS. Uses
+## throwaway heroes and never saves.
+func _start_bench() -> void:
+	var party: Array = []
+	for r in ["A", "A", "B", "B", "C"]:
+		party.append(Combat.gen_hero(r, 10))
+	var view := SurvivorsView.new()
+	view.setup(party, "ashen")
+	view.bench = true
+	view.autopilot = true
+	var t0 := Time.get_ticks_msec()
+	while view.run.time < 360.0 and not view.run.over:
+		view.run.step(0.1, view.run.autopilot_dir())
+		view.run.events.clear()
+		while view.run.pending_levels > 0:
+			view.run.pick(view.run.offer()[0])
+	print("[bench] fast-forward to 6:00 took %d ms" % (Time.get_ticks_msec() - t0))
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
+	get_tree().root.add_child(view)
+
+
 ## The Endless Rift is a real-time survivors run in its own node; Main steps
 ## aside (hidden and paused) until the player leaves it.
 func _start_survivors(ids: Array[String]) -> void:
@@ -1609,7 +1642,11 @@ var _js_file_cb   # keeps the browser file-picker callback alive
 func _render_save_backup(v: VBoxContainer) -> void:
 	v.add_child(_hsep())
 	v.add_child(_label("Backup", 15))
-	v.add_child(_wrap_label("Saves live in this browser/device only. Export one to keep a copy or move it to another device.", 12, true))
+	v.add_child(_wrap_label("Saves live in this browser/device only; clearing site data erases them. Export one to keep a copy or move it to another device. The previous save is also kept automatically in case one gets damaged.", 12, true))
+	if GameState.guild_name != "":
+		var le := _label("Last exported: %s" % ("never" if GameState.last_export_day < 0 else "day %d (today is day %d)" % [GameState.last_export_day, GameState.day]), 12)
+		le.add_theme_color_override("font_color", Palette.HAZARD if GameState.last_export_day < 0 and GameState.rifts_sealed >= 3 else Palette.MUTED)
+		v.add_child(le)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	var exp := _icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Export save", func():

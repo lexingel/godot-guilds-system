@@ -24,7 +24,8 @@ func _ready() -> void:
 		total_fail += t.fails
 		t.queue_free()
 	var slot_file := "user://save_slot_%d.json" % TEST_SLOT
-	if FileAccess.file_exists(slot_file):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(slot_file))
+	for p in [slot_file, slot_file + ".bak", slot_file + ".tmp"]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 	print("\n%d test files · %d checks passed · %d failed" % [files.size(), total_pass, total_fail])
 	get_tree().quit(1 if total_fail > 0 else 0)

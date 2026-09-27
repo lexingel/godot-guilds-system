@@ -18,6 +18,10 @@ var party: Array = []
 var biome := "vale"
 var paused := false
 var autopilot := false   # screenshots / attract: the run steers itself
+var bench := false       # performance check: logs FPS and step time, never pays out
+var _bench_acc := 0.0
+var _bench_us := 0
+var _bench_steps := 0
 
 var _cam: Camera2D
 var _world: Node2D
@@ -119,9 +123,16 @@ func _foe_key(name: String) -> String:
 func _physics_process(delta: float) -> void:
 	if paused or _panel != null:
 		return
+	var t0 := Time.get_ticks_usec()
 	run.step(delta, run.autopilot_dir() if autopilot else _input_dir())
 	_sync()
 	_play_events()
+	if bench:
+		_bench_log(delta, Time.get_ticks_usec() - t0)
+	if autopilot:
+		while run.pending_levels > 0:
+			var o := run.offer()
+			run.pick(o[0] if not o.is_empty() else "")
 	if run.pending_levels > 0:
 		_show_level_up()
 	elif run.over:
@@ -509,7 +520,24 @@ func _toggle_pause() -> void:
 	v.add_child(leave)
 
 
+## Every 5 s: frames per second, and how long one simulation + draw sync takes.
+func _bench_log(delta: float, us: int) -> void:
+	_bench_acc += delta
+	_bench_us += us
+	_bench_steps += 1
+	if _bench_acc >= 5.0:
+		print("[bench] t=%d foes=%d shots=%d gems=%d fps=%d step=%.2fms" % [int(run.time), run.foes.size(), run.shots.size(), run.gems.size(),
+			Engine.get_frames_per_second(), _bench_us / 1000.0 / maxi(1, _bench_steps)])
+		_bench_acc = 0.0
+		_bench_us = 0
+		_bench_steps = 0
+
+
 func _show_results() -> void:
+	if bench:
+		print("[bench] run over at %d s" % int(run.time))
+		paused = true
+		return
 	if not _summary.is_empty():
 		return
 	_summary = GameState.finish_survivors(run)

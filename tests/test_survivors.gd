@@ -40,6 +40,7 @@ func run() -> void:
 	check(saw_elite, "an elite shows up each minute")
 	check(r.time < 300.0 or saw_boss, "a warden arrives at 5:00")
 	check(r.foes.size() <= SurvivorsRun.MAX_FOES + 12, "foe count stays capped")
+	check(r.gems.size() <= SurvivorsRun.MAX_GEMS, "shards merge past the cap")
 	check(not r.upgrades.is_empty(), "picks are recorded")
 	print("    survived %.0fs, %d kills, level %d" % [r.time, r.kills, r.level])
 

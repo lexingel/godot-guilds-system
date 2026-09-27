@@ -7,6 +7,7 @@ extends RefCounted
 
 const ARENA_SPAWN_R := 820.0      # foes appear on a ring this far from the lead
 const MAX_FOES := 260
+const MAX_GEMS := 120             # past this the oldest shards merge (no XP lost)
 const HERO_R := 14.0
 const CONTACT_CD := 0.6           # a foe touching a hero hits this often
 const LEAD_SPEED := 120.0         # px/s at speed 10
@@ -400,6 +401,9 @@ func _damage(i: int, dmg: float) -> void:
 		bosses_killed += 1
 	events.append({"type": "kill", "pos": f["pos"], "tier": f["tier"], "name": f["name"]})
 	gems.append({"pos": f["pos"], "xp": int(f["xp"])})
+	if gems.size() > MAX_GEMS:
+		var old: Dictionary = gems.pop_front()
+		gems[0]["xp"] = int(gems[0]["xp"]) + int(old["xp"])
 	foes.remove_at(i)
 
 

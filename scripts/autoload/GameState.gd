@@ -98,6 +98,7 @@ var campaign_act: int = 1   # the act in progress (GameData.CAMPAIGN); CAMPAIGN.
 var pending_stories: Array = []   # story cards Main shows before anything else: {title, subtitle, text}
 var features_seen: Array = []   # unlocked features already announced (see check_feature_unlocks)
 var hints_seen: Array = []   # coach tips dismissed
+var last_export_day: int = -1   # day the save was last exported as a backup (-1 = never)
 var tips_off: bool = false
 var board_refresh_day: int = 0   # the day the Guild Board's unaccepted postings are replaced
 var quest_tally: Dictionary = {}   # counters only quests read: boss:<name>, map:<uid>, rank_seals:<i>, *_seals, flawless_rifts
@@ -384,6 +385,7 @@ func reset() -> void:
 	pending_stories = [_act_intro_card(1)]
 	features_seen = []
 	hints_seen = []
+	last_export_day = -1
 	tips_off = false
 	board_refresh_day = 0
 	quest_tally = {}
@@ -469,6 +471,42 @@ func _slot_path(slot: int) -> String:
 	return "user://save_slot_%d.json" % slot
 
 
+## Writes a slot without ever leaving it half-written: the text goes to a
+## temp file first, the previous save is kept as .bak, then the temp file
+## takes its place. A crash or a closed tab mid-save can't eat the guild.
+func _write_slot(slot: int, text: String) -> bool:
+	var path := _slot_path(slot)
+	var name := path.get_file()
+	var f := FileAccess.open(path + ".tmp", FileAccess.WRITE)
+	if not f:
+		return false
+	f.store_string(text)
+	f.close()
+	var dir := DirAccess.open("user://")
+	if FileAccess.file_exists(path):
+		if FileAccess.file_exists(path + ".bak"):
+			dir.remove(name + ".bak")
+		dir.rename(name, name + ".bak")
+	return dir.rename(name + ".tmp", name) == OK
+
+
+## A slot's save as a Dictionary with a guild in it, falling back to the
+## previous save (.bak) if the main file is missing or damaged. {} if neither
+## holds one. Sets `restored_from_backup` when the fallback was used.
+var restored_from_backup := false
+func _read_slot(slot: int) -> Dictionary:
+	restored_from_backup = false
+	var path := _slot_path(slot)
+	for p in [path, path + ".bak"]:
+		if not FileAccess.file_exists(p):
+			continue
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(p))
+		if typeof(parsed) == TYPE_DICTIONARY and String(parsed.get("guild_name", "")) != "":
+			restored_from_backup = p != path
+			return parsed
+	return {}
+
+
 func load_active_slot() -> void:
 	active_slot = 0
 	if FileAccess.file_exists(ACTIVE_SLOT_PATH):
@@ -486,12 +524,8 @@ func set_active_slot(slot: int) -> void:
 ## Peeks at a slot's save file without touching live state — used by the
 ## Settings screen's slot picker to show a summary before switching.
 func slot_summary(slot: int) -> Dictionary:
-	var path := _slot_path(slot)
-	if not FileAccess.file_exists(path):
-		return {"empty": true}
-	var f := FileAccess.open(path, FileAccess.READ)
-	var parsed = JSON.parse_string(f.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY or String(parsed.get("guild_name", "")) == "":
+	var parsed := _read_slot(slot)
+	if parsed.is_empty():
 		return {"empty": true}
 	return {
 		"empty": false,
@@ -502,8 +536,9 @@ func slot_summary(slot: int) -> Dictionary:
 
 func delete_slot(slot: int) -> void:
 	var path := _slot_path(slot)
-	if FileAccess.file_exists(path):
-		DirAccess.open("user://").remove(path.trim_prefix("user://"))
+	for p in [path, path + ".bak", path + ".tmp"]:
+		if FileAccess.file_exists(p):
+			DirAccess.open("user://").remove(p.get_file())
 
 
 func save_settings() -> void:
@@ -568,12 +603,10 @@ func save() -> void:
 		"reputation": reputation, "monster_kill_counts": monster_kill_counts,
 		"crafts_performed": crafts_performed, "flawless_wins": flawless_wins,
 		"elites_won": elites_won, "bosses_won": bosses_won,
-		"guild_board": guild_board, "day": day, "runs_started": runs_started, "campaign_act": campaign_act, "features_seen": features_seen, "hints_seen": hints_seen, "tips_off": tips_off, "board_refresh_day": board_refresh_day, "quest_tally": quest_tally, "milestones_claimed": milestones_claimed,
+		"guild_board": guild_board, "day": day, "runs_started": runs_started, "campaign_act": campaign_act, "features_seen": features_seen, "hints_seen": hints_seen, "last_export_day": last_export_day, "tips_off": tips_off, "board_refresh_day": board_refresh_day, "quest_tally": quest_tally, "milestones_claimed": milestones_claimed,
 		"bonds": bonds,
 	}
-	var f := FileAccess.open(_slot_path(active_slot), FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(data))
+	_write_slot(active_slot, JSON.stringify(data))
 
 
 ## One-time migration for saves from before skill ids were namespaced by
@@ -622,6 +655,8 @@ func _migrate_save(data: Dictionary) -> Dictionary:
 
 ## The active slot's save as text, for backing up or moving to another device.
 func export_save_text() -> String:
+	if guild_name != "":
+		last_export_day = day
 	save()
 	if not FileAccess.file_exists(_slot_path(active_slot)):
 		return ""
@@ -635,21 +670,19 @@ func import_save_text(text: String, slot: int) -> String:
 		return "That doesn't look like a Guild System save"
 	if int(parsed.get("save_version", 1)) > SAVE_VERSION:
 		return "That save is from a newer version of the game"
-	var f := FileAccess.open(_slot_path(slot), FileAccess.WRITE)
-	if not f:
+	# The slot's current save is kept as .bak by _write_slot.
+	if not _write_slot(slot, JSON.stringify(parsed)):
 		return "Couldn't write the save slot"
-	f.store_string(JSON.stringify(parsed))
-	f.close()
 	return ""
 
 
 func load_save() -> bool:
-	if not FileAccess.file_exists(_slot_path(active_slot)):
+	var parsed := _read_slot(active_slot)
+	if parsed.is_empty():
 		return false
-	var f := FileAccess.open(_slot_path(active_slot), FileAccess.READ)
-	var parsed = JSON.parse_string(f.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return false
+	if restored_from_backup:
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Save restored",
+			"text": "Your last save was damaged, so the one just before it was loaded."})
 	var data: Dictionary = _migrate_save(parsed)
 	# A save file can exist on disk for a slot that was never actually
 	# founded (e.g. a stray write while "Name Your Guild" was still open) —
@@ -750,6 +783,7 @@ func load_save() -> bool:
 		# A guild from before the campaign keeps what it had unlocked.
 		campaign_act = 3 if best_endless_cycle > 0 else (2 if rifts_sealed >= 3 else 1)
 	hints_seen = data.get("hints_seen", [])
+	last_export_day = int(data.get("last_export_day", -1))
 	tips_off = bool(data.get("tips_off", false))
 	if data.has("features_seen"):
 		features_seen = data["features_seen"]
