@@ -469,6 +469,12 @@ func _start_round(state: Dictionary) -> void:
 			wtier = "brute"
 		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)) + float(state.get("diff", {}).get("windup_bonus", 0.0)) + float(mw.get("windup_bonus", 0.0)):
 			mw["_winding"] = true
+	# The guided first fight (training rift) shows one wind-up in round 2.
+	if GameState.run.get("training", false) and int(state["round_num"]) == 2 and not GameState.hints_seen.has("tut_windup"):
+		for mw in monsters:
+			if float(mw["hp"]) > 0 and not mw.get("_charged", false):
+				mw["_winding"] = true
+				break
 	if int(state["round_num"]) % 3 == 0 and not living.is_empty():
 		_fire("round_third", state, living[0])
 	var intents := {}
@@ -489,7 +495,7 @@ func _roll_intent(state: Dictionary, mi: int, living: Array[Hero]) -> Dictionary
 		m["kit"] = monster_kit(m)
 	var round_num := int(state["round_num"])
 	var kind := "attack"
-	if not m.get("_winding", false) and not m.get("_charged", false) and int(m.get("_special_round", -9)) < round_num - 1:
+	if not m.get("_winding", false) and not m.get("_charged", false) and int(m.get("_special_round", -9)) < round_num - 1 and not GameState.run.get("training", false):
 		var kit: Array = m["kit"]
 		if not kit.is_empty():
 			var pick := str(kit[randi() % kit.size()])

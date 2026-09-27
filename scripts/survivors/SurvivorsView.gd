@@ -11,7 +11,7 @@ const WALK_DIR := "res://assets/survivors/walk/"
 const FLOOR_PATH := "res://assets/survivors/floor_%s.png"
 const THEME := preload("res://theme/guild_theme.tres")
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
-const TIER_SCALE := {"combat": 1.0, "elite": 1.45, "boss": 2.3}
+const TIER_SCALE := {"combat": 1.0, "elite": 2.0, "boss": 3.0}   # whole multiples keep pixels square
 
 var run: SurvivorsRun
 var party: Array = []
@@ -238,8 +238,11 @@ func _play_events() -> void:
 				if e["tier"] != "combat":
 					Fx.burst(_fx, "explosion", e["pos"], 120.0 if e["tier"] == "elite" else 220.0, Color(0.8, 0.75, 0.9), 18.0)
 					AudioManager.play_sfx(GameData.SFX_PATH["victory" if e["tier"] == "boss" else "hit_heavy"])
-			"hurt":
+			"hurt", "dodge":
 				pass
+			"ability":
+				if str(e.get("name", "")) != "":
+					_pop_text(str(e["name"]), e["pos"] + Vector2(0, -70), Palette.EMBER_BRIGHT)
 			"heal":
 				var hn: Node2D = _hero_nodes.get(e["hero"])
 				if hn:
@@ -258,6 +261,24 @@ func _play_events() -> void:
 				if rn:
 					Fx.burst(_fx, "holy", rn.position + Vector2(0, -24), 90.0, Color(1, 1, 0.85), 18.0)
 	run.events.clear()
+
+
+## A short name floating up over the field (an Ability going off).
+func _pop_text(text: String, at: Vector2, color: Color) -> void:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 14)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	l.add_theme_constant_override("outline_size", 4)
+	l.position = at - Vector2(60, 0)
+	l.size = Vector2(120, 20)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_fx.add_child(l)
+	var tw := l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 30.0, 0.9)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.9).set_delay(0.4)
+	tw.tween_callback(l.queue_free)
 
 
 # ---------------- HUD ----------------

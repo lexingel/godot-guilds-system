@@ -90,6 +90,11 @@ func hint_pending(id: String) -> bool:
 	return not tips_off and not hints_seen.has(id)
 
 
+func _see_hint(id: String) -> void:
+	if not hints_seen.has(id):
+		hints_seen.append(id)
+
+
 func dismiss_hint(id: String) -> void:
 	if not hints_seen.has(id):
 		hints_seen.append(id)
@@ -206,6 +211,13 @@ func set_hero_action(hero_id: String, action: String, target: int = 0, ally_id: 
 		return
 	var pending: Dictionary = state["pending_actions"]
 	pending[hero_id] = {"action": action, "target": target, "ally": ally_id}
+	if run.get("training", false):
+		if action == "attack":
+			_see_hint("tut_attack")
+		elif (action == "ability" or action.begins_with("skill:")) and Combat.action_block(state, find_hero(hero_id), action) == "":
+			_see_hint("tut_skill")
+		elif action in ["defend", "guard"] and (state["monsters"] as Array).any(func(m): return m.get("_winding", false) or m.get("_charged", false)):
+			_see_hint("tut_windup")
 	save()
 	state_changed.emit()
 

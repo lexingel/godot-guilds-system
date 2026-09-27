@@ -63,11 +63,14 @@ func _ready() -> void:
 
 ## Endless Rift (survivors): how long each profile lasts on autopilot (the
 ## Champion stays home; first upgrade offered is taken).
+const SURV_RUNS := 12
+
+
 func _survivors(name: String, p: Array) -> void:
 	var times: Array = []
 	var kills := 0
 	var levels := 0
-	for i in 6:
+	for i in SURV_RUNS:
 		var party: Array = _build_party(p)
 		var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
 		while not r.over and r.time < 1200.0:
@@ -80,8 +83,8 @@ func _survivors(name: String, p: Array) -> void:
 		kills += r.kills
 		levels += r.level
 	times.sort()
-	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d" % [name, times[3] / 60, times[3] % 60,
-		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / 6, levels / 6])
+	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d" % [name, times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
+		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / SURV_RUNS, levels / SURV_RUNS])
 
 
 ## Tower of Trials: how high each profile climbs (3 tries a floor, full HP

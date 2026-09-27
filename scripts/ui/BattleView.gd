@@ -1036,7 +1036,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if not in_tower:
 			for line in _run_summary_lines():
 				v.add_child(_label(line, 12, true))
-		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" if in_tower else "Return to Terminal", func():
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" if in_tower else "Return to camp", func():
 			GameState.finish_run()
 			screen = "tower" if in_tower else "terminal"
 			render()
@@ -1690,6 +1690,10 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		col.add_child(warn_row)
 
 	col.add_child(_turn_order_strip(state))
+	var tut := _tutorial_step(state, current_hero)
+	_tut_key = str(tut.get("key", ""))
+	if not tut.is_empty():
+		col.add_child(_tutorial_panel(tut))
 	col.add_child(_command_bar(state, current_hero, living_heroes, hero_wrappers, attack_cb, run_turns))
 	if _combat_log_open:
 		var full_log: Array = state["log"]
@@ -1702,6 +1706,63 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 	# every turn while Auto is on).
 	if (current_hero == null or _auto_battle) and not living_heroes.is_empty():
 		_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
+
+
+var _tut_key := ""   # the command key the guided first fight is pointing at
+
+
+## The guided first fight (training rift): the next step to teach, or {}.
+## {text, key, step}; steps tick off in GameState.set_hero_action.
+func _tutorial_step(state: Dictionary, h: Hero) -> Dictionary:
+	if not GameState.run.get("training", false) or GameState.hints_seen.has("tut_done") or GameState.tips_off:
+		return {}
+	var seen := GameState.hints_seen
+	if seen.has("tut_attack") and seen.has("tut_skill") and seen.has("tut_windup"):
+		return {"step": 4, "text": "That's the core of every fight: read the tags above the foes, build Momentum with attacks and defence, and spend it on skills. Auto (A) plays turns for you whenever you like.", "key": ""}
+	if h == null:
+		return {}
+	var who := h.name.split(" the ")[0]
+	var monsters: Array = state["monsters"]
+	if not seen.has("tut_windup"):
+		for i in monsters.size():
+			if float(monsters[i]["hp"]) > 0 and (monsters[i].get("_winding", false) or monsters[i].get("_charged", false)):
+				var it := Combat.monster_intent(state, i)
+				var t: Hero = it.get("target") if not it.is_empty() else null
+				var tname := t.name.split(" the ")[0] if t else "a hero"
+				var own := t == h
+				return {"step": 3, "key": "5" if own else "6", "text": "Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s" % [str(monsters[i]["name"]), tname,
+					"Press Defend (5) — %s takes half and earns Momentum." % who if own else "Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker." % [tname, who]]}
+	if not seen.has("tut_attack"):
+		return {"step": 1, "key": "1", "text": "Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name." % [who, who]}
+	if not seen.has("tut_skill"):
+		for sk in GameData.hero_role_skills(h):
+			if Combat.action_block(state, h, "skill:" + str(sk["id"])) == "":
+				return {"step": 2, "key": "2", "text": "Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it." % [int(state.get("momentum", 0)), who, sk["name"], int(sk["cost"])]}
+		return {"step": 2, "key": "", "text": "Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it."}
+	return {}
+
+
+func _tutorial_panel(tut: Dictionary) -> Control:
+	var p := PanelContainer.new()
+	p.theme_type_variation = &"CardPanelEmber"
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var tag := _label("Step %d of 3" % int(tut["step"]) if int(tut["step"]) <= 3 else "Well fought", 15)
+	tag.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	tag.custom_minimum_size.x = 110
+	row.add_child(tag)
+	var txt := _wrap_label(str(tut["text"]), 14)
+	txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(txt)
+	var done := int(tut["step"]) > 3
+	var b := _button("Got it" if done else "Skip tutorial", func():
+		GameState.dismiss_hint("tut_done")
+		render()
+	)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(b)
+	p.add_child(row)
+	return p
 
 
 ## A small dark chip with a sword (or skull, for a heavy hit) and text.
@@ -1732,6 +1793,9 @@ func _intent_chip(text: String, heavy: bool, tip: String, icon: String = "") -> 
 ## dark cooldown overlay with the rounds left when it can't be used yet.
 func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, tip: String, selected: bool = false, block: String = "", cost: int = 0) -> Button:
 	var b := _button("", cb)
+	if key != "" and key == _tut_key:
+		selected = true
+		_pulse(b, 0.55, 0.5)
 	b.custom_minimum_size = Vector2(92, 72)
 	b.tooltip_text = tip
 	b.disabled = block != ""

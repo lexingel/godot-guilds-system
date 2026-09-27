@@ -30,8 +30,20 @@ const WEAPONS := {
 	"mage": {"kind": "bolt", "cd": 1.3, "mult": 1.2, "range": 320.0, "burst": 55.0},
 	"cleric": {"kind": "pulse", "cd": 1.6, "mult": 0.6, "range": 95.0},
 }
-## Every 8s a hero with an Ability unleashes a bigger version of its attack.
+## Every 8s a hero with an Ability unleashes it: its subclass Ability's
+## effect picks the style (ABILITY_STYLE); without one, a bigger version of
+## the role's attack.
 const ABILITY_CD := 8.0
+const ABILITY_STYLE := {
+	"burst_lowest": "strike", "execute_burst": "strike", "self_sac_burst": "strike", "hp_drain_burst": "strike",
+	"cleave_burst": "nova", "execute_all_low": "nova",
+	"mend_burst": "mend", "mend_shield_hybrid": "mend", "shield_lowest": "mend", "team_shield_burst": "mend",
+	"monster_dmg_mult": "slow", "debuff_lowest": "slow",
+	"team_dmg_mult": "rally", "escalate_surge": "rally", "counter_surge": "rally", "dodge_surge": "rally", "wipe_guard_surge": "rally", "reset_cooldowns": "rally",
+}
+const RALLY_MULT := 1.25
+const RALLY_TIME := 4.0
+const SLOW_TIME := 4.0
 
 ## Level-up picks: id -> {name, desc, icon, max}. Effects read in _stat().
 const UPGRADES := {
@@ -70,17 +82,32 @@ var _spawn_acc := 0.0
 var _next_elite := ELITE_EVERY
 var _next_ring := 120.0
 var _next_boss := BOSS_EVERY
+# The guild's build, read once at the start (see _init): party dodge and
+# mending from skills, items and relics, relic damage and wards.
+var dodge := 0.0
+var mend := 0.0
+var rally_t := 0.0
 
 
 func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
 	rng.seed = seed_val if seed_val != 0 else randi()
 	biome = biome_id
+	var typed: Array[Hero] = []
+	typed.assign(party)
+	dodge = clampf(Combat.party_skill_total(typed, "dodge_pct") + Combat.relic_special_total("dodge_pct"), 0.0, 0.2)
+	mend = clampf(Combat.party_skill_total(typed, "mend_pct") + Combat.relic_special_total("mend_pct"), 0.0, 0.4)
+	var ward := 0.0
+	for r in Combat.equipped_relics():
+		ward += r.hp
+	var n: float = maxf(1.0, party.size())
 	for i in party.size():
 		var h: Hero = party[i]
-		var mhp := float(Combat.max_hp(h))
+		var mhp := float(Combat.max_hp(h)) + ward / n
+		var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}) if Combat.qualifies_for_ability(h) else {}
 		heroes.append({"hero": h, "role": GameData.hero_role(h), "pos": Vector2(-40.0 * i, 30.0 * (i % 2)), "hp": mhp, "max_hp": mhp,
 			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * 0.5, "facing": 1.0,
-			"has_ability": Combat.qualifies_for_ability(h)})
+			"has_ability": not ab.is_empty(), "ability_name": str(ab.get("name", "")), "style": str(ABILITY_STYLE.get(str(ab.get("effect", "")), "")),
+			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct"))})
 
 
 func lead() -> Dictionary:
@@ -100,7 +127,7 @@ func _stat(id: String) -> int:
 
 
 func dmg_mult() -> float:
-	return 1.0 + 0.15 * _stat("might")
+	return (1.0 + 0.15 * _stat("might")) * (RALLY_MULT if rally_t > 0.0 else 1.0)
 
 
 ## Foe strength grows with time: HP faster than damage.
@@ -126,10 +153,13 @@ func step(dt: float, move_dir: Vector2) -> void:
 	_move_shots(dt)
 	_contact(dt)
 	_pickups(dt)
-	if _stat("regen") > 0:
+	rally_t = maxf(0.0, rally_t - dt)
+	# Mending: a round's worth (see Combat) spread over ~10 seconds.
+	var regen := 0.01 * _stat("regen") + mend * 0.1
+	if regen > 0.0:
 		for h in heroes:
 			if h["alive"]:
-				h["hp"] = minf(h["max_hp"], h["hp"] + h["max_hp"] * 0.01 * _stat("regen") * dt)
+				h["hp"] = minf(h["max_hp"], h["hp"] + h["max_hp"] * regen * dt)
 	for h in heroes:
 		if not h["alive"] and not h["lead"]:
 			h["down_t"] = float(h.get("down_t", 0.0)) + dt
@@ -256,7 +286,9 @@ func _move_foes(dt: float) -> void:
 					var l := d.length()
 					if l < min_d and l > 0.01:
 						push += d / l * (min_d - l)
-		f["pos"] += dir * f["speed"] * dt + push * 0.5
+		var slow := 0.4 if float(f.get("slow_t", 0.0)) > 0.0 else 1.0
+		f["slow_t"] = maxf(0.0, float(f.get("slow_t", 0.0)) - dt)
+		f["pos"] += dir * f["speed"] * slow * dt + push * 0.5
 		if absf(dir.x) > 0.2:
 			f["facing"] = signf(dir.x)
 		# Stragglers far behind are pulled back in front of the party.
@@ -276,7 +308,7 @@ func _nearest_foe(p: Vector2, reach: float) -> int:
 
 
 func _hero_dmg(h: Dictionary, mult: float) -> float:
-	return float(Combat.dmg_of(h["hero"])) * mult * dmg_mult() * rng.randf_range(0.9, 1.1)
+	return (float(Combat.dmg_of(h["hero"])) + float(h.get("bonus_dmg", 0.0))) * mult * dmg_mult() * rng.randf_range(0.9, 1.1)
 
 
 func _attacks(dt: float) -> void:
@@ -289,7 +321,7 @@ func _attacks(dt: float) -> void:
 		h["cd"] -= dt
 		if h["cd"] <= 0.0:
 			if _fire(h, w, area, 1.0):
-				h["cd"] = float(w["cd"]) * cd_mult
+				h["cd"] = float(w["cd"]) * cd_mult / float(h.get("haste", 1.0))
 			else:
 				h["cd"] = 0.15   # nothing in reach, check again soon
 		if h["has_ability"]:
@@ -332,7 +364,36 @@ func _fire(h: Dictionary, w: Dictionary, area: float, power: float) -> bool:
 
 
 func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
-	events.append({"type": "ability", "pos": h["pos"], "role": h["role"]})
+	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", ""))})
+	match str(h.get("style", "")):
+		"strike":
+			var best := -1
+			for i in foes.size():
+				if foes[i]["pos"].distance_squared_to(h["pos"]) <= 420.0 * 420.0 and (best < 0 or float(foes[i]["hp"]) > float(foes[best]["hp"])):
+					best = i
+			if best >= 0:
+				var at: Vector2 = foes[best]["pos"]
+				events.append({"type": "meteor", "pos": at, "r": 60.0})
+				_damage(best, _hero_dmg(h, 4.0))
+			return
+		"nova":
+			_hit_area(h["pos"], 200.0 * area, _hero_dmg(h, 2.5))
+			events.append({"type": "shockwave", "pos": h["pos"], "r": 200.0 * area})
+			return
+		"mend":
+			_heal_all(0.1)
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 160.0})
+			return
+		"slow":
+			for f in foes:
+				if f["pos"].distance_squared_to(h["pos"]) <= 260.0 * 260.0:
+					f["slow_t"] = SLOW_TIME
+			events.append({"type": "shockwave", "pos": h["pos"], "r": 260.0})
+			return
+		"rally":
+			rally_t = RALLY_TIME
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 120.0})
+			return
 	match w["kind"]:
 		"arc":
 			_hit_area(h["pos"], 170.0 * area, _hero_dmg(h, 3.0))
@@ -448,6 +509,9 @@ func _contact(dt: float) -> void:
 				continue
 			if f["pos"].distance_squared_to(h["pos"]) <= (f["r"] + HERO_R + 4.0) * (f["r"] + HERO_R + 4.0):
 				f["hit_cd"] = CONTACT_CD
+				if rng.randf() < dodge:
+					events.append({"type": "dodge", "hero": h["hero"].id})
+					break
 				h["hp"] -= f["dmg"] * guard
 				events.append({"type": "hurt", "hero": h["hero"].id, "dmg": f["dmg"] * guard})
 				if _stat("thorns") > 0:

@@ -20,6 +20,29 @@ func run() -> void:
 	check(GameState.run.get("training", false) and GameState.run["layers"].size() == GameData.TRAINING_RIFT["floors"], "first run is a %d-floor training rift" % GameData.TRAINING_RIFT["floors"])
 	check(GameState.run["layers"].all(func(l): return not (l["options"] as Array).has("elite")), "no elites in the training rift")
 	check(int(GameState._diff()["monster_hp"]) < int(GameData.DIFFICULTIES[0]["monster_hp"]), "training foes are weaker")
+	# The guided first fight: plain foes, a scripted wind-up in round 2, and
+	# actions tick the steps.
+	GameState.run["node_state"] = {}
+	GameState.choose_node_type("combat")
+	GameState.engage_node()
+	var st: Dictionary = GameState.run["node_state"]["combat_state"]
+	for m in st["monsters"]:
+		m["hp"] = 9999.0
+		m["max_hp"] = 9999.0
+		m["dmg"] = 0.0
+	check((st["intents"] as Dictionary).values().all(func(it): return str(it["kind"]) == "attack"), "no special moves in the training fight")
+	var h0: Hero = GameState.find_hero(ids[0])
+	GameState.set_hero_action(h0.id, "attack", 0)
+	check(GameState.hints_seen.has("tut_attack"), "attacking ticks the first step")
+	var winding := false
+	for i in 40:
+		GameState.resolve_turn_now()
+		if int(st["round_num"]) == 2 and (st["monsters"] as Array).any(func(m): return m.get("_winding", false) or m.get("_charged", false)):
+			winding = true
+			break
+	check(winding, "round 2 shows a scripted wind-up")
+	GameState.set_hero_action(h0.id, "defend")
+	check(GameState.hints_seen.has("tut_windup"), "defending against it ticks the wind-up step")
 	GameState.finish_run()
 	GameState.start_run("lesser", ids, null)
 	check(not GameState.run.get("training", false), "second run is a normal rift")

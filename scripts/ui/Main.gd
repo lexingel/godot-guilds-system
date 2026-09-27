@@ -308,6 +308,9 @@ func _update_screen_music() -> void:
 
 ## Pinned HUD stays outside the ScrollContainer, so the guild identity,
 ## currencies, and "where am I" breadcrumb never scroll out of view.
+const TAB_TITLE := {"roster": "Heroes", "management": "Guild Management", "quests": "Guild Board", "compendium": "Codex"}
+
+
 func _breadcrumb_for_screen() -> String:
 	match screen:
 		"rift_hall": return "Rift Hall"
@@ -317,7 +320,7 @@ func _breadcrumb_for_screen() -> String:
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting Hall"
 		"settings": return "Settings"
-		"terminal": return "Terminal" if term_tab == "camp" else "Terminal — %s" % term_tab.capitalize()
+		"terminal": return "Camp" if term_tab == "camp" else "Camp — %s" % TAB_TITLE.get(term_tab, term_tab.capitalize())
 		_: return ""
 
 
@@ -1230,7 +1233,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 
 	var bench: Array = GameState.heroes.filter(func(x): return not pending_party.has(x.id))
 	if GameState.heroes.is_empty():
-		v.add_child(_label("No heroes yet — recruit some from the Guild Terminal first."))
+		v.add_child(_label("No heroes yet — recruit some under Roster > Recruits first."))
 	elif not bench.is_empty():
 		v.add_child(_label("Roster — drag into a row, or Add (joins their natural row)", 12, true))
 		var bench_flow := HFlowContainer.new()
@@ -1354,7 +1357,7 @@ func _party_launch_bar() -> Control:
 	if _pending_endless and not pending_party.is_empty():
 		var lead := GameState.find_hero(pending_party[0])
 		if lead:
-			info.add_child(_wrap_label("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Survive as long as you can." % lead.name.split(" the ")[0], 12, true))
+			info.add_child(_wrap_label("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive as long as you can." % lead.name.split(" the ")[0], 12, true))
 	row.add_child(info)
 	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Begin the trial" if _pending_tower else "Enter the Rift", func():
 		if pending_party.is_empty():

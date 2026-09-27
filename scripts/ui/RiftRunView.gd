@@ -375,7 +375,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	var ns_tip: Dictionary = GameState.run.get("node_state", {})
 	if kind == "":
 		_coach(v, "path", "Choosing a path", "Each floor offers a choice. Fights give gold and loot; elites hit harder and pay more; shops, campfires, events and treasure help in other ways. The last floor is the boss.")
-	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result"):
+	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result") and not GameState.run.get("training", false):
 		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows its next move: who it hits, or a Sweep, Snipe, Curse, Ward, Mend or Roar. Attacks build Momentum (the pips under the hero's name); skills (2-4) spend it. Defend (5) halves damage and Guard (6) takes a hit for an ally, both earning Momentum. Foes \"winding up\" land a heavy blow next round: Defend, or break it with Shield Bash or Frost Nova. Melee heroes hit at half strength from the back row.")
 	elif ns_tip.has("result") and bool(ns_tip["result"].get("won", false)) and not ns_tip.get("reward_chosen", false):
 		_coach(v, "reward", "Picking loot", "Choose one reward. Items are worn by one hero (equip them on the Roster's Hero tab); relics go on the Relic Altar and help the whole party.")
@@ -411,7 +411,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		for line in _run_summary_lines():
 			v.add_child(_label(line, 12, true))
-		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to camp", func():
 			GameState.finish_run()
 			screen = "terminal"
 			render()
