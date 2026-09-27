@@ -475,7 +475,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		add_roll = false
 	if add_roll:
 		for i in add_count:
-			monsters.append(_make_add(diff, floor_idx, add_mult, add_mult))
+			monsters.append(_make_add(diff, floor_idx, add_mult, add_mult, kind == "elite"))
 	return monsters
 
 
@@ -508,8 +508,16 @@ func _designed_encounter(diff: Dictionary, floor_idx: int) -> Array[Dictionary]:
 
 
 ## A weaker "combat"-tier foe fighting alongside an elite or boss.
-func _make_add(diff: Dictionary, floor_idx: int, hp_mult: float, dmg_mult: float) -> Dictionary:
+## An elite's escorts come from its region's retinue (supports: wardens,
+## healers, snipers, cursers) when there is one.
+func _make_add(diff: Dictionary, floor_idx: int, hp_mult: float, dmg_mult: float, retinue: bool = false) -> Dictionary:
 	var add := gen_monster(diff, floor_idx, "combat")
+	var pool: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("retinue", []) if retinue else []
+	if not pool.is_empty():
+		var nm := str(pool[randi() % pool.size()])
+		add["name"] = nm
+		add["armor"] = float(GameData.MONSTER_ARMOR.get(nm, 0.0))
+		add["status"] = str(GameData.MONSTER_STATUS.get(nm, ""))
 	add["hp"] = max(1, int(round(add["hp"] * hp_mult)))
 	add["dmg"] = max(1, int(round(add["dmg"] * dmg_mult)))
 	add["max_hp"] = add["hp"]

@@ -98,11 +98,11 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 ## from the biomes the campaign has reached (GameState.pick_biome).
 const BIOMES := {
 	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver", "Hedge Warden", "Carrion Crier", "Rootbound Thrall"],
-		"elites": ["Warbound Elite", "Iron Revenant"], "backgrounds": [1, 3, 0]},
+		"elites": ["Warbound Elite", "Iron Revenant"], "retinue": ["Hedge Warden", "Carrion Crier", "Rift Wisp"], "backgrounds": [1, 3, 0]},
 	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite", "Leech Priest", "Mire Sniper", "Drowned Bellringer"],
-		"elites": ["Blightfang Elite", "Storm-Called Elite"], "backgrounds": [5, 6, 2]},
+		"elites": ["Blightfang Elite", "Storm-Called Elite"], "retinue": ["Leech Priest", "Mire Sniper", "Drowned Bellringer"], "backgrounds": [5, 6, 2]},
 	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend", "Slag Golem", "Ember Oracle", "Ash Harrier"],
-		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "backgrounds": [4, 8, 7, 9]},
+		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "retinue": ["Ember Oracle", "Ash Harrier", "Cinder Moth"], "backgrounds": [4, 8, 7, 9]},
 }
 const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
 

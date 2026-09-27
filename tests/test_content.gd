@@ -72,3 +72,13 @@ func run() -> void:
 			break
 	check((st["log"] as Array).any(func(l): return str(l).contains(str(st["monsters"][0].get("encounter", {}).get("name", "@@")))), "the encounter's name and hint open the fight log")
 	GameState.run = {}
+
+	# An elite's escorts come from its region's retinue.
+	var ediff: Dictionary = GameData.DIFFICULTIES[1].duplicate()
+	ediff["biome"] = "marsh"
+	var seen_adds := {}
+	for t in 80:
+		var ms := Combat.gen_monsters(ediff, 3, "elite")
+		for k in range(1, ms.size()):
+			seen_adds[ms[k]["name"]] = true
+	check(not seen_adds.is_empty() and seen_adds.keys().all(func(n): return (GameData.BIOMES["marsh"]["retinue"] as Array).has(n)), "marsh elites bring marsh supports %s" % [seen_adds.keys()])
