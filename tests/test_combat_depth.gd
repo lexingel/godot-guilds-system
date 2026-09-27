@@ -45,7 +45,7 @@ func run() -> void:
 	# Affix channels.
 	for id in ["juggernaut", "blazing", "hasted", "vampiric"]:
 		var e4 := {}
-		for t in 60:
+		for t in 2000:   # until the wanted affix comes up
 			e4 = {"name": "X", "hp": 100, "dmg": 100, "armor": 0.0, "status": "", "ability": {}}
 			Combat._roll_affixes(e4, 1)
 			if e4["affixes"][0] == id:
