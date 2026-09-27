@@ -1078,11 +1078,6 @@ func _render_compendium_relics(v: VBoxContainer) -> void:
 		var synergy: Dictionary = GameData.SYNERGY_BONUS.get(rtype, {})
 		if not synergy.is_empty():
 			v.add_child(_wrap_label("Synergy (3+ equipped): %s" % str(synergy.get("label", "")), 12, true))
-		var matchup: Dictionary = GameData.TYPE_MATCHUPS.get(rtype, {})
-		if not matchup.is_empty():
-			var strong: Array = matchup.get("strong_vs", [])
-			var weak: Array = matchup.get("weak_vs", [])
-			v.add_child(_wrap_label("Strong vs %s · Weak vs %s" % [", ".join(strong), ", ".join(weak)], 12, true))
 
 
 func _render_compendium_crafting(v: VBoxContainer) -> void:

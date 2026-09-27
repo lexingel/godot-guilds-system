@@ -316,7 +316,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 				h.history[kind + "_kills"] = int(h.history.get(kind + "_kills", 0)) + 1
 		var earned: Array[String] = []
 		for h in state.get("party", []):
-			earned.append_array(check_earned_traits(h))
+			earned.append_array(check_earned_quirks(h))
 		if not earned.is_empty():
 			result["flavor"] = (str(result.get("flavor", "")) + " " + " ".join(earned)).strip_edges()
 		ns["result"] = result
@@ -837,7 +837,7 @@ func seal_rift() -> void:
 				flavor += " %s and %s's bond deepens (Lv%d)." % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], before + 1]
 				push_toast(sealers[i], "Bond deepened — Lv%d" % (before + 1), "%s & %s: +%d%% party damage while both stand" % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
 	for h in sealers:
-		for line in check_earned_traits(h):
+		for line in check_earned_quirks(h):
 			flavor += " " + line
 	triage_used_this_cycle = false
 	refresh_recruit_pool()

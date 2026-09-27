@@ -345,7 +345,7 @@ const BRANCHES := [
 		{"id": "vault", "name": "Relic Vault", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Starting relic choices (2 at Lv1, 3 at Lv2, 4 at Lv4)",
 			"perks": {3: "+1 equipped relic slot", 5: "+1 more relic slot, and starting relics are Rare or better"}},
 		{"id": "lab", "name": "Arcane Lab", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+10% relic element-set bonuses; Lv1 unlocks relic scrapping and trait/scar removal",
-			"perks": {3: "Skill respecs and trait rerolls cost 30% less", 5: "Relic upgrades cost 25% fewer Essence"}},
+			"perks": {3: "Skill respecs and quirk treatments cost 30% less", 5: "Relic upgrades cost 25% fewer Essence"}},
 	]},
 ]
 

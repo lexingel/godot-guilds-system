@@ -100,7 +100,7 @@ func run() -> void:
 	check(not bool(lost["won"]), "a lone F-rank loses floor 60")
 	GameState.finish_run()
 	var wh := GameState.find_hero(weak[0])
-	check(not wh.is_downed() and wh.hp > 0 and wh.scars.is_empty() and GameState.coins == coins1 and GameState.tower_best == 59, "a tower loss downs, scars and pays nothing")
+	check(not wh.is_downed() and wh.hp > 0 and not wh.quirks.any(func(q): return GameData.quirk(q)["origin"] == "scar") and GameState.coins == coins1 and GameState.tower_best == 59, "a tower loss downs, scars and pays nothing")
 
 	# Guardian first clear: relic + title.
 	GameState.tower_best = 9

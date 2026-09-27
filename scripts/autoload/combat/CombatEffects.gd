@@ -160,13 +160,10 @@ func hero_effects(h: Hero) -> Array[Dictionary]:
 	for n in learned_nodes:
 		for e in n["effects"]:
 			out.append(_tagged(e, str(n["name"]), str(n["arch"])))
-	for scar in h.scars:
-		for e in GameData.SCAR_UPSIDES.get(scar, []):
-			out.append(_tagged(e, scar))
-	for tid in h.earned_traits:
-		var t := GameData.find_earned_trait(tid)
-		for e in t.get("effects", []):
-			out.append(_tagged(e, str(t["name"]), str(t["arch"])))
+	for q in h.quirks:
+		var qd := GameData.quirk(q)
+		for e in qd.get("effects", []):
+			out.append(_tagged(e, q, str(qd.get("arch", ""))))
 	for it in GameState.items:
 		if it.equipped_to != h.id:
 			continue
@@ -201,10 +198,10 @@ func hero_archetype_counts(h: Hero) -> Dictionary:
 		var a: String = str(e.get("arch", ""))
 		if a != "":
 			counts[a] = int(counts.get(a, 0)) + 1
-	for tid in h.earned_traits:
-		var t := GameData.find_earned_trait(tid)
-		if t.has("kind"):
-			counts[t["arch"]] = int(counts.get(t["arch"], 0)) + 1
+	for q in h.quirks:
+		var qd := GameData.quirk(q)
+		if qd.has("stats") and qd.has("arch"):
+			counts[qd["arch"]] = int(counts.get(qd["arch"], 0)) + 1
 	return counts
 
 

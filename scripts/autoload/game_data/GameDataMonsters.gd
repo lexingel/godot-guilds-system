@@ -120,15 +120,8 @@ const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
 const HEAVY_BLOW_MULT := 3.0
 
 ## ---------------- Hero voices ----------------
-## A hero's trait sets how they talk; they speak up at a few fight moments
+## A hero's born quirk sets how they talk (GameData.hero_voice); they speak up at a few fight moments
 ## (Combat._bark) and on the victory screen.
-const TRAIT_VOICE := {
-	"Battle-Hardened": "bold", "Juggernaut": "bold", "Reckless": "bold",
-	"Swift": "swift", "Glass Dagger": "swift", "Deadeye": "swift",
-	"Iron Skin": "stoic", "": "stoic",
-	"Frail": "wary", "Slothful": "wary",
-	"Zealous Mercy": "devout", "Overtuned": "arcane",
-}
 const VOICE_NAME := {"bold": "Bold", "swift": "Quick", "stoic": "Stoic", "wary": "Nervous", "devout": "Devout", "arcane": "Scholarly"}
 const BARKS := {
 	"bold": {

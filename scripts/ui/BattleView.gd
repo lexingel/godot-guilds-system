@@ -1420,9 +1420,6 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 func _monster_statuses(state: Dictionary, i: int) -> Array:
 	var m: Dictionary = state["monsters"][i]
 	var out: Array = []
-	var type_icon: String = GameData.RELIC_TYPE_ICON_PATH.get(str(m.get("type", "")), "")
-	if type_icon != "":
-		out.append({"icon": type_icon, "tip": "%s type" % str(m["type"]), "color": Palette.LINE})
 	for key in ["mechanic", "mechanic2"]:
 		var mech: Dictionary = m.get(key, {})
 		var icon: String = GameData.BOSS_MECHANIC_ICON.get(str(mech.get("id", "")), "")

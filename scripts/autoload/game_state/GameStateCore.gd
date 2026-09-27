@@ -195,10 +195,6 @@ func respec_fee_reduction() -> float:
 	return 0.3 if lvl("res.lab") >= 3 else 0.0
 
 
-func trait_reroll_cost() -> int:
-	return int(round(60 * (1.0 - respec_fee_reduction())))
-
-
 func crystal_yield_bonus() -> float:
 	return 1.0 + 0.08 * lvl("infra.amplifiers")
 

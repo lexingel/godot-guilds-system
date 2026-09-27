@@ -32,8 +32,7 @@ var prior_innate_value: float = 0.0
 var base_hp: int
 var base_dmg: int
 var base_spd: int = 10   # turn-order speed — role-based at generation, not level-scaled; see Combat.spd_of
-var trait_name: String = ""      # "" means no trait ("Steadfast")
-var scars: Array[String] = []    # earned from being knocked out in combat, capped at 2
+var quirks: Array[String] = []   # GameData.QUIRKS names: born, scars, earned
 var attrs: Dictionary = {}       # "might"/"agility"/"focus" -> base value (items add on top; see Combat.hero_attr)
 var attr_points: int = 0         # unspent attribute points (ATTR_POINTS_PER_LEVEL per level-up)
 var attr_trained: int = 0        # points bought at camp (capped at GameData.ATTR_TRAIN_CAP)
@@ -47,8 +46,7 @@ var oath: int = 0   # rifts sealed together as Champion (see GameData.CHAMPION_O
 var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
-var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds GameData.EARNED_TRAITS
-var earned_traits: Array[String] = []     # GameData.EARNED_TRAITS ids this hero has unlocked through play
+var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds earned quirks (GameData.QUIRKS)
 
 
 static var attrs_migrated := 0   # heroes converted from a pre-attribute save this session (for a one-off notice)
@@ -68,12 +66,12 @@ func to_dict() -> Dictionary:
 		"id": id, "name": name, "cls_id": cls_id, "pool_id": pool_id, "type": type,
 		"flavor": flavor, "rank": rank, "innate_kind": innate_kind, "innate_value": innate_value,
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
-		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "trait_name": trait_name, "scars": scars,
+		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "quirks": quirks,
 		"down_runs": down_runs, "bedded": bedded, "busy_runs": busy_runs, "battered": battered, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 "ability_awakened": ability_awakened,
-		"history": history, "earned_traits": earned_traits,
+		"history": history,
 	}
 
 
@@ -111,12 +109,18 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.skills = d.get("skills", {})
 	h.ability_awakened = d.get("ability_awakened", false)
 	h.history = d.get("history", {})
-	h.earned_traits.assign(d.get("earned_traits", []))
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
 	h.base_spd = d.get("base_spd", 10)
-	h.trait_name = d.get("trait_name", "")
-	h.scars.assign(d.get("scars", []))
+	if d.has("quirks"):
+		h.quirks.assign(d["quirks"])
+	else:   # an older save: trait, scars and earned traits become quirks
+		if str(d.get("trait_name", "")) != "":
+			h.quirks.append(str(d["trait_name"]))
+		h.quirks.append_array(d.get("scars", []))
+		for q in GameData.quirks_from("earned"):
+			if (d.get("earned_traits", []) as Array).has(GameData.QUIRKS[q]["id"]):
+				h.quirks.append(q)
 	h.down_runs = int(d.get("down_runs", 0))
 	# Saves from the wall-clock era: a hero still inside their old recovery
 	# window sits out one run.

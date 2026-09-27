@@ -119,13 +119,13 @@ func run() -> void:
 	h2.level = 10
 	h2.skill_points = 30
 	var cap_node: Dictionary = GameData.find_skill_node(h2.innate_kind, "cap")
-	h2.trait_name = ""
-	for t in GameData.TRAIT_TABLE:
-		if float(GameData.TRAIT_TABLE[t].get(str(cap_node["kind"]), 0.0)) > 0.0:
-			h2.trait_name = t
+	h2.quirks.clear()
+	for t in GameData.quirks_from("born"):
+		if float(GameData.QUIRKS[t].get("stats", {}).get(str(cap_node["kind"]), 0.0)) > 0.0:
+			h2.quirks.assign([t])
 			break
-	if h2.trait_name != "":
-		check(GameState.skill_node_cost(h2, h2.innate_kind, cap_node) == int(cap_node["cost"]) - 1, "trait %s discounts the %s fork" % [h2.trait_name, cap_node["kind"]])
+	if not h2.quirks.is_empty():
+		check(GameState.skill_node_cost(h2, h2.innate_kind, cap_node) == int(cap_node["cost"]) - 1, "quirk %s discounts the %s fork" % [h2.quirks[0], cap_node["kind"]])
 	else:
 		print("   (no trait boosts %s; discount check skipped)" % cap_node["kind"])
 	var sp0 := h2.skill_points

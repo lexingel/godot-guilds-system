@@ -19,38 +19,66 @@ const RARITIES := [
 	# find_rarity() still has something sane to return.
 	{"id": "legendary", "name": "Legendary", "mult": 1.0, "cost": 800, "weight": 1},
 ]
-const POS_TRAITS := ["Battle-Hardened", "Swift", "Iron Skin"]
-const NEG_TRAITS := ["Frail", "Reckless", "Slothful"]
-
-# Trait kind-keys use the same BUILD_KINDS vocabulary as skills/items/relics
-# so they flow through Combat.hero_skill_total for free.
-const TRAIT_TABLE := {
-	"Battle-Hardened": {"dmg_pct": 0.1},
-	"Swift": {"dmg_pct": 0.05, "speed_pct": 0.12},
-	"Iron Skin": {"hp_pct": 0.15},
-	"Frail": {"hp_pct": -0.15},
-	"Reckless": {"dmg_pct": -0.05, "hp_pct": -0.05},
-	"Slothful": {"dmg_pct": -0.1, "speed_pct": -0.12},
-	# Role-exclusive double-edged traits (see ROLE_TRAITS below).
-	"Juggernaut": {"hazard_guard_pct": 0.10, "dodge_pct": -0.08},
-	"Deadeye": {"first_round_pct": 0.15, "hp_pct": -0.08},
-	"Overtuned": {"escalate_pct": 0.03, "hp_pct": -0.10},
-	"Zealous Mercy": {"mend_pct": 0.04, "dmg_pct": -0.06},
-	"Glass Dagger": {"dodge_pct": 0.10, "hazard_guard_pct": -0.08},
+## ---------------- Quirks ----------------
+## Everything personal about a hero beyond class, skills and gear, in one list
+## (Hero.quirks, by name):
+## - "born": rolled at recruitment (at most one; sets their voice),
+## - "scar": left by being knocked out (up to 2; a net wound with an upside),
+## - "earned": unlocked by what they've done (Hero.history `stat` >= `need`).
+## `stats` {kind: value} add to the hero like skills and gear; `effects` are
+## Combat.hero_effects entries. `treatable` quirks can be treated for Gold at
+## the Arcane Lab.
+const QUIRKS := {
+	"Battle-Hardened": {"origin": "born", "stats": {"dmg_pct": 0.1}, "voice": "bold"},
+	"Swift": {"origin": "born", "stats": {"dmg_pct": 0.05, "speed_pct": 0.12}, "voice": "swift"},
+	"Iron Skin": {"origin": "born", "stats": {"hp_pct": 0.15}, "voice": "stoic"},
+	"Frail": {"origin": "born", "treatable": true, "stats": {"hp_pct": -0.15}, "voice": "wary"},
+	"Reckless": {"origin": "born", "treatable": true, "stats": {"dmg_pct": -0.05, "hp_pct": -0.05}, "voice": "bold"},
+	"Slothful": {"origin": "born", "treatable": true, "stats": {"dmg_pct": -0.1, "speed_pct": -0.12}, "voice": "wary"},
+	# Double-edged, one per role.
+	"Juggernaut": {"origin": "born", "role": "warrior", "treatable": true, "stats": {"hazard_guard_pct": 0.10, "dodge_pct": -0.08}, "voice": "bold"},
+	"Deadeye": {"origin": "born", "role": "ranger", "treatable": true, "stats": {"first_round_pct": 0.15, "hp_pct": -0.08}, "voice": "swift"},
+	"Overtuned": {"origin": "born", "role": "mage", "treatable": true, "stats": {"escalate_pct": 0.03, "hp_pct": -0.10}, "voice": "arcane"},
+	"Zealous Mercy": {"origin": "born", "role": "cleric", "treatable": true, "stats": {"mend_pct": 0.04, "dmg_pct": -0.06}, "voice": "devout"},
+	"Glass Dagger": {"origin": "born", "role": "rogue", "treatable": true, "stats": {"dodge_pct": 0.10, "hazard_guard_pct": -0.08}, "voice": "swift"},
+	# Scars: a wound, and what it changes about how they fight.
+	"Shell-Shocked": {"origin": "scar", "treatable": true, "stats": {"dodge_pct": -0.08}, "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"ally_below": 0.5}}]},
+	"Trembling Hands": {"origin": "scar", "treatable": true, "stats": {"dmg_pct": -0.06}, "effects": [{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.15}]},
+	"Battle Fatigue": {"origin": "scar", "treatable": true, "stats": {"hp_pct": -0.08}, "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"round_min": 4}}]},
+	"Haunted": {"origin": "scar", "treatable": true, "stats": {"mend_pct": -0.03}, "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"hp_below": 0.5}}]},
+	"Flinching": {"origin": "scar", "treatable": true, "stats": {"first_round_pct": -0.10}, "effects": [{"kind": "dodge_pct", "value": 0.15, "cond": {"hp_below": 0.4}}]},
+	# Earned through play.
+	"Bosskiller": {"origin": "earned", "id": "bosskiller", "stat": "boss_kills", "need": 3, "arch": "executioner",
+		"effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"vs_boss": true}}]},
+	"Elite Hunter": {"origin": "earned", "id": "elite_hunter", "stat": "elite_kills", "need": 5, "arch": "opener", "stats": {"first_round_pct": 0.10}},
+	"Reaper": {"origin": "earned", "id": "reaper", "stat": "kills", "need": 40, "arch": "executioner",
+		"effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"target_below": 0.3}}]},
+	"Seasoned": {"origin": "earned", "id": "seasoned", "stat": "kills", "need": 100, "arch": "executioner", "stats": {"dmg_pct": 0.06}},
+	"Survivor": {"origin": "earned", "id": "survivor", "stat": "knockouts", "need": 3, "arch": "evasion",
+		"effects": [{"kind": "dodge_pct", "value": 0.20, "cond": {"hp_below": 0.3}}]},
+	"Veteran": {"origin": "earned", "id": "veteran", "stat": "rifts_cleared", "need": 5, "arch": "guardian", "stats": {"hp_pct": 0.08}},
+	"Old Guard": {"origin": "earned", "id": "old_guard", "stat": "rifts_cleared", "need": 15, "arch": "guardian", "stats": {"wipe_guard": 0.05}},
 }
-
-# One per role, rolled only for that role — on top of the universal pool above.
-const ROLE_TRAITS := {
-	"warrior": "Juggernaut",
-	"ranger": "Deadeye",
-	"mage": "Overtuned",
-	"cleric": "Zealous Mercy",
-	"rogue": "Glass Dagger",
-}
+const SCARS_MAX := 2
+const QUIRK_TREAT_COST := 30
+const HISTORY_LABEL := {"kills": "kills", "boss_kills": "bosses", "elite_kills": "elites", "rifts_cleared": "rifts", "knockouts": "knockouts"}
 
 
-static func is_role_trait(trait_name: String) -> bool:
-	return ROLE_TRAITS.values().has(trait_name)
+static func quirk(name: String) -> Dictionary:
+	return QUIRKS.get(name, {})
+
+
+## The names of every quirk from `origin` ("born"/"scar"/"earned").
+static func quirks_from(origin: String) -> Array:
+	return QUIRKS.keys().filter(func(q): return QUIRKS[q]["origin"] == origin)
+
+
+## How the hero talks (VOICE lines): their born quirk's voice, else stoic.
+static func hero_voice(h: Hero) -> String:
+	for q in h.quirks:
+		if QUIRKS.get(q, {}).has("voice"):
+			return str(QUIRKS[q]["voice"])
+	return "stoic"
 
 
 ## One opener + one closer, joined — see NARRATIVE_LINES above. Returns ""
@@ -63,60 +91,6 @@ static func narrative_line(event_id: String) -> String:
 	var openers: Array = pools["openers"]
 	var closers: Array = pools["closers"]
 	return "%s %s" % [openers[randi() % openers.size()], closers[randi() % closers.size()]]
-
-# Earned from being knocked out in combat (Combat._finish_combat), not rolled
-# at recruitment like TRAIT_TABLE above — a separate, capped-at-2 pool so a
-# scar reads as a distinct kind of thing from the base trait. Same kind/value
-# shape (flows through Combat.hero_skill_total for free), deliberately milder
-# than a full NEG_TRAITS entry since up to 2 can stack on top of the trait.
-const SCAR_POOL := ["Shell-Shocked", "Trembling Hands", "Battle Fatigue", "Haunted", "Flinching"]
-const SCAR_TABLE := {
-	"Shell-Shocked": {"dodge_pct": -0.08},
-	"Trembling Hands": {"dmg_pct": -0.06},
-	"Battle Fatigue": {"hp_pct": -0.08},
-	"Haunted": {"mend_pct": -0.03},
-	"Flinching": {"first_round_pct": -0.10},
-}
-
-## What a scar gives back — every scar is still a net wound (SCAR_TABLE), but
-## one that changes how the hero fights instead of only making them worse.
-## Combat.hero_effects entry shape.
-const SCAR_UPSIDES := {
-	"Shell-Shocked": [{"kind": "dmg_pct", "value": 0.15, "cond": {"ally_below": 0.5}}],
-	"Trembling Hands": [{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.15}],
-	"Battle Fatigue": [{"kind": "dmg_pct", "value": 0.12, "cond": {"round_min": 4}}],
-	"Haunted": [{"kind": "dmg_pct", "value": 0.15, "cond": {"hp_below": 0.5}}],
-	"Flinching": [{"kind": "dodge_pct", "value": 0.15, "cond": {"hp_below": 0.4}}],
-}
-
-## Traits earned through play rather than rolled at recruitment: each unlocks
-## once `stat` in Hero.history reaches `need` (checked by
-## GameState.check_earned_traits after fights and rift seals). Either a flat
-## `kind`/`value` (summed by hero_skill_total) or `effects` (hero_effects).
-const EARNED_TRAITS := [
-	{"id": "bosskiller", "name": "Bosskiller", "stat": "boss_kills", "need": 3, "arch": "executioner",
-	 "effects": [{"kind": "dmg_pct", "value": 0.15, "cond": {"vs_boss": true}}]},
-	{"id": "elite_hunter", "name": "Elite Hunter", "stat": "elite_kills", "need": 5, "arch": "opener",
-	 "kind": "first_round_pct", "value": 0.10},
-	{"id": "reaper", "name": "Reaper", "stat": "kills", "need": 40, "arch": "executioner",
-	 "effects": [{"kind": "dmg_pct", "value": 0.12, "cond": {"target_below": 0.3}}]},
-	{"id": "seasoned", "name": "Seasoned", "stat": "kills", "need": 100, "arch": "executioner",
-	 "kind": "dmg_pct", "value": 0.06},
-	{"id": "survivor", "name": "Survivor", "stat": "knockouts", "need": 3, "arch": "evasion",
-	 "effects": [{"kind": "dodge_pct", "value": 0.20, "cond": {"hp_below": 0.3}}]},
-	{"id": "veteran", "name": "Veteran", "stat": "rifts_cleared", "need": 5, "arch": "guardian",
-	 "kind": "hp_pct", "value": 0.08},
-	{"id": "old_guard", "name": "Old Guard", "stat": "rifts_cleared", "need": 15, "arch": "guardian",
-	 "kind": "wipe_guard", "value": 0.05},
-]
-const HISTORY_LABEL := {"kills": "kills", "boss_kills": "bosses", "elite_kills": "elites", "rifts_cleared": "rifts", "knockouts": "knockouts"}
-
-
-static func find_earned_trait(trait_id: String) -> Dictionary:
-	for t in EARNED_TRAITS:
-		if t["id"] == trait_id:
-			return t
-	return {}
 
 ## Bonds between two specific heroes grow by clearing rifts together
 ## (GameState.bonds): level N once their shared rift count reaches
@@ -183,19 +157,6 @@ const RELIC_REROLL_CRYSTALS := 10
 const TYPE_DOMAIN := {
 	"Ember": "damage", "Verdant": "heal", "Frost": "chance",
 	"Umbral": "defense", "Arcane": "droprate",
-}
-
-# Hero-vs-monster elemental weakness (attack-only — doesn't affect retaliation
-# taken). Deliberately asymmetric rather than a clean 5-cycle: 3 of the 10
-# pairs are neutral (Ember-Arcane, Frost-Umbral, Verdant-Umbral), and Ember/
-# Arcane come out net stronger than Frost/Verdant. First-draft numbers,
-# tunable after playing.
-const TYPE_MATCHUPS := {
-	"Ember": {"strong_vs": ["Verdant", "Umbral"], "weak_vs": ["Frost"]},
-	"Frost": {"strong_vs": ["Ember"], "weak_vs": ["Verdant", "Arcane"]},
-	"Verdant": {"strong_vs": ["Frost"], "weak_vs": ["Ember", "Arcane"]},
-	"Umbral": {"strong_vs": ["Arcane"], "weak_vs": ["Ember"]},
-	"Arcane": {"strong_vs": ["Verdant", "Frost"], "weak_vs": ["Umbral"]},
 }
 
 # Mirrors UNIQUE_RELICS' existing "combo_with" named-partner pattern, as a

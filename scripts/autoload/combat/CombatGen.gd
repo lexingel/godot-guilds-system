@@ -42,7 +42,9 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	h.base_hp = round(role_cls["base_hp"] * cls["hp_ratio"] * rank["mult"] * s)
 	h.base_dmg = round(role_cls["base_dmg"] * cls["dmg_ratio"] * rank["mult"] * s)
 	h.base_spd = round(float(role_cls["base_spd"]) * float(rank["mult"]))
-	h.trait_name = pick_trait_name(cls["role"])
+	var born := roll_born_quirk(cls["role"])
+	if born != "":
+		h.quirks.append(born)
 	h.formation = str(GameData.ROLE_POSITION.get(cls["role"], {}).get("row", "front"))
 	# Recruits arrive with their levels' points already spent by role.
 	h.attrs = GameData.role_attrs(cls["role"])
@@ -418,7 +420,6 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			m["mechanic"] = {}
 			m["ability"] = GameData.MONSTER_ABILITIES.get(str(m["name"]), {})
 			m["is_main"] = i == 0
-			m["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 			monsters.append(m)
 		return monsters
 
@@ -456,7 +457,6 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	elif kind == "elite":
 		_roll_affixes(main, 2 if diff.get("elite_chance_up", false) else 1)
 	main["max_hp"] = main["hp"]
-	main["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	monsters.append(main)
 
 	var add_roll := randf() < 0.35
@@ -486,7 +486,6 @@ func _make_add(diff: Dictionary, floor_idx: int, hp_mult: float, dmg_mult: float
 	add["mechanic"] = {}
 	add["ability"] = GameData.MONSTER_ABILITIES.get(str(add["name"]), {})
 	add["is_main"] = false
-	add["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	return add
 const AFFIX_HP_MULT := 0.85
 
@@ -519,7 +518,7 @@ func _roll_affixes(m: Dictionary, count: int) -> void:
 
 ## A line in this hero's voice for a moment (GameData.BARKS).
 func bark_line(h: Hero, moment: String) -> String:
-	var lines: Array = GameData.BARKS[GameData.TRAIT_VOICE.get(h.trait_name, "stoic")][moment]
+	var lines: Array = GameData.BARKS[GameData.hero_voice(h)][moment]
 	return str(lines[randi() % lines.size()])
 
 

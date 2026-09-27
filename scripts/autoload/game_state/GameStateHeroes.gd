@@ -15,19 +15,53 @@ func bond_rifts(a: String, b: String) -> int:
 	return int(bonds.get(_bond_key(a, b), 0))
 
 
-## Unlocks every GameData.EARNED_TRAITS entry `h` now qualifies for; returns
-## the newly earned trait names (for a "X earned Bosskiller" line).
-func check_earned_traits(h: Hero) -> Array[String]:
+## Gives `h` every earned quirk (GameData.QUIRKS, origin "earned") their
+## history now qualifies for; returns "X earned Bosskiller!" lines.
+func check_earned_quirks(h: Hero) -> Array[String]:
 	var gained: Array[String] = []
 	if h.is_champion:
 		return gained
-	for t in GameData.EARNED_TRAITS:
-		if not h.earned_traits.has(t["id"]) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
-			h.earned_traits.append(t["id"])
-			gained.append("%s earned %s!" % [h.name, t["name"]])
-			var what: String = Combat.describe_skill(str(t["kind"]), float(t["value"])) if t.has("kind") else Combat.describe_effect(t["effects"][0])
-			push_toast(h, "Trait earned: %s" % t["name"], "%s — %s" % [h.name.split(" the ")[0], what])
+	for q in GameData.quirks_from("earned"):
+		var t := GameData.quirk(q)
+		if not h.quirks.has(q) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
+			h.quirks.append(q)
+			gained.append("%s earned %s!" % [h.name, q])
+			push_toast(h, "Quirk earned: %s" % q, "%s — %s" % [h.name.split(" the ")[0], quirk_text(q)])
 	return gained
+
+
+## "+10% damage; +15% dodge while below 40% HP" for a quirk.
+func quirk_text(q: String) -> String:
+	var t := GameData.quirk(q)
+	var parts: Array[String] = []
+	var stats: Dictionary = t.get("stats", {})
+	for kind in stats:
+		parts.append(Combat.describe_skill(kind, float(stats[kind])))
+	for e in t.get("effects", []):
+		parts.append(Combat.describe_effect(e))
+	return "; ".join(parts)
+
+
+## Treats a treatable quirk (a bad born quirk or a scar) at the Arcane Lab.
+func treat_quirk(hero_id: String, q: String) -> String:
+	if lvl("res.lab") < 1:
+		return "Build the Arcane Lab first"
+	var h := find_hero(hero_id)
+	if not h or not h.quirks.has(q) or not GameData.quirk(q).get("treatable", false):
+		return ""
+	var cost := quirk_treat_cost()
+	if coins < cost:
+		return "Need %d Gold" % cost
+	coins -= cost
+	h.quirks.erase(q)
+	h.hp = mini(h.hp, Combat.max_hp(h))
+	save()
+	state_changed.emit()
+	return ""
+
+
+func quirk_treat_cost() -> int:
+	return int(round(GameData.QUIRK_TREAT_COST * (1.0 - respec_fee_reduction())))
 
 
 func find_hero(hero_id: String) -> Hero:
@@ -249,7 +283,8 @@ func swear_in_champion() -> String:
 	c.is_champion = false
 	c.cls_id = str(cls.get("role", "warrior"))
 	c.innate_value = Combat.hero_innate_value(cls, GameData.rank_index(c.rank))
-	c.trait_name = Combat.pick_trait_name(c.cls_id)
+	var born := Combat.roll_born_quirk(c.cls_id)
+	c.quirks.assign([born] if born != "" else [])
 	c.skill_points = c.level - 1
 	c.oath = 0
 	heroes.append(c)
@@ -399,15 +434,13 @@ func skill_node_cost(h: Hero, kind: String, n: Dictionary) -> int:
 	return cost
 
 
+## A quirk that leans into `stat` (a boost, or a scar that wounds it) makes
+## that fork's tier-3 node cheaper.
 func fork_discounted(h: Hero, stat: String) -> bool:
-	if float(GameData.TRAIT_TABLE.get(h.trait_name, {}).get(stat, 0.0)) > 0.0:
-		return true
-	for tid in h.earned_traits:
-		var t := GameData.find_earned_trait(tid)
-		if t.get("kind", "") == stat and float(t.get("value", 0.0)) > 0.0:
-			return true
-	for scar in h.scars:
-		if float(GameData.SCAR_TABLE.get(scar, {}).get(stat, 0.0)) < 0.0:
+	for q in h.quirks:
+		var t := GameData.quirk(q)
+		var v := float(t.get("stats", {}).get(stat, 0.0))
+		if (v > 0.0 and t["origin"] != "scar") or (v < 0.0 and t["origin"] == "scar"):
 			return true
 	return false
 
@@ -541,55 +574,6 @@ func respec_hero(hero_id: String, kind: String = "") -> String:
 	h.skill_points += spent_sp
 	for key in target_keys:
 		h.skills.erase(key)
-	save()
-	state_changed.emit()
-	return ""
-
-
-func reroll_trait(hero_id: String) -> String:
-	var h := find_hero(hero_id)
-	if not h:
-		return ""
-	if coins < trait_reroll_cost():
-		return "Need %d Gold" % trait_reroll_cost()
-	coins -= trait_reroll_cost()
-	h.trait_name = Combat.pick_trait_name(h.cls_id)
-	h.hp = min(Combat.max_hp(h), h.hp)
-	save()
-	state_changed.emit()
-	return ""
-
-
-func scrub_trait(hero_id: String) -> String:
-	if lvl("res.lab") < 1:
-		return "Build the Arcane Lab first"
-	var h := find_hero(hero_id)
-	var scrubbable := h and (GameData.NEG_TRAITS.has(h.trait_name) or GameData.is_role_trait(h.trait_name))
-	if not scrubbable:
-		return ""
-	if coins < 30:
-		return "Need 30 Gold"
-	coins -= 30
-	h.trait_name = ""
-	h.hp = Combat.max_hp(h)
-	save()
-	state_changed.emit()
-	return ""
-
-
-## Same gate/cost as scrub_trait — removes one named scar rather than the
-## base trait, and doesn't touch h.hp (a scar isn't tied to a heal-to-full
-## the way clearing the base trait is).
-func scrub_scar(hero_id: String, scar_name: String) -> String:
-	if lvl("res.lab") < 1:
-		return "Build the Arcane Lab first"
-	var h := find_hero(hero_id)
-	if not h or not h.scars.has(scar_name):
-		return ""
-	if coins < 30:
-		return "Need 30 Gold"
-	coins -= 30
-	h.scars.erase(scar_name)
 	save()
 	state_changed.emit()
 	return ""

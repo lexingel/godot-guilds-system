@@ -45,15 +45,8 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 		s += h.prior_innate_value
 	s += hero_item_total(h, kind)
 	s += attr_kind_total(h, kind)
-	if GameData.TRAIT_TABLE.has(h.trait_name):
-		s += GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)
-	for scar in h.scars:
-		if GameData.SCAR_TABLE.has(scar):
-			s += GameData.SCAR_TABLE[scar].get(kind, 0.0)
-	for tid in h.earned_traits:
-		var t := GameData.find_earned_trait(tid)
-		if t.get("kind", "") == kind:
-			s += float(t["value"])
+	for q in h.quirks:
+		s += float(GameData.quirk(q).get("stats", {}).get(kind, 0.0))
 	if GameState.active_incense.get("kind", "") == kind:
 		s += float(GameState.active_incense["value"])
 	return s
@@ -105,15 +98,8 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 		var per: float = float(GameData.ATTR_EFFECTS[a].get(kind, 0.0))
 		if per != 0.0:
 			add.call("%s %d" % [GameData.ATTR_LABEL[a], hero_attr(h, a)], (hero_attr(h, a) - GameData.ATTR_BASELINE) * per)
-	if GameData.TRAIT_TABLE.has(h.trait_name):
-		add.call("Trait: %s" % h.trait_name, float(GameData.TRAIT_TABLE[h.trait_name].get(kind, 0.0)))
-	for scar in h.scars:
-		if GameData.SCAR_TABLE.has(scar):
-			add.call("Scar: %s" % scar, float(GameData.SCAR_TABLE[scar].get(kind, 0.0)))
-	for tid in h.earned_traits:
-		var t := GameData.find_earned_trait(tid)
-		if t.get("kind", "") == kind:
-			add.call("Earned: %s" % t["name"], float(t["value"]))
+	for q in h.quirks:
+		add.call("Quirk: %s" % q, float(GameData.quirk(q).get("stats", {}).get(kind, 0.0)))
 	if GameState.active_incense.get("kind", "") == kind:
 		add.call("Incense: %s" % GameState.active_incense.get("name", "active"), float(GameState.active_incense["value"]))
 	return out
@@ -246,20 +232,6 @@ func domain_for_type(type: String) -> String:
 	return others[randi() % others.size()]
 
 
-## Attack-only elemental multiplier: 1.3 if attacker_type is strong_vs
-## defender_type, 0.8 if weak_vs, 1.0 otherwise (including either side being
-## untyped/"" — combat kinds with no type, e.g. no hero picked yet, just no-op).
-func type_matchup_mult(attacker_type: String, defender_type: String) -> float:
-	if attacker_type == "" or defender_type == "" or not GameData.TYPE_MATCHUPS.has(attacker_type):
-		return 1.0
-	var matchup: Dictionary = GameData.TYPE_MATCHUPS[attacker_type]
-	if matchup["strong_vs"].has(defender_type):
-		return 1.3
-	if matchup["weak_vs"].has(defender_type):
-		return 0.8
-	return 1.0
-
-
 ## Weighted retaliation-target pick: front row weight 3, back row weight 1
 ## (a bias, not a hard block — an all-back-row candidates array just reduces
 ## to a uniform roll among them, no special-casing needed).
@@ -276,25 +248,30 @@ func weighted_formation_target(candidates: Array[Hero]) -> Hero:
 	return candidates[candidates.size() - 1]
 
 
-func pick_trait_name(role: String) -> String:
+## A recruit's born quirk: 22% a bad one, 28% a good one, 12% their role's
+## double-edged one, otherwise none.
+func roll_born_quirk(role: String) -> String:
+	var born := GameData.quirks_from("born")
 	var r := randf()
 	if r < 0.22:
-		return GameData.NEG_TRAITS[randi() % GameData.NEG_TRAITS.size()]
+		return str(born.filter(func(q): return GameData.QUIRKS[q].get("treatable", false) and not GameData.QUIRKS[q].has("role")).pick_random())
 	if r < 0.50:
-		return GameData.POS_TRAITS[randi() % GameData.POS_TRAITS.size()]
+		return str(born.filter(func(q): return not GameData.QUIRKS[q].get("treatable", false)).pick_random())
 	if r < 0.62:
-		return GameData.ROLE_TRAITS[role]
+		var own: Array = born.filter(func(q): return GameData.QUIRKS[q].get("role", "") == role)
+		return str(own[0]) if not own.is_empty() else ""
 	return ""
 
 
-## Uniform pick from SCAR_POOL excluding whatever the hero already has —
-## returns "" if every entry is already held (can't happen at the cap of 2
-## against a 5-entry pool, but keeps this safe regardless).
-func pick_scar_name(existing: Array[String]) -> String:
-	var choices: Array = GameData.SCAR_POOL.filter(func(s): return not existing.has(s))
-	if choices.is_empty():
+## A scar the hero doesn't have yet, or "" at the cap.
+func roll_scar(h: Hero) -> String:
+	var have: Array = h.quirks.filter(func(q): return GameData.quirk(q).get("origin", "") == "scar")
+	if have.size() >= GameData.SCARS_MAX:
 		return ""
-	return str(choices[randi() % choices.size()])
+	var choices: Array = GameData.quirks_from("scar").filter(func(q): return not h.quirks.has(q))
+	return str(choices.pick_random()) if not choices.is_empty() else ""
+
+
 const HERO_INNATE_MULT := 0.6
 
 

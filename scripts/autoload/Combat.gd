@@ -420,10 +420,9 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			target_idx = _first_living_monster_idx(monsters)
 		if target_idx >= 0:
 			var team_dmg_base: float = float(state["team_dmg_base"])
-			var type_mult := type_matchup_mult(h.type, str(monsters[target_idx].get("type", "")))
 			var formation_mult := 1.0 if bool(monsters[target_idx].get("is_main", true)) else 0.75
 			var hit := {"target": monsters[target_idx]}
-			hit["dealt"] = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * type_mult * formation_mult * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
+			hit["dealt"] = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * formation_mult * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
 			_fire("before_hit", state, h, hit)
 			var dealt: float = hit["dealt"]
 			var armor := float(monsters[target_idx].get("armor", 0.0))
@@ -1051,13 +1050,12 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 			if h.hp <= 0 and h.down_runs <= 0:
 				GameState.knock_out(h)
 				h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
-				# A freshly-knocked-out roster hero has a chance to pick up a
-				# lasting scar, capped at 2 — champions are regenerated fresh
-				# every seal_rift() and carry no persistent state worth scarring.
-				if not h.is_champion and h.scars.size() < 2 and not GameState.run.has("tower") and randf() < 0.5:
-					var scar := pick_scar_name(h.scars)
+				# A freshly-knocked-out roster hero may pick up a scar quirk
+				# (up to GameData.SCARS_MAX).
+				if not h.is_champion and not GameState.run.has("tower") and randf() < 0.5:
+					var scar := roll_scar(h)
 					if scar != "":
-						h.scars.append(scar)
+						h.quirks.append(scar)
 						log.append("%s is left with a lasting scar: %s." % [h.name, scar])
 						log.append(GameData.narrative_line("scar_gained"))
 

@@ -79,10 +79,10 @@ func run() -> void:
 	var b := Combat.gen_hero("C", 8)
 	GameState.heroes.assign([a, b])
 	a.history = {"boss_kills": 3, "rifts_cleared": 4}
-	var got := GameState.check_earned_traits(a)
-	check(a.earned_traits.has("bosskiller") and got.size() == 1, "bosskiller earned at 3 boss kills")
+	var got := GameState.check_earned_quirks(a)
+	check(a.quirks.has("Bosskiller") and got.size() == 1, "bosskiller earned at 3 boss kills")
 	check(Combat.hero_effects(a).any(func(e): return e.get("source", "") == "Bosskiller"), "earned effect active")
-	a.scars.assign(["Haunted"])
+	a.quirks.append("Haunted")
 	check(Combat.hero_effects(a).any(func(e): return e.get("source", "") == "Haunted"), "scar upside active")
 	var ids: Array[String] = [a.id, b.id]
 	for r in 5:
@@ -90,13 +90,13 @@ func run() -> void:
 		GameState.seal_rift()
 		GameState.run = {}
 	check(GameState.bond_rifts(a.id, b.id) == 5 and GameData.bond_level(5) == 2, "bond grows with shared rifts")
-	check(a.earned_traits.has("veteran"), "veteran earned on 5th rift (had 4)")
+	check(a.quirks.has("Veteran"), "veteran earned on 5th rift (had 4)")
 	var party2: Array[Hero] = [a, b]
 	a.hp = Combat.max_hp(a)
 	b.hp = Combat.max_hp(b)
 	check(absf(Combat.bond_bonus_for(party2, "dmg_pct") - 0.04) < 0.0001 or Combat.bond_bonus_for(party2, "dmg_pct") >= 0.04, "bond Lv2 gives +4% dmg")
 	var back := Hero.from_dict(JSON.parse_string(JSON.stringify(a.to_dict())))
-	check(back.earned_traits == a.earned_traits and int(back.history.get("rifts_cleared", 0)) == 9, "hero history roundtrip")
+	check(back.quirks == a.quirks and int(back.history.get("rifts_cleared", 0)) == 9, "hero history roundtrip")
 	GameState.delete_slot(9)
 	GameState.heroes.clear()
 	# --- fights with every legendary + epic affixes ---

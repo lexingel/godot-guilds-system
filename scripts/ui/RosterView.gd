@@ -62,7 +62,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
-	var voice := str(GameData.TRAIT_VOICE.get(h.trait_name, "stoic"))
+	var voice := GameData.hero_voice(h)
 	var head := _label("Lv%d %s (%s) · %d/%d HP · Power %d · %s" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h), GameData.VOICE_NAME[voice]])
 	head.tooltip_text = "Personality (from their trait) — e.g. “%s”" % str(GameData.BARKS[voice]["victory"][0])
 	head.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -203,13 +203,6 @@ func _render_roster(v: VBoxContainer) -> void:
 				cv.add_child(_rich_line(line, 12, true))
 			if hist_lines.is_empty():
 				cv.add_child(_label("No deeds yet — send this hero into a rift.", 11, true))
-			for scar_name in h.scars:
-				cv.add_child(_info_row("Scar: %s — %s" % [scar_name, _scar_text(scar_name)], 11, [_icon_button("res://assets/skills/potion_blue.png", "Scrub (30c)", func(id=h.id, sn=scar_name):
-					var err := GameState.scrub_scar(id, sn)
-					if err != "":
-						push_warning(err)
-					render()
-				)], null, true))
 		_:
 			_render_hero_sheet(cv, h, fitting_items)
 
@@ -319,25 +312,35 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var build := _build_bb(h)
 	if build != "":
 		cv.add_child(_rich_line("Build: " + build, 12, true))
-	var trait_row := HBoxContainer.new()
-	trait_row.add_theme_constant_override("separation", 8)
-	var tl := _label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true)
-	tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	trait_row.add_child(tl)
-	trait_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (%d Gold)" % GameState.trait_reroll_cost(), func(id=h.id):
-		var err := GameState.reroll_trait(id)
-		if err != "":
-			push_warning(err)
-		render()
-	))
-	if h.trait_name != "":
-		trait_row.add_child(_icon_button("res://assets/skills/potion_blue.png", "Scrub Trait (30c)", func(id=h.id):
-			var err := GameState.scrub_trait(id)
-			if err != "":
-				push_warning(err)
-			render()
-		))
-	cv.add_child(trait_row)
+	cv.add_child(_quirk_row(h))
+
+
+## The hero's quirks as chips (good ones in the healthy colour, wounds in
+## the danger colour), with Treat on the treatable ones.
+func _quirk_row(h: Hero) -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 6)
+	var head := _label("Quirks:", 12, true)
+	row.add_child(head)
+	if h.quirks.is_empty():
+		row.add_child(_label("none yet", 12, true))
+	for q in h.quirks:
+		var t := GameData.quirk(q)
+		var bad: bool = t.get("treatable", false)
+		var chip := _label(q, 12)
+		chip.add_theme_color_override("font_color", Palette.HAZARD if bad else Palette.good())
+		chip.tooltip_text = "%s (%s) — %s" % [q, {"born": "born with it", "scar": "a scar", "earned": "earned"}.get(str(t.get("origin", "")), ""), GameState.quirk_text(q)]
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(chip)
+		if bad and GameState.lvl("res.lab") >= 1:
+			row.add_child(_icon_button("res://assets/skills/potion_blue.png", "Treat (%d Gold)" % GameState.quirk_treat_cost(), func(id=h.id, qq=q):
+				var err := GameState.treat_quirk(id, qq)
+				if err != "":
+					push_warning(err)
+				render()
+			))
+	return row
 
 
 ## Might / Agility / Focus with a + per attribute while there are points to
@@ -538,7 +541,7 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		else:
 			reason = "Learn (%d SP%s)" % [cost, " + %d Essence" % GameData.STONEBOUND_CRYSTALS if n.get("stone", false) else ""]
 		if cost < int(n["cost"]):
-			reason += "\nCheaper: your trait or scar suits this path"
+			reason += "\nCheaper: your quirks suit this path"
 
 	var combo_line := ""
 	if n.has("combo_kind"):

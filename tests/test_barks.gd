@@ -4,8 +4,8 @@ extends "res://tests/base_test.gd"
 
 
 func run() -> void:
-	for t in GameData.TRAIT_TABLE.keys() + [""]:
-		check(GameData.TRAIT_VOICE.has(t), "trait '%s' has a voice" % t)
+	for q in GameData.quirks_from("born"):
+		check(GameData.BARKS.has(str(GameData.QUIRKS[q].get("voice", ""))), "born quirk '%s' has a voice" % q)
 	for v in GameData.BARKS:
 		for moment in ["kill", "low_hp", "ally_down", "victory", "level_up"]:
 			if (GameData.BARKS[v].get(moment, []) as Array).is_empty():

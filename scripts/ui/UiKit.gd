@@ -715,18 +715,7 @@ func _kw_footer(text: String) -> String:
 	return "\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]" % [Palette.MUTED2.to_html(false), Palette.MUTED.to_html(false), "\n".join(lines)]
 
 
-## "−3% mend; +15% damage while below 50% HP" — a scar's wound and its upside.
-func _scar_text(scar_name: String) -> String:
-	var parts: Array[String] = []
-	var wound: Dictionary = GameData.SCAR_TABLE.get(scar_name, {})
-	for kind in wound:
-		parts.append(Combat.describe_skill(kind, float(wound[kind])))
-	for e in GameData.SCAR_UPSIDES.get(scar_name, []):
-		parts.append(Combat.describe_effect(e))
-	return "; ".join(parts)
-
-
-## History, earned traits, the nearest trait still to earn, and grown bonds —
+## History, earned quirks, the nearest quirk still to earn, and grown bonds —
 ## as BBCode lines (render with _rich_line).
 func _history_lines(h: Hero) -> Array[String]:
 	var lines: Array[String] = []
@@ -739,17 +728,17 @@ func _history_lines(h: Hero) -> Array[String]:
 		lines.append("History: " + " · ".join(hist))
 	var next_best := {}
 	var next_frac := -1.0
-	for t in GameData.EARNED_TRAITS:
-		if h.earned_traits.has(t["id"]):
-			var what: String = Combat.describe_skill(str(t["kind"]), float(t["value"])) if t.has("kind") else "; ".join(t["effects"].map(func(e): return Combat.describe_effect(e)))
-			lines.append("Earned: [b]%s[/b] — %s  %s" % [t["name"], what.replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
+	for q in GameData.quirks_from("earned"):
+		var t := GameData.quirk(q)
+		if h.quirks.has(q):
+			lines.append("Earned: [b]%s[/b] — %s  %s" % [q, GameState.quirk_text(q).replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
 		else:
 			var frac := float(h.history.get(t["stat"], 0)) / float(t["need"])
 			if frac > next_frac:
 				next_frac = frac
-				next_best = t
+				next_best = t.merged({"name": q})
 	if not next_best.is_empty():
-		lines.append("Next trait: %s (%d/%d %s)" % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
+		lines.append("Next quirk: %s (%d/%d %s)" % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
 	var bond_parts: Array[String] = []
 	for other in GameState.heroes:
 		if other == h:
