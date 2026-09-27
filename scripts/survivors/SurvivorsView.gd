@@ -27,6 +27,8 @@ var _cam: Camera2D
 var _world: Node2D
 var _fx: Node2D
 var _overlay: Node2D
+var _top: Node2D
+var _arrows: Control
 var _hud: CanvasLayer
 var _hud_time: Label
 var _hud_kills: Label
@@ -61,11 +63,15 @@ func _ready() -> void:
 		fl.region_enabled = true
 		fl.region_rect = Rect2(-20000, -20000, 40000, 40000)
 		fl.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		fl.modulate = Color(0.75, 0.75, 0.8)
 		_world.add_child(fl)
 	_overlay = _Overlay.new()
 	_overlay.view = self
 	_world.add_child(_overlay)
+	# Health bars and cooldowns float above every sprite.
+	_top = _TopOverlay.new()
+	_top.view = self
+	_top.z_index = 3000
+	_world.add_child(_top)
 	_fx = Node2D.new()
 	_fx.z_index = 20
 	_world.add_child(_fx)
@@ -226,6 +232,8 @@ func _sync() -> void:
 			_foe_nodes[id].queue_free()
 			_foe_nodes.erase(id)
 	_overlay.queue_redraw()
+	_top.queue_redraw()
+	_arrows.queue_redraw()
 	_update_hud()
 
 
@@ -361,6 +369,11 @@ func _build_hud() -> void:
 		hr.add_child(bar)
 		party_box.add_child(hr)
 		_hero_bars[h["hero"].id] = bar
+	_arrows = _Arrows.new()
+	_arrows.view = self
+	_arrows.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_arrows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_arrows)
 	var hint := _hud_label(root, 13)
 	hint.text = "Move: WASD / arrows, or drag  ·  Pause: Esc"
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 14)
@@ -608,9 +621,26 @@ class _Overlay:
 
 	func _draw() -> void:
 		var run: SurvivorsRun = view.run
+		# A shadow under every foe splits the crowd into bodies; elites and
+		# wardens stand on a colored ring.
+		for f in run.foes:
+			var r: float = f["r"]
+			draw_set_transform(f["pos"] + Vector2(0, 2), 0.0, Vector2(1.0, 0.38))
+			draw_circle(Vector2.ZERO, r * 1.05, Color(0, 0, 0, 0.35))
+			if f["tier"] != "combat":
+				draw_arc(Vector2.ZERO, r * 1.25, 0.0, TAU, 32, Palette.ELITE if f["tier"] == "elite" else Palette.HAZARD, 3.0)
+		for h in run.heroes:
+			if h["alive"]:
+				draw_set_transform(h["pos"] + Vector2(0, 2), 0.0, Vector2(1.0, 0.38))
+				draw_circle(Vector2.ZERO, 16.0, Color(0, 0, 0, 0.35))
+		draw_set_transform(Vector2.ZERO)
+		# Shards: a dark edge and a bright core so they read on any floor.
 		for g in run.gems:
 			var c := Palette.CRYSTALS if int(g["xp"]) <= 1 else (Palette.TOKENS if int(g["xp"]) < 50 else Palette.RANK_S)
-			draw_colored_polygon(PackedVector2Array([g["pos"] + Vector2(0, -6), g["pos"] + Vector2(4, 0), g["pos"] + Vector2(0, 6), g["pos"] + Vector2(-4, 0)]), c)
+			var p: Vector2 = g["pos"]
+			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -8), p + Vector2(6, 0), p + Vector2(0, 8), p + Vector2(-6, 0)]), Color(0.05, 0.05, 0.1, 0.9))
+			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -6), p + Vector2(4, 0), p + Vector2(0, 6), p + Vector2(-4, 0)]), c)
+			draw_rect(Rect2(p + Vector2(-1, -3), Vector2(2, 2)), Color(1, 1, 1, 0.9))
 		for s in run.shots:
 			if s["kind"] == "shot":
 				var dir: Vector2 = s["vel"].normalized()
@@ -626,3 +656,49 @@ class _Overlay:
 			draw_rect(Rect2(p, Vector2(36.0 * h["hp"] / h["max_hp"], 4)), Palette.good() if h["hp"] > h["max_hp"] * 0.35 else Palette.HAZARD)
 		var lp: Vector2 = run.lead()["pos"]
 		draw_arc(lp + Vector2(0, 2), 18.0, 0.0, TAU, 24, Color(1, 0.8, 0.4, 0.5), 2.0)
+
+
+## Above every sprite: elite and warden health bars.
+class _TopOverlay:
+	extends Node2D
+	var view: SurvivorsView
+
+	func _draw() -> void:
+		for f in view.run.foes:
+			if f["tier"] != "elite":
+				continue
+			var w := 52.0
+			var p: Vector2 = f["pos"] + Vector2(-w * 0.5, -60.0 * SurvivorsView.TIER_SCALE["elite"] - 4.0)
+			draw_rect(Rect2(p - Vector2(1, 1), Vector2(w + 2, 7)), Color(0, 0, 0, 0.8))
+			draw_rect(Rect2(p, Vector2(w * clampf(f["hp"] / f["max_hp"], 0.0, 1.0), 5)), Palette.ELITE)
+
+
+## HUD edge arrows toward elites and wardens that are off screen.
+class _Arrows:
+	extends Control
+	var view: SurvivorsView
+
+	func _draw() -> void:
+		var vp := get_viewport_rect().size
+		var center: Vector2 = view._cam.get_screen_center_position()
+		var inner := Rect2(Vector2(28, 130), vp - Vector2(56, 170))   # below the boss bar
+		for f in view.run.foes:
+			if f["tier"] == "combat":
+				continue
+			var sp: Vector2 = f["pos"] - center + vp * 0.5
+			if Rect2(Vector2.ZERO, vp).has_point(sp):
+				continue
+			var dir := (sp - vp * 0.5).normalized()
+			# Walk from the middle toward the foe until the inner rect's edge.
+			var t := INF
+			for axis in 2:
+				if absf(dir[axis]) > 0.001:
+					var edge: float = (inner.end[axis] if dir[axis] > 0.0 else inner.position[axis]) - vp[axis] * 0.5
+					t = minf(t, edge / dir[axis])
+			var at := vp * 0.5 + dir * t
+			var col: Color = Palette.HAZARD if f["tier"] == "boss" else Palette.ELITE
+			var sz := 16.0 if f["tier"] == "boss" else 11.0
+			var tri := PackedVector2Array([at + dir * sz, at + dir.rotated(2.4) * sz, at + dir.rotated(-2.4) * sz])
+			draw_colored_polygon(tri, col)
+			draw_polyline(tri + PackedVector2Array([tri[0]]), Color(0, 0, 0, 0.9), 2.0)
+
