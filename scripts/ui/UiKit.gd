@@ -843,11 +843,17 @@ func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Lab
 	return l
 
 
-## Champion + the 4 strongest heroes able to go right now.
-func _best_party_power() -> int:
-	var ready: Array = GameState.heroes.filter(func(h): return h.is_available())
+## Heroes allowed in the party being assembled (a Tower floor's rule can cap it).
+func _party_cap() -> int:
+	return int(GameState.tower_floor_info(GameState.tower_next_floor())["party_cap"]) if _pending_tower else 4
+
+
+## Champion + the `cap` strongest heroes able to go right now (the Tower
+## ignores wounds, so it counts anyone not downed or away).
+func _best_party_power(cap: int = 4) -> int:
+	var ready: Array = GameState.heroes.filter(func(h): return h.is_available() or (screen == "tower" and h.down_runs <= 0 and h.busy_runs <= 0))
 	ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
-	var party: Array = ready.slice(0, 4)
+	var party: Array = ready.slice(0, cap)
 	var champ := GameState.ensure_champion()
 	if champ:
 		party.append(champ)
@@ -1136,6 +1142,7 @@ var _pending_diff_id: String = "lesser"
 
 var _pending_endless: bool = false
 var _pending_finale: bool = false   # Party Assembly is for the current act's finale
+var _pending_tower: bool = false    # Party Assembly is for the next Tower of Trials floor
 var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_action)
 var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 

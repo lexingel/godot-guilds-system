@@ -212,6 +212,11 @@ func render() -> void:
 			else:
 				_locked_feature(v, "rift_map")
 		"party_assembly": _render_party_assembly(v)
+		"tower":
+			if GameState.feature_unlocked("tower"):
+				_render_tower(v)
+			else:
+				_locked_feature(v, "tower")
 		"rift_run": _render_rift_run(v)
 		"crafting_hall":
 			if GameState.feature_unlocked("crafting"):
@@ -305,7 +310,9 @@ func _breadcrumb_for_screen() -> String:
 	match screen:
 		"rift_hall": return "Rift Hall"
 		"rift_map": return "Rift Map"
+		"tower": return "Tower of Trials"
 		"party_assembly": return "Party Assembly"
+		"rift_run" when GameState.run.has("tower"): return "Tower of Trials — Floor %d" % int(GameState.run["tower"])
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting Hall"
 		"settings": return "Settings"
@@ -533,7 +540,11 @@ func _header_back() -> Array:
 				return [to_camp, "Camp"]
 		"rift_hall", "rift_map", "crafting_hall":
 			return [to_camp, "Camp"]
+		"tower":
+			return [func(): screen = "rift_hall"; render(), "Rift Hall"]
 		"party_assembly":
+			if _pending_tower:
+				return [func(): _pending_tower = false; screen = "tower"; render(), "Tower"]
 			var from_map := _pending_rift_rank != ""
 			return [func():
 				screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
@@ -542,7 +553,7 @@ func _header_back() -> Array:
 				render()
 			, "Rift Map" if from_map else "Rift Hall"]
 		"settings":
-			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "rift_map": "Rift Map",
+			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "rift_map": "Rift Map", "tower": "Tower",
 				"party_assembly": "Party Assembly", "crafting_hall": "Crafting Hall"}
 			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
 	return []
@@ -586,6 +597,13 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
 	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_lbl)
+	if GameState.tower_title() != "" and not _narrow():
+		var title_lbl := _label(GameState.tower_title(), 12)
+		title_lbl.add_theme_color_override("font_color", Palette.RANK_S)
+		title_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		title_lbl.tooltip_text = "Guild title — Tower of Trials, best floor %d" % GameState.tower_best
+		title_lbl.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(title_lbl)
 	if breadcrumb != "" and not _narrow():
 		var crumb := _label("›  " + breadcrumb, 16)
 		crumb.add_theme_color_override("font_color", Palette.MUTED)
@@ -824,6 +842,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var unlocked := GameState.greater_rift_unlocked()
 	var go := func(diff_id: String, endless: bool):
 		pending_party.clear()
+		_pending_tower = false
 		screen = "party_assembly"
 		_pending_diff_id = diff_id
 		_pending_endless = endless
@@ -860,14 +879,8 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	# One card per rift: what it is, how your strongest party measures up,
 	# and the button to go.
 	var best := _best_party_power()
-	var cards: Container
-	if _narrow():
-		cards = HFlowContainer.new()
-		cards.alignment = FlowContainer.ALIGNMENT_CENTER
-	else:
-		cards = HBoxContainer.new()
-		cards.alignment = BoxContainer.ALIGNMENT_CENTER
-	cards.add_theme_constant_override("separation", 10)
+	var cards := HFlowContainer.new()   # four cards: two rows when the column is narrower than all of them
+	cards.alignment = FlowContainer.ALIGNMENT_CENTER
 	cards.add_theme_constant_override("h_separation", 10)
 	cards.add_theme_constant_override("v_separation", 10)
 	var card_defs := [
@@ -876,6 +889,8 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			"" if unlocked else "Opens when you complete Act I"],
 		["Endless Rift", "Late-game challenge — scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true),
 			"" if endless_open else "Opens when you complete Act II"],
+		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
+			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
 	]
 	for cd in card_defs:
 		var card := PanelContainer.new()
@@ -890,12 +905,159 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			var pr := _power_readout(best, int(cd[2]), "Your best party")
 			pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			cv.add_child(pr)
-			var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party", cd[3])
+			var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], str(cd[5]) if cd.size() > 5 else "Assemble party", cd[3])
 			b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			cv.add_child(b)
 		card.add_child(cv)
 		cards.add_child(card)
 	v.add_child(cards)
+
+
+# ---------------- Tower of Trials ----------------
+## The next floor (its fight, rules, reward and the party's odds), the climb
+## around it, and the ten guardians with their relics.
+func _render_tower(v: VBoxContainer) -> void:
+	v.add_child(_label("Tower of Trials", 20))
+	var title := GameState.tower_title()
+	v.add_child(_label("Best floor %d / %d%s" % [GameState.tower_best, GameData.TOWER_FLOORS, ("  ·  " + title) if title != "" else ""], 13, true))
+	_coach(v, "tower", "The Tower", "Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic.")
+	var f := GameState.tower_next_floor()
+	if f == 0:
+		var days_left := 7 - int(fmod(Time.get_unix_time_from_system(), 604800.0) / 86400.0)
+		var done := _wrap_label("You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s." % [GameData.TOWER_WEEKLY_FROM, GameData.TOWER_FLOORS, days_left, "" if days_left == 1 else "s"], 14)
+		done.add_theme_color_override("font_color", Palette.RANK_E)
+		v.add_child(done)
+	else:
+		v.add_child(_tower_floor_card(GameState.tower_floor_info(f)))
+		v.add_child(_tower_strip(f))
+	v.add_child(_hsep())
+	v.add_child(_label("Guardians", 16))
+	for gf in GameData.TOWER_BOSSES:
+		var boss: Dictionary = GameData.TOWER_BOSSES[gf]
+		var rdef: Dictionary = GameData.TOWER_RELICS[gf]
+		var done_g := GameState.tower_best >= int(gf)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var ic := _icon(GameData.sprite_for_monster(str(boss["name"])), 32)
+		if not done_g:
+			ic.modulate = Color(1, 1, 1, 0.45)
+		row.add_child(ic)
+		var fl := _label("Floor %d" % int(gf), 13, true)
+		fl.custom_minimum_size.x = 64
+		row.add_child(fl)
+		var nm := _label(str(boss["name"]), 13)
+		nm.custom_minimum_size.x = 170
+		row.add_child(nm)
+		var rl := _label(("✓ " if done_g else "") + str(rdef["name"]), 13)
+		rl.add_theme_color_override("font_color", Palette.RANK_E if done_g else Palette.RANK_S)
+		rl.tooltip_text = str(rdef["desc"])
+		rl.mouse_filter = Control.MOUSE_FILTER_STOP
+		rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(rl)
+		v.add_child(row)
+	var titles := GameData.TOWER_TITLES.map(func(e): return ("✓ " if GameState.tower_best >= int(e[0]) else "") + "%s (floor %d)" % [e[1], int(e[0])])
+	v.add_child(_wrap_label("Titles: " + ", ".join(titles), 12, true))
+
+
+func _tower_floor_card(info: Dictionary) -> Control:
+	var f := int(info["floor"])
+	var boss: Dictionary = info["boss"]
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelEmber" if not boss.is_empty() else &"CardPanelViolet"
+	var cv := _vbox(6)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	if not boss.is_empty():
+		head.add_child(_icon(GameData.sprite_for_monster(str(boss["name"])), 48))
+	var hv := _vbox(2)
+	var t := _label("Floor %d" % f, 22)
+	t.add_theme_font_override("font", DISPLAY_FONT)
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if not boss.is_empty() else Palette.TEXT)
+	hv.add_child(t)
+	var kind_name: String = {"boss": "Guardian: " + str(boss.get("name", "")), "elite": "Elite fight", "combat": "Fight"}[str(info["kind"])]
+	hv.add_child(_label("%s  ·  %s%s" % [kind_name, GameData.BIOMES[str(info["biome"])]["name"], "  ·  weekly ladder" if info["weekly"] else ""], 12, true))
+	head.add_child(hv)
+	cv.add_child(head)
+	if not boss.is_empty():
+		cv.add_child(_wrap_label(str(boss["line"]), 12, true))
+		for mid in boss["mechanics"]:
+			var bm: Dictionary = GameData.BOSS_MECHANICS.filter(func(x): return x["id"] == mid)[0]
+			cv.add_child(_wrap_label("%s — %s" % [bm["name"], bm["desc"]], 13))
+	for r in info["rules"]:
+		var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 13)
+		rl.add_theme_color_override("font_color", Palette.HAZARD)
+		cv.add_child(rl)
+	if info["rules"].is_empty() and boss.is_empty():
+		cv.add_child(_label("No special rules on this floor.", 12, true))
+	var cap := int(info["party_cap"])
+	var pr := _power_readout(_best_party_power(cap), GameState.tower_recommended_power(f), "Your best party")
+	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cv.add_child(pr)
+	cv.add_child(_tower_reward_line(info))
+	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party (up to %d + the Champion)" % cap, func():
+		pending_party.clear()
+		_pending_tower = true
+		screen = "party_assembly"
+		render()
+	)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cv.add_child(b)
+	panel.add_child(cv)
+	return panel
+
+
+func _tower_reward_line(info: Dictionary) -> Control:
+	var f := int(info["floor"])
+	var rw: Dictionary = info["reward"]
+	var first := f > GameState.tower_best
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(_label("First clear:" if first else "This week's re-clear:", 13))
+	row.add_child(_icon(GameData.CURRENCY_ICON_PATH["coins"], 16))
+	row.add_child(_label("+%d" % (int(rw["coins"]) if first else int(rw["coins"]) / 2), 13))
+	row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 16))
+	row.add_child(_label("+%d" % (int(rw["crystals"]) if first else int(rw["crystals"]) / 2), 13))
+	if first and int(rw["tokens"]) > 0:
+		row.add_child(_icon(GameData.CURRENCY_ICON_PATH["tokens"], 16))
+		row.add_child(_label("+%d" % int(rw["tokens"]), 13))
+	var rdef: Dictionary = rw["relic"]
+	if first and not rdef.is_empty():
+		var rl := _label("+ %s" % rdef["name"], 13)
+		rl.add_theme_color_override("font_color", Palette.RANK_S)
+		rl.tooltip_text = str(rdef["desc"])
+		rl.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(rl)
+	return row
+
+
+## A strip of floor chips around the next one: cleared, next, and a few ahead
+## (guardians in ember, rules in the tooltip).
+func _tower_strip(next_f: int) -> Control:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	for f in range(maxi(1, next_f - 3), mini(GameData.TOWER_FLOORS, next_f + 8) + 1):
+		var info := GameState.tower_floor_info(f)
+		var chip := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		var guardian: bool = not (info["boss"] as Dictionary).is_empty()
+		st.bg_color = Palette.SURFACE3 if f == next_f else Palette.SURFACE2
+		st.border_color = Palette.EMBER_BRIGHT if f == next_f else (Palette.EMBER if guardian else Palette.LINE)
+		st.set_border_width_all(2 if f == next_f or guardian else 1)
+		st.set_corner_radius_all(6)
+		st.set_content_margin_all(6)
+		chip.add_theme_stylebox_override("panel", st)
+		chip.custom_minimum_size = Vector2(52, 44)
+		var cleared := f < next_f
+		var l := _label(("✓ " if cleared else "") + str(f), 14, cleared)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		chip.add_child(l)
+		var tip := "Floor %d — %s" % [f, str(info["boss"]["name"]) if guardian else ("Elite fight" if info["kind"] == "elite" else "Fight")]
+		for r in info["rules"]:
+			tip += "\n%s: %s" % [r["name"], r["desc"]]
+		chip.tooltip_text = tip
+		flow.add_child(chip)
+	return flow
 
 
 func _render_rift_map_hub(v: VBoxContainer) -> void:
@@ -985,7 +1147,12 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
-	if _pending_finale and not GameState.current_act().is_empty():
+	var tower_info := GameState.tower_floor_info(GameState.tower_next_floor()) if _pending_tower else {}
+	if _pending_tower:
+		v.add_child(_label("Tower of Trials — Floor %d" % int(tower_info["floor"]), 20))
+		var rules: Array = tower_info["rules"]
+		v.add_child(_wrap_label("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s" % [_party_cap(), (" Rules: " + ", ".join(rules.map(func(r): return "%s (%s)" % [r["name"], r["desc"]]))) if not rules.is_empty() else ""], 12, true))
+	elif _pending_finale and not GameState.current_act().is_empty():
 		v.add_child(_label("Finale — %s" % GameState.current_act()["finale"], 20))
 		v.add_child(_wrap_label("A harder %s Rift that ends in %s. Up to 4 heroes and the Champion." % [str(GameState.current_act()["tier"]).capitalize(), GameState.current_act()["boss"]], 12, true))
 	else:
@@ -1014,7 +1181,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			if typeof(data) != TYPE_DICTIONARY or data.get("kind", "") != "party_hero":
 				return false
 			var hid2: String = str(data.get("hero_id", ""))
-			return hid2 == champ.id or pending_party.has(hid2) or pending_party.size() < 4
+			return hid2 == champ.id or pending_party.has(hid2) or pending_party.size() < _party_cap()
 		zone.on_drop = func(data, r=row_id) -> void:
 			var hid2: String = str(data.get("hero_id", ""))
 			if hid2 != champ.id and not pending_party.has(hid2):
@@ -1088,7 +1255,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_label("Eclectic active - a fully varied party (+%s to everything)" % Combat.describe_skill("dmg_pct", GameData.PARTY_ECLECTIC_BONUS), 12, true))
 
 	v.add_child(_hsep())
-	var choice_count := GameState.relic_choice_count()
+	var choice_count := 0 if _pending_tower else GameState.relic_choice_count()
 	if choice_count > 0:
 		v.add_child(_label("Starting Relic (pick one, optional)"))
 		if pending_relic_options.is_empty():
@@ -1111,7 +1278,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		)
 		v.add_child(_info_row("%s (%s) — %s" % [r.name, r.type, r.desc()], 14, [], rb))
 
-	if not GameState.consumables.is_empty():
+	if not GameState.consumables.is_empty() and not _pending_tower:
 		v.add_child(_hsep())
 		v.add_child(_label("Field Incense (pick one, optional) — lasts the whole rift"))
 		for c in GameState.consumables:
@@ -1126,7 +1293,9 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			v.add_child(_info_row("%s — %s" % [def["name"], def["desc"]], 14, [], ib))
 
 	v.add_child(_hsep())
-	if _pending_rift_rank == "":
+	if _pending_tower:
+		pass
+	elif _pending_rift_rank == "":
 		var hc_toggle := CheckButton.new()
 		hc_toggle.text = "Hardcore Mode — ×1.5 rewards, a loss removes your heroes for good"
 		hc_toggle.button_pressed = _pending_hardcore
@@ -1164,19 +1333,19 @@ func _party_launch_bar(champ: Hero) -> Control:
 		if pending_party.has(h.id):
 			going.append(h)
 	var map_run := _pending_map_slot_idx >= 0
-	var rec_power: int = GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)
+	var rec_power: int = GameState.tower_recommended_power(GameState.tower_next_floor()) if _pending_tower else GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)
 	var pr := _power_readout(Combat.party_power(going), rec_power)
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(pr)
 	var hurt: Array = going.filter(func(h): return h.hp < Combat.max_hp(h) * 0.5)
 	if pending_party.is_empty():
 		info.add_child(_label("Add at least one hero to the party.", 12, true))
-	elif not hurt.is_empty():
+	elif not hurt.is_empty() and not _pending_tower:
 		var hl := _wrap_label("Wounded: %s — they start the rift hurt." % ", ".join(hurt.map(func(h): return "%s (%d/%d)" % [h.name.split(" the ")[0], h.hp, Combat.max_hp(h)])), 12)
 		hl.add_theme_color_override("font_color", Palette.HAZARD)
 		info.add_child(hl)
 	row.add_child(info)
-	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter the Rift", func():
+	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Begin the trial" if _pending_tower else "Enter the Rift", func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -1185,13 +1354,16 @@ func _party_launch_bar(champ: Hero) -> Control:
 		if pending_incense_id != "":
 			GameState.use_incense(pending_incense_id)
 			pending_incense_id = ""
-		if _pending_finale:
+		if _pending_tower:
+			GameState.start_tower(ids)
+		elif _pending_finale:
 			GameState.start_finale(ids, chosen)
 		elif _pending_rift_rank != "":
 			GameState.start_map_rift(_pending_map_slot_idx, ids, chosen)
 		else:
 			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
 		_pending_finale = false
+		_pending_tower = false
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_hardcore = false
@@ -1514,13 +1686,13 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 			))
 	elif not downed:
 		var add_btn := _button("Add", func(id=h.id, hero=h):
-			if pending_party.size() >= 4:
+			if pending_party.size() >= _party_cap():
 				return
 			pending_party.append(id)
 			GameState.set_hero_formation(id, str(GameData.ROLE_POSITION.get(GameData.hero_role(hero), {}).get("row", hero.formation)))
 			render()
 		)
-		add_btn.disabled = pending_party.size() >= 4
+		add_btn.disabled = pending_party.size() >= _party_cap()
 		actions.add_child(add_btn)
 	cv.add_child(actions)
 	card.add_child(cv)

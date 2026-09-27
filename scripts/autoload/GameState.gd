@@ -47,6 +47,9 @@ var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
 var champion_offers: Array[Hero] = []   # pick one to replace current_champion (refreshed each seal)
 var best_endless_cycle: int = 0
+var tower_best: int = 0          # highest Tower of Trials floor ever cleared
+var tower_week: int = 0          # tower_week_id() the weekly ladder progress belongs to
+var tower_week_cleared: int = 0  # ladder floors (91+) cleared this week
 var rifts_sealed: int = 0   # any rift, lesser/greater/endless — gates greater_rift_unlocked()
 var best_rift_rank_sealed: int = -1   # highest Rift Map rank sealed (GameData.RIFT_RANKS index) — gates Riftborn nodes
 var triage_used_this_cycle: bool = false
@@ -267,6 +270,9 @@ func reset() -> void:
 	current_champion = null
 	champion_offers = []
 	best_endless_cycle = 0
+	tower_best = 0
+	tower_week = 0
+	tower_week_cleared = 0
 	rifts_sealed = 0
 	best_rift_rank_sealed = -1
 	triage_used_this_cycle = false
@@ -308,7 +314,7 @@ func reset() -> void:
 func _run_for_save() -> Dictionary:
 	if run.is_empty():
 		return {}
-	return {
+	var out := {
 		"diff_id": run.get("diff_id", ""), "endless": run.get("endless", false),
 		"cycle": run.get("cycle", 0), "hardcore": run.get("hardcore", false),
 		"layers": run.get("layers", []), "pos": run.get("pos", 0),
@@ -328,6 +334,10 @@ func _run_for_save() -> Dictionary:
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
 	}
+	if run.has("tower"):
+		out["tower"] = run["tower"]
+		out["tower_snap"] = run.get("tower_snap", {})
+	return out
 
 
 func _saveable_node_state() -> Dictionary:
@@ -453,6 +463,7 @@ func save() -> void:
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"best_endless_cycle": best_endless_cycle,
+		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
@@ -608,6 +619,9 @@ func load_save() -> bool:
 		migrate_hero_skill_keys(current_champion)
 	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
 	best_endless_cycle = data.get("best_endless_cycle", 0)
+	tower_best = int(data.get("tower_best", 0))
+	tower_week = int(data.get("tower_week", 0))
+	tower_week_cleared = int(data.get("tower_week_cleared", 0))
 	rifts_sealed = data.get("rifts_sealed", 0)
 	best_rift_rank_sealed = int(data.get("best_rift_rank_sealed", -1))
 	runs_started = int(data.get("runs_started", 0 if rifts_sealed == 0 and monsters_seen.is_empty() else 1))
@@ -658,6 +672,9 @@ func load_save() -> bool:
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 		}
+		if run_data.has("tower"):
+			run["tower"] = int(run_data["tower"])
+			run["tower_snap"] = run_data.get("tower_snap", {})
 	return true
 
 
@@ -1017,6 +1034,8 @@ func loot_rank() -> String:
 
 
 func _diff() -> Dictionary:
+	if run.has("tower"):
+		return _tower_diff(tower_floor_info(int(run["tower"])))
 	var diff: Dictionary
 	if run.get("endless", false):
 		diff = Combat.endless_diff_for_cycle(int(run.get("cycle", 0)))
@@ -1054,6 +1073,7 @@ func feature_unlocked(id: String) -> bool:
 		"bestiary": return not monsters_seen.is_empty()
 		"crafting", "quests", "management": return rifts_sealed >= 1
 		"rift_map": return rifts_sealed >= 2
+		"tower": return campaign_act >= 2
 	return true
 
 
@@ -1148,6 +1168,9 @@ func engage_node() -> void:
 	if party.is_empty():
 		return
 	var kind := current_node_kind()
+	if run.has("tower"):
+		for h in party:
+			h.hp = Combat.max_hp(h)
 	seed(hash([int(run.get("seed", 0)), int(run.get("cycle", 0)), int(run["pos"])]))
 	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
 	randomize()
@@ -1219,6 +1242,12 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 	var state: Dictionary = ns.get("combat_state", {})
 	if outcome["done"]:
 		var result: Dictionary = outcome["result"]
+		if run.has("tower"):
+			# The Tower pays per floor (first clear), not per fight.
+			result["reward_options"] = []
+			result["bonus_crystal"] = 0
+			if result["won"]:
+				result["tower"] = _complete_tower_floor(int(run["tower"]))
 		var kind := current_node_kind()
 		var hardcore: bool = run.get("hardcore", false)
 		if result["won"]:
@@ -1258,7 +1287,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			# affects the fight's own win/loss. Gated the same as every other
 			# reward here: a Riftbreak win is a consequence contained, not an
 			# opportunity, so it grants nothing extra either.
-			if kind != "boss" and not run.get("is_riftbreak", false):
+			if kind != "boss" and not run.get("is_riftbreak", false) and not run.has("tower"):
 				_note_injuries("critical" if kind == "elite" else "wounded")
 			var escort: Dictionary = state.get("escort", {})
 			if not run.get("is_riftbreak", false) and not escort.is_empty() and float(escort.get("hp", 0.0)) > 0.0:
@@ -1954,6 +1983,164 @@ static func _roman(n: int) -> String:
 	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
 
 
+# ---------------- Tower of Trials ----------------
+
+static func tower_week_id() -> int:
+	return int(Time.get_unix_time_from_system() / 604800.0)
+
+
+func _tower_roll_week() -> void:
+	if tower_week != tower_week_id():
+		tower_week = tower_week_id()
+		tower_week_cleared = 0
+
+
+## The floor a new attempt fights: the next uncleared one, or, once floor 90
+## is cleared, this week's next ladder floor (91-100). 0 = nothing left this week.
+func tower_next_floor() -> int:
+	_tower_roll_week()
+	var from := GameData.TOWER_WEEKLY_FROM
+	if tower_best < from - 1:
+		return tower_best + 1
+	var f := from + tower_week_cleared
+	return f if f <= GameData.TOWER_FLOORS else 0
+
+
+## Everything fixed about a floor: its fight kind, region, guardian, rules
+## (seeded by the floor; floors 91+ also by the week) and first-clear reward.
+func tower_floor_info(f: int) -> Dictionary:
+	var boss: Dictionary = GameData.TOWER_BOSSES.get(f, {})
+	var weekly := f >= GameData.TOWER_WEEKLY_FROM
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(["tower", f, tower_week_id() if weekly else 0])
+	var rules: Array = []
+	if boss.is_empty() and f > 5:
+		var pool: Array = GameData.TOWER_RULES.duplicate()
+		for i in (2 if weekly else 1):
+			rules.append(pool.pop_at(rng.randi() % pool.size()))
+	var cap := 4
+	for r in rules:
+		cap = mini(cap, int(r.get("party_cap", 4)))
+	return {"floor": f, "kind": "boss" if not boss.is_empty() else ("elite" if f % 5 == 0 else "combat"),
+		"biome": str(boss.get("biome", ["vale", "marsh", "ashen"][((f - 1) / 10) % 3])),
+		"boss": boss, "rules": rules, "weekly": weekly, "party_cap": cap, "seed": rng.randi(), "reward": tower_reward(f)}
+
+
+## First-clear reward for a floor. A weekly re-clear pays half the Coins and
+## Crystals and nothing else.
+func tower_reward(f: int) -> Dictionary:
+	return {"coins": 20 + 4 * f, "crystals": 8 + int(1.5 * f), "tokens": (2 + f / 10) if f % 5 == 0 else 0,
+		"relic": GameData.TOWER_RELICS.get(f, {})}
+
+
+## Fit to the balance sim: a party of this power clears about half its tries.
+func tower_recommended_power(f: int) -> int:
+	return int(round(114.0 * pow(1.015, f - 1)))
+
+
+func _tower_diff(info: Dictionary) -> Dictionary:
+	var f := int(info["floor"])
+	var d := {"id": "tower", "name": "Tower of Trials", "floors": 1, "power": "Trial",
+		"coin": [0, 0], "crystal": [0, 0], "token_base": 0, "detector_chance": 0.0,
+		"rec_power": tower_recommended_power(f), "biome": info["biome"]}
+	for r in info["rules"]:
+		d.merge(r.get("diff", {}), true)
+	var hp := float(GameData.TOWER_BASE["monster_hp"]) * pow(1.0 + GameData.TOWER_HP_GROWTH, f - 1) * float(d.get("hp_mult", 1.0))
+	if d.get("tower_single", false):
+		hp *= 2.0
+	d["monster_hp"] = int(round(hp))
+	d["monster_dmg"] = int(round(float(GameData.TOWER_BASE["monster_dmg"]) * pow(1.0 + GameData.TOWER_DMG_GROWTH, f - 1) * float(d.get("dmg_mult", 1.0))))
+	var boss: Dictionary = info["boss"]
+	if not boss.is_empty():
+		d["boss_name"] = str(boss["name"])
+		d["boss_mechanics"] = boss["mechanics"]
+	return d
+
+
+func tower_title() -> String:
+	var t := ""
+	for e in GameData.TOWER_TITLES:
+		if tower_best >= int(e[0]):
+			t = str(e[1])
+	return t
+
+
+## One fight on the next floor. Heroes fight at full HP with abilities ready;
+## _end_tower puts them back exactly as they were (no downing, no time passing).
+func start_tower(hero_ids: Array[String]) -> void:
+	var f := tower_next_floor()
+	if f <= 0 or not feature_unlocked("tower"):
+		return
+	var info := tower_floor_info(f)
+	var ids: Array[String] = []
+	ids.assign(hero_ids.slice(0, int(info["party_cap"])))
+	var shield := 0
+	for r in Combat.equipped_relics():
+		shield += r.hp
+	run = {
+		"diff_id": "tower", "endless": false, "cycle": 0, "hardcore": false,
+		"layers": [{"options": [info["kind"]]}], "pos": 0, "chosen": {},
+		"hero_ids": ids, "shield": shield, "boss_rounds": 0,
+		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
+		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
+		"rift_rank": "", "seed": int(info["seed"]), "biome": str(info["biome"]), "tower": f,
+	}
+	ensure_champion()
+	var snap := {}
+	for h in current_party():
+		snap[h.id] = [h.hp, h.down_runs, h.bedded, h.ability_cooldown]
+		h.ability_cooldown = 0
+	run["tower_snap"] = snap
+	auto_resolve_single_option()
+	save()
+	state_changed.emit()
+
+
+## Pays a cleared floor (from _apply_combat_outcome, once) and returns what
+## it paid for the result screen.
+func _complete_tower_floor(f: int) -> Dictionary:
+	var first := f > tower_best
+	var rw := tower_reward(f)
+	var got := {"floor": f, "first": first, "coins": int(rw["coins"]), "crystals": int(rw["crystals"]), "tokens": 0, "relic": "", "title": ""}
+	if first:
+		got["tokens"] = int(rw["tokens"])
+		var rdef: Dictionary = rw["relic"]
+		if not rdef.is_empty():
+			var r := Combat.relic_from_unique(rdef)
+			r.equipped = Combat.equipped_relics().size() < relic_slot_cap()
+			relics.append(r)
+			got["relic"] = r.name
+		var old_title := tower_title()
+		tower_best = f
+		if tower_title() != old_title:
+			got["title"] = tower_title()
+	else:
+		got["coins"] = int(got["coins"]) / 2
+		got["crystals"] = int(got["crystals"]) / 2
+	if f >= GameData.TOWER_WEEKLY_FROM:
+		_tower_roll_week()
+		tower_week_cleared = maxi(tower_week_cleared, f - GameData.TOWER_WEEKLY_FROM + 1)
+	coins += int(got["coins"])
+	crystals += int(got["crystals"])
+	tokens += int(got["tokens"])
+	return got
+
+
+func _end_tower() -> void:
+	var snap: Dictionary = run.get("tower_snap", {})
+	for h in current_party():
+		if snap.has(h.id):
+			var s: Array = snap[h.id]
+			h.hp = int(s[0])
+			h.down_runs = int(s[1])
+			h.bedded = bool(s[2])
+			h.ability_cooldown = int(s[3])
+	run = {}
+	_clamp_hp_to_max()
+	save()
+	state_changed.emit()
+
+
 # ---------------- Downed mid-rift ----------------
 
 ## Adds every roster hero in the party who's down and not yet decided on to
@@ -2410,6 +2597,9 @@ func _clamp_hp_to_max() -> void:
 
 
 func retreat_now() -> void:
+	if run.has("tower"):
+		_end_tower()
+		return
 	_lose_left_behind()
 	run = {}
 	active_incense = {}
@@ -2420,6 +2610,9 @@ func retreat_now() -> void:
 
 
 func finish_run() -> void:
+	if run.has("tower"):
+		_end_tower()
+		return
 	_lose_left_behind()
 	run = {}
 	active_incense = {}

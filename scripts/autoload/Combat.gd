@@ -511,7 +511,11 @@ func roll_relic_trigger(rarity_id: String) -> Dictionary:
 ## instead of `effect` — Combat.resolve_round only dispatches on unique_id
 ## for the entries that actually need bespoke behavior.
 func gen_unique_relic() -> Relic:
-	var def: Dictionary = GameData.UNIQUE_RELICS[randi() % GameData.UNIQUE_RELICS.size()]
+	return relic_from_unique(GameData.UNIQUE_RELICS[randi() % GameData.UNIQUE_RELICS.size()])
+
+
+## A Legendary relic built exactly from a UNIQUE_RELICS/TOWER_RELICS entry.
+func relic_from_unique(def: Dictionary) -> Relic:
 	var r := Relic.new()
 	r.id = "rl" + str(GameState.next_id)
 	GameState.next_id += 1
@@ -730,8 +734,9 @@ func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 		var pool: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("monsters", GameData.MONSTER_NAMES)
 		name = str(pool[randi() % pool.size()])
 	var base_name := name.split(",")[0]
-	return {"name": name, "hp": hp, "dmg": dmg, "spd": 9 + randi() % 4, "tier": kind,
-		"armor": float(GameData.MONSTER_ARMOR.get(base_name, 0.0)), "status": str(GameData.MONSTER_STATUS.get(base_name, ""))}
+	var armor := maxf(float(GameData.MONSTER_ARMOR.get(base_name, 0.0)), float(diff.get("tower_armor", 0.0)))
+	var status := str(diff.get("tower_status", GameData.MONSTER_STATUS.get(base_name, "")))
+	return {"name": name, "hp": hp, "dmg": dmg, "spd": 9 + randi() % 4, "tier": kind, "armor": armor, "status": status}
 
 
 func _first_living_monster_idx(monsters: Array) -> int:
@@ -763,10 +768,17 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	var monsters: Array[Dictionary] = []
 	if kind == "combat":
 		var count := 1 + randi() % 3
+		var share := float(count)
+		if diff.get("tower_single", false):
+			count = 1
+			share = 1.0
+		elif diff.get("tower_swarm", false):
+			count = 4
+			share = 2.5   # more foes, more total threat
 		for i in count:
 			var m := gen_monster(diff, floor_idx, "combat")
-			m["hp"] = max(1, int(round(float(m["hp"]) / float(count))))
-			m["dmg"] = max(1, int(round(float(m["dmg"]) / float(count))))
+			m["hp"] = max(1, int(round(float(m["hp"]) / share)))
+			m["dmg"] = max(1, int(round(float(m["dmg"]) / share)))
 			m["max_hp"] = m["hp"]
 			m["mechanic"] = {}
 			m["ability"] = GameData.MONSTER_ABILITIES.get(str(m["name"]), {})
@@ -780,6 +792,9 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	main["ability"] = {}
 	if kind == "boss":
 		var mechanic: Dictionary = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
+		var fixed: Array = diff.get("boss_mechanics", [])   # a Tower guardian's own
+		if not fixed.is_empty():
+			mechanic = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] == fixed[0])[0]
 		if mechanic["id"] == "frenzied":
 			main["dmg"] = int(round(main["dmg"] * 1.25))
 		main["mechanic"] = mechanic
@@ -788,9 +803,11 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		# describe_incoming, the regen/retaliation loops, Main.gd's badge) reads
 		# "mechanic2" via .get() with an empty-dict default, so this is additive
 		# and doesn't touch the normal single-mechanic path at all.
-		if bool(diff.get("boss_double_mechanic", false)):
+		if bool(diff.get("boss_double_mechanic", false)) or fixed.size() > 1:
 			var pool: Array = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] != mechanic["id"])
 			var mechanic2: Dictionary = pool[randi() % pool.size()]
+			if fixed.size() > 1:
+				mechanic2 = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] == fixed[1])[0]
 			if mechanic2["id"] == "frenzied":
 				main["dmg"] = int(round(main["dmg"] * 1.25))
 			main["mechanic2"] = mechanic2
@@ -800,8 +817,14 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	main["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	monsters.append(main)
 
-	if randf() < 0.35:
-		var add_count := 1 + randi() % 2
+	var add_roll := randf() < 0.35
+	var add_count := 1 + randi() % 2
+	if diff.get("tower_swarm", false):
+		add_roll = true
+		add_count = 2
+	elif diff.get("tower_single", false):
+		add_roll = false
+	if add_roll:
 		for i in add_count:
 			var add := gen_monster(diff, floor_idx, "combat")
 			add["hp"] = max(1, int(round(add["hp"] * 0.6)))
@@ -1371,7 +1394,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	# resolve_round's retaliation loop). {} = no escort this fight, the same
 	# "empty dict = not present" contract mechanic/mechanic2 already use.
 	var escort: Dictionary = {}
-	if kind == "combat" and not GameState.run.get("is_riftbreak", false) and randf() < 0.25:
+	if kind == "combat" and not GameState.run.get("is_riftbreak", false) and not GameState.run.has("tower") and randf() < 0.25:
 		var avg_hp := 0.0
 		for h in party:
 			avg_hp += max_hp(h)
@@ -1653,7 +1676,7 @@ func _start_round(state: Dictionary) -> void:
 		var wtier := str(mw.get("tier", "combat"))
 		if wtier == "combat" and GameData.WINDUP_BRUTES.has(str(mw["name"])):
 			wtier = "brute"
-		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)):
+		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)) + float(state.get("diff", {}).get("windup_bonus", 0.0)):
 			mw["_winding"] = true
 	if int(state["round_num"]) % 3 == 0 and not living.is_empty():
 		_fire("round_third", state, living[0])
@@ -2228,7 +2251,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 				# A freshly-knocked-out roster hero has a chance to pick up a
 				# lasting scar, capped at 2 — champions are regenerated fresh
 				# every seal_rift() and carry no persistent state worth scarring.
-				if not h.is_champion and h.scars.size() < 2 and randf() < 0.5:
+				if not h.is_champion and h.scars.size() < 2 and not GameState.run.has("tower") and randf() < 0.5:
 					var scar := pick_scar_name(h.scars)
 					if scar != "":
 						h.scars.append(scar)

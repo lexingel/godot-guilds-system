@@ -224,6 +224,8 @@ func _run_bar(in_combat: bool) -> Control:
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	var cycle_label := (" (cycle %d)" % (int(GameState.run["cycle"]) + 1)) if GameState.run.get("endless", false) else ""
+	if GameState.run.has("tower"):
+		cycle_label = " — Floor %d" % int(GameState.run["tower"])
 	top.add_child(_label("%s%s" % [diff["name"], cycle_label], 16))
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 3)
@@ -324,6 +326,11 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(rb_flavor, 12, true))
 	var kind := GameState.current_node_kind()
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	if GameState.run.has("tower"):
+		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
+			var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 12)
+			rl.add_theme_color_override("font_color", Palette.HAZARD)
+			v.add_child(rl)
 	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
 	if not biome.is_empty() and not GameState.run.get("is_riftbreak", false):
 		var bl := _label(str(biome["name"]), 12, true)

@@ -229,7 +229,8 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color, big: boo
 	tween.tween_property(l, "position:y", l.position.y - 30, 0.6)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.6).set_delay(0.2)
 	await _await_or_timeout(tween.finished, 1.5)
-	l.queue_free()
+	if is_instance_valid(l):   # gone already if the screen was rebuilt meanwhile
+		l.queue_free()
 
 
 ## Floats every effect that fired this turn (Combat._proc: "Counter!",
@@ -417,6 +418,8 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 				await _tween_defend(hero_wrappers[h.id])
 
 		for i in monsters.size():
+			if not is_instance_valid(arena):
+				return   # the screen was rebuilt mid-animation (e.g. Quick fight)
 			if not monster_wrappers.has(i):
 				continue
 			var dmg: float = float(monster_hp_before[i]) - float(monsters[i]["hp"])
@@ -454,6 +457,8 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var atk_type := str(monsters[i].get("type", ""))
 		var retaliation_color: Color = Palette.ELEMENT_PARTICLE_COLOR.get(atk_type, Color(1, 1, 1))
 		for h in party:
+			if not is_instance_valid(arena):
+				return
 			var before: int = int(hp_before.get(h.id, h.hp))
 			var dmg2: int = before - h.hp
 			if dmg2 > 0 and hero_wrappers.has(h.id):
@@ -621,6 +626,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		v.add_child(_log_richtext(result["log"], log_party, [{"name": result["monster_name"]}]))
 
 	var is_riftbreak: bool = GameState.run.get("is_riftbreak", false)
+	if result["won"] and result.has("tower"):
+		v.add_child(_tower_victory(result))
+		return
 	if result["won"]:
 		if is_riftbreak:
 			# A Riftbreak is a consequence, not an opportunity — no loot, no
@@ -736,6 +744,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		))
 	else:
 		var defeat_text := "You withdraw from the fight." if result.get("retreated", false) else "Defeat — the party is downed and recovering."
+		if GameState.run.has("tower"):
+			defeat_text = "The trial ends. Your heroes step out of the tower unharmed — this floor will be waiting, exactly as it was."
 		var defeat_key := "defeat%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0))]
 		if not result.get("retreated", false) and not _sfx_seen.has(defeat_key):
 			_sfx_seen[defeat_key] = true
@@ -745,13 +755,54 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
 		if str(result.get("flavor", "")) != "":
 			v.add_child(_label(str(result["flavor"]), 12, true))
-		for line in _run_summary_lines():
-			v.add_child(_label(line, 12, true))
-		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
+		var in_tower := GameState.run.has("tower")
+		if not in_tower:
+			for line in _run_summary_lines():
+				v.add_child(_label(line, 12, true))
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" if in_tower else "Return to Terminal", func():
 			GameState.finish_run()
-			screen = "terminal"
+			screen = "tower" if in_tower else "terminal"
 			render()
 		))
+
+
+## A cleared Tower floor: what it paid (first clear, relic, title) and the way back.
+func _tower_victory(result: Dictionary) -> Control:
+	var t: Dictionary = result["tower"]
+	var frame := PanelContainer.new()
+	frame.theme_type_variation = &"CardPanelViolet"
+	var col := _vbox(8)
+	frame.add_child(col)
+	var head := _label("Floor %d cleared!" % int(t["floor"]), 28)
+	head.add_theme_color_override("font_color", Palette.RANK_S)
+	col.add_child(head)
+	var gains := HBoxContainer.new()
+	gains.add_theme_constant_override("separation", 14)
+	for pair in [["coins", "coins"], ["crystals", "crystals"], ["tokens", "tokens"]]:
+		if int(t[pair[0]]) > 0:
+			gains.add_child(_icon(GameData.CURRENCY_ICON_PATH[pair[1]], 18))
+			gains.add_child(_label("+%d" % int(t[pair[0]]), 14))
+	col.add_child(gains)
+	if not bool(t["first"]):
+		col.add_child(_label("A weekly re-clear pays half.", 12, true))
+	if str(t["relic"]) != "":
+		var rl := _label("Guardian's relic: %s" % t["relic"], 16)
+		rl.add_theme_color_override("font_color", Palette.RANK_S)
+		col.add_child(rl)
+		col.add_child(_wrap_label(str(GameData.TOWER_RELICS[int(t["floor"])]["desc"]) + " It's on the Relic Altar.", 12, true))
+	if str(t["title"]) != "":
+		var tl := _label("New guild title: %s" % t["title"], 16)
+		tl.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		col.add_child(tl)
+	if result.has("heroes"):
+		col.add_child(_victory_party(result))
+	var next := GameState.tower_next_floor()
+	col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" + (" — floor %d next" % next if next > 0 else ""), func():
+		GameState.finish_run()
+		screen = "tower"
+		render()
+	))
+	return frame
 
 
 ## A short recap for the two screens a run can end on (sealed or wiped/
@@ -1566,7 +1617,7 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 		for k in ["mechanic", "mechanic2"]:
 			if not boss.get(k, {}).is_empty():
 				mechs.append(str(boss[k]["name"]))
-		var sub := _label("Rift Warden" + (" · " + ", ".join(mechs) if not mechs.is_empty() else ""), 14)
+		var sub := _label(("Tower Guardian" if GameState.run.has("tower") else "Rift Warden") + (" · " + ", ".join(mechs) if not mechs.is_empty() else ""), 14)
 		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_shadow(sub)
 		card.add_child(sub)

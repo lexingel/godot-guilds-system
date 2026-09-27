@@ -22,11 +22,48 @@ const PROFILES := {
 }
 
 
+var TOWER_ONLY := false   # `-- tower` on the command line: skip the rift profiles
+
+
 func _ready() -> void:
 	GameState.active_slot = 9
+	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
+	if not TOWER_ONLY:
+		for name in PROFILES:
+			_profile(name, PROFILES[name])
 	for name in PROFILES:
-		_profile(name, PROFILES[name])
+		_tower(name, PROFILES[name])
 	get_tree().quit()
+
+
+## Tower of Trials: how high each profile climbs (3 tries a floor, full HP
+## each try, XP from wins kept, no loot).
+func _tower(name: String, p: Array) -> void:
+	var tops: Array[int] = []
+	for s in 20:
+		seed(30000 + s)
+		var party := _build_party(p)
+		var top := 0
+		for f in range(1, GameData.TOWER_FLOORS + 1):
+			var info := GameState.tower_floor_info(f)
+			var fighters: Array[Hero] = [party[0]]
+			fighters.append_array(party.slice(1, 1 + int(info["party_cap"])))
+			var cleared := false
+			for attempt in 3:
+				for h in fighters:
+					h.hp = Combat.max_hp(h)
+					h.ability_cooldown = 0
+				GameState.run = {"sim": true, "tower": f}
+				seed(hash([int(info["seed"]), 0, 0]))
+				if _fight(fighters, str(info["kind"]), GameState._tower_diff(info), GameData.TOWER_FIGHT_DEPTH):
+					cleared = true
+					break
+			if not cleared:
+				break
+			top = f
+		tops.append(top)
+	tops.sort()
+	print("%-24s tower: median floor %d (min %d, max %d)" % [name, tops[tops.size() / 2], tops[0], tops[-1]])
 
 
 func _profile(name: String, p: Array) -> void:
@@ -40,29 +77,7 @@ func _profile(name: String, p: Array) -> void:
 	var fail_at := {}
 	for s in N:
 		seed(20000 + s)
-		GameState.items.clear()
-		GameState.relics.clear()
-		GameState.heroes.clear()
-		GameState.run = {}
-		var champ := Combat.generate_champion()
-		GameState.current_champion = champ
-		var party: Array[Hero] = [champ]
-		for r in p[1]:
-			var h := Combat.gen_hero(r, p[2])
-			_learn(h, p[3])
-			GameState.heroes.append(h)
-			party.append(h)
-		if CHAMP_V2:
-			GameState.sync_champion_level()
-		for i in party.size():
-			party[i].formation = "front" if i < 2 else "back"
-			if p[4] != "" and not party[i].is_champion:
-				_gear(party[i], p[4])
-			party[i].hp = Combat.max_hp(party[i])
-		for i in p[5]:
-			var rl := Combat.gen_relic(p[6])
-			rl.equipped = true
-			GameState.relics.append(rl)
+		var party := _build_party(p)
 		for h in party:
 			power_sum += Combat.power_of(h)
 		if p[0] == "endless":
@@ -99,6 +114,34 @@ func _profile(name: String, p: Array) -> void:
 	else:
 		print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
 			name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
+
+
+## A fresh party for a profile (Champion first), gear and relics equipped.
+func _build_party(p: Array) -> Array[Hero]:
+	GameState.items.clear()
+	GameState.relics.clear()
+	GameState.heroes.clear()
+	GameState.run = {}
+	var champ := Combat.generate_champion()
+	GameState.current_champion = champ
+	var party: Array[Hero] = [champ]
+	for r in p[1]:
+		var h := Combat.gen_hero(r, p[2])
+		_learn(h, p[3])
+		GameState.heroes.append(h)
+		party.append(h)
+	if CHAMP_V2:
+		GameState.sync_champion_level()
+	for i in party.size():
+		party[i].formation = "front" if i < 2 else "back"
+		if p[4] != "" and not party[i].is_champion:
+			_gear(party[i], p[4])
+		party[i].hp = Combat.max_hp(party[i])
+	for i in p[5]:
+		var rl := Combat.gen_relic(p[6])
+		rl.equipped = true
+		GameState.relics.append(rl)
+	return party
 
 
 ## One rift: walk its layers, fight/hazard/shop, HP carries. Returns

@@ -18,6 +18,22 @@ A failed run still pays for every fight it won, so newcomers earn most of an
 invested party's coins. Endless rewards grow +20% per cycle (foes +50%), so an
 attempt is worth about 3× a Greater run of the same length.
 
+## Tower of Trials (one-time, plus a weekly ladder)
+
+First clears only, so the Tower can't be farmed. Floor *f* pays 20 + 4*f*
+Coins and 8 + 1.5*f* Crystals; every 5th floor adds 2 + *f*/10 Seal Tokens;
+every 10th gives its guardian's relic.
+
+| | Coins | Crystals | Seal Tokens |
+|---|---|---|---|
+| Floors 1–100, all first clears | 22,200 | ~8,350 | 140 |
+| Weekly ladder (floors 91–100 re-cleared at half) | ~2,000 / week | ~750 / week | — |
+
+How far each profile climbs (sim, 3 tries a floor): Act II entry party ~9
+(the floor-10 guardian), Greater-invested ~49, endgame ~85. The guardians are
+the walls. The recommended power is fit to those numbers
+(`GameState.tower_recommended_power`).
+
 ## Sinks
 
 | Currency | Sink | Cost |

@@ -830,7 +830,7 @@ static func relic_icon(r) -> String:
 
 
 static func find_unique_relic(unique_id: String) -> Dictionary:
-	for u in UNIQUE_RELICS:
+	for u in UNIQUE_RELICS + TOWER_RELICS.values():
 		if u["id"] == unique_id:
 			return u
 	return {}
@@ -952,6 +952,72 @@ const STATUS_INFO := {"burn": {"chance": 0.5, "rounds": 3, "value": 0.05}, "chil
 const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
 const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
 const HEAVY_BLOW_MULT := 3.0
+
+## ---------------- Tower of Trials ----------------
+## 100 fixed floors, one fight each (GameState.tower_floor_info). Every floor
+## is always the same fight, so a loss is something to plan around rather
+## than reroll. Heroes fight at full HP and leave as they came (no downing, no
+## injuries, no time passing); only the first clear of a floor pays.
+const TOWER_FLOORS := 100
+const TOWER_WEEKLY_FROM := 91   # floors 91-100: rules reshuffle weekly, re-clearable each week
+const TOWER_HP_GROWTH := 0.027  # foes' HP/damage grow this much per floor (compounding)
+const TOWER_DMG_GROWTH := 0.0255
+const TOWER_BASE := {"monster_hp": 135, "monster_dmg": 15}
+const TOWER_FIGHT_DEPTH := 2    # gen_monster's floor_idx for every tower fight
+## Floor rules: each is a diff key read by Combat (gen_monster/gen_monsters/
+## _start_round), or a party cap read by Party Assembly.
+const TOWER_RULES := [
+	{"id": "ironclad", "name": "Ironclad", "desc": "Every foe is armored (at least 30% of basic attacks shrugged off). Abilities ignore armor.", "diff": {"tower_armor": 0.3}},
+	{"id": "scorching", "name": "Scorching", "desc": "Every foe's hits can set a hero ablaze.", "diff": {"tower_status": "burn"}},
+	{"id": "frostbound", "name": "Frostbound", "desc": "Every foe's hits can chill a hero (acts late).", "diff": {"tower_status": "chill"}},
+	{"id": "swarm", "name": "Swarm", "desc": "Extra foes join the fight.", "diff": {"tower_swarm": true}},
+	{"id": "brutal", "name": "Brutal", "desc": "Every foe winds up heavy blows far more often. Defend!", "diff": {"windup_bonus": 0.35}},
+	{"id": "colossus", "name": "Colossus", "desc": "A single foe with double health.", "diff": {"tower_single": true}},
+	{"id": "glass", "name": "Glass Cannon", "desc": "Foes hit 40% harder but have 30% less health.", "diff": {"hp_mult": 0.7, "dmg_mult": 1.4}},
+	{"id": "bulwark", "name": "Bulwark", "desc": "Foes have 50% more health but hit 20% softer.", "diff": {"hp_mult": 1.5, "dmg_mult": 0.8}},
+	{"id": "trio", "name": "Trio", "desc": "At most 3 heroes (plus the Champion).", "party_cap": 3},
+	{"id": "duo", "name": "Duo", "desc": "At most 2 heroes (plus the Champion).", "party_cap": 2},
+]
+## Every 10th floor: a named guardian with fixed mechanics and a Tower relic.
+const TOWER_BOSSES := {
+	10: {"name": "The Gatekeeper", "biome": "vale", "mechanics": ["warded"], "line": "An iron sentinel bars the first gate."},
+	20: {"name": "Mirelord Oskan", "biome": "marsh", "mechanics": ["regen"], "line": "The flooded stair has a keeper, and it does not tire."},
+	30: {"name": "Cindermaw", "biome": "ashen", "mechanics": ["frenzied"], "line": "Heat pours down from the thirtieth landing."},
+	40: {"name": "The Hollow Choir", "biome": "vale", "mechanics": ["enrage"], "line": "Voices echo from every wall, louder by the moment."},
+	50: {"name": "Tidewarden Selk", "biome": "marsh", "mechanics": ["warded", "regen"], "line": "Halfway up, the tower tests your patience."},
+	60: {"name": "The Ember Regent", "biome": "ashen", "mechanics": ["frenzied", "enrage"], "line": "A crowned flame waits on its throne."},
+	70: {"name": "Gravewright Mourn", "biome": "vale", "mechanics": ["regen", "enrage"], "line": "Whatever falls here, it stitches back together."},
+	80: {"name": "The Drowned Oracle", "biome": "marsh", "mechanics": ["warded", "frenzied"], "line": "It has already seen how this fight ends."},
+	90: {"name": "Ashfather", "biome": "ashen", "mechanics": ["frenzied", "regen"], "line": "The oldest fire in the tower."},
+	100: {"name": "The Summit Keeper", "biome": "ashen", "mechanics": ["warded", "enrage"], "line": "The top of the tower. No one has stood here in an age."},
+}
+## Relics only the Tower's guardians give (first clear of that floor). Same
+## schema as UNIQUE_RELICS; only special_kind/trigger, no bespoke effects.
+const TOWER_RELICS := {
+	10: {"id": "t_gate_key", "name": "Gatekeeper's Key", "type": "Arcane", "special_kind": "first_round_pct", "special_value": 0.3,
+		"desc": "+30% first-strike damage."},
+	20: {"id": "t_mire_lantern", "name": "Mire Lantern", "type": "Verdant", "special_kind": "mend_pct", "special_value": 0.04,
+		"desc": "Mends 4% HP every round."},
+	30: {"id": "t_cinder_brand", "name": "Cinder Brand", "type": "Ember", "special_kind": "escalate_pct", "special_value": 0.04,
+		"desc": "+4% damage every round (stacking)."},
+	40: {"id": "t_choir_bell", "name": "Choir Bell", "type": "Arcane", "trigger": {"trigger": "round_third", "effect": "shield_party", "value": 0.15},
+		"desc": "Every third round, shields the whole party for 15% of max HP."},
+	50: {"id": "t_tide_mirror", "name": "Tide Mirror", "type": "Frost", "special_kind": "dodge_pct", "special_value": 0.12,
+		"desc": "+12% dodge chance."},
+	60: {"id": "t_regent_crown", "name": "Regent's Crown", "type": "Ember", "special_kind": "boss_alpha_strike", "special_value": 0.6,
+		"desc": "+60% opening volley against bosses."},
+	70: {"id": "t_grave_thread", "name": "Gravewright's Thread", "type": "Umbral", "special_kind": "wipe_guard", "special_value": 0.35,
+		"desc": "Relic ward: once a fight, survive a wipe at 35% HP."},
+	80: {"id": "t_oracle_eye", "name": "Oracle's Eye", "type": "Frost", "special_kind": "counter_pct", "special_value": 0.3,
+		"desc": "+30% chance to counter when evading or hit hard."},
+	90: {"id": "t_ashfather_coal", "name": "Ashfather's Coal", "type": "Ember", "trigger": {"trigger": "round_third", "effect": "nova", "value": 0.8},
+		"desc": "Every third round, fire strikes every foe for 80% of the party's damage."},
+	100: {"id": "t_summit_star", "name": "Summit Star", "type": "Arcane", "special_kind": "escalate_pct", "special_value": 0.05,
+		"trigger": {"trigger": "round_third", "effect": "nova", "value": 1.0},
+		"desc": "+5% damage every round (stacking), and every third round a starfall hits every foe for 100% of the party's damage."},
+}
+## Guild titles for reaching a floor (the highest shows beside the guild name).
+const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spire Walker"], [75, "Stormbreaker"], [100, "Summit Keeper"]]
 
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers; Endless
 # (below, via ENDLESS_BASE) is a separate infinite-scaling mode. Ascendant
@@ -1908,6 +1974,7 @@ const FEATURE_UNLOCKS := {
 	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for coins, crystals and Evolution Stones."},
 	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Crystals on lasting guild upgrades."},
 	"rift_map": {"name": "Rift Map", "hint": "Opens after you seal 2 rifts", "news": "Ranked rifts appear on the map — seal them before they break open."},
+	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
 }
 ## The very first rift is a shorter, gentler training rift.
 ## The campaign: three acts, each a region with a named foe. Meet an act's
@@ -2282,6 +2349,11 @@ const MONSTER_NAME_SPRITE := {
 	"Storm-Called Elite": "storm_called_elite", "Ashen Broodlord": "ashen_broodlord",
 	"Vaelith": "vaelith", "Korrath": "korrath", "Nyxara": "nyxara",
 	"Drevok": "drevok", "Sythrane": "sythrane",
+	# Tower of Trials guardians reuse elite/boss art.
+	"The Gatekeeper": "iron_revenant", "Mirelord Oskan": "deep_anchorite", "Cindermaw": "ashen_broodlord",
+	"The Hollow Choir": "hollow_reaver", "Tidewarden Selk": "blightfang_elite", "The Ember Regent": "drevok",
+	"Gravewright Mourn": "korrath", "The Drowned Oracle": "nyxara", "Ashfather": "rift_touched_colossus",
+	"The Summit Keeper": "sythrane",
 }
 
 
