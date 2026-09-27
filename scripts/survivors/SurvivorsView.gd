@@ -75,7 +75,9 @@ func _ready() -> void:
 	add_child(_cam)
 	_cam.make_current()
 	for h in run.heroes:
-		var n := _make_sprite(str(h["role"]), 1.0)
+		# The hero's own walk cycle (their subclass look), else their role's.
+		var own := "sub_" + str(h["hero"].pool_id)
+		var n := _make_sprite(own if ResourceLoader.exists(WALK_DIR + own + "_0.png") else str(h["role"]), 1.0)
 		_world.add_child(n)
 		_hero_nodes[h["hero"].id] = n
 	_build_hud()
