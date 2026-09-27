@@ -1143,6 +1143,12 @@ var _pending_diff_id: String = "lesser"
 var _pending_endless: bool = false
 var _pending_finale: bool = false   # Party Assembly is for the current act's finale
 var _pending_tower: bool = false    # Party Assembly is for the next Tower of Trials floor
+## GameState.combat_speed value meaning "Instant": turns resolve with no playback.
+const INSTANT_SPEED := 4.0
+
+
+func _speed_label() -> String:
+	return "Instant" if GameState.combat_speed >= INSTANT_SPEED else "×%d" % int(GameState.combat_speed)
 var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_action)
 var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 

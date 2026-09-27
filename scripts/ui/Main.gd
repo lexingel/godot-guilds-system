@@ -129,7 +129,7 @@ func render() -> void:
 	_combat_hotkeys.clear()
 	# Combat speed only ever applies inside a rift — camp animations (embers,
 	# day/night drift) always run at normal speed.
-	Engine.time_scale = GameState.combat_speed if screen == "rift_run" else 1.0
+	Engine.time_scale = minf(GameState.combat_speed, 3.0) if screen == "rift_run" else 1.0
 	GameState.resolve_recovery()
 	GameState.resolve_rift_map()
 	GameState.resolve_guild_board()
@@ -1438,6 +1438,21 @@ func _render_settings(v: VBoxContainer) -> void:
 		AudioManager.set_sfx_volume(val)
 		GameState.save_settings()
 	))
+
+	var speed_row := HBoxContainer.new()
+	speed_row.add_theme_constant_override("separation", 6)
+	speed_row.add_child(_label("Battle speed", 13))
+	for spd in [1.0, 2.0, 3.0, INSTANT_SPEED]:
+		var spb := _button("Instant" if spd >= INSTANT_SPEED else "×%d" % int(spd), func(val=spd):
+			GameState.combat_speed = val
+			GameState.save_settings()
+			render()
+		)
+		spb.toggle_mode = true
+		spb.button_pressed = is_equal_approx(GameState.combat_speed, spd)
+		spb.tooltip_text = "Fights resolve with no animation; the screen updates when it's your turn" if spd >= INSTANT_SPEED else "Battle animations at %d× speed" % int(spd)
+		speed_row.add_child(spb)
+	v.add_child(speed_row)
 
 	v.add_child(_hsep())
 	v.add_child(_label("Display", 15))
