@@ -381,7 +381,7 @@ func _render_history(v: VBoxContainer) -> void:
 		var res := str(e["result"])
 		var rl := _label(res, 13)
 		rl.custom_minimum_size.x = 80
-		rl.add_theme_color_override("font_color", Palette.RANK_E if res == "Sealed" else (Palette.HAZARD if res == "Defeated" else Palette.MUTED))
+		rl.add_theme_color_override("font_color", Palette.good() if res == "Sealed" else (Palette.HAZARD if res == "Defeated" else Palette.MUTED))
 		row.add_child(rl)
 		var what := "Day %d · %s · floor %s" % [int(e["day"]), e["kind"], e["floor"]]
 		if int(e.get("cycle", 0)) > 0:

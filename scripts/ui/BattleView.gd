@@ -73,6 +73,8 @@ func _tween_hurt(wrapper: Control) -> void:
 
 
 func _flash_white(wrapper: Control) -> void:
+	if GameState.reduce_motion:
+		return
 	var tween := create_tween()
 	tween.tween_property(wrapper, "modulate", Color(2, 2, 2), 0.06)
 	tween.tween_property(wrapper, "modulate", Color(1, 1, 1), 0.18)
@@ -168,6 +170,8 @@ func _spawn_impact_particles(parent: Control, pos: Vector2, color: Color, heavy:
 ## that cleared 25% of the target's max HP — the same "heavy hit" threshold
 ## Combat.gd's own retaliation math already uses for counter-attacks.
 func _impact_beat(arena: Control, heavy: bool = false) -> void:
+	if GameState.reduce_motion:
+		return
 	var base: Vector2 = arena.position
 	var mag: float = 8.0 if heavy else 3.0
 	var tween := create_tween()
@@ -186,6 +190,9 @@ func _impact_beat(arena: Control, heavy: bool = false) -> void:
 ## is enough to be noticed without still running by the time a player has
 ## read the line and picked an action.
 func _start_mechanic_pulse(wrapper: Control, color: Color) -> void:
+	if GameState.reduce_motion:
+		wrapper.modulate = color.lerp(Color.WHITE, 0.5)   # a steady tint instead of a flash
+		return
 	var tween := create_tween()
 	tween.bind_node(wrapper)
 	tween.set_loops(3)
@@ -203,6 +210,8 @@ func _start_mechanic_pulse(wrapper: Control, color: Color) -> void:
 ## up: bind_node() means Godot kills the tween automatically once render()
 ## frees this wrapper on the next state change, no manual bookkeeping needed.
 func _start_idle_sway(wrapper: Control) -> void:
+	if GameState.reduce_motion:
+		return
 	var rest := wrapper.position
 	var tween := create_tween()
 	tween.bind_node(wrapper)
@@ -582,6 +591,8 @@ func _dash(w: Control, to_x: float, dur: float = 0.15) -> void:
 
 ## A shove away from the hit (dir +1 pushes right, -1 left), springing back.
 func _knockback(w: Control, dir: float, heavy: bool) -> void:
+	if GameState.reduce_motion:
+		return
 	var sx := w.position.x
 	var t := create_tween()
 	t.tween_property(w, "position:x", sx + dir * (16.0 if heavy else 8.0), 0.06).set_ease(Tween.EASE_OUT)
@@ -590,6 +601,8 @@ func _knockback(w: Control, dir: float, heavy: bool) -> void:
 
 ## A quick zoom-in on the arena for the big moments.
 func _camera_punch(arena: Control, amount: float = 1.035) -> void:
+	if GameState.reduce_motion:
+		return
 	var t := create_tween()
 	t.tween_property(arena, "scale", Vector2(amount, amount), 0.06).set_ease(Tween.EASE_OUT)
 	t.tween_property(arena, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_SINE)

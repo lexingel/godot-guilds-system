@@ -144,7 +144,7 @@ func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 ## a quick-scan cue on top of the exact numbers shown alongside every bar.
 func _hp_color(ratio: float) -> Color:
 	if ratio > 0.5:
-		return Palette.RANK_E
+		return Palette.good()
 	elif ratio > 0.25:
 		return Palette.EMBER_BRIGHT
 	return Palette.HAZARD
@@ -442,11 +442,26 @@ func _item_tile(it: Item, size: int = 44, compare_for: Hero = null) -> Control:
 	var d := _draggable_item_icon(it, inner, compare_for)
 	d.position = Vector2((size - inner) * 0.5, (size - inner) * 0.5)
 	wrap.add_child(d)
+	_rarity_letter(wrap, it.rarity, size)
 	if compare_for != null and not GameState.attr_req_met(it, compare_for):
 		d.drag_payload = null
 		d.modulate = Color(0.45, 0.45, 0.5)
 		d.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
 	return wrap
+
+
+## Colour-blind mode: the rarity's initial in the frame's corner, so rarity
+## never rests on frame colour alone.
+func _rarity_letter(box: Control, rarity: String, size: float) -> void:
+	if not GameState.colorblind:
+		return
+	var l := _label(rarity.substr(0, 1).to_upper(), 11)
+	l.add_theme_color_override("font_color", Palette.TEXT)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	l.add_theme_constant_override("outline_size", 4)
+	l.position = Vector2(size - 12, size - 17)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(l)
 
 
 func _draggable_item_icon(it: Item, size: int = 32, compare_for: Hero = null) -> DragIcon:
@@ -812,12 +827,12 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 			if absf(d) >= 0.001:
 				# hazard guard reads inverted ("-8% hazard severity" is good), so
 				# judge better/worse by the raw delta, not the text's sign.
-				lines.append(_bb(Palette.RANK_E if d > 0 else Palette.HAZARD, ("▲ " if d > 0 else "▼ ") + Combat.describe_skill(kind, d)))
+				lines.append(_bb(Palette.good() if d > 0 else Palette.HAZARD, ("▲ " if d > 0 else "▼ ") + Combat.describe_skill(kind, d)))
 				any = true
 		for at in GameData.ATTRIBUTES:
 			var da: int = (it.attr_bonus if it.attr == at else 0) - ((current.attr_bonus if current.attr == at else 0) if current else 0)
 			if da != 0:
-				lines.append(_bb(Palette.RANK_E if da > 0 else Palette.HAZARD, ("▲ " if da > 0 else "▼ ") + "%+d %s" % [da, GameData.ATTR_LABEL[at]]))
+				lines.append(_bb(Palette.good() if da > 0 else Palette.HAZARD, ("▲ " if da > 0 else "▼ ") + "%+d %s" % [da, GameData.ATTR_LABEL[at]]))
 				any = true
 		if current:
 			var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
@@ -837,7 +852,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Label:
 	var ratio := float(power) / float(max(1, rec))
 	var verdict := "Deadly" if ratio < 0.9 else ("Risky" if ratio < 1.0 else ("Even fight" if ratio < 1.25 else "Favored"))
-	var color: Color = Palette.HAZARD if ratio < 1.0 else (Palette.COINS if ratio < 1.25 else Palette.RANK_E)
+	var color: Color = Palette.HAZARD if ratio < 1.0 else (Palette.COINS if ratio < 1.25 else Palette.good())
 	var l := _label("%s %d / Recommended %d — %s" % [prefix, power, rec, verdict], 13)
 	l.add_theme_color_override("font_color", color)
 	return l
@@ -867,7 +882,7 @@ func _stat_breakdown_card(h: Hero, kind: String, total: float) -> String:
 	var lines: Array[String] = ["[b]%s[/b]" % Combat.describe_skill(kind, total).replace("[", "[lb]")]
 	for src in Combat.hero_skill_sources(h, kind):
 		var v: float = src[1]
-		lines.append("%s  %s" % [_bb(Palette.RANK_E if v > 0 else Palette.HAZARD, "%s%d%%" % ["+" if v > 0 else "-", int(round(absf(v) * 100))]), str(src[0]).replace("[", "[lb]")])
+		lines.append("%s  %s" % [_bb(Palette.good() if v > 0 else Palette.HAZARD, "%s%d%%" % ["+" if v > 0 else "-", int(round(absf(v) * 100))]), str(src[0]).replace("[", "[lb]")])
 	var situational: Array[String] = []
 	for e in Combat.hero_effects(h):
 		if e.get("kind", "") == kind:
@@ -893,14 +908,7 @@ func _rich_tip(node: Control, bbcode: String) -> void:
 ## Every flat kind->value an item contributes (exactly what
 ## Combat.hero_item_total sums for it), for side-by-side comparison.
 func _item_stat_map(it: Item) -> Dictionary:
-	var m := {}
-	if it == null:
-		return m
-	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
-			[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
-		if str(pair[0]) != "":
-			m[pair[0]] = float(m.get(pair[0], 0.0)) + float(pair[1])
-	return m
+	return GameState.item_stat_map(it)
 
 
 ## "vs Swift Blade: +5% turn speed, -12% damage" — how equipping `it` into

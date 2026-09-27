@@ -63,6 +63,12 @@ const ELEMENT_PARTICLE_COLOR := {
 	"Arcane": TOKENS,
 }
 
+## "Good" in a good-vs-bad pair (healthy HP, a favored fight, a stat gain):
+## green, or blue in colour-blind mode so it never sits next to red.
+static func good() -> Color:
+	return RANK_D if GameState.colorblind else RANK_E
+
+
 static func rank_color(rank: String) -> Color:
 	match rank:
 		"F": return RANK_F

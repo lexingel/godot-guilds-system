@@ -539,7 +539,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 ## higher is a real spike worth pausing on.
 func _hazard_severity_color(dmg_mult: float) -> Color:
 	if dmg_mult < 1.0:
-		return Palette.RANK_E
+		return Palette.good()
 	elif dmg_mult <= 1.15:
 		return Palette.EMBER_BRIGHT
 	return Palette.HAZARD

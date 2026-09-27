@@ -22,6 +22,8 @@ var active_slot: int = 0
 # own save data, so they survive Reset Guild and switching slots.
 var music_volume: float = 1.0
 var combat_speed: float = 1.0
+var reduce_motion := false   # no shakes, sways, zooms or flashes in fights (settings.json)
+var colorblind := false      # blue instead of green against red, rarity letters on items (settings.json)
 var ui_scale: float = 1.0   # whole-UI scale (Window.content_scale_factor), a settings.json preference   # animation time scale inside a rift (x1/x2/x3), a settings.json preference
 var sfx_volume: float = 1.0
 var resolution_idx: int = 0
@@ -505,11 +507,15 @@ func save_settings() -> void:
 	if f:
 		f.store_string(JSON.stringify({
 			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx, "combat_speed": combat_speed, "ui_scale": ui_scale,
+			"reduce_motion": reduce_motion, "colorblind": colorblind,
 		}))
 
 
 func load_settings() -> void:
 	if not FileAccess.file_exists(SETTINGS_PATH):
+		# First launch in a browser: follow its reduced-motion preference.
+		if OS.has_feature("web"):
+			reduce_motion = bool(JavaScriptBridge.eval("window.matchMedia('(prefers-reduced-motion: reduce)').matches", true))
 		return
 	var f := FileAccess.open(SETTINGS_PATH, FileAccess.READ)
 	var parsed = JSON.parse_string(f.get_as_text())
@@ -517,6 +523,8 @@ func load_settings() -> void:
 		music_volume = parsed.get("music_volume", 1.0)
 		combat_speed = float(parsed.get("combat_speed", 1.0))
 		ui_scale = float(parsed.get("ui_scale", 1.0))
+		reduce_motion = bool(parsed.get("reduce_motion", false))
+		colorblind = bool(parsed.get("colorblind", false))
 		sfx_volume = parsed.get("sfx_volume", 1.0)
 		resolution_idx = parsed.get("resolution_idx", 0)
 
@@ -3586,6 +3594,74 @@ func item_slot_type_of(it: Item) -> String:
 ## Has this hero enough of the item's attribute to equip it?
 func attr_req_met(it: Item, h: Hero) -> bool:
 	return it.attr_req <= 0 or Combat.hero_attr(h, it.attr) - (it.attr_bonus if it.equipped_to == h.id else 0) >= it.attr_req
+
+
+## Every flat kind->value an item contributes (what Combat.hero_item_total
+## sums for it).
+func item_stat_map(it: Item) -> Dictionary:
+	var m := {}
+	if it == null:
+		return m
+	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
+			[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
+		if str(pair[0]) != "":
+			m[pair[0]] = float(m.get(pair[0], 0.0)) + float(pair[1])
+	return m
+
+
+const GEAR_SCORE_WEIGHT := {"dmg_pct": 1.0, "hp_pct": 0.9, "dodge_pct": 0.8, "mend_pct": 0.8, "ability_power": 0.7, "speed_pct": 0.6, "escalate_pct": 0.5}
+
+
+## How much an item helps, for "Equip best": its stat lines weighted (damage
+## and health count most) plus a flat bonus per special effect.
+## ponytail: role-blind weights; weigh by the hero's archetype if picks feel off.
+func gear_score(it: Item) -> float:
+	var s := 0.0
+	var stats := item_stat_map(it)
+	for k in stats:
+		s += float(stats[k]) * float(GEAR_SCORE_WEIGHT.get(k, 0.4))
+	var fx: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
+	return s + 0.08 * fx.size()
+
+
+## The best free (or already worn) gear for a hero: {slot_type: [items]},
+## never taking an item another hero is wearing.
+func best_gear(h: Hero) -> Dictionary:
+	var out := {}
+	for st in ["weapon", "gear"]:
+		var cap := GameData.weapon_slots(h.pool_id) if st == "weapon" else GameData.gear_slots(h.rank)
+		var pool: Array = items.filter(func(it): return it.slot_type() == st and (it.equipped_to == "" or it.equipped_to == h.id) and item_fits_hero(it, h) and attr_req_met(it, h))
+		pool.sort_custom(func(a, b): return gear_score(a) > gear_score(b))
+		out[st] = pool.slice(0, cap)
+	return out
+
+
+## How many items "Equip best" would put on `h` that it isn't wearing.
+func equip_best_changes(h: Hero) -> int:
+	var n := 0
+	var best := best_gear(h)
+	for st in best:
+		n += (best[st] as Array).filter(func(it): return it.equipped_to != h.id).size()
+	return n
+
+
+func equip_best(hero_id: String) -> void:
+	var h := find_hero(hero_id)
+	if not h:
+		return
+	var best := best_gear(h)
+	for st in best:
+		for it in items:
+			if it.equipped_to == h.id and it.slot_type() == st:
+				it.equipped_to = ""
+				it.equipped_idx = -1
+		var idx := 0
+		for it in best[st]:
+			it.equipped_to = h.id
+			it.equipped_idx = idx
+			idx += 1
+	save()
+	state_changed.emit()
 
 
 func auto_assign_attrs(hero_id: String) -> void:

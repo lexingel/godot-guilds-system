@@ -1496,7 +1496,7 @@ func _render_settings(v: VBoxContainer) -> void:
 	var scale_row := HBoxContainer.new()
 	scale_row.add_theme_constant_override("separation", 6)
 	scale_row.add_child(_label("Text & UI size", 13))
-	for sc in [0.9, 1.0, 1.15, 1.3]:
+	for sc in [0.9, 1.0, 1.15, 1.3, 1.5]:
 		var sb := _button("%d%%" % int(round(sc * 100)), func(val=sc):
 			GameState.ui_scale = val
 			get_tree().root.content_scale_factor = val
@@ -1521,6 +1521,24 @@ func _render_settings(v: VBoxContainer) -> void:
 			_apply_resolution(next_idx)
 			render()
 		))
+
+	v.add_child(_hsep())
+	v.add_child(_label("Accessibility", 15))
+	var acc_row := HFlowContainer.new()
+	acc_row.add_theme_constant_override("h_separation", 8)
+	var rm := _button("Reduce motion: %s" % ("on" if GameState.reduce_motion else "off"), func():
+		GameState.reduce_motion = not GameState.reduce_motion
+		GameState.save_settings()
+		render())
+	rm.tooltip_text = "No screen shake, zooms, knockbacks, idle sway or flashing in fights"
+	acc_row.add_child(rm)
+	var cb := _button("Colour-blind mode: %s" % ("on" if GameState.colorblind else "off"), func():
+		GameState.colorblind = not GameState.colorblind
+		GameState.save_settings()
+		render())
+	cb.tooltip_text = "Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item"
+	acc_row.add_child(cb)
+	v.add_child(acc_row)
 
 	v.add_child(_hsep())
 	v.add_child(_label("Tips", 15))

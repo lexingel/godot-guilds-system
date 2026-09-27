@@ -260,6 +260,15 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var pw := _label("Power %d" % Combat.power_of(h), 15)
 	pw.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mid.add_child(pw)
+	var changes := GameState.equip_best_changes(h)
+	if changes > 0:
+		var eb := _button("Equip best (%d)" % changes, func(id=h.id):
+			var before := Combat.power_of(h)
+			GameState.equip_best(id)
+			GameState.pending_toasts.append({"cls_id": h.cls_id, "pool_id": h.pool_id, "title": "Equipped best gear", "text": "Power %d → %d" % [before, Combat.power_of(h)]})
+			render())
+		eb.tooltip_text = "Fill this hero's slots with the strongest free gear that fits them. Gear worn by other heroes is left alone."
+		mid.add_child(eb)
 	doll.add_child(mid)
 	var gcol := _vbox(6)
 	gcol.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -976,6 +985,7 @@ func _inv_tile(it: Item) -> Button:
 	ic.position = Vector2(8, 8)
 	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(ic)
+	_rarity_letter(box, it.rarity, 60)
 	var note := _loot_fit_note(it, false, GameState.heroes)
 	if str(note[0]).begins_with("Fills"):
 		var dot := _count_badge("+", str(note[0]))
