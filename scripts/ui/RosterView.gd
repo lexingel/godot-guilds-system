@@ -63,7 +63,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	var voice := GameData.hero_voice(h)
-	var head := _label("Lv%d %s (%s) · %d/%d HP · Power %d · %s" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h), GameData.VOICE_NAME[voice]])
+	var head := _label("Lv%d %s (%s) · %d/%d HP · Power %d · %s · Morale %d %s" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h), GameData.VOICE_NAME[voice], h.morale, GameData.morale_tier(h.morale)[1]])
 	head.tooltip_text = "Personality (from their trait) — e.g. “%s”" % str(GameData.BARKS[voice]["victory"][0])
 	head.mouse_filter = Control.MOUSE_FILTER_STOP
 	cv.add_child(head)

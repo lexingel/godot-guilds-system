@@ -85,6 +85,12 @@ var elites_won: int = 0      # every Elite win, unlike bosses_defeated/monsters_
 var bosses_won: int = 0      # every Boss win, same distinction
 var guild_board: Array[Dictionary] = []    # rotating pool of quest dicts, see roll_quest()
 var day: int = 0   # in-game days: one passes per rift run or rest (see pass_time)
+var rival_name: String = ""      # the rival guild (GameData.RIVAL_NAMES)
+var rival_renown: int = 0
+var rival_ahead: int = 0          # set at payday: 1 = we lead (better recruits), -1 = they lead, 0 = not compared yet
+var feast_week: int = -1          # the payday week a feast was last held
+var payday_report: Dictionary = {}   # the last payday: {day, due, paid, unpaid, left, rival}
+var guild_news: Array = []        # recent rival/contract/payday lines for the Ledger (newest first)
 var runs_started: int = 0   # the first one is a training rift (GameData.TRAINING_RIFT)
 var campaign_act: int = 1   # the act in progress (GameData.CAMPAIGN); CAMPAIGN.size()+1 = campaign complete
 var pending_stories: Array = []   # story cards Main shows before anything else: {title, subtitle, text}
@@ -153,6 +159,7 @@ func knock_out(h: Hero) -> void:
 	if not run.is_empty():
 		run["any_ko"] = true
 	h.down_runs = recovery_runs() + (0 if run.is_empty() else 1)
+	h.morale = clampi(h.morale + GameData.MORALE_KNOCKOUT, 0, 100)
 
 
 func medical_bed_cap() -> int:
@@ -242,7 +249,7 @@ func shop_guaranteed_epic() -> bool:
 
 func recruit_offer_count() -> int:
 	var l := lvl("log.scouts")
-	return 4 + (1 if l >= 1 else 0) + (1 if l >= 4 else 0)
+	return 4 + (1 if l >= 1 else 0) + (1 if l >= 4 else 0) + rival_ahead
 
 
 func headhunter_guarantee() -> bool:
@@ -505,7 +512,7 @@ func save() -> void:
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "boon_set4_reached": boon_set4_reached,
-		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
+		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "payday_report": payday_report, "guild_news": guild_news,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,

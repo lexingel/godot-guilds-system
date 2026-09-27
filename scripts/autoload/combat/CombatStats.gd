@@ -45,6 +45,8 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 		s += h.prior_innate_value
 	s += hero_item_total(h, kind)
 	s += attr_kind_total(h, kind)
+	if kind == "dmg_pct":
+		s += float(GameData.morale_tier(h.morale)[2])
 	for q in h.quirks:
 		s += float(GameData.quirk(q).get("stats", {}).get(kind, 0.0))
 	if GameState.active_incense.get("kind", "") == kind:
@@ -98,6 +100,9 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 		var per: float = float(GameData.ATTR_EFFECTS[a].get(kind, 0.0))
 		if per != 0.0:
 			add.call("%s %d" % [GameData.ATTR_LABEL[a], hero_attr(h, a)], (hero_attr(h, a) - GameData.ATTR_BASELINE) * per)
+	if kind == "dmg_pct":
+		var mt: Array = GameData.morale_tier(h.morale)
+		add.call("Morale: %s" % mt[1], float(mt[2]))
 	for q in h.quirks:
 		add.call("Quirk: %s" % q, float(GameData.quirk(q).get("stats", {}).get(kind, 0.0)))
 	if GameState.active_incense.get("kind", "") == kind:

@@ -485,3 +485,45 @@ const MILESTONES := [
 const DAILY_CLEAR_CRYSTALS := 35
 const DAILY_CLEAR_CRYSTALS_PER_ACT := 10
 const RUN_HISTORY_MAX := 30
+
+
+# ---------------- Running the guild ----------------
+## Payday comes every PAYDAY_DAYS days (a day = one rift run or a rest).
+## A hero's weekly wage: by rank, +6% per level above 1.
+const PAYDAY_DAYS := 7
+const WAGE_BY_RANK := {"F": 15, "E": 22, "D": 30, "C": 42, "B": 60, "A": 85, "S": 120}
+const WAGE_PER_LEVEL := 0.06
+## Unpaid twice running, or paid while at rock-bottom morale, a hero walks out.
+const UNPAID_WEEKS_TO_LEAVE := 2
+const MORALE_WALKOUT := 10
+
+## Morale 0-100. Tiers by floor: [min, name, damage bonus].
+const MORALE_START := 60
+const MORALE_TIERS := [[80, "Inspired", 0.10], [40, "Steady", 0.0], [20, "Shaken", -0.10], [0, "Breaking", -0.20]]
+const MORALE_SEAL := 8          # every hero who saw a rift sealed
+const MORALE_DEFEAT := -10      # the party of a lost rift
+const MORALE_KNOCKOUT := -5
+const MORALE_UNPAID := -25
+const MORALE_IDLE_WEEK := -5    # a week without a rift run
+const MORALE_QUEST_FAILED := -5 # everyone, when a contract fails
+const FEAST_MORALE := 15
+const FEAST_COST_PER_HERO := 8   # Gold, once a week
+
+## Contracts come due this many days after they're taken, by difficulty;
+## a missed one costs 2 Renown per difficulty level.
+const QUEST_DUE_DAYS := {1: 6, 2: 8, 3: 10}
+
+## The rival guild competing for the same contracts and recruits.
+const RIVAL_NAMES := ["The Iron Chorus", "The Ashen Wolves", "The Gilded Lance", "The Last Lantern", "The Hollow Crown Company"]
+const RIVAL_DAILY_RENOWN := {1: [0, 1], 2: [1, 2], 3: [1, 3]}   # [min, max] per day by campaign act (3 = Act III and after)
+const RIVAL_SNATCH_CHANCE := 0.25   # a day's chance it takes one posted contract
+## Sealing a rift earns Renown: 1, +1 per three ladder ranks.
+const SEAL_RENOWN_BASE := 1
+
+
+static func morale_tier(m: int) -> Array:
+	for t in MORALE_TIERS:
+		if m >= int(t[0]):
+			return t
+	return MORALE_TIERS[-1]
+

@@ -36,6 +36,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 		"compendium": _render_compendium(v)
 		"records": _render_records(v)
 		"memorial": _render_memorial(v)
+		"ledger": _render_ledger(v)
 		"quests": _render_quests(v)
 		_: _render_roster(v)
 
@@ -236,6 +237,17 @@ func _guild_status_lines() -> Array:
 					var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [mini(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
 					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
 					break
+	if not GameState.heroes.is_empty():
+		var wages := GameState.weekly_wages()
+		var dtp := GameState.days_to_payday()
+		if wages > GameState.coins or dtp <= 2:
+			out.append(["Payday in %d day%s: %d Gold in wages%s" % [dtp, "" if dtp == 1 else "s", wages, " (short %d)" % (wages - GameState.coins) if wages > GameState.coins else ""], Palette.HAZARD if wages > GameState.coins else Palette.COINS, go_term.call("ledger")])
+		var low := GameState.heroes.filter(func(h): return h.morale < 40)
+		if not low.is_empty():
+			out.append(["%d hero%s with low morale" % [low.size(), "" if low.size() == 1 else "es"], Palette.HAZARD, go_term.call("ledger")])
+		var due_soon := GameState.guild_board.filter(func(q): return str(q["status"]) == "active" and GameState.quest_progress(q) < int(q["target"]) and int(q.get("due", 1 << 30)) - GameState.day <= 2)
+		if not due_soon.is_empty():
+			out.append(["%d contract%s due within 2 days" % [due_soon.size(), "" if due_soon.size() == 1 else "s"], Palette.HAZARD, go_term.call("quests")])
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty() and GameState.feature_unlocked("quests"):
 		out.append(["%d quest%s ready to claim" % [claimable.size(), "" if claimable.size() == 1 else "s"], Palette.RANK_E, go_term.call("quests")])
@@ -409,6 +421,100 @@ func _render_memorial(v: VBoxContainer) -> void:
 		col.add_child(_wrap_label("%s, on day %d. %d rift%s sealed, %d foe%s felled." % [f["cause"], int(f["day"]), int(f["rifts"]), "" if int(f["rifts"]) == 1 else "s", int(f["kills"]), "" if int(f["kills"]) == 1 else "s"], 12, true))
 		row.add_child(col)
 		v.add_child(row)
+
+
+var _dismiss_confirm: String = ""   # hero id awaiting a second click on Dismiss
+
+
+## The Ledger: payday and wages, the weekly feast, every hero's wage and
+## morale (and Dismiss), the rival guild, and recent guild news.
+func _render_ledger(v: VBoxContainer) -> void:
+	v.add_child(_label("Guild Ledger", 20))
+	var wages := GameState.weekly_wages()
+	var dtp := GameState.days_to_payday()
+	var short := wages > GameState.coins
+
+	var pay := PanelContainer.new()
+	pay.theme_type_variation = &"CardPanelEmber"
+	var pv := _vbox(6)
+	var pl := _label("Payday in %d day%s · wages %d Gold · you have %d" % [dtp, "" if dtp == 1 else "s", wages, GameState.coins], 16)
+	pl.add_theme_color_override("font_color", Palette.HAZARD if short else Palette.EMBER_BRIGHT)
+	pv.add_child(pl)
+	pv.add_child(_wrap_label("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out." % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID], 12, true))
+	var rep: Dictionary = GameState.payday_report
+	if not rep.is_empty():
+		var bits: Array[String] = ["%d Gold paid" % int(rep.get("paid", 0))]
+		if not (rep.get("unpaid", []) as Array).is_empty():
+			bits.append("unpaid: %s" % ", ".join(rep["unpaid"]))
+		if not (rep.get("left", []) as Array).is_empty():
+			bits.append("walked out: %s" % ", ".join(rep["left"]))
+		pv.add_child(_wrap_label("Last payday (day %d): %s." % [int(rep.get("day", 0)), "; ".join(bits)], 12, true))
+	var feast := _button("Hold a feast (%d Gold): +%d morale for everyone" % [GameState.feast_cost(), GameData.FEAST_MORALE], func():
+		var err := GameState.hold_feast()
+		if err != "":
+			_flavor_toast = err
+		render()
+	)
+	feast.disabled = not GameState.feast_ready() or GameState.coins < GameState.feast_cost()
+	feast.tooltip_text = "Once a week." if GameState.feast_ready() else "Already feasted this week — the next one after payday."
+	feast.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	pv.add_child(feast)
+	pay.add_child(pv)
+	v.add_child(pay)
+
+	var rival := PanelContainer.new()
+	rival.theme_type_variation = &"CardPanelViolet"
+	var rv := _vbox(4)
+	rv.add_child(_label("Rival: %s" % GameState.rival_name, 16))
+	var lead := GameState.reputation - GameState.rival_renown
+	var rl := _label("Renown — you %d · them %d (%s)" % [GameState.reputation, GameState.rival_renown, "you lead by %d" % lead if lead > 0 else ("they lead by %d" % -lead if lead < 0 else "level")], 14)
+	rl.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
+	rv.add_child(rl)
+	rv.add_child(_wrap_label("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.", 12, true))
+	rival.add_child(rv)
+	v.add_child(rival)
+
+	v.add_child(_label("Heroes — wages and morale", 16))
+	var sorted: Array = GameState.heroes.duplicate()
+	sorted.sort_custom(func(a, b): return a.morale < b.morale)
+	for h in sorted:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		if portrait != "":
+			row.add_child(_icon_trimmed(portrait, 40))
+		var col := _vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label("%s — Rank %s, Lv%d · wage %d Gold/week" % [h.name.split(" the ")[0], h.rank, h.level, GameState.wage_of(h)], 14))
+		var tier: Array = GameData.morale_tier(h.morale)
+		var ml := _label("Morale %d · %s%s%s" % [h.morale, tier[1], (" (%+d%% damage)" % int(round(float(tier[2]) * 100))) if float(tier[2]) != 0.0 else "", " · unpaid %d week%s" % [h.unpaid_weeks, "" if h.unpaid_weeks == 1 else "s"] if h.unpaid_weeks > 0 else ""], 12)
+		ml.add_theme_color_override("font_color", Palette.good() if h.morale >= 80 else (Palette.MUTED if h.morale >= 40 else Palette.HAZARD))
+		ml.tooltip_text = "Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d" % [GameData.MORALE_SEAL, GameData.MORALE_DEFEAT, GameData.MORALE_KNOCKOUT, GameData.MORALE_UNPAID, GameData.MORALE_IDLE_WEEK, GameData.MORALE_QUEST_FAILED, GameData.FEAST_MORALE]
+		ml.mouse_filter = Control.MOUSE_FILTER_STOP
+		col.add_child(ml)
+		row.add_child(col)
+		var confirming: bool = _dismiss_confirm == h.id
+		var hid: String = h.id
+		var db := _button("Confirm: let them go" if confirming else "Dismiss", func():
+			if _dismiss_confirm != hid:
+				_dismiss_confirm = hid
+			else:
+				_dismiss_confirm = ""
+				var err := GameState.dismiss_hero(hid)
+				if err != "":
+					_flavor_toast = err
+			render()
+		)
+		db.tooltip_text = "They leave the guild for good; their gear goes back to the stockpile. No more wages."
+		db.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(db)
+		v.add_child(row)
+
+	if not GameState.guild_news.is_empty():
+		v.add_child(_hsep())
+		v.add_child(_label("Guild news", 16))
+		for line in GameState.guild_news:
+			v.add_child(_wrap_label(str(line), 12, true))
 
 
 ## A short first-guild checklist under the camp scene, each step ticking off
@@ -1067,6 +1173,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
+		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level; see Guild > Ledger. The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily and poaches posted contracts; at payday, the leader on Renown gets the better recruits."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -1197,6 +1304,17 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	dl.add_theme_color_override("font_color", INK)
 	dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(dl)
+	if status == "active" and not done and q.has("due"):
+		var left := int(q["due"]) - GameState.day
+		var due := _label("Due in %d day%s" % [left, "" if left == 1 else "s"] if left > 0 else "Due today", 12)
+		due.add_theme_color_override("font_color", Color("b3261e") if left <= 2 else INK)
+		due.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(due)
+	elif status == "posted":
+		var takes := _label("%d days once taken" % int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6)), 11)
+		takes.add_theme_color_override("font_color", INK)
+		takes.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(takes)
 	var stars := _label("★".repeat(int(q["diff"])) + "☆".repeat(3 - int(q["diff"])), 13)
 	stars.add_theme_color_override("font_color", Color("9a5a12"))
 	stars.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

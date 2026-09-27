@@ -45,6 +45,9 @@ var is_champion: bool = false
 var oath: int = 0   # rifts sealed together as Champion (see GameData.CHAMPION_OATH_SEALS)
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
+var morale: int = 60           # 0-100, see GameData.MORALE_TIERS
+var unpaid_weeks: int = 0       # paydays missed in a row
+var last_rift_day: int = 0      # day this hero last went on a rift (idle heroes grow restless)
 var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds earned quirks (GameData.QUIRKS)
 
 
@@ -70,7 +73,7 @@ func to_dict() -> Dictionary:
 		"formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 "ability_awakened": ability_awakened,
-		"history": history,
+		"history": history, "morale": morale, "unpaid_weeks": unpaid_weeks, "last_rift_day": last_rift_day,
 	}
 
 
@@ -108,6 +111,9 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.skills = d.get("skills", {})
 	h.ability_awakened = d.get("ability_awakened", false)
 	h.history = d.get("history", {})
+	h.morale = int(d.get("morale", 60))
+	h.unpaid_weeks = int(d.get("unpaid_weeks", 0))
+	h.last_rift_day = int(d.get("last_rift_day", 0))
 	h.base_hp = d.get("base_hp", 10)
 	h.base_dmg = d.get("base_dmg", 1)
 	h.base_spd = d.get("base_spd", 10)

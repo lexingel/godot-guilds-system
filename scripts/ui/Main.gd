@@ -430,7 +430,7 @@ const NAV_GROUPS := [
 	["Roster", "roster", [["roster", "Heroes", "Command Tent"], ["recruits", "Recruits", "Hero Recruits"], ["medical", "Medical", "Medical Tent"]]],
 	["Inventory", "inventory", [["inventory", "Items", "Inventory"], ["crafting", "Crafting", "Trading Post"]]],
 	["Rift Hall", "rift", [["rift", "Rift Hall", "Rift Gate"]]],
-	["Guild", "management", [["management", "Manage", ""], ["quests", "Quests", "Scholar's Lodge"], ["records", "Records", ""], ["memorial", "Memorial", ""]]],
+	["Guild", "management", [["management", "Manage", ""], ["ledger", "Ledger", ""], ["quests", "Quests", "Scholar's Lodge"], ["records", "Records", ""], ["memorial", "Memorial", ""]]],
 	["Library", "bestiary", [["bestiary", "Bestiary", ""], ["compendium", "Codex", ""]]],
 ]
 const NAV_FEATURE := {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}

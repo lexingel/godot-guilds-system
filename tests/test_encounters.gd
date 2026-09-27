@@ -107,6 +107,7 @@ func run() -> void:
 	# Burn ticks at round end; a tonic cleanses it.
 	h0.hp = Combat.max_hp(h0)
 	st["hero_burn"] = {h0.id: {"rounds": 2, "value": 0.1}}
+	st["mend"] = 0.0   # no mending over the tick
 	var hb := h0.hp
 	Combat._end_round_effects(st)
 	check(h0.hp < hb and int(st["hero_burn"][h0.id]["rounds"]) == 1, "burn ticks")

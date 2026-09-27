@@ -37,6 +37,12 @@ func reset() -> void:
 	tower_week_cleared = 0
 	rifts_sealed = 0
 	best_rift_rank_sealed = -1
+	rival_name = str(GameData.RIVAL_NAMES[randi() % GameData.RIVAL_NAMES.size()])
+	rival_renown = 0
+	rival_ahead = 0
+	feast_week = -1
+	payday_report = {}
+	guild_news = []
 	triage_used_this_cycle = false
 	pending_shop_boost = false
 	guide_hidden = false
@@ -167,6 +173,12 @@ func load_save() -> bool:
 	tower_week_cleared = int(data.get("tower_week_cleared", 0))
 	rifts_sealed = data.get("rifts_sealed", 0)
 	best_rift_rank_sealed = int(data.get("best_rift_rank_sealed", -1))
+	rival_name = str(data.get("rival_name", GameData.RIVAL_NAMES[0]))
+	rival_renown = int(data.get("rival_renown", 0))
+	rival_ahead = int(data.get("rival_ahead", 0))
+	feast_week = int(data.get("feast_week", -1))
+	payday_report = data.get("payday_report", {})
+	guild_news = data.get("guild_news", [])
 	runs_started = int(data.get("runs_started", 0 if rifts_sealed == 0 and monsters_seen.is_empty() else 1))
 	pending_stories = []
 	if data.has("campaign_act"):

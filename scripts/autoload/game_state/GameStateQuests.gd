@@ -8,7 +8,7 @@ extends "res://scripts/autoload/game_state/GameStateItems.gd"
 ## Reputation losses (none exist yet, but kept symmetrical) skip the roll.
 func add_reputation(amount: int) -> void:
 	if amount <= 0:
-		reputation += amount
+		reputation = maxi(0, reputation + amount)
 		return
 	var before := reputation / 20
 	reputation += amount
@@ -118,6 +118,16 @@ func resolve_guild_board() -> void:
 			guild_board.append(roll_quest())
 		board_refresh_day = day + GameData.QUEST_REFRESH_DAYS
 		changed = true
+	# Contracts past their due day fail: Renown and everyone's morale drop.
+	for q in guild_board:
+		if str(q["status"]) == "active" and day > int(q.get("due", 1 << 30)) and quest_progress(q) < int(q["target"]):
+			q["status"] = "failed"
+			add_reputation(-2 * int(q.get("diff", 1)))
+			for h in heroes:
+				h.morale = clampi(h.morale + GameData.MORALE_QUEST_FAILED, 0, 100)
+			_news("Contract failed: %s (-%d Renown)." % [quest_desc(q), 2 * int(q.get("diff", 1))])
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contract failed", "text": "%s ran out of time. -%d Renown, and the guild's morale dips." % [quest_desc(q), 2 * int(q.get("diff", 1))]})
+			changed = true
 	if changed:
 		save()
 
@@ -133,6 +143,7 @@ func accept_quest(quest_id: String) -> String:
 		if str(q["id"]) == quest_id and str(q["status"]) == "posted":
 			q["status"] = "active"
 			q["baseline"] = _quest_current(q)
+			q["due"] = day + int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6))
 			save()
 			state_changed.emit()
 			return ""
@@ -237,3 +248,139 @@ func check_milestones() -> Array[String]:
 		save()
 		state_changed.emit()
 	return newly
+
+
+# ---------------- Running the guild: wages, morale, the rival ----------------
+
+func _news(line: String) -> void:
+	guild_news.push_front("Day %d: %s" % [day, line])
+	if guild_news.size() > 12:
+		guild_news.resize(12)
+
+
+func wage_of(h: Hero) -> int:
+	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1))))
+
+
+func weekly_wages() -> int:
+	var total := 0
+	for h in heroes:
+		total += wage_of(h)
+	return total
+
+
+func days_to_payday() -> int:
+	return GameData.PAYDAY_DAYS - (day % GameData.PAYDAY_DAYS)
+
+
+func change_morale(h: Hero, delta: int) -> void:
+	h.morale = clampi(h.morale + delta, 0, 100)
+
+
+## Every PAYDAY_DAYS days: wages go out (as many heroes as Gold covers, in
+## roster order), the unpaid lose morale, idle heroes grow restless, and a
+## hero unpaid twice running or at rock-bottom morale walks out (never one
+## on a rift right now). Then the guild is compared with its rival.
+func run_payday() -> void:
+	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
+	var paid := 0
+	var unpaid: Array[String] = []
+	for h in heroes:
+		var w := wage_of(h)
+		if coins >= w:
+			coins -= w
+			paid += w
+			h.unpaid_weeks = 0
+		else:
+			h.unpaid_weeks += 1
+			change_morale(h, GameData.MORALE_UNPAID)
+			unpaid.append(h.name.split(" the ")[0])
+		if day - h.last_rift_day >= GameData.PAYDAY_DAYS and not in_rift.has(h.id):
+			change_morale(h, GameData.MORALE_IDLE_WEEK)
+	var left: Array[String] = []
+	for h in heroes.duplicate():
+		if in_rift.has(h.id) or heroes.size() <= 1:
+			continue
+		if h.unpaid_weeks >= GameData.UNPAID_WEEKS_TO_LEAVE or h.morale <= GameData.MORALE_WALKOUT:
+			left.append(h.name.split(" the ")[0])
+			_release(h)
+	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
+	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead}
+	var line := "Payday: %d Gold in wages." % paid
+	if not unpaid.is_empty():
+		line += " Unpaid: %s." % ", ".join(unpaid)
+	if not left.is_empty():
+		line += " Walked out: %s." % ", ".join(left)
+	_news(line)
+	_news("%s the %s (Renown %d vs %d)." % ["Your guild leads" if rival_ahead > 0 else ("The guild trails" if rival_ahead < 0 else "Your guild is level with"), rival_name, reputation, rival_renown] + (" Recruits favor you this week: +1 offer." if rival_ahead > 0 else (" Recruits favor them this week: -1 offer." if rival_ahead < 0 else "")))
+	refresh_recruit_pool()
+	var text := "%d Gold in wages" % paid
+	if not unpaid.is_empty():
+		text += " · couldn't pay %s" % ", ".join(unpaid)
+	if not left.is_empty():
+		text += " · %s walked out" % ", ".join(left)
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Payday", "text": text + "."})
+
+
+## A hero leaves the guild (dismissed or walked out): their gear returns to
+## the stockpile.
+func _release(h: Hero) -> void:
+	for it in items:
+		if it.equipped_to == h.id:
+			it.equipped_to = ""
+			it.equipped_idx = -1
+	heroes.erase(h)
+
+
+## Let a hero go. Not while they're on a rift, and never the last one.
+func dismiss_hero(hero_id: String) -> String:
+	var h := find_hero(hero_id)
+	if h == null:
+		return ""
+	if not run.is_empty() and (run.get("hero_ids", []) as Array).has(hero_id):
+		return "They're on a rift right now"
+	if heroes.size() <= 1:
+		return "The guild needs at least one hero"
+	_release(h)
+	_news("%s left the guild." % h.name.split(" the ")[0])
+	save()
+	state_changed.emit()
+	return ""
+
+
+func feast_cost() -> int:
+	return GameData.FEAST_COST_PER_HERO * heroes.size()
+
+
+func feast_ready() -> bool:
+	return feast_week != day / GameData.PAYDAY_DAYS
+
+
+## Once a week: Gold for +FEAST_MORALE morale for every hero.
+func hold_feast() -> String:
+	if not feast_ready():
+		return "Already feasted this week"
+	if coins < feast_cost():
+		return "Not enough Gold"
+	coins -= feast_cost()
+	feast_week = day / GameData.PAYDAY_DAYS
+	for h in heroes:
+		change_morale(h, GameData.FEAST_MORALE)
+	_news("A feast in the hall: +%d morale for everyone." % GameData.FEAST_MORALE)
+	save()
+	state_changed.emit()
+	return ""
+
+
+## The rival's day: it gains Renown (more each act) and now and then takes a
+## posted contract off the board before you can.
+func rival_day() -> void:
+	var span: Array = GameData.RIVAL_DAILY_RENOWN[mini(3, campaign_act)]
+	rival_renown += int(span[0]) + randi() % (int(span[1]) - int(span[0]) + 1)
+	if randf() < GameData.RIVAL_SNATCH_CHANCE:
+		var posted: Array = guild_board.filter(func(q): return str(q["status"]) == "posted")
+		if not posted.is_empty():
+			var q: Dictionary = posted[randi() % posted.size()]
+			guild_board.erase(q)
+			_news("%s took the contract: %s." % [rival_name, quest_desc(q)])
+

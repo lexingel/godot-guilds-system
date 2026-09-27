@@ -747,6 +747,7 @@ func seal_rift() -> void:
 		best_rift_rank_sealed = max(best_rift_rank_sealed, GameData.rift_rank_index(mapped_rank))
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
+	add_reputation(GameData.SEAL_RENOWN_BASE + (GameData.rift_rank_index(mapped_rank) / 3 if mapped_rank != "" else 0))
 	# Guild Board tallies (see _quest_current).
 	if mapped_rank != "":
 		_bump("rank_seals:%d" % GameData.rift_rank_index(mapped_rank))
@@ -773,6 +774,7 @@ func seal_rift() -> void:
 				flavor += " %s and %s's bond deepens (Lv%d)." % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], before + 1]
 				push_toast(sealers[i], "Bond deepened — Lv%d" % (before + 1), "%s & %s: +%d%% party damage while both stand" % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
 	for h in sealers:
+		change_morale(h, GameData.MORALE_SEAL)
 		for line in check_earned_quirks(h):
 			flavor += " " + line
 	triage_used_this_cycle = false
@@ -1013,6 +1015,13 @@ func resolve_recovery() -> void:
 func pass_time() -> void:
 	day += 1
 	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
+	for hid in in_rift:
+		var hr := find_hero(str(hid))
+		if hr:
+			hr.last_rift_day = day
+	rival_day()
+	if day % GameData.PAYDAY_DAYS == 0:
+		run_payday()
 	for h in heroes:
 		if h.busy_runs > 0:
 			h.busy_runs -= 1
@@ -1083,7 +1092,11 @@ func finish_run() -> void:
 	if run.has("tower"):
 		_end_tower()
 		return
-	_record_run(_run_outcome())
+	var outcome := _run_outcome()
+	if outcome == "Defeated":
+		for h in current_party():
+			change_morale(h, GameData.MORALE_DEFEAT)
+	_record_run(outcome)
 	_lose_left_behind()
 	run = {}
 	active_incense = {}

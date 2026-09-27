@@ -47,6 +47,10 @@ func run() -> void:
 	GameState.choose_node_type("combat")
 	GameState.engage_node()
 	var state: Dictionary = GameState.run["node_state"]["combat_state"]
+	for m in state["monsters"]:   # a long fight, so the champion surely gets a turn
+		m["hp"] = 9999.0
+		m["max_hp"] = 9999.0
+		m["dmg"] = 1.0
 	var used := false
 	for step in 30:
 		if GameState.run["node_state"].has("result"):

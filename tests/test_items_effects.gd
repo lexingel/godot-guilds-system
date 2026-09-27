@@ -17,7 +17,7 @@ func run() -> void:
 			check(it.implicit_kind != "", "implicit rolled")
 			check((it.effects.size() == 1) == (rar == "epic"), "epic cond affix only on epic")
 			var back := Item.from_dict(JSON.parse_string(JSON.stringify(it.to_dict())))
-			check(back.implicit_value == it.implicit_value and back.item_rank == it.item_rank and back.effects.size() == it.effects.size(), "roundtrip")
+			check(is_equal_approx(back.implicit_value, it.implicit_value) and back.item_rank == it.item_rank and back.effects.size() == it.effects.size(), "roundtrip")
 			print("[%s/%s] %s | %s" % [rank, rar, it.name, _desc(it)])
 	var lo := Combat.gen_item("common", "weapon", "F")
 	var hi := Combat.gen_item("common", "weapon", "SSS")
