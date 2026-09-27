@@ -113,7 +113,7 @@ const DIFFICULTIES := [
 ]
 
 ## The power the Rift Hall compares against for the Endless Rift (survivors).
-const ENDLESS_REC_POWER := 1000   # median survival ~6 min (balance_sim -- calibrate)
+const ENDLESS_REC_POWER := 1000   # a party this strong lasts roughly 8-15 min (balance_sim -- calibrate)
 
 ## Recovery in rift runs rather than real time: a downed hero sits out this
 ## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
@@ -269,7 +269,7 @@ const WOUND_HEAL_PER_RUN := 0.5
 const RIFT_RANKS := [
 	{"id": "F", "rec": 65, "base": "lesser", "hp": 0.8, "dmg": 0.85, "reward": 1.0},
 	{"id": "E", "rec": 160, "base": "lesser", "hp": 1.8, "dmg": 1.6, "reward": 1.4},
-	{"id": "D", "rec": 440, "base": "lesser", "hp": 3.2, "dmg": 2.6, "reward": 2.0},
+	{"id": "D", "rec": 220, "base": "lesser", "hp": 2.4, "dmg": 2.0, "reward": 1.7},
 	{"id": "C", "rec": 480, "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
 	{"id": "B", "rec": 740, "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
 	{"id": "A", "rec": 960, "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},

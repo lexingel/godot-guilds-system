@@ -188,7 +188,7 @@ func render() -> void:
 		var back := _header_back()
 		if not back.is_empty():
 			_combat_hotkeys["Escape"] = back[0]
-		if screen in ["terminal", "crafting_hall", "rift_hall"]:
+		if screen in ["camp", "crafting_hall", "rift_hall"]:
 			outer.add_child(_quick_nav())
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
@@ -226,7 +226,7 @@ func render() -> void:
 			else:
 				_locked_feature(v, "crafting")
 		"settings": _render_settings(v)
-		"terminal": _render_terminal(v)
+		"camp": _render_camp_screen(v)
 	_update_screen_music()
 
 	# A real navigation (not an in-place data refresh — see is_navigation
@@ -297,7 +297,7 @@ func _story_overlay(card_data: Dictionary) -> void:
 ## yet. Both AudioManager.play_music calls are safe to make unconditionally
 ## (they already no-op on a repeat of the same path, or a missing file).
 func _update_screen_music() -> void:
-	if screen == "terminal":
+	if screen == "camp":
 		AudioManager.play_music(GameData.MUSIC_PATH["camp"])
 	elif screen == "rift_run":
 		var kind := GameState.current_node_kind()
@@ -320,7 +320,7 @@ func _breadcrumb_for_screen() -> String:
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting Hall"
 		"settings": return "Settings"
-		"terminal": return "Camp" if term_tab == "camp" else "Camp — %s" % TAB_TITLE.get(term_tab, term_tab.capitalize())
+		"camp": return "Camp" if term_tab == "camp" else "Camp — %s" % TAB_TITLE.get(term_tab, term_tab.capitalize())
 		_: return ""
 
 
@@ -443,7 +443,7 @@ func _quick_nav_current() -> String:
 	match screen:
 		"crafting_hall": return "crafting"
 		"rift_hall": return "rift"
-		"terminal": return "" if term_tab == "camp" else term_tab
+		"camp": return "" if term_tab == "camp" else term_tab
 	return ""
 
 
@@ -460,7 +460,7 @@ func _quick_go(id: String) -> void:
 		"crafting": screen = "crafting_hall"
 		"rift": screen = "rift_hall"
 		_:
-			screen = "terminal"
+			screen = "camp"
 			term_tab = id
 	render()
 
@@ -549,7 +549,7 @@ func _quick_nav() -> Control:
 ## same place instead of at the bottom of a long page.
 func _header_back() -> Array:
 	var to_camp := func():
-		screen = "terminal"
+		screen = "camp"
 		term_tab = "camp"
 		hub_cluster = ""
 		medical_picker_bed = -1
@@ -557,7 +557,7 @@ func _header_back() -> Array:
 		inv_category = ""
 		render()
 	match screen:
-		"terminal":
+		"camp":
 			if term_tab == "inventory" and inv_category != "":
 				return [func(): inv_category = ""; render(), "Inventory"]
 			if term_tab == "management" and mgmt_branch != "":
@@ -579,7 +579,7 @@ func _header_back() -> Array:
 				render()
 			, "Rift Hall"]
 		"settings":
-			const NAMES := {"terminal": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "tower": "Tower",
+			const NAMES := {"camp": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "tower": "Tower",
 				"party_assembly": "Party Assembly", "crafting_hall": "Crafting Hall"}
 			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
 	return []
@@ -591,7 +591,7 @@ func _column_width() -> float:
 	var avail: float = get_viewport().get_visible_rect().size.x - 64.0
 	if screen == "rift_run":
 		return _battle_width()
-	if screen == "terminal" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory", "bestiary"]):
+	if screen == "camp" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory", "bestiary"]):
 		return clampf(avail, minf(760.0, avail), 1180.0)
 	return clampf(avail, minf(700.0, avail), 860.0)
 
@@ -785,7 +785,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 		pending_guild_name = ""
 		pending_crest = 1
 		_flavor_toast = GameData.narrative_line("guild_founded")
-		screen = "terminal"
+		screen = "camp"
 		render()
 	))
 
@@ -1430,7 +1430,7 @@ func _switch_slot(slot: int) -> void:
 	if not GameState.load_save():
 		GameState.reset()
 	if GameState.guild_name != "":
-		screen = "terminal" if GameState.run.is_empty() else "rift_run"
+		screen = "camp" if GameState.run.is_empty() else "rift_run"
 	else:
 		pending_crest = 1 + randi() % GameData.CREST_PATH.size()
 		screen = "onboard"

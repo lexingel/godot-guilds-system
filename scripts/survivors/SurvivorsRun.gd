@@ -35,16 +35,17 @@ const WEAPONS := {
 ## the role's attack.
 const ABILITY_CD := 8.0
 const ABILITY_STYLE := {
-	"burst_lowest": "strike", "execute_burst": "strike", "self_sac_burst": "strike", "hp_drain_burst": "strike",
-	"cleave_burst": "nova", "execute_all_low": "nova",
-	"mend_burst": "mend", "mend_shield_hybrid": "mend", "shield_lowest": "mend", "team_shield_burst": "mend",
+	"burst_lowest": "strike", "self_sac_burst": "strike", "hp_drain_burst": "strike",
+	"cleave_burst": "nova", "execute_all_low": "nova", "ward_break": "nova",
+	"mend_burst": "mend", "mend_shield_hybrid": "mend", "shield_lowest": "mend", "cleanse_heal": "mend",
 	"monster_dmg_mult": "slow", "debuff_lowest": "slow",
-	"team_dmg_mult": "rally", "escalate_surge": "rally", "counter_surge": "rally", "dodge_surge": "rally", "wipe_guard_surge": "rally", "reset_cooldowns": "rally",
-	"stun_strike": "strike", "execute_threshold": "strike", "armor_break": "strike", "double_strike": "strike", "mark_target": "strike",
-	"burn_all": "nova", "chain_lightning": "nova", "ward_break": "nova",
-	"taunt_ward": "mend", "undying": "mend", "revive": "mend", "shield_wall_front": "mend", "cleanse_heal": "mend",
-	"trap": "slow", "freeze_target": "slow",
-	"riposte": "rally", "evasion_round": "rally", "lifesteal_surge": "rally", "blood_price": "rally",
+	"team_dmg_mult": "rally", "escalate_surge": "rally", "counter_surge": "rally", "wipe_guard_surge": "rally", "reset_cooldowns": "rally",
+	# Signature effects keep their identity in the Endless Rift.
+	"riposte": "riposte", "revive": "revive", "trap": "trap", "freeze_target": "freeze", "stun_strike": "stun",
+	"burn_all": "burn", "chain_lightning": "chain", "mark_target": "mark", "armor_break": "mark",
+	"execute_threshold": "execute", "execute_burst": "execute", "lifesteal_surge": "lifesteal",
+	"undying": "undying", "taunt_ward": "undying", "shield_wall_front": "wall", "team_shield_burst": "wall",
+	"evasion_round": "evasion", "dodge_surge": "evasion", "blood_price": "blood", "double_strike": "double",
 }
 ## Role skills learned at level-up become auto-moves on their own timer.
 const SKILL_MOVES := {
@@ -114,6 +115,9 @@ var dodge := 0.0
 var mend := 0.0
 var rally_t := 0.0
 var dodge_t := 0.0   # a Smoke Bomb or an evasion twist: extra dodge while > 0
+var wall_t := 0.0    # a shield wall: the party takes half damage while > 0
+var regen_t := 0.0   # lifesteal: the party regains 3% HP a second while > 0
+var traps: Array = []   # {pos, r, dmg, life}: the first foe to step in springs it
 
 
 func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
@@ -183,8 +187,11 @@ func step(dt: float, move_dir: Vector2) -> void:
 	_pickups(dt)
 	rally_t = maxf(0.0, rally_t - dt)
 	dodge_t = maxf(0.0, dodge_t - dt)
+	wall_t = maxf(0.0, wall_t - dt)
+	regen_t = maxf(0.0, regen_t - dt)
+	_tick_statuses(dt)
 	# Mending: a round's worth (see Combat) spread over ~10 seconds.
-	var regen := 0.01 * _stat("regen") + mend * 0.1
+	var regen := 0.01 * _stat("regen") + mend * 0.1 + (0.03 if regen_t > 0.0 else 0.0)
 	if regen > 0.0:
 		for h in heroes:
 			if h["alive"]:
@@ -364,7 +371,8 @@ func _attacks(dt: float) -> void:
 				_ability(h, w, area)
 				if int(h["ab_rank"]) >= ABILITY_RANK_MAX:
 					_twist(h, w, area)
-		h["taunt_t"] = maxf(0.0, float(h["taunt_t"]) - dt)
+		for tk in ["taunt_t", "riposte_t", "undying_t"]:
+			h[tk] = maxf(0.0, float(h.get(tk, 0.0)) - dt)
 		var skills: Dictionary = h["skills"]
 		for sid in skills:
 			skills[sid] = float(skills[sid]) - dt
@@ -492,6 +500,101 @@ func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", ""))})
 	var pw := _ability_power(h)
 	match str(h.get("style", "")):
+		"riposte":
+			h["riposte_t"] = 6.0
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 70.0})
+			return
+		"revive":
+			for o in heroes:
+				if not o["alive"]:
+					o["alive"] = true
+					o["down_t"] = 0.0
+					o["hp"] = o["max_hp"] * 0.5 * pw
+					o["pos"] = h["pos"]
+					events.append({"type": "revive", "hero": o["hero"].id})
+					return
+			_heal_lowest(0.25 * pw)
+			return
+		"trap":
+			traps.append({"pos": _densest_point(h["pos"], 300.0), "r": 90.0 * area, "dmg": _hero_dmg(h, 5.0 * pw), "life": 10.0})
+			events.append({"type": "pulse", "pos": traps[-1]["pos"], "r": 90.0 * area, "role": h["role"]})
+			return
+		"freeze", "stun":
+			var fr := (220.0 if str(h["style"]) == "freeze" else 140.0) * area
+			for i in range(foes.size() - 1, -1, -1):
+				if i < foes.size() and foes[i]["pos"].distance_squared_to(h["pos"]) <= fr * fr:
+					foes[i]["stun_t"] = 2.5
+					if str(h["style"]) == "stun":
+						_damage(i, _hero_dmg(h, 2.5 * pw))
+			events.append({"type": "shockwave", "pos": h["pos"], "r": fr})
+			return
+		"burn":
+			for f in foes:
+				if f["pos"].distance_squared_to(h["pos"]) <= 260.0 * 260.0 * area * area:
+					f["burn_t"] = 4.0
+					f["burn_dps"] = maxf(float(f.get("burn_dps", 0.0)), _hero_dmg(h, 0.8 * pw))
+			events.append({"type": "meteor", "pos": h["pos"], "r": 200.0 * area})
+			return
+		"chain":
+			for k in 5:
+				var near: Array = []
+				for i in foes.size():
+					if foes[i]["pos"].distance_squared_to(h["pos"]) <= 350.0 * 350.0:
+						near.append(i)
+				if near.is_empty():
+					break
+				var ci: int = near[rng.randi() % near.size()]
+				events.append({"type": "stab", "from": h["pos"], "to": foes[ci]["pos"]})
+				_damage(ci, _hero_dmg(h, 2.0 * pw))
+			return
+		"mark":
+			for f in foes:
+				if f["pos"].distance_squared_to(h["pos"]) <= 250.0 * 250.0:
+					f["marked_t"] = 6.0
+			events.append({"type": "pulse", "pos": h["pos"], "r": 250.0, "role": h["role"]})
+			return
+		"execute":
+			for i in range(foes.size() - 1, -1, -1):
+				if i < foes.size() and str(foes[i]["tier"]) != "boss" and foes[i]["pos"].distance_squared_to(h["pos"]) <= 250.0 * 250.0 and float(foes[i]["hp"]) <= float(foes[i]["max_hp"]) * 0.35:
+					_damage(i, float(foes[i]["hp"]) + 1.0)
+			var best_x := _nearest_foe(h["pos"], 300.0)
+			if best_x >= 0:
+				events.append({"type": "meteor", "pos": foes[best_x]["pos"], "r": 60.0})
+				_damage(best_x, _hero_dmg(h, 3.0 * pw))
+			return
+		"lifesteal":
+			regen_t = 6.0
+			rally_t = maxf(rally_t, 3.0)
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 120.0})
+			return
+		"undying":
+			h["undying_t"] = 3.0
+			if h["role"] == "warrior":
+				h["taunt_t"] = 3.0
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 90.0})
+			return
+		"wall":
+			wall_t = 4.0
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 160.0})
+			return
+		"evasion":
+			dodge_t = maxf(dodge_t, 3.0)
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 110.0})
+			return
+		"blood":
+			h["hp"] = maxf(1.0, h["hp"] - h["max_hp"] * 0.15)
+			rally_t = RALLY_TIME * 1.5
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 120.0})
+			return
+		"double":
+			for k in 2:
+				var t2 := _nearest_foe(h["pos"], 300.0)
+				if t2 < 0:
+					break
+				events.append({"type": "stab", "from": h["pos"], "to": foes[t2]["pos"]})
+				_damage(t2, _hero_dmg(h, 2.5 * pw))
+			return
+	match str(h.get("style", "")):
 		"strike":
 			var best := -1
 			for i in foes.size():
@@ -545,6 +648,33 @@ func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 			events.append({"type": "sanctuary", "pos": h["pos"], "r": 200.0 * area})
 
 
+## Burning and marked foes, and traps waiting to be sprung.
+func _tick_statuses(dt: float) -> void:
+	for i in range(foes.size() - 1, -1, -1):
+		if i >= foes.size():
+			continue
+		var f: Dictionary = foes[i]
+		f["marked_t"] = maxf(0.0, float(f.get("marked_t", 0.0)) - dt)
+		if float(f.get("burn_t", 0.0)) > 0.0:
+			f["burn_t"] = float(f["burn_t"]) - dt
+			_damage(i, float(f.get("burn_dps", 0.0)) * dt)
+	for t in traps.duplicate():
+		t["life"] = float(t["life"]) - dt
+		var sprung := false
+		for f in foes:
+			if f["pos"].distance_squared_to(t["pos"]) <= float(t["r"]) * float(t["r"]):
+				sprung = true
+				break
+		if sprung:
+			events.append({"type": "meteor", "pos": t["pos"], "r": float(t["r"])})
+			for i in range(foes.size() - 1, -1, -1):
+				if i < foes.size() and foes[i]["pos"].distance_squared_to(t["pos"]) <= float(t["r"]) * float(t["r"]):
+					foes[i]["stun_t"] = 1.5
+					_damage(i, float(t["dmg"]))
+		if sprung or float(t["life"]) <= 0.0:
+			traps.erase(t)
+
+
 func _densest_point(p: Vector2, reach: float) -> Vector2:
 	var best := p
 	var best_n := -1
@@ -570,7 +700,7 @@ func _hit_area(center: Vector2, r: float, dmg: float) -> void:
 
 func _damage(i: int, dmg: float) -> void:
 	var f: Dictionary = foes[i]
-	f["hp"] -= dmg
+	f["hp"] -= dmg * (1.3 if float(f.get("marked_t", 0.0)) > 0.0 else 1.0)
 	f["flash"] = 0.12
 	if f["tier"] == "boss" and not f["phased"] and f["hp"] <= f["max_hp"] * 0.5 and f["hp"] > 0.0:
 		f["phased"] = true
@@ -638,7 +768,12 @@ func _contact(dt: float) -> void:
 				if rng.randf() < dodge + (0.4 if dodge_t > 0.0 else 0.0):
 					events.append({"type": "dodge", "hero": h["hero"].id})
 					break
-				h["hp"] -= f["dmg"] * guard * (0.6 if float(h.get("taunt_t", 0.0)) > 0.0 else 1.0)
+				if float(h.get("undying_t", 0.0)) > 0.0:
+					break
+				h["hp"] -= f["dmg"] * guard * (0.6 if float(h.get("taunt_t", 0.0)) > 0.0 else 1.0) * (0.5 if wall_t > 0.0 else 1.0)
+				if float(h.get("riposte_t", 0.0)) > 0.0 and i < foes.size() and foes[i] == f:
+					_damage(i, _hero_dmg(h, 2.0))
+					events.append({"type": "stab", "from": h["pos"], "to": f["pos"]})
 				events.append({"type": "hurt", "hero": h["hero"].id, "dmg": f["dmg"] * guard})
 				if _stat("thorns") > 0:
 					_damage(i, float(Combat.dmg_of(h["hero"])) * 0.4 * _stat("thorns") * dmg_mult())
@@ -786,5 +921,5 @@ func autopilot_dir() -> Vector2:
 ## What the guild earns for this run (time survived and kills).
 func rewards() -> Dictionary:
 	var m := minutes()
-	return {"coins": int(round(45.0 * m + 0.15 * kills)), "crystals": int(round(7.0 * m + 3.0 * elites_killed + 20.0 * bosses_killed)),
+	return {"coins": int(round(45.0 * m + 0.05 * kills)), "crystals": int(round(7.0 * m + 3.0 * elites_killed + 20.0 * bosses_killed)),
 		"xp": int(round(12.0 * m)), "loot": elites_killed / 4 + bosses_killed}

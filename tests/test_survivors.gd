@@ -124,3 +124,37 @@ func run() -> void:
 	for k in 20:
 		r5.step(0.1, Vector2.ZERO)
 	check(float(r5.heroes[0]["skills"][sk_id]) > 0.0, "the learned skill fires and goes on cooldown")
+
+	# Signature Abilities keep their identity in the Endless Rift.
+	var r6 := SurvivorsRun.new(party, "vale", 31)
+	var h6: Dictionary = r6.heroes[0]
+	var w6: Dictionary = SurvivorsRun.WEAPONS[h6["role"]]
+	var near_foe := r6._add_foe("combat", h6["pos"] + Vector2(60, 0))
+	h6["style"] = "freeze"
+	r6._ability(h6, w6, 1.0)
+	check(float(near_foe["stun_t"]) > 0.0, "Freeze stops foes around the hero")
+	h6["style"] = "mark"
+	r6._ability(h6, w6, 1.0)
+	var hp6 := float(near_foe["hp"])
+	r6._damage(r6.foes.find(near_foe), 10.0)
+	check(is_equal_approx(hp6 - float(near_foe["hp"]), 13.0), "marked foes take 30% more")
+	h6["style"] = "trap"
+	r6._ability(h6, w6, 1.0)
+	check(r6.traps.size() == 1, "Trap sets a snare")
+	r6.traps[0]["pos"] = near_foe["pos"]
+	near_foe["stun_t"] = 0.0
+	r6._tick_statuses(0.1)
+	check(r6.traps.is_empty() and (not r6.foes.has(near_foe) or float(near_foe["stun_t"]) > 0.0), "a foe springs the snare")
+	if r6.heroes.size() > 1:
+		r6.heroes[1]["alive"] = false
+		h6["style"] = "revive"
+		r6._ability(h6, w6, 1.0)
+		check(r6.heroes[1]["alive"], "Revive raises a downed companion")
+	h6["style"] = "undying"
+	r6._ability(h6, w6, 1.0)
+	var hp_u: float = h6["hp"]
+	var biter := r6._add_foe("combat", h6["pos"])
+	biter["hit_cd"] = 0.0
+	r6._contact(0.1)
+	check(h6["hp"] == hp_u, "Undying: no damage for a moment")
+	check(r6.rewards()["coins"] < 45.0 * r6.minutes() + 0.1 * r6.kills + 1, "kills pay 0.05 Gold each")

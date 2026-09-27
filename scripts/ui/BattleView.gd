@@ -1038,7 +1038,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				v.add_child(_label(line, 12, true))
 		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" if in_tower else "Return to camp", func():
 			GameState.finish_run()
-			screen = "tower" if in_tower else "terminal"
+			screen = "tower" if in_tower else "camp"
 			render()
 		))
 

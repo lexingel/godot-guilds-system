@@ -259,7 +259,7 @@ func _run_bar(in_combat: bool) -> Control:
 			top.add_child(_icon_domain_button("ember", "res://assets/skills/wing.png", "Leave rift", func():
 				_confirm_retreat = false
 				GameState.retreat_now()
-				screen = "terminal"
+				screen = "camp"
 				render()
 			))
 			top.add_child(_button("Stay", func(): _confirm_retreat = false; render()))
@@ -335,7 +335,7 @@ func _orders_bar() -> Control:
 
 func _render_rift_run(v: VBoxContainer) -> void:
 	if GameState.run.is_empty():
-		screen = "terminal"
+		screen = "camp"
 		render()
 		return
 	var kind := GameState.current_node_kind()
@@ -411,7 +411,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(line, 12, true))
 		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to camp", func():
 			GameState.finish_run()
-			screen = "terminal"
+			screen = "camp"
 			render()
 		))
 		return

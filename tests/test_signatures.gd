@@ -179,3 +179,25 @@ func run() -> void:
 	for arch in found:
 		check(bool(found[arch]), "%s twist applies" % arch)
 	check(found.size() >= 4, "twists seen for %d archetypes" % found.size())
+
+	# Auto-battle fires an Ability only when it helps.
+	GameState.heroes.clear()
+	var med := _hero("cleric", "rift-medic", "back")
+	var tank := _hero("warrior", "stormguard", "front")
+	var p4: Array[Hero] = [med, tank]
+	var st4 := _state(p4)
+	st4["momentum"] = 5
+	check(str(Combat.auto_action(st4, med)["action"]) != "ability", "Revive waits while nobody is down or badly hurt")
+	tank.hp = 0
+	check(str(Combat.auto_action(st4, med)["action"]) == "ability", "Revive fires when an ally is down")
+	tank.hp = Combat.max_hp(tank)
+	st4["monsters"][1]["_winding"] = true
+	var aa := Combat.auto_action(st4, tank)
+	check(str(aa["action"]) in ["ability", "skill:shield_bash"] and int(aa["target"]) == 1, "a stun goes to the foe winding up")
+	st4["monsters"][1]["_winding"] = false
+	st4["momentum"] = 0
+	GameState.tonics = {"healing": 1}
+	med.hp = 1
+	var ta := Combat.auto_action(st4, tank)
+	check(str(ta["action"]) == "tonic:healing" and str(ta["ally"]) == med.id, "auto gives a Healing Tonic to a badly hurt ally")
+	GameState.tonics = {}

@@ -14,7 +14,7 @@ const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
 
 
-var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | party_assembly | rift_run | terminal | crafting_hall | settings
+var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | party_assembly | rift_run | camp | crafting_hall | settings
 
 
 var term_tab: String = "camp"      # camp | roster | inventory | recruits | medical | management | bestiary | compendium | quests

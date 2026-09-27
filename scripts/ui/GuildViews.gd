@@ -4,7 +4,7 @@ extends RiftRunView
 ## bestiary, compendium, quests and guild management.
 
 # ---------------- Terminal ----------------
-func _render_terminal(v: VBoxContainer) -> void:
+func _render_camp_screen(v: VBoxContainer) -> void:
 	var tier := Combat.guild_tier_info()
 	var tier_name := str(tier["name"])
 	# Guild Tier is purely derived (not stored), so "just reached a new tier"
@@ -1467,7 +1467,7 @@ func _render_management_hub(v: VBoxContainer) -> void:
 			render()
 			get_tree().create_timer(3.0).timeout.connect(func():
 				confirm_reset = false
-				if screen == "terminal" and term_tab == "management" and mgmt_branch == "":
+				if screen == "camp" and term_tab == "management" and mgmt_branch == "":
 					render()
 			)
 			return

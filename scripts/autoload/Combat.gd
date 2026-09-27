@@ -276,13 +276,63 @@ func auto_action(state: Dictionary, h: Hero) -> Dictionary:
 	if bool(state.get("is_boss", false)) and GameState.champion_call_ready(h):
 		return {"action": "call", "target": 0}
 	if ok.call("ability"):
-		return {"action": "ability", "target": tgt}
+		var at := _ability_target(state, h)
+		if at >= 0:
+			return {"action": "ability", "target": at}
+	# A Healing Tonic for a badly hurt ally when no heal skill is ready.
+	if GameState.tonic_count("healing") > 0:
+		var worst: Hero = null
+		for x in party:
+			if x.hp > 0 and x.hp < max_hp(x) * 0.3 and (worst == null or x.hp < worst.hp):
+				worst = x
+		if worst:
+			return {"action": "tonic:healing", "target": 0, "ally": worst.id}
 	# Spend on a damage skill only with enough left over for someone's Ability.
 	if int(state.get("momentum", 0)) >= GameData.ABILITY_MOMENTUM_COST + 2:
 		for sk in GameData.hero_role_skills(h):
 			if str(sk["effect"]) in ["pierce", "strike", "backstab", "volley"] and ok.call("skill:" + str(sk["id"])):
 				return {"action": "skill:" + str(sk["id"]), "target": tgt}
 	return {"action": "attack", "target": tgt}
+
+
+## Whether `h`'s Ability is worth firing now, and at which foe: the index,
+## or -1 to hold it. Heals wait for someone hurt, Revive for someone down,
+## defensive ones for a big hit coming; stuns go to a foe winding up, marks
+## to the toughest foe, executes to the weakest. Full Momentum always fires.
+func _ability_target(state: Dictionary, h: Hero) -> int:
+	var monsters: Array = state["monsters"]
+	var party: Array = state["party"]
+	var weakest: int = max(0, _lowest_hp_living_monster_idx(monsters))
+	var toughest := weakest
+	for i in monsters.size():
+		if float(monsters[i]["hp"]) > float(monsters[toughest]["hp"]):
+			toughest = i
+	var full := int(state.get("momentum", 0)) >= GameData.MOMENTUM_MAX - 1
+	var eff := str(GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}).get("effect", ""))
+	var hurt: bool = party.any(func(x): return x.hp > 0 and x.hp < max_hp(x) * 0.6)
+	var danger := false
+	for mi in monsters.size():
+		var it := monster_intent(state, mi)
+		if it.get("kind") in ["sweep", "heavy", "windup"] or (it.get("target") != null and int(it.get("dmg", 0)) >= max_hp(it["target"]) * 0.25):
+			danger = true
+	match eff:
+		"revive":
+			return 0 if party.any(func(x): return x.hp <= 0) or party.any(func(x): return x.hp > 0 and x.hp < max_hp(x) * 0.4) or full else -1
+		"mend_burst", "cleanse_heal", "mend_shield_hybrid", "shield_lowest", "team_shield_burst", "shield_wall_front":
+			var ailing: bool = not (state.get("hero_burn", {}) as Dictionary).is_empty() or not (state.get("hero_poison", {}) as Dictionary).is_empty() or not (state.get("_weakened", {}) as Dictionary).is_empty()
+			return 0 if hurt or (eff == "cleanse_heal" and ailing) or full else -1
+		"trap", "riposte", "taunt_ward", "undying", "evasion_round", "dodge_surge", "wipe_guard_surge":
+			return 0 if danger or full else -1
+		"stun_strike", "freeze_target":
+			for mi in monsters.size():
+				if float(monsters[mi]["hp"]) > 0 and (monsters[mi].get("_winding", false) or monsters[mi].get("_charged", false)):
+					return mi
+			return toughest
+		"mark_target", "armor_break":
+			return toughest
+		"execute_threshold":
+			return weakest if float(monsters[weakest]["hp"]) <= float(monsters[weakest]["max_hp"]) * 0.35 or full else -1
+	return weakest
 
 
 ## What monster `i` is about to do this round, for the combat screen and the
