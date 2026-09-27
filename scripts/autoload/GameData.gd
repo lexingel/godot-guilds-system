@@ -952,6 +952,29 @@ const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
 const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
 const HEAVY_BLOW_MULT := 3.0
 
+## ---------------- Boss phases & elite affixes ----------------
+## Every boss turns once, at half health: one of these, rolled at fight start
+## and shown on its plate so the player can plan for it.
+const BOSS_PHASE_AT := 0.5
+const BOSS_PHASES := {
+	"summon": {"name": "Call the Horde", "desc": "At half health, two foes answer its call.", "line": "%s howls, and the rift answers with reinforcements!", "icon": "res://assets/skills/icon_boss_skull.png"},
+	"fury": {"name": "Fury", "desc": "At half health it hits 20% harder and winds up heavy blows more often.", "line": "%s roars in fury!", "icon": "res://assets/skills/sword_dual.png"},
+	"barrier": {"name": "Last Bastion", "desc": "At half health it raises a ward worth 12% of its health.", "line": "%s raises a shimmering barrier!", "icon": "res://assets/skills/shield_basic.png"},
+}
+## Elites roll one affix (two in Endless and B-rank+ mapped rifts), each
+## costing them 15% HP. Each rides an existing channel: a monster ability,
+## armor, a status, or extra adds.
+const ELITE_AFFIXES := {
+	"vampiric": {"name": "Vampiric", "desc": "Heals for 25% of the damage it deals.", "icon": "res://assets/skills/dagger_red.png", "ability": {"kind": "drain", "name": "Vampiric", "value": 0.25}},
+	"thorned": {"name": "Thorned", "desc": "Reflects 15% of the damage it takes back at the attacker.", "icon": "res://assets/skills/shield_blue.png", "ability": {"kind": "reflect", "name": "Thorned", "value": 0.15}},
+	"shielded": {"name": "Shielded", "desc": "Starts behind a ward worth 20% of its health.", "icon": "res://assets/skills/shield_orange.png", "ability": {"kind": "shielded", "name": "Shielded", "value": 0.2}},
+	"venomous": {"name": "Venomous", "desc": "Its hits poison.", "icon": "res://assets/skills/shard_green.png", "ability": {"kind": "poison", "name": "Venomous", "value": 0.06}},
+	"juggernaut": {"name": "Juggernaut", "desc": "Heavily armored: shrugs off 35% of basic attacks.", "icon": "res://assets/skills/armor_chest.png", "armor": 0.35},
+	"blazing": {"name": "Blazing", "desc": "Its hits can set heroes ablaze.", "icon": "res://assets/relics/escalate_pct.png", "status": "burn"},
+	"hasted": {"name": "Hasted", "desc": "Acts twice each round (each hit a little weaker) and never winds up.", "icon": "res://assets/skills/boots.png", "hasted": true},
+	"commander": {"name": "Commander", "desc": "Always brings two (weaker) escorts.", "icon": "res://assets/skills/helm.png", "adds": 2},
+}
+
 ## ---------------- Run boons ----------------
 ## Picked after an elite win (1 of 3), kept for the rest of that rift only.
 ## Each is a stat ("kind"/"value", read through Combat.boon_total) or a relic-

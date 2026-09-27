@@ -816,12 +816,24 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			main["mechanic2"] = mechanic2
 	else:
 		main["mechanic"] = {}
+	if kind == "boss":
+		var phases: Array = GameData.BOSS_PHASES.keys()
+		if diff.get("tower_single", false):
+			phases.erase("summon")
+		main["phase"] = str(phases[randi() % phases.size()])
+	elif kind == "elite":
+		_roll_affixes(main, 2 if diff.get("id") == "endless" or diff.get("elite_chance_up", false) else 1)
 	main["max_hp"] = main["hp"]
 	main["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	monsters.append(main)
 
 	var add_roll := randf() < 0.35
 	var add_count := 1 + randi() % 2
+	var add_mult := 0.6
+	if (main.get("affixes", []) as Array).has("commander"):
+		add_roll = true
+		add_count = 2
+		add_mult = 0.35
 	if diff.get("tower_swarm", false):
 		add_roll = true
 		add_count = 2
@@ -829,16 +841,74 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		add_roll = false
 	if add_roll:
 		for i in add_count:
-			var add := gen_monster(diff, floor_idx, "combat")
-			add["hp"] = max(1, int(round(add["hp"] * 0.6)))
-			add["dmg"] = max(1, int(round(add["dmg"] * 0.6)))
-			add["max_hp"] = add["hp"]
-			add["mechanic"] = {}
-			add["ability"] = GameData.MONSTER_ABILITIES.get(str(add["name"]), {})
-			add["is_main"] = false
-			add["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
-			monsters.append(add)
+			monsters.append(_make_add(diff, floor_idx, add_mult, add_mult))
 	return monsters
+
+
+## A weaker "combat"-tier foe fighting alongside an elite or boss.
+func _make_add(diff: Dictionary, floor_idx: int, hp_mult: float, dmg_mult: float) -> Dictionary:
+	var add := gen_monster(diff, floor_idx, "combat")
+	add["hp"] = max(1, int(round(add["hp"] * hp_mult)))
+	add["dmg"] = max(1, int(round(add["dmg"] * dmg_mult)))
+	add["max_hp"] = add["hp"]
+	add["mechanic"] = {}
+	add["ability"] = GameData.MONSTER_ABILITIES.get(str(add["name"]), {})
+	add["is_main"] = false
+	add["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
+	return add
+
+
+const AFFIX_HP_MULT := 0.85
+
+
+## Gives an elite `count` GameData.ELITE_AFFIXES, never two that need the
+## monster's one ability slot.
+func _roll_affixes(m: Dictionary, count: int) -> void:
+	var pool: Array = GameData.ELITE_AFFIXES.keys()
+	pool.shuffle()
+	var picked: Array = []
+	for id in pool:
+		if picked.size() >= count:
+			break
+		var a: Dictionary = GameData.ELITE_AFFIXES[id]
+		if a.has("ability") and not (m["ability"] as Dictionary).is_empty():
+			continue
+		picked.append(id)
+		if a.has("ability"):
+			m["ability"] = a["ability"]
+		if a.has("armor"):
+			m["armor"] = maxf(float(m["armor"]), float(a["armor"]))
+		if a.has("status"):
+			m["status"] = a["status"]
+		if a.get("hasted", false):
+			m["dmg"] = maxi(1, int(round(float(m["dmg"]) * 0.55)))
+		# The affix is the threat, not a free buff on top.
+		m["hp"] = maxi(1, int(round(float(m["hp"]) * AFFIX_HP_MULT)))
+	m["affixes"] = picked
+
+
+## A boss turns once at half health (GameData.BOSS_PHASES).
+func _check_phases(state: Dictionary) -> void:
+	var monsters: Array = state["monsters"]
+	for i in monsters.size():
+		var m: Dictionary = monsters[i]
+		var ph := str(m.get("phase", ""))
+		if ph == "" or m.get("_phased", false) or float(m["hp"]) <= 0.0 or float(m["hp"]) > float(m["max_hp"]) * GameData.BOSS_PHASE_AT:
+			continue
+		m["_phased"] = true
+		var info: Dictionary = GameData.BOSS_PHASES[ph]
+		(state["log"] as Array).append(str(info["line"]) % m["name"])
+		state["_phase_banner"] = [str(m["name"]), str(info["name"])]
+		match ph:
+			"fury":
+				m["dmg"] = int(round(float(m["dmg"]) * 1.2))
+				m["windup_bonus"] = 0.15
+			"barrier":
+				var ws: Dictionary = state["monster_shields"]
+				ws[i] = float(ws.get(i, 0.0)) + round(float(m["max_hp"]) * 0.12)
+			"summon":
+				for k in 2:
+					monsters.append(_make_add(state["diff"], int(state["floor_idx"]), 0.3, 0.3))
 
 
 ## Guild Management node display strings — a match on node id since the HTML
@@ -1404,6 +1474,11 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		var mechanic2: Dictionary = m.get("mechanic2", {})
 		if not mechanic2.is_empty():
 			log.append("%s: %s" % [mechanic2["name"], mechanic2["desc"]])
+		if m.has("phase"):
+			var ph: Dictionary = GameData.BOSS_PHASES[m["phase"]]
+			log.append("%s: %s" % [ph["name"], ph["desc"]])
+		for a in m.get("affixes", []):
+			log.append("%s: %s" % [GameData.ELITE_AFFIXES[a]["name"], GameData.ELITE_AFFIXES[a]["desc"]])
 	if alpha_strikes > 0:
 		var alpha: float = team_dmg_base * alpha_strikes
 		monsters[0]["hp"] = float(monsters[0]["hp"]) - round(alpha)
@@ -1512,6 +1587,9 @@ func describe_incoming(state: Dictionary) -> String:
 				return "Regenerating — it will heal after this exchange."
 			"frenzied":
 				return "Frenzied — its blows already hit harder."
+	for m in monsters:
+		if m.has("phase") and not m.get("_phased", false) and float(m["hp"]) > 0.0 and float(m["hp"]) <= float(m["max_hp"]) * 0.7:
+			return "%s is close to half health: %s." % [str(m["name"]).split(",")[0], str(GameData.BOSS_PHASES[m["phase"]]["desc"]).trim_prefix("At half health, ").trim_prefix("At half health ")]
 
 	var party: Array[Hero] = state["party"]
 	var living: Array[Hero] = []
@@ -1630,6 +1708,8 @@ func _compute_turn_order(state: Dictionary) -> Array:
 	for i in monsters.size():
 		if float(monsters[i]["hp"]) > 0:
 			entries.append({"type": "monster", "id": i, "_spd": float(monsters[i].get("spd", 10)) + randf() * 0.01})
+			if (monsters[i].get("affixes", []) as Array).has("hasted"):
+				entries.append({"type": "monster", "id": i, "_spd": float(monsters[i].get("spd", 10)) * 0.4 + randf() * 0.01})
 	entries.sort_custom(func(a, b): return float(a["_spd"]) > float(b["_spd"]))
 	return entries
 
@@ -1717,10 +1797,12 @@ func _start_round(state: Dictionary) -> void:
 		if int(mw.get("_windup_cd", 0)) > 0:
 			mw["_windup_cd"] = int(mw["_windup_cd"]) - 1
 			continue
+		if (mw.get("affixes", []) as Array).has("hasted"):
+			continue
 		var wtier := str(mw.get("tier", "combat"))
 		if wtier == "combat" and GameData.WINDUP_BRUTES.has(str(mw["name"])):
 			wtier = "brute"
-		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)) + float(state.get("diff", {}).get("windup_bonus", 0.0)):
+		if randf() < float(GameData.WINDUP_CHANCE.get(wtier, 0.0)) + float(state.get("diff", {}).get("windup_bonus", 0.0)) + float(mw.get("windup_bonus", 0.0)):
 			mw["_winding"] = true
 	if int(state["round_num"]) % 3 == 0 and not living.is_empty():
 		_fire("round_third", state, living[0])
@@ -2323,6 +2405,7 @@ func resolve_turn(state: Dictionary) -> Dictionary:
 		var monsters: Array = state["monsters"]
 		if i < monsters.size() and float(monsters[i]["hp"]) > 0:
 			_resolve_monster_action(state, i)
+	_check_phases(state)
 
 	var outcome := _check_monsters_defeated(state)
 	if not outcome.is_empty():

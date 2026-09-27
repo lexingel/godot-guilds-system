@@ -1382,8 +1382,14 @@ func _monster_statuses(state: Dictionary, i: int) -> Array:
 		var icon: String = GameData.BOSS_MECHANIC_ICON.get(str(mech.get("id", "")), "")
 		if icon != "":
 			out.append({"icon": icon, "tip": "%s — %s" % [str(mech["name"]), str(mech["desc"])], "color": Palette.ELITE})
+	if m.has("phase"):
+		var ph: Dictionary = GameData.BOSS_PHASES[m["phase"]]
+		out.append({"icon": ph["icon"], "tip": "%s — %s%s" % [ph["name"], ph["desc"], " (active)" if m.get("_phased", false) else ""], "color": Palette.HAZARD if m.get("_phased", false) else Palette.ELITE})
+	for a in m.get("affixes", []):
+		var af: Dictionary = GameData.ELITE_AFFIXES[a]
+		out.append({"icon": af["icon"], "tip": "%s — %s" % [af["name"], af["desc"]], "color": Palette.ELITE})
 	var ability: Dictionary = m.get("ability", {})
-	if m.get("mechanic", {}).is_empty() and not ability.is_empty():
+	if m.get("mechanic", {}).is_empty() and not ability.is_empty() and not m.has("affixes"):
 		var a_icon: String = GameData.MONSTER_ABILITY_ICON.get(str(ability["kind"]), "")
 		if a_icon != "":
 			out.append({"icon": a_icon, "tip": str(ability["name"]), "color": Palette.ELITE})
@@ -1962,7 +1968,13 @@ func _turn_sfx(lines: Array) -> void:
 
 func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -> void:
 	var round_num := int(state.get("round_num", 0))
-	if state.get("is_boss", false) and not is_same(_boss_intro_for, state):
+	if state.has("_phase_banner"):
+		var pb: Array = state["_phase_banner"]
+		state.erase("_phase_banner")
+		AudioManager.play_sfx(GameData.SFX_PATH["boss"])
+		_title_card(arena, W, H, str(pb[1]), "%s enters its second phase" % str(pb[0]).split(",")[0], Palette.HAZARD)
+		return
+	if (state.get("is_boss", false) or state.get("is_elite", false)) and not is_same(_boss_intro_for, state):
 		_boss_intro_for = state
 		AudioManager.play_sfx(GameData.SFX_PATH["boss"])
 		_banner_state = state
@@ -1971,39 +1983,14 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 		for m in state["monsters"]:
 			if float(m["max_hp"]) > float(boss["max_hp"]):
 				boss = m
-		var card := _vbox(2)
-		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var band := ColorRect.new()
-		band.color = Color(0, 0, 0, 0.6)
-		band.size = Vector2(W, 96)
-		band.position = Vector2(0, H * 0.32)
-		band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		arena.add_child(band)
-		var nm := _label(str(boss["name"]), 30)
-		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		_shadow(nm)
-		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		card.add_child(nm)
-		var mechs: Array[String] = []
+		var tags: Array[String] = []
 		for k in ["mechanic", "mechanic2"]:
 			if not boss.get(k, {}).is_empty():
-				mechs.append(str(boss[k]["name"]))
-		var sub := _label(("Tower Guardian" if GameState.run.has("tower") else "Rift Warden") + (" · " + ", ".join(mechs) if not mechs.is_empty() else ""), 14)
-		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_shadow(sub)
-		card.add_child(sub)
-		card.size = Vector2(W, 80)
-		card.position = Vector2(W, H * 0.32 + 10)
-		arena.add_child(card)
-		var tw := card.create_tween()
-		tw.set_ignore_time_scale(true)
-		tw.tween_property(card, "position:x", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_interval(1.4)
-		tw.tween_property(card, "modulate:a", 0.0, 0.4)
-		tw.parallel().tween_property(band, "modulate:a", 0.0, 0.4)
-		tw.tween_callback(card.queue_free)
-		tw.tween_callback(band.queue_free)
-		AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy"])
+				tags.append(str(boss[k]["name"]))
+		for a in boss.get("affixes", []):
+			tags.append(str(GameData.ELITE_AFFIXES[a]["name"]))
+		var who := "Elite" if state.get("is_elite", false) else ("Tower Guardian" if GameState.run.has("tower") else "Rift Warden")
+		_title_card(arena, W, H, str(boss["name"]), who + (" · " + ", ".join(tags) if not tags.is_empty() else ""), Palette.EMBER_BRIGHT)
 		return
 	if (is_same(_banner_state, state) and _banner_round == round_num) or round_num <= 0:
 		return
@@ -2026,6 +2013,40 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 	tw.tween_property(l, "position:x", W * 0.25, 0.3).set_ease(Tween.EASE_IN)
 	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.3)
 	tw.tween_callback(l.queue_free)
+
+
+## A big name sliding across a dark band mid-arena (boss/elite intro, a boss
+## changing phase).
+func _title_card(arena: Control, W: float, H: float, title: String, subtitle: String, color: Color) -> void:
+	var card := _vbox(2)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var band := ColorRect.new()
+	band.color = Color(0, 0, 0, 0.6)
+	band.size = Vector2(W, 96)
+	band.position = Vector2(0, H * 0.32)
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	arena.add_child(band)
+	var nm := _label(title, 30)
+	nm.add_theme_color_override("font_color", color)
+	_shadow(nm)
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card.add_child(nm)
+	var sub := _label(subtitle, 14)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_shadow(sub)
+	card.add_child(sub)
+	card.size = Vector2(W, 80)
+	card.position = Vector2(W, H * 0.32 + 10)
+	arena.add_child(card)
+	var tw := card.create_tween()
+	tw.set_ignore_time_scale(true)
+	tw.tween_property(card, "position:x", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.4)
+	tw.tween_property(card, "modulate:a", 0.0, 0.4)
+	tw.parallel().tween_property(band, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(card.queue_free)
+	tw.tween_callback(band.queue_free)
+	AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy"])
 
 
 ## A defeated monster flashes, sinks and fades out.
