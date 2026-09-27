@@ -377,7 +377,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 	reroll.disabled = GameState.coins < GameData.CHAMPION_REROLL_COST
 	reroll.tooltip_text = "A free set of offers also arrives every time you seal a rift."
 	v.add_child(reroll)
-	v.add_child(_wrap_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Headhunter Guarantee active (a C+ recruit is assured each refresh)" if GameState.headhunter_guarantee() else ""], 11, true))
+	v.add_child(_wrap_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Scouts' Lodge: a C+ recruit is assured each refresh" if GameState.headhunter_guarantee() else ""], 11, true))
 	v.add_child(_hsep())
 
 	v.add_child(_label("Hero Recruits — %d/%d roster slots" % [GameState.heroes.size(), GameState.hero_slot_cap()]))
@@ -409,7 +409,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
 		mid.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
-		row.add_child(_button("Reroll (%dc)" % GameData.RECRUIT_REROLL_COST, func(id=h.id):
+		row.add_child(_button("Reroll (%dc)" % GameState.recruit_reroll_cost(), func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)
 			if err != "":
 				push_warning(err)
@@ -801,7 +801,8 @@ func _render_compendium_crafting(v: VBoxContainer) -> void:
 
 func _render_compendium_systems(v: VBoxContainer) -> void:
 	var entries := [
-		["Guild Management", "Spend Crystals across 4 branches (Operations/Infrastructure/Logistics/Research) to raise hero-slot caps, relic-slot caps, recovery speed, fee reductions, and more. A Guild Tier banner tracks total levels purchased."],
+		["Guild Management", "Spend Crystals on 9 upgrades across 4 branches. Every level adds its effect; Lv3 and Lv5 unlock a perk (a first-strike bonus, a boss Crystal cache, extra relic slots…). Guild Tier tracks total levels."],
+		["Guild Orders", "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."],
 		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],
 		["Hero Bonds", "Certain subclass pairs (e.g. Duelist + Blade-Dancer) grant a bonus while both are alive in the active party — shown in Party Assembly when both halves are picked."],
 		["Party Synergy", "Resonance: 2+ party members currently building the same skill kind reinforce each other. Eclectic: a 3+ party with no kind repeated gets a small universal bonus instead. Never both at once — shown in Party Assembly."],
@@ -1132,13 +1133,16 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.theme_type_variation = &"CardPanelViolet"
 	card.custom_minimum_size.x = 330
-	var cv := _vbox(4)
+	var cv := _vbox(5)
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
 	if icon_path != "":
 		header.add_child(_icon(icon_path, 28))
-	header.add_child(_label(str(n["name"]), 13))
+	var nm := _label(str(n["name"]), 15)
+	nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(nm)
+	header.add_child(_label("Lv %d/%d" % [cur, node_max], 12, true))
 	cv.add_child(header)
 
 	var bar := ProgressBar.new()
@@ -1146,47 +1150,45 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	bar.max_value = node_max
 	bar.value = cur
 	bar.show_percentage = false
-	bar.custom_minimum_size.y = 10
+	bar.custom_minimum_size.y = 8
 	var bar_bg := StyleBoxFlat.new()
 	bar_bg.bg_color = Palette.SURFACE
-	bar_bg.corner_radius_top_left = 4
-	bar_bg.corner_radius_top_right = 4
-	bar_bg.corner_radius_bottom_left = 4
-	bar_bg.corner_radius_bottom_right = 4
+	bar_bg.set_corner_radius_all(4)
 	bar.add_theme_stylebox_override("background", bar_bg)
 	var bar_fill := StyleBoxFlat.new()
 	bar_fill.bg_color = Palette.VIOLET_BRIGHT if maxed else Palette.VIOLET
-	bar_fill.corner_radius_top_left = 4
-	bar_fill.corner_radius_top_right = 4
-	bar_fill.corner_radius_bottom_left = 4
-	bar_fill.corner_radius_bottom_right = 4
+	bar_fill.set_corner_radius_all(4)
 	bar.add_theme_stylebox_override("fill", bar_fill)
 	cv.add_child(bar)
-	cv.add_child(_label("Level %d/%d" % [cur, node_max], 11, true))
 
-	var cur_desc := Combat.describe_node_effect(n["id"], cur)
-	cv.add_child(_wrap_label(cur_desc, 11))
-	if not maxed:
-		cv.add_child(_wrap_label("Next: %s" % Combat.describe_node_effect(n["id"], cur + 1), 11, true))
+	var now := _wrap_label(Combat.describe_node_effect(n["id"], cur), 13)
+	now.add_theme_color_override("font_color", Palette.TEXT if cur > 0 else Palette.MUTED)
+	cv.add_child(now)
+	cv.add_child(_wrap_label("Each level: %s" % n["every"], 11, true))
+	var perks: Dictionary = n["perks"]
+	for pl in perks:
+		var got := cur >= int(pl)
+		var is_order := str(perks[pl]).begins_with("Order:")
+		var pr := _wrap_label("%s Lv%d — %s" % ["✓" if got else ("⚑" if is_order else "★"), int(pl), perks[pl]], 12)
+		pr.add_theme_color_override("font_color", Palette.RANK_E if got else (Palette.EMBER_BRIGHT if is_order else Palette.RANK_S))
+		cv.add_child(pr)
 
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
-		cv.add_child(_icon_button(icon_path, "Upgrade (%dcr)" % cost, func(k=key):
+		var next_perk := str(perks.get(cur + 1, ""))
+		var ub := _icon_button(icon_path, "Upgrade to Lv%d — %d Crystals" % [cur + 1, cost], func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
 			render()
-		))
-	var cap: Dictionary = n.get("cap", {})
-	if not cap.is_empty() and maxed and not GameState.has_cap(key):
-		cv.add_child(_icon_button(icon_path, "%s (%dcr) — %s" % [cap["name"], int(cap["cost"]), cap["desc"]], func(k=key):
-			var err := GameState.buy_cap(k)
-			if err != "":
-				push_warning(err)
-			render()
-		))
-	elif not cap.is_empty() and GameState.has_cap(key):
-		cv.add_child(_label("%s unlocked" % cap["name"], 12))
+		)
+		ub.disabled = GameState.crystals < cost
+		ub.tooltip_text = "Next: %s%s" % [Combat.describe_node_effect(n["id"], cur + 1), ("\nUnlocks: " + next_perk) if next_perk != "" else ""]
+		cv.add_child(ub)
+	else:
+		var ml := _label("Fully upgraded", 12)
+		ml.add_theme_color_override("font_color", Palette.RANK_E)
+		cv.add_child(ml)
 
 	card.add_child(cv)
 	return card

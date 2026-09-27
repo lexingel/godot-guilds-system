@@ -581,6 +581,17 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, roundf(clampf(bw * 0.36, 280.0, 420.0))))
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
 		v.add_child(_label("A %s encounter awaits." % kind_label, 16))
+		var guild_bits: Array[String] = []
+		if GameState.lvl("ops.drill") > 0:
+			guild_bits.append("+%d%% damage and HP" % (GameState.lvl("ops.drill") * 4))
+		if GameState.vanguard():
+			guild_bits.append("Vanguard first strike")
+		if GameState.abilities_ready_each_fight():
+			guild_bits.append("abilities ready")
+		if not guild_bits.is_empty():
+			var gl := _label("Drill Yard: " + ", ".join(guild_bits), 12, true)
+			gl.add_theme_color_override("font_color", Palette.RANK_E)
+			v.add_child(gl)
 		if kind == "combat":
 			var qf := _icon_button("res://assets/skills/sword_dual.png", "Quick fight  (Q)", func():
 				GameState.quick_fight()
@@ -666,8 +677,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		gains_row.add_child(_label("+%d" % int(result["coin"]), 14))
 		gains_row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 18))
 		var crystal_text := "+%d" % int(result["crystal"])
+		if int(result.get("guild_crystal", 0)) > 0:
+			crystal_text += " (%d from Amplifiers)" % int(result["guild_crystal"])
+		if int(result.get("crystal_cache", 0)) > 0:
+			crystal_text += "  +%d Crystal cache (Resonance)" % int(result["crystal_cache"])
+			bonus_crystal -= int(result["crystal_cache"])
 		if bonus_crystal > 0:
-			crystal_text += " (+%d bonus)" % bonus_crystal
+			crystal_text += "  +%d extracted" % bonus_crystal
 		gains_row.add_child(_label(crystal_text, 14))
 		victory_col.add_child(gains_row)
 		if result.has("heroes"):

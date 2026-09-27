@@ -85,7 +85,7 @@ func run() -> void:
 	GameState.items.append(junk)
 	GameState.salvage_item(junk.id)
 	check(GameState.items.has(junk), "salvage locked without Recycling")
-	GameState.upgrades["res.recycle"] = 1
+	GameState.upgrades["res.lab"] = 1
 	if GameState.recycle_unlocked():
 		cr0 = GameState.crystals
 		GameState.salvage_item(junk.id)

@@ -13,7 +13,7 @@ const SLOT_COUNT := 3
 ## _migrate_save() on anything older before reading it. (Older, per-field
 ## fallbacks still live in the model from_dicts: Hero attrs, Item attrs,
 ## Relic specials, the Guild Board's old contract/daily format.)
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 const ACTIVE_SLOT_PATH := "user://active_slot.cfg"
 const SETTINGS_PATH := "user://settings.json"
 
@@ -116,34 +116,18 @@ func upgrade_node(key: String) -> String:
 	return ""
 
 
-func buy_cap(key: String) -> String:
-	var node := GameData.find_branch_node(key)
-	var cap: Dictionary = node.get("cap", {})
-	if node.is_empty() or cap.is_empty():
-		return ""
-	if lvl(key) < int(node["max"]) or has_cap(key):
-		return ""
-	var cost := int(cap["cost"])
-	if crystals < cost:
-		return "Not enough Crystals"
-	crystals -= cost
-	caps[key] = true
-	save()
-	state_changed.emit()
-	return ""
-
-
 # ---------------- Guild Management-derived formulas ----------------
 func hero_slot_cap() -> int:
-	return 4 + 2 * lvl("ops.roster")
+	return 4 + 2 * lvl("ops.barracks")
 
 
 func relic_slot_cap() -> int:
-	return 3 + lvl("res.vault")
+	var l := lvl("res.vault")
+	return 3 + (1 if l >= 3 else 0) + (1 if l >= 5 else 0)
 
 
 func medical_recovery_reduction() -> float:
-	return min(0.5, 0.10 * lvl("ops.medical"))
+	return 0.15 * lvl("ops.infirmary")
 
 
 ## Runs a downed hero sits out (Medical upgrades bring it down to 1). A new
@@ -166,87 +150,144 @@ func knock_out(h: Hero) -> void:
 
 
 func medical_bed_cap() -> int:
-	return 1 + int(ceil(lvl("ops.medical") / 2.0))
+	return 1 + int(ceil(lvl("ops.infirmary") / 2.0))
 
 
 func guild_mentor() -> bool:
-	return has_cap("ops.roster")
+	return lvl("ops.barracks") >= 3
+
+
+func xp_mult() -> float:
+	return 1.2 if lvl("ops.barracks") >= 5 else 1.0
 
 
 func field_triage_available() -> bool:
-	return has_cap("ops.medical")
+	return lvl("ops.infirmary") >= 3
 
 
+func full_heal_between_runs() -> bool:
+	return lvl("ops.infirmary") >= 5
+
+
+## Drill Yard: party damage (Combat.start_combat) and max HP (Combat.max_hp).
 func tactical_bonus() -> float:
-	return 1.0 + 0.03 * lvl("ops.drill")
+	return 1.0 + 0.04 * lvl("ops.drill")
+
+
+func vanguard() -> bool:
+	return lvl("ops.drill") >= 3
+
+
+func abilities_ready_each_fight() -> bool:
+	return lvl("ops.drill") >= 5
 
 
 func respec_fee_reduction() -> float:
-	return min(0.5, 0.10 * lvl("ops.trait"))
+	return 0.3 if lvl("res.lab") >= 3 else 0.0
+
+
+func trait_reroll_cost() -> int:
+	return int(round(60 * (1.0 - respec_fee_reduction())))
 
 
 func crystal_yield_bonus() -> float:
-	return 1.0 + 0.05 * lvl("infra.crystal")
-
-
-func hazard_severity_reduction() -> float:
-	return min(0.8, 0.08 * lvl("infra.stab"))
-
-
-func anchor_artifact() -> bool:
-	return has_cap("infra.stab")
-
-
-func seal_token_bonus() -> float:
-	return 1.0 + 0.10 * lvl("infra.seal")
+	return 1.0 + 0.08 * lvl("infra.amplifiers")
 
 
 func energy_extract_chance() -> float:
-	return 0.05 * lvl("infra.energy")
+	return 0.25 if lvl("infra.amplifiers") >= 3 else 0.0
+
+
+func crystal_resonance() -> bool:
+	return lvl("infra.amplifiers") >= 5
+
+
+func hazard_severity_reduction() -> float:
+	return 0.12 * lvl("infra.wardstones")
+
+
+func anchor_artifact() -> bool:
+	return lvl("infra.wardstones") >= 3
+
+
+func hazards_nonlethal() -> bool:
+	return lvl("infra.wardstones") >= 5
+
+
+func seal_token_bonus() -> float:
+	return 1.0 + 0.10 * lvl("infra.wardstones")
 
 
 func broker_fee_reduction() -> float:
-	return min(0.10, 0.03 * lvl("log.broker"))
+	return 0.02 * lvl("log.trade")
 
 
 func black_market_unlocked() -> bool:
-	return has_cap("log.broker")
-
-
-func headhunter_guarantee() -> bool:
-	return has_cap("log.scout")
+	return lvl("log.trade") >= 3
 
 
 func merchant_price_reduction() -> float:
-	return min(0.6, 0.05 * lvl("log.merchant"))
+	return 0.06 * lvl("log.trade")
 
 
 func detector_drop_bonus() -> float:
-	return 0.05 * lvl("log.detector")
+	return 0.05 * lvl("log.trade")
+
+
+func shop_guaranteed_epic() -> bool:
+	return lvl("log.trade") >= 5
+
+
+func recruit_offer_count() -> int:
+	var l := lvl("log.scouts")
+	return 4 + (1 if l >= 1 else 0) + (1 if l >= 4 else 0)
+
+
+func headhunter_guarantee() -> bool:
+	return lvl("log.scouts") >= 3
+
+
+func recruit_reroll_cost() -> int:
+	return GameData.RECRUIT_REROLL_COST / (2 if lvl("log.scouts") >= 5 else 1)
 
 
 func relic_choice_count() -> int:
-	var l := lvl("res.relic")
-	if l >= 3: return 4
-	if l == 2: return 3
+	var l := lvl("res.vault")
+	if l >= 4: return 4
+	if l >= 2: return 3
 	if l == 1: return 2
 	return 0
 
 
 func inherited_power() -> bool:
-	return has_cap("res.relic")
+	return lvl("res.vault") >= 5
 
 
-func synergy_unlocked() -> bool:
-	return has_cap("res.theory")
+## Multiplier on relic element-set bonuses (Arcane Lab).
+func set_bonus_mult() -> float:
+	return 1.0 + 0.10 * lvl("res.lab")
 
 
 func recycle_unlocked() -> bool:
-	return lvl("res.recycle") > 0
+	return lvl("res.lab") >= 1
 
 
-func cartography_unlocked() -> bool:
-	return lvl("res.cart") > 0
+func relic_upgrade_cost(r: Relic) -> int:
+	var cost := 15.0 * float(GameData.find_rarity(r.rarity)["mult"]) * r.level
+	return int(round(cost * (0.75 if lvl("res.lab") >= 5 else 1.0)))
+
+
+## Crystals a pre-rework save spent on the old Guild Management tree.
+static func old_mgmt_refund(old_upgrades: Dictionary, old_caps: Dictionary) -> int:
+	var total := 0
+	for key in old_upgrades:
+		var c: Array = GameData.OLD_MGMT_COSTS.get(key, [0, 0])
+		for i in int(old_upgrades[key]):
+			total += int(c[0]) + int(c[1]) * i
+	for key in old_caps:
+		if old_caps[key]:
+			total += int(GameData.OLD_MGMT_CAP_COSTS.get(key, 0))
+	return total
 
 
 func reset() -> void:
@@ -333,6 +374,7 @@ func _run_for_save() -> Dictionary:
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
+		"orders_used": run.get("orders_used", 0),
 	}
 	if run.has("tower"):
 		out["tower"] = run["tower"]
@@ -511,7 +553,17 @@ func _migrate_save(data: Dictionary) -> Dictionary:
 	var v := int(data.get("save_version", 1))
 	if v > SAVE_VERSION:
 		push_warning("Save is from a newer version (%d > %d)" % [v, SAVE_VERSION])
-	# if v < 3: ...next migration goes here, then v = 3
+	if v < 3:
+		# Guild Management was rebuilt (9 nodes, perks instead of capstones):
+		# refund every Crystal spent on the old tree.
+		var refund := old_mgmt_refund(data.get("upgrades", {}), data.get("caps", {}))
+		data["upgrades"] = {}
+		data["caps"] = {}
+		data["crystals"] = int(data.get("crystals", 0)) + refund
+		if refund > 0:
+			data["_mgmt_refund"] = refund
+		v = 3
+	# if v < 4: ...next migration goes here, then v = 4
 	data["save_version"] = max(v, SAVE_VERSION)
 	return data
 
@@ -613,6 +665,9 @@ func load_save() -> bool:
 	bonds = data.get("bonds", {})
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
+	if int(data.get("_mgmt_refund", 0)) > 0:
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild Management rebuilt",
+			"text": "Upgrades are fewer and much stronger now. %d Crystals spent on the old tree were refunded." % int(data["_mgmt_refund"])})
 	var champ_data = data.get("current_champion")
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
 	if current_champion:
@@ -671,6 +726,7 @@ func load_save() -> bool:
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
+			"orders_used": int(run_data.get("orders_used", 0)),
 		}
 		if run_data.has("tower"):
 			run["tower"] = int(run_data["tower"])
@@ -727,7 +783,9 @@ func _maybe_flag_s_rank(h: Hero, source: String) -> void:
 
 
 func refresh_recruit_pool() -> void:
-	recruit_pool = [gen_recruit_offer(), gen_recruit_offer(), gen_recruit_offer(), gen_recruit_offer()]
+	recruit_pool = []
+	for i in recruit_offer_count():
+		recruit_pool.append(gen_recruit_offer())
 	if headhunter_guarantee():
 		var order: Array[String] = []
 		for r in GameData.RANKS:
@@ -792,9 +850,9 @@ func reroll_recruit_offer(offer_id: String) -> String:
 			break
 	if idx < 0:
 		return ""
-	if coins < GameData.RECRUIT_REROLL_COST:
+	if coins < recruit_reroll_cost():
 		return "Not enough Coins."
-	coins -= GameData.RECRUIT_REROLL_COST
+	coins -= recruit_reroll_cost()
 	recruit_pool[idx] = gen_recruit_offer()
 	_maybe_flag_s_rank(recruit_pool[idx], "recruit")
 	save()
@@ -1615,7 +1673,7 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 		if dmg > 0 and party.size() > 0:
 			var per: float = float(dmg) / party.size()
 			for h in party:
-				h.hp = max(0, int(round(h.hp - per)))
+				h.hp = max(1 if hazards_nonlethal() else 0, int(round(h.hp - per)))
 				if h.hp <= 0:
 					knock_out(h)
 			log.append("The hazard deals %d damage across the party." % dmg)
@@ -1675,7 +1733,7 @@ func ensure_shop_offers() -> void:
 	var boosted := pending_shop_boost
 	var offers: Array = []
 	for i in 3:
-		offers.append(_gen_shop_offer(boosted and i == 0))
+		offers.append(_gen_shop_offer((boosted or shop_guaranteed_epic()) and i == 0))
 	if boosted:
 		pending_shop_boost = false
 	run["node_state"] = {"type": "shop", "offers": offers, "rerolls": 0}
@@ -1767,7 +1825,7 @@ func seal_rift() -> void:
 		_complete_act(campaign_act)
 	var diff := _diff()
 	var fast_clear: bool = int(run.get("boss_rounds", 99)) <= 6
-	var token_mult: float = (seal_token_bonus() if fast_clear else 1.0) * (1.5 if run.get("hardcore", false) else 1.0)
+	var token_mult: float = seal_token_bonus() * (1.5 if run.get("hardcore", false) else 1.0)
 	var earned_tokens := int(round(float(diff["token_base"]) * token_mult))
 	var got_detector := false
 	if randf() < float(diff["detector_chance"]) + detector_drop_bonus():
@@ -1981,6 +2039,88 @@ func _act_intro_card(act_num: int) -> Dictionary:
 
 static func _roman(n: int) -> String:
 	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
+
+
+# ---------------- Guild Orders ----------------
+
+## Orders whose node is at GameData.ORDER_UNLOCK_LEVEL or above.
+func orders_unlocked() -> Array:
+	return GameData.GUILD_ORDERS.keys().filter(func(id): return lvl(str(GameData.GUILD_ORDERS[id]["node"])) >= GameData.ORDER_UNLOCK_LEVEL)
+
+
+## Orders per rift: 1 once any is unlocked, +1 at Renowned and Legendary tier.
+func orders_per_rift() -> int:
+	if orders_unlocked().is_empty():
+		return 0
+	var total := int(Combat.guild_tier_info()["total"])
+	return 1 + (1 if total >= 25 else 0) + (1 if total >= 40 else 0)
+
+
+func orders_left() -> int:
+	return maxi(0, orders_per_rift() - int(run.get("orders_used", 0)))
+
+
+## "" if `id` can be used right now, else why not.
+func order_blocker(id: String) -> String:
+	if run.is_empty():
+		return "Only inside a rift"
+	if run.has("tower"):
+		return "The Tower is a trial: no orders"
+	if not orders_unlocked().has(id):
+		return "Not unlocked"
+	if orders_left() <= 0:
+		return "No orders left this rift"
+	var ns: Dictionary = run.get("node_state", {})
+	var in_fight: bool = ns.has("combat_state") and not ns.has("result")
+	match id:
+		"supply":
+			if in_fight:
+				return "Not during a fight"
+			if not current_party().any(func(h): return h.hp > 0 and h.hp < Combat.max_hp(h)):
+				return "Everyone is at full HP"
+		"rally":
+			if not in_fight:
+				return "Only during a fight"
+		"requisition":
+			var res: Dictionary = ns.get("result", {})
+			if not bool(res.get("won", false)) or (res.get("reward_options", []) as Array).is_empty() or ns.get("reward_chosen", false):
+				return "Only when choosing a fight's loot"
+		"scout":
+			if current_node_kind() != "" or current_layer_options().size() < 2:
+				return "Only when choosing a path"
+	return ""
+
+
+func use_order(id: String) -> String:
+	var why := order_blocker(id)
+	if why != "":
+		return why
+	var ns: Dictionary = run.get("node_state", {})
+	match id:
+		"supply":
+			for h in current_party():
+				if h.hp > 0:
+					h.hp = mini(Combat.max_hp(h), h.hp + int(ceil(Combat.max_hp(h) * 0.35)))
+		"rally":
+			Combat.apply_rally(ns["combat_state"])
+		"requisition":
+			var res: Dictionary = ns["result"]
+			var opts: Array = []
+			for i in (res["reward_options"] as Array).size():
+				opts.append(Combat.gen_loot(Combat.weighted_rarity()))
+			res["reward_options"] = opts
+		"scout":
+			var layer: Dictionary = run["layers"][int(run["pos"])]
+			var old: Array = layer["options"]
+			var pool: Array = Combat.FORK_POOL.filter(func(k): return not old.has(k))
+			pool.shuffle()
+			var a: String = pool[0]
+			var rest: Array = pool.filter(func(k): return k != a)
+			layer["options"] = [a, rest[0]]
+	run["orders_used"] = int(run.get("orders_used", 0)) + 1
+	save()
+	state_changed.emit()
+	return ""
 
 
 # ---------------- Tower of Trials ----------------
@@ -2351,7 +2491,7 @@ func pass_time() -> void:
 				h.hp = mx
 				h.bedded = false
 		elif h.hp > 0 and h.hp < mx:
-			h.hp = mx if h.bedded else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
+			h.hp = mx if h.bedded or full_heal_between_runs() else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
 			if h.hp >= mx:
 				h.bedded = false
 	for i in rift_map.size():
@@ -2921,9 +3061,9 @@ func reroll_trait(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
 		return ""
-	if coins < 60:
-		return "Need 60 Coins"
-	coins -= 60
+	if coins < trait_reroll_cost():
+		return "Need %d Coins" % trait_reroll_cost()
+	coins -= trait_reroll_cost()
 	h.trait_name = Combat.pick_trait_name(h.cls_id)
 	h.hp = min(Combat.max_hp(h), h.hp)
 	save()
@@ -2932,8 +3072,8 @@ func reroll_trait(hero_id: String) -> String:
 
 
 func scrub_trait(hero_id: String) -> String:
-	if lvl("ops.trait") < 1:
-		return "Unlock the Trait Management Office first"
+	if lvl("res.lab") < 1:
+		return "Build the Arcane Lab first"
 	var h := find_hero(hero_id)
 	var scrubbable := h and (GameData.NEG_TRAITS.has(h.trait_name) or GameData.is_role_trait(h.trait_name))
 	if not scrubbable:
@@ -2952,8 +3092,8 @@ func scrub_trait(hero_id: String) -> String:
 ## base trait, and doesn't touch h.hp (a scar isn't tied to a heal-to-full
 ## the way clearing the base trait is).
 func scrub_scar(hero_id: String, scar_name: String) -> String:
-	if lvl("ops.trait") < 1:
-		return "Unlock the Trait Management Office first"
+	if lvl("res.lab") < 1:
+		return "Build the Arcane Lab first"
 	var h := find_hero(hero_id)
 	if not h or not h.scars.has(scar_name):
 		return ""
@@ -3330,8 +3470,7 @@ func upgrade_relic(relic_id: String) -> String:
 			continue
 		if r.level >= RELIC_MAX_LEVEL:
 			return "Already max level"
-		var rar := GameData.find_rarity(r.rarity)
-		var cost := int(round(15.0 * float(rar["mult"]) * r.level))
+		var cost := relic_upgrade_cost(r)
 		if crystals < cost:
 			return "Not enough Crystals"
 		crystals -= cost

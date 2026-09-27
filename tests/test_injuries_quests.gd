@@ -44,8 +44,7 @@ func run() -> void:
 	# Heal: needs a healer; Field Triage works.
 	_down(ids[2], "wounded")
 	check(GameState.injury_heal(ids[2]) != "" or GameState.field_healer() != "", "heal gated on a healer")
-	GameState.upgrades["ops.medical"] = 5
-	GameState.caps["ops.medical"] = true
+	GameState.upgrades["ops.infirmary"] = 3
 	if GameState.field_healer() != "":
 		check(GameState.injury_heal(ids[2]) == "", "heal with Field Triage")
 		var h2 := GameState.find_hero(ids[2])

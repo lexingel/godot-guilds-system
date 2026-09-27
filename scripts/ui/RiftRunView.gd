@@ -312,6 +312,31 @@ func _run_bar(in_combat: bool) -> Control:
 	return panel
 
 
+## Guild Orders: one button per unlocked order, live only where it applies.
+func _orders_bar() -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var left := GameState.orders_left()
+	var head := _label("Guild Orders  %d/%d" % [left, GameState.orders_per_rift()], 13)
+	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if left > 0 else Palette.MUTED)
+	head.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.tooltip_text = "Orders from your Guild Management upgrades. You get %d per rift (more at Renowned and Legendary guild tier)." % GameState.orders_per_rift()
+	head.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.add_child(head)
+	for id in GameState.orders_unlocked():
+		var def: Dictionary = GameData.GUILD_ORDERS[id]
+		var why := GameState.order_blocker(id)
+		var b := _icon_button(str(def["icon"]), str(def["name"]), func(oid=id):
+			if _combat_animating:
+				return
+			GameState.use_order(oid)
+		)
+		b.disabled = why != ""
+		b.tooltip_text = str(def["desc"]) + ("\n(%s)" % why if why != "" else "")
+		row.add_child(b)
+	return row
+
+
 func _render_rift_run(v: VBoxContainer) -> void:
 	if GameState.run.is_empty():
 		screen = "terminal"
@@ -326,6 +351,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label(rb_flavor, 12, true))
 	var kind := GameState.current_node_kind()
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
+		v.add_child(_orders_bar())
 	if GameState.run.has("tower"):
 		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
 			var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 12)
@@ -368,7 +395,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var stone_tier: String = str(sealed_dict.get("got_stone", ""))
 		sealed_row.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s%s" % [
 			int(sealed_dict["tokens"]),
-			" (fast clear)" if sealed_dict.get("fast_clear", false) else "",
+			" (+%d%% Wardstones)" % (GameState.lvl("infra.wardstones") * 10) if GameState.lvl("infra.wardstones") > 0 else "",
 			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
 			" · %s-Rank Evolution Stone found!" % stone_tier if stone_tier != "" else "",
 		]))
@@ -423,6 +450,10 @@ func _render_shop_node(v: VBoxContainer) -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
 	head.add_child(_label("Rift Hallway Shop", 18))
+	if GameState.merchant_price_reduction() > 0.0:
+		var tl := _label("Trade Network: -%d%% prices" % int(round(GameState.merchant_price_reduction() * 100)), 12, true)
+		tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		head.add_child(tl)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)

@@ -178,10 +178,9 @@ const RELIC_TRIGGERS := [
 	{"trigger": "ally_down", "effect": "mend_party", "value": 0.10},
 ]
 ## Element sets: 2 relics of a type give half of SYNERGY_BONUS, 3 the full
-## amount; 3 different types give PRISM_BONUS. Optimal Synergy (Theorycrafting)
-## multiplies every set bonus by SET_UPGRADE_MULT.
+## amount; 3 different types give PRISM_BONUS. The Arcane Lab scales every set
+## bonus (GameState.set_bonus_mult).
 const PRISM_BONUS := {"kind": "dmg_pct", "value": 0.06, "label": "+6% team damage"}
-const SET_UPGRADE_MULT := 1.5
 const RELIC_REROLL_CRYSTALS := 10
 const TYPE_DOMAIN := {
 	"Ember": "damage", "Verdant": "heal", "Frost": "chance",
@@ -1837,44 +1836,62 @@ const CLASS_POOL := [
 # Every kind that can appear on a hero build (skills/items/relics/traits/innate).
 const BUILD_KINDS := ["dmg_pct", "hp_pct", "speed_pct", "first_round_pct", "escalate_pct", "mend_pct", "hazard_guard_pct", "dodge_pct", "ability_power", "wipe_guard", "boss_alpha_strike"]
 
-# Guild Management: 4 branches x 4-5 nodes each. Each node's display effect
-# string is computed by Combat.describe_node_effect(node_id, level) — a
-# match on node id, since the HTML version used a per-node JS closure that
-# doesn't translate directly to static GDScript data. "cap" is {} when a node
-# has no capstone.
+# Guild Management: 4 branches, 9 upgrades of 5 levels. Every level adds the
+# node's "every" effect (numbers from Combat.describe_node_effect); the
+# "perks" levels unlock something new (Lv2 perks marked "Order:" are Guild
+# Orders, used once per rift). Costs: cost_base + cost_step * current level.
 const BRANCHES := [
-	{"id": "ops", "name": "Operations Branch", "sub": "Hero Roster & Combat Management", "nodes": [
-		{"id": "roster", "name": "Roster Expansion", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Elite Barracks", "cost": 400, "desc": "Set a Guild Mentor — new recruits join one level higher."}},
-		{"id": "medical", "name": "Medical Bay", "max": 5, "cost_base": 25, "cost_step": 18, "cap": {"name": "Field Triage", "cost": 350, "desc": "Once per rift, get a downed hero back up mid-rift (no healer needed)."}},
-		{"id": "drill", "name": "Tactical Drilling", "max": 5, "cost_base": 35, "cost_step": 22, "cap": {"name": "Vanguard Order", "cost": 450, "desc": "A fight's first strike deals +25% bonus damage."}},
-		{"id": "trait", "name": "Trait Management Office", "max": 3, "cost_base": 40, "cost_step": 30, "cap": {}},
+	{"id": "ops", "name": "Operations Branch", "sub": "Heroes & Combat", "nodes": [
+		{"id": "barracks", "name": "Barracks", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+2 hero slots",
+			"perks": {3: "Mentors: new recruits join 1 level higher", 5: "Veteran instructors: heroes earn +20% XP"}},
+		{"id": "infirmary", "name": "Infirmary", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-15% recovery time; a bed at Lv1/3/5",
+			"perks": {2: "Order: Supply Drop — heal the party 35% between fights", 3: "Field Triage: once per rift, get a downed hero back up", 5: "Wounded heroes heal fully after every run"}},
+		{"id": "drill", "name": "Drill Yard", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+4% party damage and +4% max HP",
+			"perks": {2: "Order: Rally — the party acts first this round and hits 30% harder", 3: "Vanguard: a fight's first strike deals +25% damage", 5: "Abilities are ready at the start of every fight"}},
 	]},
-	{"id": "infra", "name": "Infrastructure Branch", "sub": "Rift Efficiency & Yield", "nodes": [
-		{"id": "crystal", "name": "Crystal Amplifiers", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Crystal Resonance", "cost": 400, "desc": "Rift Bosses drop a bonus Pure Crystal cache."}},
-		{"id": "stab", "name": "Rift Stabilization", "max": 5, "cost_base": 28, "cost_step": 18, "cap": {"name": "Anchor Artifact", "cost": 380, "desc": "Negates each floor's first hazard entirely."}},
-		{"id": "seal", "name": "Seal Maximizer", "max": 3, "cost_base": 45, "cost_step": 30, "cap": {}},
-		{"id": "energy", "name": "Energy Extraction", "max": 5, "cost_base": 26, "cost_step": 16, "cap": {}},
+	{"id": "infra", "name": "Infrastructure Branch", "sub": "Rift Yield & Safety", "nodes": [
+		{"id": "amplifiers", "name": "Crystal Amplifiers", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+8% Crystals from fights",
+			"perks": {3: "Energy extraction: elites often drop bonus Crystals", 5: "Resonance: bosses drop a Crystal cache"}},
+		{"id": "wardstones", "name": "Wardstones", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-12% hazard damage, +10% Seal Tokens",
+			"perks": {3: "Anchor: the first hazard of each rift is negated", 5: "Hazards can't knock a hero out"}},
 	]},
-	{"id": "log", "name": "Logistics Branch", "sub": "Economy & Market", "nodes": [
-		{"id": "broker", "name": "Broker Network", "max": 5, "cost_base": 30, "cost_step": 20, "cap": {"name": "Black Market Clearance", "cost": 420, "desc": "Unlocks premium bids on ultra-rare Rift Detectors."}},
-		{"id": "scout", "name": "Targeted Scouting", "max": 3, "cost_base": 35, "cost_step": 25, "cap": {"name": "Headhunter", "cost": 400, "desc": "Guarantees a Rank C+ hero in every HR refresh."}},
-		{"id": "merchant", "name": "Merchant Contract", "max": 5, "cost_base": 24, "cost_step": 14, "cap": {}},
-		{"id": "detector", "name": "Detector Tuning", "max": 4, "cost_base": 32, "cost_step": 20, "cap": {}},
+	{"id": "log", "name": "Logistics Branch", "sub": "Trade & Recruiting", "nodes": [
+		{"id": "trade", "name": "Trade Network", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-6% shop prices, -2% auction fees, +5% detector drops",
+			"perks": {2: "Order: Requisition — reroll a fight's loot choices", 3: "Black Market: premium bids on rare Rift Detectors", 5: "Every rift shop stocks an Epic relic"}},
+		{"id": "scouts", "name": "Scouts' Lodge", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Recruit board: +1 offer at Lv1 and Lv4",
+			"perks": {2: "Order: Scout Ahead — reroll the next fork's paths", 3: "Headhunter: every recruit refresh has a Rank C+ hero", 5: "Recruit rerolls cost half"}},
 	]},
-	{"id": "res", "name": "Research Branch", "sub": "Run Mechanics & Analytics", "nodes": [
-		{"id": "relic", "name": "Relic Storage", "max": 3, "cost_base": 30, "cost_step": 22, "cap": {"name": "Inherited Power", "cost": 380, "desc": "Start every Rift with a Rare Relic instead of Common."}},
-		{"id": "theory", "name": "Theorycrafting Lab", "max": 3, "cost_base": 28, "cost_step": 20, "cap": {"name": "Optimal Synergy", "cost": 400, "desc": "Relic element-set bonuses are 50% stronger."}},
-		{"id": "recycle", "name": "Relic Recycling", "max": 3, "cost_base": 22, "cost_step": 14, "cap": {}},
-		{"id": "cart", "name": "Arcane Cartography", "max": 3, "cost_base": 26, "cost_step": 16, "cap": {}},
-		{"id": "vault", "name": "Relic Vault", "max": 2, "cost_base": 50, "cost_step": 40, "cap": {}},
+	{"id": "res", "name": "Research Branch", "sub": "Relics & Theory", "nodes": [
+		{"id": "vault", "name": "Relic Vault", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Starting relic choices (2 at Lv1, 3 at Lv2, 4 at Lv4)",
+			"perks": {3: "+1 equipped relic slot", 5: "+1 more relic slot, and starting relics are Rare or better"}},
+		{"id": "lab", "name": "Arcane Lab", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+10% relic element-set bonuses; Lv1 unlocks relic scrapping and trait/scar removal",
+			"perks": {3: "Skill respecs and trait rerolls cost 30% less", 5: "Relic upgrades cost 25% fewer Crystals"}},
 	]},
 ]
+## What each Guild Order does and which node level unlocks it.
+const GUILD_ORDERS := {
+	"supply": {"name": "Supply Drop", "node": "ops.infirmary", "icon": "res://assets/skills/potion_red.png", "desc": "Heal every standing hero 35% of their max HP."},
+	"rally": {"name": "Rally", "node": "ops.drill", "icon": "res://assets/skills/sword_slash.png", "desc": "This round the party acts before every foe and hits 30% harder."},
+	"requisition": {"name": "Requisition", "node": "log.trade", "icon": "res://assets/skills/ingot_gold.png", "desc": "Reroll this fight's loot choices."},
+	"scout": {"name": "Scout Ahead", "node": "log.scouts", "icon": "res://assets/skills/eye_gem.png", "desc": "Reroll the paths on the next fork."},
+}
+const ORDER_UNLOCK_LEVEL := 2
+## Old tree (before save version 3): [cost_base, cost_step] per node and
+## capstone costs — only used to refund a migrated save.
+const OLD_MGMT_COSTS := {
+	"ops.roster": [30, 20], "ops.medical": [25, 18], "ops.drill": [35, 22], "ops.trait": [40, 30],
+	"infra.crystal": [30, 20], "infra.stab": [28, 18], "infra.seal": [45, 30], "infra.energy": [26, 16],
+	"log.broker": [30, 20], "log.scout": [35, 25], "log.merchant": [24, 14], "log.detector": [32, 20],
+	"res.relic": [30, 22], "res.theory": [28, 20], "res.recycle": [22, 14], "res.cart": [26, 16], "res.vault": [50, 40],
+}
+const OLD_MGMT_CAP_COSTS := {"ops.roster": 400, "ops.medical": 350, "ops.drill": 450, "infra.crystal": 400, "infra.stab": 380,
+	"log.broker": 420, "log.scout": 400, "res.relic": 380, "res.theory": 400}
 
 const GUILD_TIERS := [
 	{"min": 0, "name": "Founding Guild"},
 	{"min": 10, "name": "Established Guild"},
 	{"min": 25, "name": "Renowned Guild"},
-	{"min": 45, "name": "Legendary Guild"},
+	{"min": 40, "name": "Legendary Guild"},
 ]
 
 ## One badge per Guild Tier, reusing existing assets/skills/ icons (no new
@@ -1892,23 +1909,15 @@ const GUILD_TIER_ICON := {
 ## every concept here already had a decent visual match sitting unused).
 ## Previously these nodes were a bare text line with no icon at all.
 const MANAGEMENT_NODE_ICON := {
-	"ops.roster": "res://assets/skills/shield_basic.png",
-	"ops.medical": "res://assets/skills/heart.png",
+	"ops.barracks": "res://assets/skills/shield_basic.png",
+	"ops.infirmary": "res://assets/skills/heart.png",
 	"ops.drill": "res://assets/skills/sword_slash.png",
-	"ops.trait": "res://assets/skills/star.png",
-	"infra.crystal": "res://assets/skills/gem_blue_big.png",
-	"infra.stab": "res://assets/skills/shield_blue.png",
-	"infra.seal": "res://assets/skills/trophy.png",
-	"infra.energy": "res://assets/skills/gem_red.png",
-	"log.broker": "res://assets/skills/ingot_gold.png",
-	"log.scout": "res://assets/skills/eye_gem.png",
-	"log.merchant": "res://assets/skills/gem_blue_a.png",
-	"log.detector": "res://assets/skills/gem_cluster.png",
-	"res.relic": "res://assets/skills/shard_blue.png",
-	"res.theory": "res://assets/skills/potion_blue.png",
-	"res.recycle": "res://assets/skills/shard_green.png",
-	"res.cart": "res://assets/skills/ring.png",
+	"infra.amplifiers": "res://assets/skills/gem_blue_big.png",
+	"infra.wardstones": "res://assets/skills/shield_blue.png",
+	"log.trade": "res://assets/skills/ingot_gold.png",
+	"log.scouts": "res://assets/skills/eye_gem.png",
 	"res.vault": "res://assets/skills/shield_orange.png",
+	"res.lab": "res://assets/skills/potion_blue.png",
 }
 
 const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}

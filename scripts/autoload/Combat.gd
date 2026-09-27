@@ -151,7 +151,7 @@ func auto_spend_attrs(h: Hero) -> void:
 
 
 func max_hp(h: Hero) -> int:
-	return round(h.base_hp * (1.0 + hero_skill_total(h, "hp_pct")))
+	return round(h.base_hp * (1.0 + hero_skill_total(h, "hp_pct")) * GameState.tactical_bonus())
 
 
 func dmg_of(h: Hero) -> int:
@@ -197,7 +197,7 @@ func xp_to_next(level: int) -> int:
 
 
 func gain_xp(h: Hero, amount: int) -> void:
-	h.xp += amount
+	h.xp += int(round(amount * GameState.xp_mult()))
 	while h.level < 10 and h.xp >= xp_to_next(h.level):
 		h.xp -= xp_to_next(h.level)
 		h.level += 1
@@ -659,12 +659,15 @@ func endless_diff_for_cycle(cycle: int) -> Dictionary:
 ## Branching rift path: first layer forced combat, last forced boss, middle
 ## layers each offer 2 different node-type options (a fork the player picks
 ## between), with a guarantee at least one middle layer includes "elite".
+## Campfire / event / treasure are one entry each, so fights stay about half
+## of every fork.
+const FORK_POOL := ["combat", "combat", "combat", "shop", "hazard", "elite", "campfire", "event", "treasure"]
+
+
 func build_layers(diff: Dictionary) -> Array:
 	var layers: Array = [{"options": ["combat"]}]
 	var mid_count: int = int(diff["floors"]) - 2
-	# Campfire / event / treasure are one entry each, so fights stay about
-	# half of every fork.
-	var pool := ["combat", "combat", "combat", "shop", "hazard", "elite", "campfire", "event", "treasure"]
+	var pool: Array = FORK_POOL.duplicate()
 	# A mapped rift's elite_chance_up/shop_chance_down modifiers bias the pool
 	# by adding/removing one entry rather than reworking the odds formula.
 	if diff.get("elite_chance_up", false):
@@ -841,26 +844,20 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 ## Guild Management node display strings — a match on node id since the HTML
 ## version used a per-node JS closure that doesn't translate to static data.
 func describe_node_effect(node_id: String, level: int) -> String:
+	if level <= 0:
+		return "Not built yet"
 	match node_id:
-		"roster": return "+%d hero slots" % (level * 2)
-		"medical": return "-%d%% recovery time" % (level * 10)
-		"drill": return "+%d%% HP/DMG in Rifts" % (level * 3)
-		"trait": return ("Scrub traits · -%d%% skill respec cost" % (level * 10)) if level > 0 else "Locked"
-		"crystal": return "+%d%% Crystal yield" % (level * 5)
-		"stab": return "-%d%% hazard severity" % (level * 8)
-		"seal": return "+%d%% Seal Tokens on a fast clear" % (level * 10)
-		"energy": return "%d%% elite bonus-Crystal chance" % (level * 5)
-		"broker": return "-%d%% Auction fees" % (level * 3)
-		"scout": return ("HR filters unlocked (Lvl %d)" % level) if level > 0 else "Locked"
-		"merchant": return "-%d%% shop prices" % (level * 5)
-		"detector": return "+%d%% Rift Detector drops" % (level * 5)
-		"relic":
-			if level <= 0: return "Locked"
-			return "%d starting Relic choices" % (4 if level >= 3 else (3 if level == 2 else 2))
-		"theory": return "Damage dummy & synergy highlights unlocked" if level > 0 else "Locked"
-		"recycle": return "Scrap unwanted Relics for Crystals" if level > 0 else "Locked"
-		"cart": return "Reveals the rift path on entry" if level > 0 else "Locked"
-		"vault": return "+%d equipped Relic slot" % level
+		"barracks": return "+%d hero slots" % (level * 2)
+		"infirmary": return "-%d%% recovery time · %d bed%s" % [level * 15, 1 + int(ceil(level / 2.0)), "" if level == 0 else "s"]
+		"drill": return "+%d%% party damage and max HP" % (level * 4)
+		"amplifiers": return "+%d%% Crystals from fights" % (level * 8)
+		"wardstones": return "-%d%% hazard damage · +%d%% Seal Tokens" % [level * 12, level * 10]
+		"trade": return "-%d%% shop prices · -%d%% auction fees · +%d%% detector drops" % [level * 6, level * 2, level * 5]
+		"scouts": return "%d recruit offers" % (4 + (1 if level >= 1 else 0) + (1 if level >= 4 else 0))
+		"vault":
+			var choices := 4 if level >= 4 else (3 if level >= 2 else 2)
+			return "%d starting relic choices · %d relic slots" % [choices, 3 + (1 if level >= 3 else 0) + (1 if level >= 5 else 0)]
+		"lab": return "+%d%% element-set bonuses" % (level * 10)
 		_: return ""
 
 
@@ -1265,7 +1262,7 @@ func relic_sets() -> Array:
 	var counts := {}
 	for r in equipped_relics():
 		counts[r.type] = int(counts.get(r.type, 0)) + 1
-	var mult := GameData.SET_UPGRADE_MULT if GameState.synergy_unlocked() else 1.0
+	var mult := GameState.set_bonus_mult()
 	var out: Array = []
 	for type in counts:
 		if int(counts[type]) >= 2 and GameData.SYNERGY_BONUS.has(type):
@@ -1344,7 +1341,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		raw_sum += dmg_of(h)
 	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party) + bond_bonus_for(party, "dmg_pct"))
 
-	var first_round_bonus: float = (0.25 if GameState.has_cap("ops.drill") else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct") + bond_bonus_for(party, "first_round_pct")
+	var first_round_bonus: float = (0.25 if GameState.vanguard() else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct") + bond_bonus_for(party, "first_round_pct")
 	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct") + synergy_value_for("escalate_pct")
 	var mend: float = 0.0 if party_has_unique_relic("bloodpact") else min(0.4, party_skill_total(party, "mend_pct") + relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct"))
 	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct"))
@@ -1387,6 +1384,8 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var pending_actions: Dictionary = {}
 	for h in party:
 		pending_actions[h.id] = {"action": "attack", "target": 0}
+		if GameState.abilities_ready_each_fight():
+			h.ability_cooldown = 0   # Drill Yard Lv5
 
 	# An escort NPC quest, folded onto an ordinary "combat" node rather than a
 	# whole new node kind — a chance for a fragile ally to tag along who
@@ -2165,6 +2164,20 @@ func _check_party_defeated(state: Dictionary) -> Dictionary:
 ## same round-rollover side effects _start_round always has, so — like
 ## resolve_turn — only call this from an actual game action, never from a
 ## read-only render() pass (see Main.gd's own comment on this).
+## Guild Order "Rally": the rest of this round, every hero acts before any
+## foe and the party hits 30% harder.
+func apply_rally(state: Dictionary) -> void:
+	peek_next_turn(state)   # make sure a round is under way
+	state["_attack_mult"] = float(state.get("_attack_mult", 1.0)) * 1.3
+	var idx := int(state.get("turn_idx", 0))
+	var order: Array = state["turn_order"]
+	var rest: Array = order.slice(idx)
+	var sorted: Array = rest.filter(func(t): return t["type"] == "hero") + rest.filter(func(t): return t["type"] != "hero")
+	for k in sorted.size():
+		order[idx + k] = sorted[k]
+	(state["log"] as Array).append("Rally! The guild's order rings out: the party moves first and hits 30% harder this round.")
+
+
 func peek_next_turn(state: Dictionary) -> Dictionary:
 	if state.get("turn_order", []).is_empty() or int(state.get("turn_idx", 0)) >= state["turn_order"].size():
 		_start_round(state)
@@ -2270,7 +2283,13 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 		var reward_mult: float = (1.4 if is_elite else 1.0) * (1.5 if hardcore else 1.0)
 		var depth_mult: float = 1.0 + floor_idx * 0.05
 		result["coin"] = round(randf_range(diff["coin"][0], diff["coin"][1]) * reward_mult * depth_mult)
-		result["crystal"] = round(randf_range(diff["crystal"][0], diff["crystal"][1]) * GameState.crystal_yield_bonus() * reward_mult * depth_mult)
+		var base_crystal: float = round(randf_range(diff["crystal"][0], diff["crystal"][1]) * reward_mult * depth_mult)
+		result["crystal"] = round(base_crystal * GameState.crystal_yield_bonus())
+		result["guild_crystal"] = int(result["crystal"] - base_crystal)   # Crystal Amplifiers' share, shown on the result
+		if is_boss and GameState.crystal_resonance():
+			var cache := int(round(float(diff["crystal"][1]) * 2.0))
+			result["bonus_crystal"] = int(result.get("bonus_crystal", 0)) + cache
+			result["crystal_cache"] = cache
 		if is_elite:
 			var bonus_crystal := 0
 			for h in party:

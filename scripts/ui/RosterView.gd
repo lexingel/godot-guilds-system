@@ -325,7 +325,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var tl := _label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true)
 	tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	trait_row.add_child(tl)
-	trait_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (60c)", func(id=h.id):
+	trait_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (%dc)" % GameState.trait_reroll_cost(), func(id=h.id):
 		var err := GameState.reroll_trait(id)
 		if err != "":
 			push_warning(err)
@@ -1187,7 +1187,7 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 		sl.add_theme_color_override("font_color", Palette.RANK_E)
 		set_line.add_child(sl)
 	var hint := _label("ⓘ", 13, true)
-	hint.tooltip_text = "2 of an element: half its bonus · 3: the full bonus · 3 different elements: Prism (+6% damage).\nEmber +15% damage · Frost +12% dodge · Verdant mends 8% · Umbral -15% hazard · Arcane +10% loot odds." + ("\nOptimal Synergy: every set bonus is 50% stronger." if GameState.synergy_unlocked() else "")
+	hint.tooltip_text = "2 of an element: half its bonus · 3: the full bonus · 3 different elements: Prism (+6% damage).\nEmber +15% damage · Frost +12% dodge · Verdant mends 8% · Umbral -15% hazard · Arcane +10% loot odds." + ("\nArcane Lab: every set bonus is %d%% stronger." % int(round((GameState.set_bonus_mult() - 1.0) * 100)) if GameState.lvl("res.lab") > 0 else "")
 	hint.mouse_filter = Control.MOUSE_FILTER_STOP
 	set_line.add_child(hint)
 	av.add_child(set_line)
@@ -1412,7 +1412,7 @@ func _relic_modal(r: Relic) -> void:
 		eb.tooltip_text = "Every altar slot is full — take a relic off first" if eb.disabled else ""
 		acts.add_child(eb)
 	if r.level < GameState.RELIC_MAX_LEVEL:
-		var ucost := int(round(15.0 * float(GameData.find_rarity(r.rarity)["mult"]) * r.level))
+		var ucost := GameState.relic_upgrade_cost(r)
 		var ub := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Upgrade — %d" % ucost, func(id=r.id):
 			var err := GameState.upgrade_relic(id)
 			if err != "":
