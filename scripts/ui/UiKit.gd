@@ -106,6 +106,27 @@ var roster_tab: String = "hero"   # overview | gear | skills | history — the h
 var _combat_hotkeys: Dictionary = {}   # key string ("1", "Space") -> Callable for the current hero's actions; rebuilt every render
 
 
+var _render_queued := false
+
+
+## GameState changes arrive in bursts (one action can emit several times);
+## the screen rebuilds once, at the end of the frame. Skipped if the signal
+## was disconnected meanwhile (an animation is playing; it rebuilds itself
+## when it ends).
+func _on_state_changed() -> void:
+	if _render_queued:
+		return
+	_render_queued = true
+	_flush_render.call_deferred()
+
+
+func _flush_render() -> void:
+	_render_queued = false
+	if not GameState.state_changed.is_connected(_on_state_changed) or not is_inside_tree():
+		return
+	render()
+
+
 func _clear_root() -> void:
 	for c in root.get_children():
 		c.queue_free()

@@ -867,8 +867,8 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 	if _combat_animating:
 		return
 	_combat_animating = true
-	if GameState.state_changed.is_connected(render):
-		GameState.state_changed.disconnect(render)
+	if GameState.state_changed.is_connected(_on_state_changed):
+		GameState.state_changed.disconnect(_on_state_changed)
 	if pre_action.is_valid():
 		pre_action.call()
 	var force := force_first
@@ -894,8 +894,8 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 		if GameState.run.get("node_state", {}).has("result"):
 			break
 		await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
-	if not GameState.state_changed.is_connected(render):
-		GameState.state_changed.connect(render)
+	if not GameState.state_changed.is_connected(_on_state_changed):
+		GameState.state_changed.connect(_on_state_changed)
 	_combat_animating = false
 	# The player may have navigated away (e.g. opened Settings) while this was
 	# still animating — render() rebuilds whatever `screen` currently is via
@@ -2211,12 +2211,12 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if _combat_animating:
 			return
 		_combat_animating = true
-		if GameState.state_changed.is_connected(render):
-			GameState.state_changed.disconnect(render)
+		if GameState.state_changed.is_connected(_on_state_changed):
+			GameState.state_changed.disconnect(_on_state_changed)
 		await _play_retreat(living_heroes, hero_wrappers)
 		GameState.combat_retreat()
-		if not GameState.state_changed.is_connected(render):
-			GameState.state_changed.connect(render)
+		if not GameState.state_changed.is_connected(_on_state_changed):
+			GameState.state_changed.connect(_on_state_changed)
 		_combat_animating = false
 		if screen == "rift_run":
 			render()

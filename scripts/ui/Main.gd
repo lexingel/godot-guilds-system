@@ -27,7 +27,7 @@ func _ready() -> void:
 	# the reference title screen rather than auto-resuming. New Game and Load
 	# Game both route through _switch_slot(), which is what actually loads
 	# (or resets) a slot's state once the player picks one.
-	GameState.state_changed.connect(render)
+	GameState.state_changed.connect(_on_state_changed)
 	if OS.has_feature("web"):
 		# Ask the browser not to evict the saves when it runs low on space.
 		JavaScriptBridge.eval("navigator.storage && navigator.storage.persist && navigator.storage.persist();", true)

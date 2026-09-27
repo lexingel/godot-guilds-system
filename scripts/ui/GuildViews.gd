@@ -956,12 +956,12 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 			if _crafting_animating:
 				return
 			_crafting_animating = true
-			if GameState.state_changed.is_connected(render):
-				GameState.state_changed.disconnect(render)
+			if GameState.state_changed.is_connected(_on_state_changed):
+				GameState.state_changed.disconnect(_on_state_changed)
 			GameState.craft_items(c, r)
 			await _play_craft_flourish(v, GameData.ITEM_CATEGORY_ICON_PATH[c])
-			if not GameState.state_changed.is_connected(render):
-				GameState.state_changed.connect(render)
+			if not GameState.state_changed.is_connected(_on_state_changed):
+				GameState.state_changed.connect(_on_state_changed)
 			_crafting_animating = false
 			render()
 		)
@@ -988,12 +988,12 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 			if _crafting_animating:
 				return
 			_crafting_animating = true
-			if GameState.state_changed.is_connected(render):
-				GameState.state_changed.disconnect(render)
+			if GameState.state_changed.is_connected(_on_state_changed):
+				GameState.state_changed.disconnect(_on_state_changed)
 			GameState.craft_relics(t, r2)
 			await _play_craft_flourish(v, GameData.RELIC_TYPE_ICON_PATH[t])
-			if not GameState.state_changed.is_connected(render):
-				GameState.state_changed.connect(render)
+			if not GameState.state_changed.is_connected(_on_state_changed):
+				GameState.state_changed.connect(_on_state_changed)
 			_crafting_animating = false
 			render()
 		)
