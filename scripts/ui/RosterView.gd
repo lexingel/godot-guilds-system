@@ -107,6 +107,22 @@ func _render_roster(v: VBoxContainer) -> void:
 
 	match roster_tab:
 		"skills":
+			var arch := Combat.hero_main_arch(h)
+			for sk in GameData.ROLE_SKILLS.get(h.cls_id, []):
+				var sk_row := HBoxContainer.new()
+				sk_row.add_theme_constant_override("separation", 8)
+				var sic := _icon(str(sk["icon"]), 28)
+				if h.level < int(sk["level"]):
+					sic.modulate = Color(1, 1, 1, 0.4)
+				sk_row.add_child(sic)
+				var sk_mid := _vbox(0)
+				sk_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				sk_mid.add_child(_label("Skill: %s · %d Momentum%s" % [sk["name"], int(sk["cost"]), "" if str(sk["row"]) == "any" else " · %s row" % str(sk["row"])], 12))
+				sk_mid.add_child(_wrap_label(str(sk["desc"]) + (" %s twist: %s." % [GameData.ARCHETYPES[arch], GameData.ARCH_TWIST[arch]] if arch != "" else ""), 11, true))
+				sk_row.add_child(sk_mid)
+				if h.level < int(sk["level"]):
+					sk_row.add_child(_label("Unlocks at Lv%d" % int(sk["level"]), 11, true))
+				cv.add_child(sk_row)
 			if GameData.SUBCLASS_ABILITIES.has(h.pool_id):
 				var ab: Dictionary = GameData.SUBCLASS_ABILITIES[h.pool_id]
 				var ab_row := HBoxContainer.new()

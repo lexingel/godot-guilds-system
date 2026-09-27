@@ -20,109 +20,109 @@ const SUBCLASS_ABILITIES := {
 	# -- Warrior --
 	"squire": {"name": "Reckless Swing", "desc": "An all-in burst against the weakest foe.", "effect": "burst_lowest", "value": 0.8},
 	"footman": {"name": "Shield Brace", "desc": "Cripples the greatest threat's damage output for the rest of this fight.", "effect": "debuff_lowest", "value": 0.65},
-	"duelist": {"name": "Riposte", "desc": "+chance to counter-attack for the rest of this fight.", "effect": "counter_surge", "value": 0.25},
-	"bulwark": {"name": "Unyielding Wall", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.25},
+	"duelist": {"name": "Riposte", "desc": "Stands ready: the next 3 hits on this hero are answered with a counter-strike.", "effect": "riposte", "value": 0.35},
+	"bulwark": {"name": "Unyielding Wall", "desc": "Draws every foe's attacks this round (30% less from them) and wards themself for 30% of max HP.", "effect": "taunt_ward", "value": 0.3},
 	"berserker": {"name": "Blood Frenzy", "desc": "Sacrifices own HP for a heavy burst on the weakest foe.", "effect": "self_sac_burst", "value": 1.4},
 	"iron-guard": {"name": "Fortify", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
-	"bloodletter": {"name": "Open Wound", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"bloodletter": {"name": "Open Wound", "desc": "For the rest of the fight, the party's hits heal the attacker for 20% of the damage.", "effect": "lifesteal_surge", "value": 0.2},
 	"runeblade": {"name": "Inscribed Strike", "desc": "Inscribes every blade in the party — damage surges for the rest of this fight.", "effect": "team_dmg_mult", "value": 1.18},
-	"ashen-templar": {"name": "Undying Vow", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.5},
+	"ashen-templar": {"name": "Undying Vow", "desc": "This round the hero takes half damage and can't fall below 1 HP.", "effect": "undying", "value": 0.5},
 	"rift-sovereign": {"name": "Sovereign's Wrath", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
 	# -- Warrior (content-pass additions) --
 	"fieldmender": {"name": "Battlefield Patch", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
-	"featherguard": {"name": "Light Feet", "desc": "Shields the whole party lightly.", "effect": "team_shield_burst", "value": 0.12},
-	"trailblazer": {"name": "First Through", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
-	"frostguard": {"name": "Unbothered", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"featherguard": {"name": "Light Feet", "desc": "+35% dodge for the whole party until the round ends.", "effect": "evasion_round", "value": 0.35},
+	"trailblazer": {"name": "First Through", "desc": "Two quick strikes at the target.", "effect": "double_strike", "value": 0.9},
+	"frostguard": {"name": "Unbothered", "desc": "Wards every hero in the front row for 30% of their max HP.", "effect": "shield_wall_front", "value": 0.3},
 	"warbrand": {"name": "Growing Anger", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
 	"aegis-bearer": {"name": "On Principle", "desc": "Cripples the greatest threat's damage output for the rest of this fight.", "effect": "debuff_lowest", "value": 0.6},
-	"stormguard": {"name": "Meet the Charge", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.1},
-	"rift-breaker": {"name": "First Crack", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
+	"stormguard": {"name": "Meet the Charge", "desc": "A heavy blow at the target that stuns it (bosses only lose their wind-up).", "effect": "stun_strike", "value": 1.0},
+	"rift-breaker": {"name": "First Crack", "desc": "Shatters the target's armor and ward; it takes 15% more damage for the rest of the fight.", "effect": "armor_break", "value": 0.8},
 	# -- Ranger --
-	"trapper": {"name": "Snare Volley", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.85},
+	"trapper": {"name": "Snare Volley", "desc": "Sets a snare: the next foe to attack is hit hard and loses that attack.", "effect": "trap", "value": 1.2},
 	"slinger": {"name": "Improvised Shot", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
 	"pathfinder": {"name": "Sure Footing", "desc": "Shields the whole party lightly.", "effect": "team_shield_burst", "value": 0.12},
 	"longshot": {"name": "One Arrow", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 0.9},
 	"blade-dancer": {"name": "Opening Performance", "desc": "A finishing sweep against every wounded foe.", "effect": "execute_all_low", "value": 0.55},
 	"warden": {"name": "Walked Worse Halls", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
-	"stormtracker": {"name": "Chase the Lightning", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.035},
-	"rift-ranger": {"name": "Read the Room", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
-	"deadfall-hunter": {"name": "Reversed Trap", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.75},
+	"stormtracker": {"name": "Chase the Lightning", "desc": "Lightning strikes three times, jumping between foes.", "effect": "chain_lightning", "value": 0.6},
+	"rift-ranger": {"name": "Read the Room", "desc": "+7 Momentum for the party (it costs 4).", "effect": "reset_cooldowns", "value": 0.0},
+	"deadfall-hunter": {"name": "Reversed Trap", "desc": "Sets a heavy snare: the next foe to attack is hit hard and loses that attack.", "effect": "trap", "value": 1.5},
 	"voidwalker": {"name": "Half-Step Out", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.22},
 	# -- Ranger (content-pass additions) --
 	"shadowtracker": {"name": "Scent in the Dark", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.85},
-	"fieldscout": {"name": "Exact Shot", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.75},
-	"nightwarden": {"name": "Watching the Dark", "desc": "Cripples the greatest threat's damage output for the rest of this fight.", "effect": "debuff_lowest", "value": 0.65},
+	"fieldscout": {"name": "Exact Shot", "desc": "Finds the gap: breaks the target's armor and ward; it takes 15% more damage for the rest of the fight.", "effect": "armor_break", "value": 0.9},
+	"nightwarden": {"name": "Watching the Dark", "desc": "Marks the target: it takes 30% more damage from every hero for the rest of the fight.", "effect": "mark_target", "value": 0.3},
 	"sapling-keeper": {"name": "Field Dressing", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
-	"duskstalker": {"name": "Gone Before the Echo", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.15},
+	"duskstalker": {"name": "Gone Before the Echo", "desc": "+40% dodge for the whole party until the round ends.", "effect": "evasion_round", "value": 0.4},
 	"gale-marksman": {"name": "True on the Wind", "desc": "A finishing sweep against every wounded foe.", "effect": "execute_all_low", "value": 0.55},
-	"rift-piercer": {"name": "The One Seam", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
-	"wintertide-archer": {"name": "Colder Every Shot", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"rift-piercer": {"name": "The One Seam", "desc": "Tears every foe's armor and ward away and hits each of them.", "effect": "ward_break", "value": 0.7},
+	"wintertide-archer": {"name": "Colder Every Shot", "desc": "Freezes the target: it loses its next two actions (a boss, one).", "effect": "freeze_target", "value": 0.6},
 	"rift-eclipsed-warden": {"name": "Eclipse Volley", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.15},
 	# -- Mage --
 	"apprentice": {"name": "Unsteady Spark", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
-	"cinderling": {"name": "First Spark", "desc": "Ignites the whole party's resolve — damage surges for the rest of this fight.", "effect": "team_dmg_mult", "value": 1.10},
+	"cinderling": {"name": "First Spark", "desc": "Sets every foe burning for three rounds.", "effect": "burn_all", "value": 0.4},
 	"fledgling-seer": {"name": "Half-Second Warning", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.08},
 	"cinder-adept": {"name": "Warming Cast", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.03},
-	"frost-scholar": {"name": "Cold Study", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.2},
+	"frost-scholar": {"name": "Cold Study", "desc": "Freezes the target: it loses its next two actions (a boss, one).", "effect": "freeze_target", "value": 0.5},
 	"wardweaver": {"name": "Faster Ward", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
-	"stormcaller": {"name": "Building Storm", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
-	"pyromancer": {"name": "The Rift Leans Away", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.2},
-	"archon-of-storms": {"name": "Thunder's Door", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.0},
+	"stormcaller": {"name": "Building Storm", "desc": "Lightning strikes three times, jumping between foes.", "effect": "chain_lightning", "value": 0.8},
+	"pyromancer": {"name": "Wildfire", "desc": "Sets every foe burning for three rounds.", "effect": "burn_all", "value": 0.6},
+	"archon-of-storms": {"name": "Thunder's Door", "desc": "Thunder strikes three times, jumping between foes.", "effect": "chain_lightning", "value": 1.0},
 	"the-unbound": {"name": "No Name Holds It", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.6},
 	# -- Mage (content-pass additions) --
-	"thornweaver": {"name": "Grown of Will", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
-	"shade-adept": {"name": "The Quiet Spell", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
-	"stoneward-mystic": {"name": "Bark and Stone", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
-	"grim-conjurer": {"name": "One More Round", "desc": "Mends and shields the lowest-HP ally at once.", "effect": "mend_shield_hybrid", "value": 0.18},
-	"verdant-oracle": {"name": "Root and Leaf", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.45},
-	"duskglass-seer": {"name": "Sees It Land First", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
-	"ashbound-theorist": {"name": "Ends in Fire", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
+	"thornweaver": {"name": "Grown of Will", "desc": "For the rest of the fight, the party's hits heal the attacker for 20% of the damage.", "effect": "lifesteal_surge", "value": 0.2},
+	"shade-adept": {"name": "The Quiet Spell", "desc": "Marks the target: it takes 30% more damage from every hero for the rest of the fight.", "effect": "mark_target", "value": 0.3},
+	"stoneward-mystic": {"name": "Bark and Stone", "desc": "Wards every hero in the front row for 30% of their max HP.", "effect": "shield_wall_front", "value": 0.3},
+	"grim-conjurer": {"name": "One More Round", "desc": "Raises a fallen ally at 40% HP (or heals the most-hurt ally).", "effect": "revive", "value": 0.4},
+	"verdant-oracle": {"name": "Root and Leaf", "desc": "Heals the whole party 35% and cleanses burn, poison, chill, stun and curses.", "effect": "cleanse_heal", "value": 0.35},
+	"duskglass-seer": {"name": "Sees It Land First", "desc": "+7 Momentum for the party (it costs 4).", "effect": "reset_cooldowns", "value": 0.0},
+	"ashbound-theorist": {"name": "Ends in Fire", "desc": "Sets every foe burning for three rounds.", "effect": "burn_all", "value": 0.6},
 	"rift-warden-magus": {"name": "Warded Before It Forms", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.35},
 	# -- Cleric --
-	"peddler": {"name": "Quick Bandage", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.3},
-	"acolyte": {"name": "Quiet Prayer", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
+	"peddler": {"name": "Quick Bandage", "desc": "Mends and shields the lowest-HP ally at once.", "effect": "mend_shield_hybrid", "value": 0.15},
+	"acolyte": {"name": "Quiet Prayer", "desc": "Heals the whole party 30% and cleanses burn, poison, chill, stun and curses.", "effect": "cleanse_heal", "value": 0.3},
 	"herbalist": {"name": "Field Kit", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.4},
-	"lay-brother": {"name": "Censer Swing", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.7},
+	"lay-brother": {"name": "Censer Swing", "desc": "A swing at the target that stuns it (bosses only lose their wind-up).", "effect": "stun_strike", "value": 0.8},
 	"battle-chaplain": {"name": "Keep Moving", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.12},
-	"zealot": {"name": "Faith and Blade", "desc": "A heavy burst against the weakest foe.", "effect": "burst_lowest", "value": 1.0},
-	"rift-medic": {"name": "Faster Than the Wounds", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.55},
-	"dawnkeeper": {"name": "First Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.35},
+	"zealot": {"name": "Faith and Blade", "desc": "Pays 20% of their own HP: +3 Momentum and +15% party damage for the rest of the fight.", "effect": "blood_price", "value": 0.15},
+	"rift-medic": {"name": "Faster Than the Wounds", "desc": "Raises a fallen ally at 50% HP (or heals the most-hurt ally).", "effect": "revive", "value": 0.5},
+	"dawnkeeper": {"name": "First Light", "desc": "Heals the whole party 30% and cleanses burn, poison, chill, stun and curses.", "effect": "cleanse_heal", "value": 0.3},
 	"sanctified-shield": {"name": "Not Today", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.4},
 	"alchemist": {"name": "Faster Brew", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
 	"last-light-martyr": {"name": "Last Light", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.6},
 	# -- Cleric (content-pass additions) --
 	"emberblessed-acolyte": {"name": "Lit Candle", "desc": "Lights every blade with sacred fire — damage surges for the rest of this fight.", "effect": "team_dmg_mult", "value": 1.10},
-	"frostward-sister": {"name": "Keeps the Chill Out", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
+	"frostward-sister": {"name": "Keeps the Chill Out", "desc": "Wards every hero in the front row for 30% of their max HP.", "effect": "shield_wall_front", "value": 0.3},
 	"vanguard-chaplain": {"name": "Blessed Blade", "desc": "A finishing sweep against every wounded foe.", "effect": "execute_all_low", "value": 0.5},
-	"hearth-warden": {"name": "Fire in the Cold", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
-	"ember-confessor": {"name": "Brief Absolution", "desc": "A burst against the weakest foe.", "effect": "burst_lowest", "value": 0.95},
-	"frost-anchorite": {"name": "Fasting Vigil", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.5},
+	"hearth-warden": {"name": "Fire in the Cold", "desc": "Wards every hero in the front row for 35% of their max HP.", "effect": "shield_wall_front", "value": 0.35},
+	"ember-confessor": {"name": "Brief Absolution", "desc": "Finishes the target outright if it's below 35% HP (not a boss); otherwise a heavy blow.", "effect": "execute_threshold", "value": 0.95},
+	"frost-anchorite": {"name": "Fasting Vigil", "desc": "Heals the whole party 40% and cleanses burn, poison, chill, stun and curses.", "effect": "cleanse_heal", "value": 0.4},
 	"radiant-vanguard": {"name": "Leads With Light", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 1.0},
 	"sainted-ember": {"name": "First Word", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.05},
 	# -- Rogue --
-	"scavenger": {"name": "Know the Puddles", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.08},
+	"scavenger": {"name": "Know the Puddles", "desc": "+30% dodge for the whole party until the round ends.", "effect": "evasion_round", "value": 0.3},
 	"runaway": {"name": "Never Fought Fair", "desc": "Shields the whole party lightly.", "effect": "team_shield_burst", "value": 0.10},
 	"cutpurse": {"name": "Leaves With More", "desc": "A burst against the weakest foe, healing the caster for a share of the damage.", "effect": "hp_drain_burst", "value": 0.75},
 	"skirmisher": {"name": "Never Where You Struck", "desc": "Shields the whole party lightly.", "effect": "team_shield_burst", "value": 0.13},
 	"footpad": {"name": "Nobody Heard Them", "desc": "+chance to counter-attack for the rest of this fight.", "effect": "counter_surge", "value": 0.2},
 	"shadowfoot": {"name": "Barely Noticed", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.18},
-	"fleetblade": {"name": "Getting Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.04},
+	"fleetblade": {"name": "Getting Faster", "desc": "Two quick strikes at the target.", "effect": "double_strike", "value": 0.9},
 	"nightblade": {"name": "Strikes From the Dark", "desc": "A heavy burst against the weakest foe, healing the caster for a share of the damage.", "effect": "hp_drain_burst", "value": 1.1},
 	"wraithstep": {"name": "Two Footprints", "desc": "A finishing blow against the weakest foe, stronger the lower they are.", "effect": "execute_burst", "value": 1.0},
 	"duskrunner": {"name": "Between Heartbeats", "desc": "A heavy burst against the weakest foe, healing the caster for a share of the damage.", "effect": "hp_drain_burst", "value": 1.3},
 	# -- Rogue (content-pass additions) --
 	"herbrunner": {"name": "Unpoisoned Plants", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
-	"arcane-pilferer": {"name": "Warded Vault", "desc": "A burst against the weakest foe, healing the caster for a share of the damage.", "effect": "hp_drain_burst", "value": 0.8},
-	"ironhide-footpad": {"name": "Tougher Than It Looks", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
-	"glyphhand": {"name": "Reads the Seams", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
+	"arcane-pilferer": {"name": "Warded Vault", "desc": "Picks every foe's armor and ward apart and hits each of them.", "effect": "ward_break", "value": 0.6},
+	"ironhide-footpad": {"name": "Tougher Than It Looks", "desc": "This round the hero takes half damage and can't fall below 1 HP.", "effect": "undying", "value": 0.5},
+	"glyphhand": {"name": "Reads the Seams", "desc": "Reads every seam: strips each foe's armor and ward and hits them.", "effect": "ward_break", "value": 0.6},
 	"bramblefoot": {"name": "The Undergrowth Hides More", "desc": "Mends and shields the lowest-HP ally at once.", "effect": "mend_shield_hybrid", "value": 0.15},
-	"rift-slipper": {"name": "Half Out of Reality", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
+	"rift-slipper": {"name": "Half Out of Reality", "desc": "+35% dodge for the whole party until the round ends.", "effect": "evasion_round", "value": 0.35},
 	"wraithblade-adept": {"name": "Thinner and Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
-	"the-unseen-hand": {"name": "Already Struck", "desc": "A wave of damage sweeps every foe.", "effect": "cleave_burst", "value": 1.1},
-	"the-final-cut": {"name": "Uncatchable", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.28},
+	"the-unseen-hand": {"name": "Already Struck", "desc": "Finishes the target outright if it's below 35% HP (not a boss); otherwise a heavy blow.", "effect": "execute_threshold", "value": 1.1},
+	"the-final-cut": {"name": "The Final Cut", "desc": "Finishes the target outright if it's below 35% HP (not a boss); otherwise a heavy blow.", "effect": "execute_threshold", "value": 1.2},
 }
 
-## One icon per ability *effect* (18 shapes, not ~90 abilities) reusing the
+## One icon per ability *effect* (37 shapes, not ~90 abilities) reusing the
 ## same assets/skills/ icons skill-tree nodes already draw from — abilities
 ## and skill nodes never render on the same screen, so sharing icons across
 ## the two doesn't read as a collision.
@@ -145,6 +145,25 @@ const ABILITY_EFFECT_ICON := {
 	"execute_all_low": "res://assets/skills/helm.png",
 	"hp_drain_burst": "res://assets/skills/potion_red_sm.png",
 	"mend_shield_hybrid": "res://assets/skills/potion_blue_sm.png",
+	"stun_strike": "res://assets/skills/shield_orange.png",
+	"riposte": "res://assets/skills/sword_silver.png",
+	"taunt_ward": "res://assets/skills/helm.png",
+	"undying": "res://assets/skills/heart.png",
+	"revive": "res://assets/skills/star.png",
+	"burn_all": "res://assets/relics/escalate_pct.png",
+	"chain_lightning": "res://assets/skills/gem_blue_b.png",
+	"mark_target": "res://assets/skills/eye_gem.png",
+	"execute_threshold": "res://assets/skills/dagger_blue.png",
+	"armor_break": "res://assets/skills/armor_shoulder.png",
+	"double_strike": "res://assets/skills/sword_dual.png",
+	"evasion_round": "res://assets/skills/cloak_a.png",
+	"shield_wall_front": "res://assets/skills/shield_split.png",
+	"trap": "res://assets/skills/ring.png",
+	"ward_break": "res://assets/skills/shard_blue.png",
+	"freeze_target": "res://assets/skills/gem_blue_a.png",
+	"cleanse_heal": "res://assets/skills/potion_blue.png",
+	"lifesteal_surge": "res://assets/skills/potion_red_sm.png",
+	"blood_price": "res://assets/skills/gem_red.png",
 }
 
 
@@ -469,6 +488,12 @@ const ABILITY_AWAKENING_BUCKET := {
 	"mend_burst": "support", "shield_lowest": "support", "mend_shield_hybrid": "support",
 	# Debuff/utility — rider: a small permanent damage stack for the fight.
 	"monster_dmg_mult": "utility", "reset_cooldowns": "utility", "debuff_lowest": "utility",
+	# The signature effects.
+	"stun_strike": "single_dmg", "execute_threshold": "single_dmg", "armor_break": "single_dmg", "double_strike": "single_dmg",
+	"burn_all": "aoe_dmg", "chain_lightning": "aoe_dmg", "ward_break": "aoe_dmg",
+	"taunt_ward": "support", "undying": "support", "revive": "support", "shield_wall_front": "support", "cleanse_heal": "support",
+	"riposte": "buff", "evasion_round": "buff", "lifesteal_surge": "buff", "blood_price": "buff",
+	"mark_target": "utility", "trap": "utility", "freeze_target": "utility",
 }
 const ABILITY_AWAKENING_BUCKET_DESC := {
 	"buff": "-1 round Ability cooldown",
@@ -596,4 +621,23 @@ static func find_role_skill(id: String) -> Dictionary:
 			if sk["id"] == id:
 				return sk
 	return {}
+
+
+## Archetype twists: a hero's main archetype (Combat.hero_main_arch) adds a
+## rider to every role skill they use.
+const ARCH_TWIST := {
+	"guardian": "also wards the most-hurt ally for 10% of their max HP",
+	"sustain": "also heals this hero 10% of their max HP",
+	"evasion": "and this hero dodges the next hit aimed at them",
+	"attrition": "and the target burns for two rounds",
+	"opener": "the first skill each fight hits 50% harder",
+	"executioner": "+50% damage against foes below 40% HP",
+}
+const TWIST_WARD := 0.10
+const TWIST_HEAL := 0.10
+const TWIST_BURN := 0.3      # of the hero's hit, per round, two rounds
+const TWIST_OPENER := 0.5
+const TWIST_EXECUTE := 0.5
+const TWIST_EXECUTE_BELOW := 0.4
+const MONSTER_BURN_ROUNDS := 3
 

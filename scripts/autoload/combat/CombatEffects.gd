@@ -182,6 +182,17 @@ func hero_archetype_counts(h: Hero) -> Dictionary:
 	return counts
 
 
+## The one archetype a hero leans into most ("" if none): the colored badge
+## on the roster, and the twist on their role skills (GameData.ARCH_TWIST).
+func hero_main_arch(h: Hero) -> String:
+	var counts := hero_archetype_counts(h)
+	var best := ""
+	for k in counts:
+		if best == "" or int(counts[k]) > int(counts[best]) or (int(counts[k]) == int(counts[best]) and str(k) < best):
+			best = k
+	return best
+
+
 ## Sum of `h`'s conditional stat effects of `kind` whose condition holds right
 ## now — layered on top of the flat hero_skill_total value at the moment of an
 ## action (attack/being targeted), never folded into max_hp/dmg_of/spd_of.

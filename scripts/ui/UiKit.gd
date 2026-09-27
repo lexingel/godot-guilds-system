@@ -640,12 +640,7 @@ func _build_bb(h: Hero) -> String:
 ## The single archetype a hero leans into most ("" if none) — the colored
 ## badge on roster portraits and party cards.
 func _main_arch(h: Hero) -> String:
-	var counts := Combat.hero_archetype_counts(h)
-	var best := ""
-	for k in counts:
-		if best == "" or int(counts[k]) > int(counts[best]):
-			best = k
-	return best
+	return Combat.hero_main_arch(h)
 
 
 ## _info_row with a BBCode body (see _rich_line).

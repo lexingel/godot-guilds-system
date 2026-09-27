@@ -439,6 +439,7 @@ func _start_round(state: Dictionary) -> void:
 	state["_extra_turned"] = {}
 	state["_taunt"] = ""
 	state["_smoke"] = 0.0
+	state["_undying"] = {}
 	var weakened: Dictionary = state.get("_weakened", {})
 	for wid in weakened.keys().duplicate():
 		weakened[wid] = int(weakened[wid]) - 1
@@ -537,8 +538,16 @@ func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = 
 	var monsters: Array = state["monsters"]
 	var formation_mult := 1.0 if bool(monsters[ti].get("is_main", true)) else 0.75
 	var weaken := 1.0 - GameData.CURSE_WEAKEN if state.get("_weakened", {}).has(h.id) else 1.0
+	var marked := 1.0 + float(monsters[ti].get("_marked", 0.0))
+	match str(state.get("_twist", "")):
+		"executioner":
+			if float(monsters[ti]["hp"]) < float(monsters[ti]["max_hp"]) * GameData.TWIST_EXECUTE_BELOW:
+				mult *= 1.0 + GameData.TWIST_EXECUTE
+		"opener":
+			if not state.get("_opened", {}).has(h.id):
+				mult *= 1.0 + GameData.TWIST_OPENER
 	var hit := {"target": monsters[ti]}
-	hit["dealt"] = dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * float(state["_attack_mult"]) * formation_mult * mult * weaken * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
+	hit["dealt"] = dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * float(state["_attack_mult"]) * formation_mult * mult * weaken * marked * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
 	_fire("before_hit", state, h, hit)
 	var dealt: float = hit["dealt"]
 	var armor := float(monsters[ti].get("armor", 0.0))
@@ -562,6 +571,9 @@ func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = 
 		h.hp = max(0, h.hp - reflected)
 		log.append("%s's surface reflects %d damage back at %s." % [monsters[ti]["name"], reflected, h.name])
 	hit["dealt"] = dealt
+	var steal := float(state.get("_lifesteal", 0.0))
+	if steal > 0.0 and dealt > 0.0 and h.hp > 0:
+		h.hp = mini(max_hp(h), h.hp + int(round(dealt * steal)))
 	_fire("after_hit", state, h, hit)
 	return dealt
 
@@ -578,6 +590,42 @@ func _use_role_skill(state: Dictionary, h: Hero, sk: Dictionary, target_idx: int
 		target_idx = _first_living_monster_idx(monsters)
 	var living: Array[Hero] = []
 	living.assign(party.filter(func(x): return x.hp > 0))
+	var arch := hero_main_arch(h)
+	state["_twist"] = arch
+	_role_skill_effect(state, h, sk, target_idx, val, living)
+	state["_twist"] = ""
+	match arch:
+		"guardian":
+			if not living.is_empty():
+				var low: Hero = living[0]
+				for x in living:
+					if float(x.hp) / max_hp(x) < float(low.hp) / max_hp(low):
+						low = x
+				var shields: Dictionary = state["hero_shields"]
+				shields[low.id] = float(shields.get(low.id, 0.0)) + max_hp(low) * GameData.TWIST_WARD
+		"sustain":
+			h.hp = mini(max_hp(h), h.hp + int(round(max_hp(h) * GameData.TWIST_HEAL)))
+		"evasion":
+			state.get_or_add("_evade_next", {})[h.id] = true
+		"attrition":
+			if target_idx >= 0 and target_idx < monsters.size() and float(monsters[target_idx]["hp"]) > 0 and str(sk["target"]) == "foe":
+				_burn_foe(state, target_idx, dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * GameData.TWIST_BURN, 2)
+		"opener":
+			state.get_or_add("_opened", {})[h.id] = true
+
+
+## A foe burns for `per_round` damage at each round's end for `rounds` rounds
+## (the stronger burn wins).
+func _burn_foe(state: Dictionary, i: int, per_round: float, rounds: int) -> void:
+	var burns: Dictionary = state.get_or_add("_m_burn", {})
+	var old: Dictionary = burns.get(i, {})
+	if old.is_empty() or float(old["dmg"]) * int(old["rounds"]) < per_round * rounds:
+		burns[i] = {"dmg": per_round, "rounds": rounds}
+
+
+func _role_skill_effect(state: Dictionary, h: Hero, sk: Dictionary, target_idx: int, val: float, living: Array[Hero]) -> void:
+	var log: Array[String] = state["log"]
+	var monsters: Array = state["monsters"]
 	match str(sk["effect"]):
 		"bash":
 			if target_idx >= 0:
@@ -763,8 +811,8 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 				if not shielded.is_empty():
 					log.append("%s is shielded for %d." % [shielded[0].name, int(round(shielded[1]))])
 			"reset_cooldowns":
-				gain_momentum(state, 4)
-				log.append("+4 Momentum.")
+				gain_momentum(state, 7)
+				log.append("+7 Momentum.")
 			"dodge_surge":
 				state["dodge"] = min(0.6, float(state["dodge"]) + val)
 				log.append("The party moves lighter on its feet.")
@@ -803,6 +851,119 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 							var dealt4: float = team_dmg_base * val * (1.0 + missing_frac2)
 							m2["hp"] = float(m2["hp"]) - round(dealt4)
 				log.append("Every wounded foe is finished off.")
+			"stun_strike", "execute_threshold", "armor_break", "double_strike", "mark_target", "freeze_target":
+				var ti := int(act.get("target", 0))
+				if ti < 0 or ti >= monsters.size() or float(monsters[ti]["hp"]) <= 0:
+					ti = _first_living_monster_idx(monsters)
+				if ti >= 0:
+					var tm: Dictionary = monsters[ti]
+					var boss: bool = str(tm.get("tier", "")) == "boss"
+					match eff:
+						"stun_strike":
+							tm["hp"] = float(tm["hp"]) - round(team_dmg_base * escalate_mult * val)
+							tm["_winding"] = false
+							tm["_charged"] = false
+							if not boss:
+								state.get_or_add("_m_stunned", {})[ti] = 1
+							log.append("%s is %s!" % [tm["name"], "stunned" if not boss else "staggered — its wind-up breaks"])
+						"freeze_target":
+							tm["_winding"] = false
+							tm["_charged"] = false
+							state.get_or_add("_m_stunned", {})[ti] = 1 if boss else 2
+							log.append("%s is frozen solid!" % tm["name"])
+						"execute_threshold":
+							if not boss and float(tm["hp"]) <= float(tm["max_hp"]) * 0.35:
+								tm["hp"] = 0.0
+								log.append("%s is finished off!" % tm["name"])
+							else:
+								tm["hp"] = float(tm["hp"]) - round(team_dmg_base * escalate_mult * val)
+						"armor_break":
+							tm["armor"] = 0.0
+							state["monster_shields"].erase(ti)
+							tm["_marked"] = float(tm.get("_marked", 0.0)) + 0.15
+							tm["hp"] = float(tm["hp"]) - round(team_dmg_base * escalate_mult * val * 0.5)
+							log.append("%s's defences shatter." % tm["name"])
+						"mark_target":
+							tm["_marked"] = float(tm.get("_marked", 0.0)) + val
+							log.append("%s is marked." % tm["name"])
+						"double_strike":
+							_hero_hit(state, h, ti, val)
+							if float(tm["hp"]) > 0:
+								_hero_hit(state, h, ti, val)
+			"burn_all":
+				for bi in monsters.size():
+					if float(monsters[bi]["hp"]) > 0:
+						_burn_foe(state, bi, team_dmg_base * val * 0.5, GameData.MONSTER_BURN_ROUNDS)
+				log.append("Every foe is set ablaze.")
+			"chain_lightning":
+				for k in 3:
+					var alive_idx: Array = []
+					for ci in monsters.size():
+						if float(monsters[ci]["hp"]) > 0:
+							alive_idx.append(ci)
+					if alive_idx.is_empty():
+						break
+					var ci2: int = alive_idx[randi() % alive_idx.size()]
+					monsters[ci2]["hp"] = float(monsters[ci2]["hp"]) - round(team_dmg_base * escalate_mult * val)
+				log.append("Lightning leaps between the foes.")
+			"ward_break":
+				for wi in monsters.size():
+					if float(monsters[wi]["hp"]) > 0:
+						monsters[wi]["armor"] = 0.0
+						monsters[wi]["hp"] = float(monsters[wi]["hp"]) - round(team_dmg_base * escalate_mult * val * 0.5)
+				state["monster_shields"] = {}
+				log.append("Every ward and plate is torn away.")
+			"riposte":
+				state.get_or_add("_riposte", {})[h.id] = {"left": 3, "dmg": team_dmg_base * val}
+				log.append("%s stands ready to answer every blow." % h.name)
+			"taunt_ward":
+				state["_taunt"] = h.id
+				state["_taunt_cut"] = 0.3
+				var tsh: Dictionary = state["hero_shields"]
+				tsh[h.id] = float(tsh.get(h.id, 0.0)) + max_hp(h) * val
+				log.append("%s plants their feet — every foe turns on them." % h.name)
+			"undying":
+				state.get_or_add("_undying", {})[h.id] = true
+				log.append("%s will not fall this round." % h.name)
+			"revive":
+				var fallen: Array = party.filter(func(x): return x.hp <= 0)
+				if not fallen.is_empty():
+					var rv: Hero = fallen[0]
+					rv.hp = maxi(1, int(round(max_hp(rv) * val)))
+					log.append("%s is raised back to their feet!" % rv.name)
+				elif not living.is_empty():
+					var low2: Hero = living[0]
+					for x in living:
+						if float(x.hp) / max_hp(x) < float(low2.hp) / max_hp(low2):
+							low2 = x
+					low2.hp = mini(max_hp(low2), low2.hp + int(round(max_hp(low2) * val)))
+					log.append("%s is mended." % low2.name)
+			"cleanse_heal":
+				for x in living:
+					x.hp = mini(max_hp(x), x.hp + int(round(max_hp(x) * val)))
+					for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+						state.get(key, {}).erase(x.id)
+				log.append("A cleansing light washes over the party.")
+			"shield_wall_front":
+				var wsh: Dictionary = state["hero_shields"]
+				for x in living:
+					if x.formation != "back":
+						wsh[x.id] = float(wsh.get(x.id, 0.0)) + max_hp(x) * val
+				log.append("The front row locks shields.")
+			"evasion_round":
+				state["_smoke"] = float(state.get("_smoke", 0.0)) + val
+				log.append("The party slips out of reach.")
+			"trap":
+				state["_trap"] = float(state.get("_trap", 0.0)) + team_dmg_base * val
+				log.append("A snare is set.")
+			"lifesteal_surge":
+				state["_lifesteal"] = float(state.get("_lifesteal", 0.0)) + val
+				log.append("Every wound the party deals now feeds it.")
+			"blood_price":
+				h.hp = maxi(1, h.hp - int(round(max_hp(h) * 0.2)))
+				gain_momentum(state, 3)
+				state["team_dmg_base"] = float(state["team_dmg_base"]) * (1.0 + val)
+				log.append("%s pays in blood: +3 Momentum, and the party hits harder." % h.name)
 			"hp_drain_burst":
 				var idx5 := _lowest_hp_living_monster_idx(monsters)
 				if idx5 >= 0:
@@ -891,7 +1052,11 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 
 	var stunned: Dictionary = state.get("_m_stunned", {})
 	if stunned.has(i):
-		stunned.erase(i)
+		var left := int(stunned[i]) - 1
+		if left <= 0:
+			stunned.erase(i)
+		else:
+			stunned[i] = left
 		log.append("%s is stunned and loses its action." % m["name"])
 		return
 	if m.get("_winding", false):
@@ -965,6 +1130,12 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 	alive_now.assign(party.filter(func(h): return h.hp > 0))
 	var guard: Hero = null
 	var taunted := false
+	if aimed and float(state.get("_trap", 0.0)) > 0.0:
+		var trap_dmg := float(state["_trap"])
+		state["_trap"] = 0.0
+		m["hp"] = float(m["hp"]) - round(trap_dmg)
+		log.append("%s springs the snare: %d damage, and its attack is lost!" % [m["name"], int(round(trap_dmg))])
+		return
 	if aimed:
 		var taunter := _find_party_hero(party, str(state.get("_taunt", "")))
 		if taunter and taunter.hp > 0:
@@ -997,13 +1168,20 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 		gain_momentum(state, 2 if heavy_blow else 1)
 	if taunted:
 		back *= 1.0 - float(state.get("_taunt_cut", 0.0))
+	var undying: bool = state.get("_undying", {}).has(target.id)
+	if undying:
+		back *= 0.5
 	var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
 	if state["_defending"].has(target.id):
 		back *= 0.5
 		gain_momentum(state, 2 if heavy_blow else 1)
 	var effective_dodge: float = float(state["dodge"]) + float(state.get("_smoke", 0.0)) + hero_cond_stat(target, "dodge_pct", state, {"attacker": m})
 	var evaded := false
-	if not warded and effective_dodge > 0.0 and randf() < effective_dodge:
+	if state.get("_evade_next", {}).has(target.id):
+		state["_evade_next"].erase(target.id)
+		log.append("%s saw it coming and slips the blow!" % target.name)
+		evaded = true
+	elif not warded and effective_dodge > 0.0 and randf() < effective_dodge:
 		log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
 		evaded = true
 	var heavy_hit: bool = back >= float(max_hp(target)) * 0.25
@@ -1026,7 +1204,7 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 			target.hp = max(1, int(round(float(max_hp(target)) * float(state["wipe_guard"]))))
 			log.append("Last Stand! %s clings to life with %d HP." % [target.name, target.hp])
 		else:
-			target.hp = max(0, target.hp - dealt_back)
+			target.hp = max(1 if undying else 0, target.hp - dealt_back)
 			log.append("The %s hits %s for %d." % [m["name"], target.name, dealt_back])
 			_tally(state, "taken", dealt_back)
 			if heavy_blow and not state["_defending"].has(target.id):
@@ -1054,6 +1232,13 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 			if target.hp <= 0:
 				log.append("%s is knocked out!" % target.name)
 				_fire("ally_down", state, target)
+	var rip: Dictionary = state.get("_riposte", {}).get(target.id, {})
+	if not rip.is_empty() and target.hp > 0 and float(m["hp"]) > 0:
+		m["hp"] = float(m["hp"]) - round(float(rip["dmg"]))
+		log.append("%s ripostes, striking %s for %d!" % [target.name, m["name"], int(round(float(rip["dmg"])))])
+		rip["left"] = int(rip["left"]) - 1
+		if int(rip["left"]) <= 0:
+			state["_riposte"].erase(target.id)
 
 
 # ---------------- Defeat analysis ----------------
@@ -1129,6 +1314,17 @@ func _end_round_effects(state: Dictionary) -> void:
 			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
 			_tally(state, "enemy_heal", regen_heal)
 
+	var mburn: Dictionary = state.get("_m_burn", {})
+	for mi in mburn.keys().duplicate():
+		var mb: Dictionary = mburn[mi]
+		if int(mi) >= monsters.size() or float(monsters[int(mi)]["hp"]) <= 0:
+			mburn.erase(mi)
+			continue
+		monsters[int(mi)]["hp"] = float(monsters[int(mi)]["hp"]) - round(float(mb["dmg"]))
+		log.append("%s burns for %d." % [monsters[int(mi)]["name"], int(round(float(mb["dmg"])))])
+		mb["rounds"] = int(mb["rounds"]) - 1
+		if int(mb["rounds"]) <= 0:
+			mburn.erase(mi)
 	var burn: Dictionary = state.get("hero_burn", {})
 	for bid in burn.keys().duplicate():
 		var hb: Hero = _find_party_hero(party, str(bid))

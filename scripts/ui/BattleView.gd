@@ -1389,6 +1389,12 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 		out.append({"icon": "res://assets/skills/shield_split.png", "tip": "Guarding an ally this round (takes their hits, 25% weaker)", "color": Palette.VIOLET_BRIGHT})
 	if state.get("_weakened", {}).has(h.id):
 		out.append({"icon": "res://assets/skills/face_hood.png", "tip": "Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it." % [int(GameData.CURSE_WEAKEN * 100), int(state["_weakened"][h.id])], "color": Palette.HAZARD})
+	if state.get("_riposte", {}).has(h.id):
+		out.append({"icon": "res://assets/skills/sword_silver.png", "tip": "Riposte — answers the next %d hit(s) with a counter-strike" % int(state["_riposte"][h.id]["left"]), "color": Palette.EMBER_BRIGHT})
+	if state.get("_undying", {}).has(h.id):
+		out.append({"icon": "res://assets/skills/heart.png", "tip": "Undying — half damage and can't fall this round", "color": Palette.EMBER_BRIGHT})
+	if state.get("_evade_next", {}).has(h.id):
+		out.append({"icon": "res://assets/skills/cloak_a.png", "tip": "Will dodge the next hit aimed at them", "color": Palette.CRYSTALS})
 	if str(state.get("_taunt", "")) == h.id:
 		out.append({"icon": "res://assets/skills/helm.png", "tip": "Taunting — every foe's attacks come here this round, %d%% weaker" % int(float(state.get("_taunt_cut", 0.0)) * 100), "color": Palette.VIOLET_BRIGHT})
 	if Combat.qualifies_for_ability(h) and Combat.action_block(state, h, "ability") == "":
@@ -1426,7 +1432,12 @@ func _monster_statuses(state: Dictionary, i: int) -> Array:
 	if m.get("_charged", false) or m.get("_winding", false):
 		out.append({"icon": "res://assets/skills/sword_big.png", "tip": "Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.", "color": Palette.HAZARD})
 	if state.get("_m_stunned", {}).has(i):
-		out.append({"icon": "res://assets/skills/star.png", "tip": "Stunned — loses its next action", "color": Palette.EMBER_BRIGHT})
+		out.append({"icon": "res://assets/skills/star.png", "tip": "Stunned — loses its next %s" % ("action" if int(state["_m_stunned"][i]) <= 1 else "%d actions" % int(state["_m_stunned"][i])), "color": Palette.EMBER_BRIGHT})
+	var mb: Dictionary = state.get("_m_burn", {}).get(i, {})
+	if not mb.is_empty():
+		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s)" % [int(round(float(mb["dmg"]))), int(mb["rounds"])], "color": Palette.HAZARD})
+	if float(m.get("_marked", 0.0)) > 0.0:
+		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": "Marked — takes %d%% more damage from heroes" % int(round(float(m["_marked"]) * 100)), "color": Palette.HAZARD})
 	var kit: Array = m.get("kit", [])
 	if not kit.is_empty():
 		var moves: Array = kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))
@@ -2005,7 +2016,8 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		# Role skills (2, 3) and the subclass Ability (4) spend Momentum.
 		var skill_defs: Array = []
 		for sk in GameData.hero_role_skills(current_hero):
-			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), str(sk["name"]), "%s%s" % [str(sk["desc"]), "" if str(sk["row"]) == "any" else "\n%s row." % str(sk["row"]).capitalize()], int(sk["cost"])])
+			var tw_arch := Combat.hero_main_arch(current_hero)
+			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), str(sk["name"]), "%s%s%s" % [str(sk["desc"]), "" if str(sk["row"]) == "any" else "\n%s row." % str(sk["row"]).capitalize(), ("\n%s twist: %s." % [GameData.ARCHETYPES[tw_arch], GameData.ARCH_TWIST[tw_arch]]) if tw_arch != "" else ""], int(sk["cost"])])
 		while skill_defs.size() < 2 and GameData.ROLE_SKILLS.has(current_hero.cls_id) and skill_defs.size() < (GameData.ROLE_SKILLS[current_hero.cls_id] as Array).size():
 			var locked_sk: Dictionary = GameData.ROLE_SKILLS[current_hero.cls_id][skill_defs.size()]
 			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), "%s\nLearned at level %d." % [locked_sk["desc"], int(locked_sk["level"])], int(locked_sk["cost"])])

@@ -40,6 +40,11 @@ const ABILITY_STYLE := {
 	"mend_burst": "mend", "mend_shield_hybrid": "mend", "shield_lowest": "mend", "team_shield_burst": "mend",
 	"monster_dmg_mult": "slow", "debuff_lowest": "slow",
 	"team_dmg_mult": "rally", "escalate_surge": "rally", "counter_surge": "rally", "dodge_surge": "rally", "wipe_guard_surge": "rally", "reset_cooldowns": "rally",
+	"stun_strike": "strike", "execute_threshold": "strike", "armor_break": "strike", "double_strike": "strike", "mark_target": "strike",
+	"burn_all": "nova", "chain_lightning": "nova", "ward_break": "nova",
+	"taunt_ward": "mend", "undying": "mend", "revive": "mend", "shield_wall_front": "mend", "cleanse_heal": "mend",
+	"trap": "slow", "freeze_target": "slow",
+	"riposte": "rally", "evasion_round": "rally", "lifesteal_surge": "rally", "blood_price": "rally",
 }
 const RALLY_MULT := 1.25
 const RALLY_TIME := 4.0

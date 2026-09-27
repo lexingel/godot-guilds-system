@@ -16,7 +16,13 @@ func _ready() -> void:
 	var total_fail := 0
 	for f in files:
 		GameState.active_slot = TEST_SLOT
-		var t: Node = load("res://tests/" + f).new()
+		var script: GDScript = load("res://tests/" + f)
+		if script == null or not script.can_instantiate():
+			# A test that doesn't compile fails loudly instead of hanging the run.
+			print("FAIL %-34s does not compile" % f.trim_suffix(".gd"))
+			total_fail += 1
+			continue
+		var t: Node = script.new()
 		add_child(t)
 		await t.run()
 		print("%s %-34s %3d passed%s" % ["ok  " if t.fails == 0 else "FAIL", f.trim_suffix(".gd"), t.passes, "" if t.fails == 0 else ", %d failed" % t.fails])
