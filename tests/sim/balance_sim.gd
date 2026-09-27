@@ -100,7 +100,6 @@ func _tower(name: String, p: Array) -> void:
 			for attempt in 3:
 				for h in fighters:
 					h.hp = Combat.max_hp(h)
-					h.ability_cooldown = 0
 				GameState.run = {"sim": true, "tower": f}
 				seed(hash([int(info["seed"]), 0, 0]))
 				if _fight(fighters, str(info["kind"]), GameState._tower_diff(info), GameData.TOWER_FIGHT_DEPTH):
@@ -209,8 +208,7 @@ func _calibrate() -> void:
 				for attempt in 3:
 					for h in fighters:
 						h.hp = Combat.max_hp(h)
-						h.ability_cooldown = 0
-					GameState.run = {"sim": true, "tower": f}
+						GameState.run = {"sim": true, "tower": f}
 					seed(hash([int(info["seed"]), 0, 0]))
 					if _fight(fighters, str(info["kind"]), GameState._tower_diff(info), GameData.TOWER_FIGHT_DEPTH):
 						cleared = true
@@ -327,10 +325,8 @@ func _run_rift(party: Array[Hero], diff: Dictionary) -> Dictionary:
 	return {"cleared": true, "fail_kind": "", "boss_hp": boss_hp}
 
 
-func _tick(party: Array[Hero]) -> void:
-	for h in party:
-		if h.ability_cooldown > 0:
-			h.ability_cooldown -= 1
+func _tick(_party: Array[Hero]) -> void:
+	pass
 
 
 func _fight(living: Array[Hero], kind: String, diff: Dictionary, pos: int) -> bool:
@@ -339,15 +335,7 @@ func _fight(living: Array[Hero], kind: String, diff: Dictionary, pos: int) -> bo
 		var nxt := Combat.peek_next_turn(state)
 		if nxt["type"] == "hero":
 			var h: Hero = living.filter(func(x): return x.id == str(nxt["id"]))[0]
-			var act := "ability" if Combat.qualifies_for_ability(h) and h.ability_cooldown == 0 and t % 2 == 0 else "attack"
-			if CHAMP_V2 and kind == "boss" and GameState.champion_call_ready(h):
-				act = "call"
-			# Answer a telegraphed heavy blow aimed at this hero by Defending.
-			for mi in (state["monsters"] as Array).size():
-				var it := Combat.monster_intent(state, mi)
-				if it.get("heavy_blow", false) and it["target"] == h:
-					act = "defend"
-			state["pending_actions"][h.id] = {"action": act, "target": _lowest(state["monsters"])}
+			state["pending_actions"][h.id] = Combat.auto_action(state, h)
 		var out := Combat.resolve_turn(state)
 		if out["done"]:
 			var won := bool(out["result"]["won"])

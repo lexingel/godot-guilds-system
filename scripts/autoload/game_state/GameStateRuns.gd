@@ -345,9 +345,8 @@ func campfire_choose(choice: String) -> void:
 				Combat.gain_xp(h, GameData.CAMPFIRE_TRAIN_XP)
 			log.append("The party drills together: +%d XP each." % GameData.CAMPFIRE_TRAIN_XP)
 		"sharpen":
-			for h in party:
-				h.ability_cooldown = 0
-			log.append("Weapons sharpened, focus restored — every ability is ready.")
+			run["momentum_bonus"] = int(run.get("momentum_bonus", 0)) + 4
+			log.append("Weapons sharpened, focus restored — the next fight starts with +4 Momentum.")
 	ns["type"] = "campfire"
 	ns["resolved"] = true
 	ns["log"] = log
@@ -463,9 +462,8 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 			h.hp = max(1, h.hp - int(ceil(Combat.max_hp(h) * float(e["hurt_pct"]))))
 		log.append("Everyone loses %d%% HP." % int(float(e["hurt_pct"]) * 100))
 	if e.get("ready", false):
-		for h in party:
-			h.ability_cooldown = 0
-		log.append("Every ability is ready.")
+		run["momentum_bonus"] = int(run.get("momentum_bonus", 0)) + 3
+		log.append("The next fight starts with +3 Momentum.")
 	if e.has("tonic"):
 		var add := mini(int(e["tonic"]), GameData.TONIC_CAP - tonics)
 		tonics += add
@@ -721,22 +719,9 @@ func buy_shop_offer(idx: int) -> void:
 	state_changed.emit()
 
 
-## Ability cooldowns live on the Hero (not reset per fight) and already tick
-## down once per combat round inside Combat.resolve_round. A shop/hazard node
-## has no rounds of its own, so without this it would give abilities a free
-## pass — call this once per non-combat node so cooldowns count every node
-## as a "turn", combat or not.
-func tick_ability_cooldowns() -> void:
-	for h in current_party():
-		if h.ability_cooldown > 0:
-			h.ability_cooldown -= 1
-
-
 func advance_node() -> void:
 	if not pending_injuries().is_empty():
 		return   # decide what happens to the downed first (see _note_injuries)
-	if not (current_node_kind() in ["combat", "boss", "elite"]):
-		tick_ability_cooldowns()
 	run["pos"] = int(run["pos"]) + 1
 	run["node_state"] = {}
 	auto_resolve_single_option()

@@ -32,10 +32,9 @@ func run() -> void:
 	var hp0 := Combat.max_hp(h)
 	GameState.upgrades["ops.drill"] = 5
 	check(Combat.max_hp(h) > hp0 and GameState.vanguard() and GameState.abilities_ready_each_fight(), "Drill Yard: HP, Vanguard, abilities ready")
-	h.ability_cooldown = 3
 	var party: Array[Hero] = [h]
-	Combat.start_combat(party, "combat", GameData.DIFFICULTIES[0], 1)
-	check(h.ability_cooldown == 0, "Drill Yard Lv5 readies abilities at fight start")
+	var dst := Combat.start_combat(party, "combat", GameData.DIFFICULTIES[0], 1)
+	check(int(dst["momentum"]) == GameData.MOMENTUM_START + 3, "Drill Yard Lv5 starts fights with +3 Momentum")
 	var xp0 := h.xp
 	Combat.gain_xp(h, 10)
 	check(h.xp - xp0 == 12 or h.level > 3, "Barracks Lv5: +20% XP")

@@ -7,13 +7,12 @@ extends "res://scripts/autoload/combat/CombatGen.gd"
 ## start_combat() (one-time setup: monster roll via gen_monsters(), all
 ## party-wide bonus totals) and then advances one round per resolve_round()
 ## call. Each living hero has their own pending action (state["pending_actions"],
-## hero_id -> {"action": "attack"/"ability"/"defend", "target": monster index,
-## meaningful only for "attack"}, mutated between renders by
-## GameState.set_hero_action without resolving anything) and, if their
-## subclass qualifies, their own Ability cooldown (Hero.ability_cooldown,
-## persistent on the hero — not reset per fight, ticks down once per node via
-## GameState.tick_ability_cooldowns so it carries across shop/hazard nodes
-## too). HP lives directly on each Hero throughout (no pooling), so win/
+## hero_id -> {"action": "attack"/"ability"/"skill:<id>"/"defend"/..., "target":
+## monster index}, mutated between renders by GameState.set_hero_action
+## without resolving anything). Skills and Abilities spend the party's shared
+## Momentum (state["momentum"]), built by attacks, kills and taking hits
+## while Defending or Guarding. Foes telegraph each round's move in
+## state["intents"] (see _roll_intent / monster_intent). HP lives directly on each Hero throughout (no pooling), so win/
 ## retreat/loss need no redistribution step. Monsters live in state["monsters"]
 ## (Array of {name, hp, max_hp, dmg, mechanic, is_main} — mechanic is only ever
 ## non-empty on the "is_main" unit, and only for a "boss" encounter). Every
@@ -40,7 +39,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var dodge: float = min(0.6, party_skill_total(party, "dodge_pct") + relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct"))
 	var wipe_guard: float = min(0.9, party_skill_total(party, "wipe_guard") + relic_special_total("wipe_guard") + relic_drawback_total("wipe_guard") + bond_bonus_for(party, "wipe_guard"))
 	var counter: float = min(0.6, relic_special_total("counter_pct"))
-	var cooldown_shave: float = min(0.75, relic_special_total("cooldown_shave_pct"))
+	var momentum_proc: float = min(0.75, relic_special_total("momentum_pct"))
 	var kill_shield: float = min(0.6, relic_special_total("kill_shield_pct"))
 	var alpha_strikes: float = (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
@@ -82,8 +81,10 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var pending_actions: Dictionary = {}
 	for h in party:
 		pending_actions[h.id] = {"action": "attack", "target": 0}
-		if GameState.abilities_ready_each_fight():
-			h.ability_cooldown = 0   # Drill Yard Lv5
+	# Drill Yard Lv5 and a campfire's Sharpen (run "momentum_bonus") add to
+	# the Momentum a fight starts with.
+	var momentum: int = GameData.MOMENTUM_START + (3 if GameState.abilities_ready_each_fight() else 0) + int(GameState.run.get("momentum_bonus", 0))
+	GameState.run.erase("momentum_bonus")
 
 	# An escort NPC quest, folded onto an ordinary "combat" node rather than a
 	# whole new node kind — a chance for a fragile ally to tag along who
@@ -114,7 +115,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		"team_dmg_base": team_dmg_base, "raw_sum": raw_sum,
 		"first_round_bonus": first_round_bonus, "escalate": escalate,
 		"mend": mend, "dodge": dodge, "wipe_guard": wipe_guard, "wipe_guard_used": false, "counter": counter,
-		"cooldown_shave": cooldown_shave, "kill_shield": kill_shield, "hero_shields": {},
+		"momentum_proc": momentum_proc, "momentum": mini(momentum, GameData.MOMENTUM_MAX), "kill_shield": kill_shield, "hero_shields": {},
 		"monster_shields": monster_shields, "hero_poison": {}, "escort": escort,
 		"round_num": 0, "log": log,
 		"pending_actions": pending_actions,
@@ -130,7 +131,36 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 ## gate both the combat action-button row and the Ability's cooldown ticking.
 static func qualifies_for_ability(h: Hero) -> bool:
 	return GameData.SUBCLASS_ABILITIES.has(h.pool_id) and h.level >= 3
-const ABILITY_COOLDOWN_ROUNDS := 3
+
+
+func gain_momentum(state: Dictionary, n: int) -> void:
+	state["momentum"] = clampi(int(state.get("momentum", 0)) + n, 0, GameData.MOMENTUM_MAX)
+
+
+## What `action` ("ability" or "skill:<id>") costs in Momentum and which row
+## it needs: [cost, row].
+func action_cost(action: String) -> Array:
+	if action == "ability":
+		return [GameData.ABILITY_MOMENTUM_COST, "any"]
+	if action.begins_with("skill:"):
+		var sk := GameData.find_role_skill(action.substr(6))
+		return [int(sk.get("cost", 0)), str(sk.get("row", "any"))]
+	return [0, "any"]
+
+
+## "" if `h` can use `action` right now, else why not (for the command bar
+## and the auto-player).
+func action_block(state: Dictionary, h: Hero, action: String) -> String:
+	if action == "ability" and not qualifies_for_ability(h):
+		return "Unlocks at level 3"
+	if action.begins_with("skill:") and not GameData.hero_role_skills(h).any(func(sk): return "skill:" + str(sk["id"]) == action):
+		return "Not learned yet"
+	var c := action_cost(action)
+	if str(c[1]) != "any" and (str(c[1]) == "back") != (h.formation == "back"):
+		return "%s row only" % str(c[1]).capitalize()
+	if int(state.get("momentum", 0)) < int(c[0]):
+		return "Needs %d Momentum" % int(c[0])
+	return ""
 
 
 ## One-line hint about the round about to happen, meant to sit above the
@@ -217,20 +247,44 @@ func _monster_hit(m: Dictionary, round_num: int) -> float:
 ## Heavy = a quarter of the target's max HP or more (same bar as the log's
 ## heavy-hit reactions). Intercepts/escort hits can still change the outcome.
 ## What an auto-played hero does this turn (Auto toggle, Quick fight, the
-## balance sim): Defend against a heavy blow aimed at them, the Champion's
-## Call on a boss, an Ability when ready, otherwise attack the weakest foe.
+## balance sim): Defend against a heavy blow aimed at them, heal a badly hurt
+## ally, break a wind-up, the Champion's Call on a boss, the Ability or a
+## damage skill when Momentum allows, otherwise attack the weakest foe.
 func auto_action(state: Dictionary, h: Hero) -> Dictionary:
-	for mi in (state["monsters"] as Array).size():
+	var monsters: Array = state["monsters"]
+	var tgt: int = max(0, _lowest_hp_living_monster_idx(monsters))
+	for mi in monsters.size():
 		var it := monster_intent(state, mi)
 		if it.get("heavy_blow", false) and it["target"] == h:
 			return {"action": "defend", "target": 0}
+	var ok := func(a: String) -> bool: return action_block(state, h, a) == ""
+	var party: Array = state["party"]
+	var hurt: Array = party.filter(func(x): return x.hp > 0 and x.hp < max_hp(x) * 0.45)
+	if not hurt.is_empty() and ok.call("skill:heal"):
+		return {"action": "skill:heal", "target": 0}
+	for mi in monsters.size():
+		if float(monsters[mi]["hp"]) > 0 and monsters[mi].get("_winding", false):
+			if ok.call("skill:shield_bash"):
+				return {"action": "skill:shield_bash", "target": mi}
+			if ok.call("skill:frost_nova"):
+				return {"action": "skill:frost_nova", "target": 0}
 	if bool(state.get("is_boss", false)) and GameState.champion_call_ready(h):
 		return {"action": "call", "target": 0}
-	if qualifies_for_ability(h) and h.ability_cooldown == 0:
-		return {"action": "ability", "target": 0}
-	return {"action": "attack", "target": max(0, _lowest_hp_living_monster_idx(state["monsters"]))}
+	if ok.call("ability"):
+		return {"action": "ability", "target": tgt}
+	# Spend on a damage skill only with enough left over for someone's Ability.
+	if int(state.get("momentum", 0)) >= GameData.ABILITY_MOMENTUM_COST + 2:
+		for sk in GameData.hero_role_skills(h):
+			if str(sk["effect"]) in ["pierce", "strike", "backstab", "volley"] and ok.call("skill:" + str(sk["id"])):
+				return {"action": "skill:" + str(sk["id"]), "target": tgt}
+	return {"action": "attack", "target": tgt}
 
 
+## What monster `i` is about to do this round, for the combat screen and the
+## auto-player: {"kind", "target" (Hero or null), "dmg", "heavy", ...} or {}
+## if it's down or has already acted. Kinds: attack, windup (charging),
+## heavy (the blow), sweep ("targets": every hero), snipe, curse, ward, mend,
+## roar, stunned. Heavy = a quarter of the target's max HP or more.
 func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	var m: Dictionary = state["monsters"][i]
 	if float(m["hp"]) <= 0:
@@ -241,21 +295,48 @@ func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	for k in min(int(state.get("turn_idx", 0)), order.size()):
 		if str(order[k]["type"]) == "monster" and int(order[k]["id"]) == i:
 			return {}
-	var t := _find_party_hero(state["party"], str(state.get("intents", {}).get(i, "")))
+	if state.get("_m_stunned", {}).has(i):
+		return {"kind": "stunned", "target": null, "dmg": 0, "heavy": false}
+	var it: Dictionary = _intent_of(state, i)
+	var kind := str(it.get("kind", "attack"))
+	var round_num := int(state.get("round_num", 0))
+	if kind in ["ward", "mend", "roar"]:
+		return {"kind": kind, "target": null, "dmg": 0, "heavy": false}
+	if kind == "sweep":
+		var living: Array = (state["party"] as Array).filter(func(h): return h.hp > 0)
+		return {"kind": "sweep", "target": null, "targets": living, "dmg": int(_monster_hit(m, round_num) * GameData.SWEEP_MULT), "heavy": false}
+	var t := _find_party_hero(state["party"], str(it.get("target", "")))
 	if t == null or t.hp <= 0:
 		return {}
+	if kind == "curse":
+		return {"kind": "curse", "target": t, "dmg": 0, "heavy": false}
 	if m.get("_winding", false):
-		return {"target": t, "dmg": 0, "heavy": false, "guarded": false, "charging": true}
-	var dmg := _monster_hit(m, int(state.get("round_num", 0)))
+		return {"kind": "windup", "target": t, "dmg": 0, "heavy": false, "guarded": false, "charging": true}
+	var taunter := _find_party_hero(state["party"], str(state.get("_taunt", "")))
+	if taunter and taunter.hp > 0:
+		t = taunter
+	var dmg := _monster_hit(m, round_num)
 	var blow: bool = m.get("_charged", false)
 	if blow:
 		dmg *= GameData.HEAVY_BLOW_MULT
+	if kind == "snipe":
+		dmg *= GameData.SNIPE_MULT
+	if t == taunter:
+		dmg *= 1.0 - float(state.get("_taunt_cut", 0.0))
 	# A guarded target shows the hit landing on its guard.
 	var guard := guard_of(state, t)
 	if guard:
 		t = guard
 		dmg *= GUARD_DAMAGE_MULT
-	return {"target": t, "dmg": int(dmg), "heavy": blow or dmg >= float(max_hp(t)) * 0.25, "guarded": guard != null, "heavy_blow": blow}
+	return {"kind": "heavy" if blow else kind, "target": t, "dmg": int(dmg), "heavy": blow or dmg >= float(max_hp(t)) * 0.25, "guarded": guard != null, "heavy_blow": blow}
+
+
+## A monster's rolled intent for this round: {"kind", "target": hero id}.
+func _intent_of(state: Dictionary, i: int) -> Dictionary:
+	var it = state.get("intents", {}).get(i, {})
+	return it if it is Dictionary else {"kind": "attack", "target": str(it)}
+
+
 const GUARD_DAMAGE_MULT := 0.75
 
 
@@ -351,10 +432,14 @@ func _start_round(state: Dictionary) -> void:
 	state["_defending"] = {}
 	state["_guarding"] = {}   # guarded hero id -> guard's id (see "guard" below)
 	state["_extra_turned"] = {}
-
-	for h in party:
-		if h.ability_cooldown > 0:
-			h.ability_cooldown -= 1
+	state["_taunt"] = ""
+	state["_smoke"] = 0.0
+	var weakened: Dictionary = state.get("_weakened", {})
+	for wid in weakened.keys().duplicate():
+		weakened[wid] = int(weakened[wid]) - 1
+		if int(weakened[wid]) <= 0:
+			weakened.erase(wid)
+	state["_weakened"] = weakened
 
 	var pending: Dictionary = state["pending_actions"]
 	for h in living:
@@ -390,9 +475,151 @@ func _start_round(state: Dictionary) -> void:
 	if not living.is_empty():
 		for mi in monsters.size():
 			if float(monsters[mi]["hp"]) > 0:
-				intents[mi] = weighted_formation_target(living).id
+				intents[mi] = _roll_intent(state, mi, living)
 	state["intents"] = intents
 	state["turn_idx"] = 0
+
+
+## What monster `mi` will do this round: attack (or wind up / land a heavy
+## blow, rolled above), or now and then a move from its kit, never two
+## rounds running. {"kind", "target": hero id or ""}.
+func _roll_intent(state: Dictionary, mi: int, living: Array[Hero]) -> Dictionary:
+	var m: Dictionary = state["monsters"][mi]
+	if not m.has("kit"):
+		m["kit"] = monster_kit(m)
+	var round_num := int(state["round_num"])
+	var kind := "attack"
+	if not m.get("_winding", false) and not m.get("_charged", false) and int(m.get("_special_round", -9)) < round_num - 1:
+		var kit: Array = m["kit"]
+		if not kit.is_empty():
+			var pick := str(kit[randi() % kit.size()])
+			var chance := GameData.INTENT_SPECIAL_CHANCE
+			var monsters: Array = state["monsters"]
+			match pick:
+				"mend":
+					chance = 0.6 if monsters.any(func(o): return float(o["hp"]) > 0 and float(o["hp"]) < float(o["max_hp"]) * 0.7) else 0.0
+				"roar":
+					chance = chance if int(m.get("_roars", 0)) < 2 else 0.0
+			if randf() < chance:
+				kind = pick
+				m["_special_round"] = round_num
+	var target := ""
+	match kind:
+		"attack", "curse":
+			target = weighted_formation_target(living).id
+		"snipe":
+			var back: Array = living.filter(func(h): return h.formation == "back")
+			var pool: Array = back if not back.is_empty() else living
+			var best: Hero = pool[0]
+			for h in pool:
+				if float(h.hp) / max_hp(h) < float(best.hp) / max_hp(best):
+					best = h
+			target = best.id
+	return {"kind": kind, "target": target}
+
+
+## One hero hit on monster `ti` at `mult` of their share of the party's
+## damage (the basic attack is mult 1). Armor and wards soak it and reflect
+## bites back unless `pierce`. Returns the damage dealt.
+func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = false) -> float:
+	var log: Array[String] = state["log"]
+	var monsters: Array = state["monsters"]
+	var formation_mult := 1.0 if bool(monsters[ti].get("is_main", true)) else 0.75
+	var weaken := 1.0 - GameData.CURSE_WEAKEN if state.get("_weakened", {}).has(h.id) else 1.0
+	var hit := {"target": monsters[ti]}
+	hit["dealt"] = dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * float(state["_attack_mult"]) * formation_mult * mult * weaken * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
+	_fire("before_hit", state, h, hit)
+	var dealt: float = hit["dealt"]
+	var armor := float(monsters[ti].get("armor", 0.0))
+	if armor > 0.0 and dealt > 0.0 and not pierce:
+		var blocked: float = dealt * armor
+		dealt -= blocked
+		monsters[ti]["armor"] = maxf(0.0, armor - GameData.ARMOR_SUNDER)
+		log.append("%s's armor turns aside %d." % [monsters[ti]["name"], int(round(blocked))])
+	var m_shields: Dictionary = state["monster_shields"]
+	if dealt > 0.0 and float(m_shields.get(ti, 0.0)) > 0.0 and not pierce:
+		var m_have: float = float(m_shields[ti])
+		var m_absorbed: float = min(m_have, dealt)
+		m_shields[ti] = m_have - m_absorbed
+		dealt -= m_absorbed
+		log.append("%s's ward absorbs %d damage." % [monsters[ti]["name"], int(round(m_absorbed))])
+	monsters[ti]["hp"] = float(monsters[ti]["hp"]) - round(dealt)
+	log.append("%s strikes %s for %d." % [h.name, monsters[ti]["name"], round(dealt)])
+	var target_ability: Dictionary = monsters[ti].get("ability", {})
+	if target_ability.get("kind") == "reflect" and dealt > 0.0 and not pierce:
+		var reflected: int = max(1, int(round(dealt * float(target_ability["value"]))))
+		h.hp = max(0, h.hp - reflected)
+		log.append("%s's surface reflects %d damage back at %s." % [monsters[ti]["name"], reflected, h.name])
+	hit["dealt"] = dealt
+	_fire("after_hit", state, h, hit)
+	return dealt
+
+
+## A role skill (GameData.ROLE_SKILLS) — Momentum already paid.
+func _use_role_skill(state: Dictionary, h: Hero, sk: Dictionary, target_idx: int) -> void:
+	var log: Array[String] = state["log"]
+	var party: Array[Hero] = state["party"]
+	var monsters: Array = state["monsters"]
+	var val := float(sk["value"])
+	log.append("%s uses %s!" % [h.name, sk["name"]])
+	_tally(state, "skills")
+	if target_idx < 0 or target_idx >= monsters.size() or float(monsters[target_idx]["hp"]) <= 0:
+		target_idx = _first_living_monster_idx(monsters)
+	var living: Array[Hero] = []
+	living.assign(party.filter(func(x): return x.hp > 0))
+	match str(sk["effect"]):
+		"bash":
+			if target_idx >= 0:
+				_hero_hit(state, h, target_idx, val)
+				var m: Dictionary = monsters[target_idx]
+				if float(m["hp"]) > 0:
+					var broke: bool = m.get("_winding", false) or m.get("_charged", false)
+					m["_winding"] = false
+					m["_charged"] = false
+					if str(m.get("tier", "")) != "boss":
+						state.get_or_add("_m_stunned", {})[target_idx] = true
+						log.append("%s is stunned!" % m["name"])
+					elif broke:
+						log.append("%s's wind-up is broken!" % m["name"])
+		"taunt":
+			state["_taunt"] = h.id
+			state["_taunt_cut"] = val
+			log.append("Every foe turns on %s." % h.name)
+		"pierce", "strike":
+			if target_idx >= 0:
+				_hero_hit(state, h, target_idx, val, str(sk["effect"]) == "pierce")
+		"backstab":
+			if target_idx >= 0:
+				var m2: Dictionary = monsters[target_idx]
+				var exposed: bool = m2.get("_winding", false) or m2.get("_charged", false) or float(m2["hp"]) < float(m2["max_hp"]) * 0.5
+				_hero_hit(state, h, target_idx, val + (1.0 if exposed else 0.0))
+		"volley", "nova":
+			for i in monsters.size():
+				if float(monsters[i]["hp"]) > 0:
+					_hero_hit(state, h, i, val)
+					if str(sk["effect"]) == "nova" and (monsters[i].get("_winding", false) or monsters[i].get("_charged", false)):
+						monsters[i]["_winding"] = false
+						monsters[i]["_charged"] = false
+						log.append("%s's wind-up is broken!" % monsters[i]["name"])
+		"heal":
+			if not living.is_empty():
+				var low: Hero = living[0]
+				for x in living:
+					if float(x.hp) / max_hp(x) < float(low.hp) / max_hp(low):
+						low = x
+				var healed: int = mini(max_hp(low) - low.hp, int(round(max_hp(low) * val)))
+				low.hp += healed
+				log.append("%s is healed for %d." % [low.name, healed])
+		"sanctuary":
+			var shields: Dictionary = state["hero_shields"]
+			for x in living:
+				shields[x.id] = float(shields.get(x.id, 0.0)) + max_hp(x) * val
+				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+					state.get(key, {}).erase(x.id)
+			log.append("A sanctuary shelters the party.")
+		"smoke":
+			state["_smoke"] = float(state.get("_smoke", 0.0)) + val
+			log.append("Smoke fills the field — the party is hard to hit.")
 
 
 ## One hero's pending action (attack/defend/ability) from state["pending_actions"]
@@ -413,39 +640,20 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 
 	var act: Dictionary = pending.get(h.id, {"action": "attack", "target": 0})
 	var action: String = str(act.get("action", "attack"))
+	# A skill the hero can't pay for (or from the wrong row) falls back to an attack.
+	if (action == "ability" or action.begins_with("skill:")) and action_block(state, h, action) != "":
+		action = "attack"
 	if action == "attack":
 		var target_idx: int = int(act.get("target", 0))
 		if target_idx < 0 or target_idx >= monsters.size() or float(monsters[target_idx]["hp"]) <= 0:
 			target_idx = _first_living_monster_idx(monsters)
 		if target_idx >= 0:
-			var team_dmg_base: float = float(state["team_dmg_base"])
-			var formation_mult := 1.0 if bool(monsters[target_idx].get("is_main", true)) else 0.75
-			var hit := {"target": monsters[target_idx]}
-			hit["dealt"] = dmg_of(h) / raw_sum * team_dmg_base * attack_mult * formation_mult * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
-			_fire("before_hit", state, h, hit)
-			var dealt: float = hit["dealt"]
-			var armor := float(monsters[target_idx].get("armor", 0.0))
-			if armor > 0.0 and dealt > 0.0:
-				var blocked: float = dealt * armor
-				dealt -= blocked
-				monsters[target_idx]["armor"] = maxf(0.0, armor - GameData.ARMOR_SUNDER)
-				log.append("%s's armor turns aside %d." % [monsters[target_idx]["name"], int(round(blocked))])
-			var m_shields: Dictionary = state["monster_shields"]
-			if dealt > 0.0 and float(m_shields.get(target_idx, 0.0)) > 0.0:
-				var m_have: float = float(m_shields[target_idx])
-				var m_absorbed: float = min(m_have, dealt)
-				m_shields[target_idx] = m_have - m_absorbed
-				dealt -= m_absorbed
-				log.append("%s's ward absorbs %d damage." % [monsters[target_idx]["name"], int(round(m_absorbed))])
-			monsters[target_idx]["hp"] = float(monsters[target_idx]["hp"]) - round(dealt)
-			log.append("%s strikes %s for %d." % [h.name, monsters[target_idx]["name"], round(dealt)])
-			var target_ability: Dictionary = monsters[target_idx].get("ability", {})
-			if target_ability.get("kind") == "reflect" and dealt > 0.0:
-				var reflected: int = max(1, int(round(dealt * float(target_ability["value"]))))
-				h.hp = max(0, h.hp - reflected)
-				log.append("%s's surface reflects %d damage back at %s." % [monsters[target_idx]["name"], reflected, h.name])
-			hit["dealt"] = dealt
-			_fire("after_hit", state, h, hit)
+			var reach := GameData.BACK_ROW_MELEE_MULT if h.formation == "back" and GameData.MELEE_ROLES.has(h.cls_id) else 1.0
+			_hero_hit(state, h, target_idx, reach)
+			gain_momentum(state, 1)
+	elif action.begins_with("skill:"):
+		gain_momentum(state, -int(action_cost(action)[0]))
+		_use_role_skill(state, h, GameData.find_role_skill(action.substr(6)), int(act.get("target", 0)))
 	elif action == "defend":
 		state["_defending"][h.id] = true
 	elif action == "swap":
@@ -470,7 +678,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			guards[ally.id] = h.id
 			state["_guarding"] = guards
 			log.append("%s moves to guard %s." % [h.name, ally.name])
-	elif (action == "ability" and h.ability_cooldown == 0) or (action == "call" and GameState.champion_call_ready(h)):
+	elif action == "ability" or (action == "call" and GameState.champion_call_ready(h)):
 		_tally(state, "abilities")
 		var team_dmg_base: float = float(state["team_dmg_base"])
 		var ab: Dictionary
@@ -479,7 +687,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			GameState.run["champion_calls"] = int(GameState.run.get("champion_calls", 0)) + 1
 			GameState.run["champion_call_used"] = true
 		else:
-			h.ability_cooldown = ABILITY_COOLDOWN_ROUNDS
+			gain_momentum(state, -GameData.ABILITY_MOMENTUM_COST)
 			ab = GameData.SUBCLASS_ABILITIES[h.pool_id]
 		var eff: String = ab["effect"]
 		var val: float = float(ab["value"])
@@ -533,12 +741,8 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 				if not shielded.is_empty():
 					log.append("%s is shielded for %d." % [shielded[0].name, int(round(shielded[1]))])
 			"reset_cooldowns":
-				# Everyone but the caster — resetting its own cooldown too let
-				# it recast every turn, keeping every Ability permanently ready.
-				for h2 in party:
-					if h2 != h:
-						h2.ability_cooldown = 0
-				log.append("Every ability is ready again.")
+				gain_momentum(state, 4)
+				log.append("+4 Momentum.")
 			"dodge_surge":
 				state["dodge"] = min(0.6, float(state["dodge"]) + val)
 				log.append("The party moves lighter on its feet.")
@@ -605,7 +809,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			var bucket: String = GameData.ABILITY_AWAKENING_BUCKET.get(eff, "buff")
 			match bucket:
 				"buff":
-					h.ability_cooldown = max(0, h.ability_cooldown - GameData.ABILITY_AWAKENING_COOLDOWN_REDUCTION)
+					gain_momentum(state, GameData.ABILITY_AWAKENING_MOMENTUM)
 				"single_dmg":
 					for m3 in monsters:
 						m3["dmg"] = float(m3["dmg"]) * 0.97
@@ -626,6 +830,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			kills += 1
 	if kills > 0:
 		h.history["kills"] = int(h.history.get("kills", 0)) + kills
+		gain_momentum(state, 1)
 		_fire("on_kill", state, h)
 	# Per-fight tallies for the victory screen (damage dealt, kills).
 	var dealt_now := 0.0
@@ -662,6 +867,11 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 			log.append("%s doesn't survive the fight." % str(escort["name"]))
 		return
 
+	var stunned: Dictionary = state.get("_m_stunned", {})
+	if stunned.has(i):
+		stunned.erase(i)
+		log.append("%s is stunned and loses its action." % m["name"])
+		return
 	if m.get("_winding", false):
 		m["_winding"] = false
 		m["_charged"] = true
@@ -671,27 +881,90 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 	alive_now.assign(party.filter(func(h): return h.hp > 0))
 	if alive_now.is_empty():
 		return
+	var it := _intent_of(state, i)
+	var kind := str(it.get("kind", "attack"))
+	if m.get("_charged", false):
+		kind = "attack"   # a charged blow always lands as an attack
+	match kind:
+		"ward", "mend":
+			var low := -1
+			for j in monsters.size():
+				if float(monsters[j]["hp"]) > 0 and (low < 0 or float(monsters[j]["hp"]) / float(monsters[j]["max_hp"]) < float(monsters[low]["hp"]) / float(monsters[low]["max_hp"])):
+					low = j
+			if low >= 0:
+				if kind == "ward":
+					var amt: float = round(float(monsters[low]["max_hp"]) * GameData.WARD_PCT)
+					var ws: Dictionary = state["monster_shields"]
+					ws[low] = float(ws.get(low, 0.0)) + amt
+					log.append("%s wards %s for %d." % [m["name"], monsters[low]["name"], amt])
+				else:
+					var pct := float(m.get("ability", {}).get("value", GameData.MEND_PCT)) if m.get("ability", {}).get("kind") == "healer" else GameData.MEND_PCT
+					var heal: float = round(float(monsters[low]["max_hp"]) * pct)
+					monsters[low]["hp"] = minf(float(monsters[low]["max_hp"]), float(monsters[low]["hp"]) + heal)
+					log.append("%s mends %s for %d." % [m["name"], monsters[low]["name"], heal])
+					_tally(state, "enemy_heal", heal)
+			return
+		"roar":
+			for o in monsters:
+				if float(o["hp"]) > 0:
+					o["dmg"] = float(o["dmg"]) * GameData.ROAR_MULT
+			m["_roars"] = int(m.get("_roars", 0)) + 1
+			log.append("%s roars — every foe hits harder!" % m["name"])
+			return
+		"curse":
+			var ct: Hero = _find_party_hero(party, str(it.get("target", "")))
+			if ct == null or ct.hp <= 0:
+				ct = alive_now[randi() % alive_now.size()]
+			state.get_or_add("_weakened", {})[ct.id] = GameData.CURSE_ROUNDS
+			log.append("%s curses %s: %d%% less damage for %d rounds." % [m["name"], ct.name, int(GameData.CURSE_WEAKEN * 100), GameData.CURSE_ROUNDS])
+			return
+		"sweep":
+			log.append("%s sweeps the whole party!" % m["name"])
+			for h in alive_now:
+				if h.hp > 0:
+					_monster_strike(state, i, h, GameData.SWEEP_MULT, false)
+			return
 	# The target was rolled at round start (state["intents"]) so the combat
 	# screen can show it; re-roll only if that hero has since dropped.
-	var target: Hero = _find_party_hero(party, str(state.get("intents", {}).get(i, "")))
+	var target: Hero = _find_party_hero(party, str(it.get("target", "")))
 	if target == null or target.hp <= 0:
 		target = weighted_formation_target(alive_now)
-	var aim := {"target": target, "attacker": m}
-	for ally in alive_now:
-		if ally != target:
-			_fire("ally_targeted", state, ally, aim)
-			if aim["target"] != target:
-				break
-	target = aim["target"]
-	var guard := guard_of(state, target)
-	if guard:
-		log.append("%s takes the blow meant for %s!" % [guard.name, target.name])
-		_proc(state, guard, "Guard!")
-		target = guard
+	_monster_strike(state, i, target, GameData.SNIPE_MULT if kind == "snipe" else 1.0, true)
+
+
+## Monster `i` hits `target` for `mult` of its hit. `aimed` hits can be
+## redirected (Taunt, intercept effects, Guard); a sweep's can't.
+func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed: bool) -> void:
+	var log: Array[String] = state["log"]
+	var party: Array[Hero] = state["party"]
+	var m: Dictionary = state["monsters"][i]
+	var round_num: int = int(state["round_num"])
+	var alive_now: Array[Hero] = []
+	alive_now.assign(party.filter(func(h): return h.hp > 0))
+	var guard: Hero = null
+	var taunted := false
+	if aimed:
+		var taunter := _find_party_hero(party, str(state.get("_taunt", "")))
+		if taunter and taunter.hp > 0:
+			target = taunter
+			taunted = true
+		else:
+			var aim := {"target": target, "attacker": m}
+			for ally in alive_now:
+				if ally != target:
+					_fire("ally_targeted", state, ally, aim)
+					if aim["target"] != target:
+						break
+			target = aim["target"]
+			guard = guard_of(state, target)
+			if guard:
+				log.append("%s takes the blow meant for %s!" % [guard.name, target.name])
+				_proc(state, guard, "Guard!")
+				target = guard
 	var mech: Dictionary = m.get("mechanic", {})
 	var mech2: Dictionary = m.get("mechanic2", {})
 	var ability: Dictionary = m.get("ability", {})
-	var back: float = _monster_hit(m, round_num)
+	var back: float = _monster_hit(m, round_num) * mult
 	var heavy_blow: bool = m.get("_charged", false)
 	if heavy_blow:
 		m["_charged"] = false
@@ -699,10 +972,14 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 		back *= GameData.HEAVY_BLOW_MULT
 	if guard:
 		back *= GUARD_DAMAGE_MULT
+		gain_momentum(state, 2 if heavy_blow else 1)
+	if taunted:
+		back *= 1.0 - float(state.get("_taunt_cut", 0.0))
 	var warded: bool = (mech.get("id") == "warded" or mech2.get("id") == "warded") and round_num <= 2
 	if state["_defending"].has(target.id):
 		back *= 0.5
-	var effective_dodge: float = float(state["dodge"]) + hero_cond_stat(target, "dodge_pct", state, {"attacker": m})
+		gain_momentum(state, 2 if heavy_blow else 1)
+	var effective_dodge: float = float(state["dodge"]) + float(state.get("_smoke", 0.0)) + hero_cond_stat(target, "dodge_pct", state, {"attacker": m})
 	var evaded := false
 	if not warded and effective_dodge > 0.0 and randf() < effective_dodge:
 		log.append("%s evades %s's retaliation!" % [target.name, m["name"]])
@@ -780,7 +1057,7 @@ func defeat_reasons(state: Dictionary) -> Array:
 	var heavy := int(st.get("undefended_heavy", 0))
 	if heavy > 0:
 		out.append([2.5 + heavy, "%d heavy blow%s landed undefended (%d damage)" % [heavy, "" if heavy == 1 else "s", int(st.get("heavy_dmg", 0.0))],
-			"When a foe is \"Winding up\", its target should Defend (3): half damage and no stun. Guard (4) moves the hit onto a sturdier ally."])
+			"When a foe is \"Winding up\", its target should Defend (5): half damage and no stun. Guard (6) moves the hit onto a sturdier ally; Shield Bash or Frost Nova break the wind-up."])
 	var taken := float(st.get("taken", 0.0))
 	var dot := float(st.get("dot", 0.0))
 	if taken > 0.0 and dot / taken >= 0.2:
@@ -811,7 +1088,7 @@ func defeat_reasons(state: Dictionary) -> Array:
 	return out.slice(0, 3).map(func(x): return [x[1], x[2]])
 
 
-## Passive round-cadence effects (monster regen/healer-heal, hero poison tick,
+## Passive round-cadence effects (monster regen, hero poison tick,
 ## party mend) — fired once, after every actor in the round's turn order has
 ## acted, rather than at the old "after heroes, before monsters" phase
 ## boundary, which no longer exists once heroes and monsters are genuinely
@@ -829,24 +1106,6 @@ func _end_round_effects(state: Dictionary) -> void:
 			m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + regen_heal)
 			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
 			_tally(state, "enemy_heal", regen_heal)
-
-	for m in monsters:
-		if float(m["hp"]) <= 0 or m.get("ability", {}).get("kind") != "healer":
-			continue
-		var lowest_idx := -1
-		var lowest_ratio := 1.0
-		for j in monsters.size():
-			if monsters[j] == m or float(monsters[j]["hp"]) <= 0:
-				continue
-			var ratio: float = float(monsters[j]["hp"]) / float(monsters[j]["max_hp"])
-			if ratio < 1.0 and ratio < lowest_ratio:
-				lowest_ratio = ratio
-				lowest_idx = j
-		if lowest_idx >= 0:
-			var heal_amt: float = round(float(monsters[lowest_idx]["max_hp"]) * float(m["ability"]["value"]))
-			monsters[lowest_idx]["hp"] = min(float(monsters[lowest_idx]["max_hp"]), float(monsters[lowest_idx]["hp"]) + heal_amt)
-			log.append("%s mends %s for %d." % [m["name"], monsters[lowest_idx]["name"], heal_amt])
-			_tally(state, "enemy_heal", heal_amt)
 
 	var burn: Dictionary = state.get("hero_burn", {})
 	for bid in burn.keys().duplicate():

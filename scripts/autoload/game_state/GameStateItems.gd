@@ -257,20 +257,24 @@ func gear_score(it: Item, h: Hero) -> float:
 ## never taking an item another hero is wearing.
 func best_gear(h: Hero) -> Dictionary:
 	var out := {}
+	# Score each piece alone on the hero with nothing equipped, so the ranking
+	# doesn't depend on what they happen to wear now (stats multiply).
+	var worn: Array = items.filter(func(it): return it.equipped_to == h.id)
+	var pools := {}
 	for st in ["weapon", "gear"]:
-		var cap := GameData.weapon_slots(h.pool_id) if st == "weapon" else GameData.gear_slots(h.rank)
-		var pool: Array = items.filter(func(it): return it.slot_type() == st and (it.equipped_to == "" or it.equipped_to == h.id) and item_fits_hero(it, h) and attr_req_met(it, h))
-		# Score each piece alone on the hero with this slot type emptied, so
-		# the ranking doesn't depend on what they happen to wear now.
-		var worn: Array = pool.filter(func(it): return it.equipped_to == h.id)
-		for it in worn:
-			it.equipped_to = ""
-		var score := {}
-		for it in pool:
+		pools[st] = items.filter(func(it): return it.slot_type() == st and (it.equipped_to == "" or it.equipped_to == h.id) and item_fits_hero(it, h) and attr_req_met(it, h))
+	for it in worn:
+		it.equipped_to = ""
+	var score := {}
+	for st in pools:
+		for it in pools[st]:
 			score[it] = gear_score(it, h)
-		for it in worn:
-			it.equipped_to = h.id
-		pool.sort_custom(func(a, b): return score[a] > score[b])
+	for it in worn:
+		it.equipped_to = h.id
+	for st in pools:
+		var pool: Array = pools[st]
+		var cap := GameData.weapon_slots(h.pool_id) if st == "weapon" else GameData.gear_slots(h.rank)
+		pool.sort_custom(func(a, b): return score[a] > score[b] or (score[a] == score[b] and a.id < b.id))
 		out[st] = pool.slice(0, cap)
 	return out
 

@@ -45,7 +45,7 @@ const SUBCLASS_ABILITIES := {
 	"blade-dancer": {"name": "Opening Performance", "desc": "A finishing sweep against every wounded foe.", "effect": "execute_all_low", "value": 0.55},
 	"warden": {"name": "Walked Worse Halls", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.25},
 	"stormtracker": {"name": "Chase the Lightning", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.035},
-	"rift-ranger": {"name": "Read the Room", "desc": "Every ability is ready again.", "effect": "reset_cooldowns", "value": 0.0},
+	"rift-ranger": {"name": "Read the Room", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
 	"deadfall-hunter": {"name": "Reversed Trap", "desc": "Weakens every foe's damage for the rest of this fight.", "effect": "monster_dmg_mult", "value": 0.75},
 	"voidwalker": {"name": "Half-Step Out", "desc": "+dodge chance for the rest of this fight.", "effect": "dodge_surge", "value": 0.22},
 	# -- Ranger (content-pass additions) --
@@ -75,7 +75,7 @@ const SUBCLASS_ABILITIES := {
 	"stoneward-mystic": {"name": "Bark and Stone", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
 	"grim-conjurer": {"name": "One More Round", "desc": "Mends and shields the lowest-HP ally at once.", "effect": "mend_shield_hybrid", "value": 0.18},
 	"verdant-oracle": {"name": "Root and Leaf", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.45},
-	"duskglass-seer": {"name": "Sees It Land First", "desc": "Every ability is ready again.", "effect": "reset_cooldowns", "value": 0.0},
+	"duskglass-seer": {"name": "Sees It Land First", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
 	"ashbound-theorist": {"name": "Ends in Fire", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
 	"rift-warden-magus": {"name": "Warded Before It Forms", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.35},
 	# -- Cleric --
@@ -114,7 +114,7 @@ const SUBCLASS_ABILITIES := {
 	"herbrunner": {"name": "Unpoisoned Plants", "desc": "Mends the whole party.", "effect": "mend_burst", "value": 0.35},
 	"arcane-pilferer": {"name": "Warded Vault", "desc": "A burst against the weakest foe, healing the caster for a share of the damage.", "effect": "hp_drain_burst", "value": 0.8},
 	"ironhide-footpad": {"name": "Tougher Than It Looks", "desc": "Shields the lowest-HP ally.", "effect": "shield_lowest", "value": 0.3},
-	"glyphhand": {"name": "Reads the Seams", "desc": "Every ability is ready again.", "effect": "reset_cooldowns", "value": 0.0},
+	"glyphhand": {"name": "Reads the Seams", "desc": "+4 Momentum for the party.", "effect": "reset_cooldowns", "value": 0.0},
 	"bramblefoot": {"name": "The Undergrowth Hides More", "desc": "Mends and shields the lowest-HP ally at once.", "effect": "mend_shield_hybrid", "value": 0.15},
 	"rift-slipper": {"name": "Half Out of Reality", "desc": "Braces the party against a wipe for the rest of this fight.", "effect": "wipe_guard_surge", "value": 0.3},
 	"wraithblade-adept": {"name": "Thinner and Faster", "desc": "Damage escalates faster for the rest of this fight.", "effect": "escalate_surge", "value": 0.045},
@@ -351,7 +351,7 @@ const ROLE_SIGNATURES := {
 	"ranger": {"name": "Hunter's Mark", "arch": "executioner", "icon": "res://assets/skills/eye_gem.png",
 		"effects": [{"kind": "dmg_pct", "value": 0.20, "cond": {"target_below": 0.5}}]},
 	"mage": {"name": "Arcane Surge", "arch": "attrition", "icon": "res://assets/skills/gem_blue_big.png",
-		"effects": [{"trigger": "on_kill", "effect": "shave_cooldowns", "value": 1.0}]},
+		"effects": [{"trigger": "on_kill", "effect": "gain_momentum", "value": 1.0}]},
 	"cleric": {"name": "Beacon", "arch": "sustain", "icon": "res://assets/skills/potion_blue.png",
 		"effects": [{"trigger": "on_kill", "effect": "mend_party", "value": 0.05}]},
 	"rogue": {"name": "Opportunist", "arch": "executioner", "icon": "res://assets/skills/dagger_blue.png",
@@ -455,7 +455,7 @@ const STONEBOUND_CRYSTALS := 40
 # without needing 18 fully bespoke riders (Combat.resolve_round applies each
 # bucket's rider once, right after the primary effect resolves).
 const ABILITY_AWAKENING_COST := 3
-const ABILITY_AWAKENING_COOLDOWN_REDUCTION := 1  # "buff" bucket's rider
+const ABILITY_AWAKENING_MOMENTUM := 2  # "buff" bucket's rider: Momentum refunded
 const ABILITY_AWAKENING_BUCKET := {
 	# Party-wide buffs/utility — rider: -1 round off the Ability's own cooldown.
 	"dodge_surge": "buff", "escalate_surge": "buff", "counter_surge": "buff",
@@ -542,3 +542,66 @@ const CHAMP_KIND_BASE := {
 	"dmg_pct": 0.06, "hp_pct": 0.06, "first_round_pct": 0.15, "escalate_pct": 0.02,
 	"mend_pct": 0.03, "dodge_pct": 0.08, "hazard_guard_pct": 0.10, "wipe_guard": 0.2, "boss_alpha_strike": 1.0,
 }
+
+
+# ---------------- Momentum and role skills ----------------
+## Momentum: the party's shared pool for skills in a fight. Basic attacks,
+## kills and taking hits while Defending or Guarding build it; role skills
+## and subclass Abilities spend it.
+const MOMENTUM_MAX := 10
+const MOMENTUM_START := 3
+const ABILITY_MOMENTUM_COST := 4
+## Melee roles hit at half strength with a basic attack from the back row.
+const MELEE_ROLES := ["warrior", "rogue"]
+const BACK_ROW_MELEE_MULT := 0.5
+
+## Two skills per role (the first at Lv1, the second at Lv6), on top of the
+## subclass Ability at Lv3. "row": where the hero must stand ("any" = either).
+## "target": "foe" skills hit the picked foe; "none" need no pick. Damage
+## values are multiples of the hero's own basic attack.
+const ROLE_SKILLS := {
+	"warrior": [
+		{"id": "shield_bash", "name": "Shield Bash", "level": 1, "cost": 2, "row": "front", "target": "foe", "effect": "bash", "value": 1.1,
+			"icon": "res://assets/skills/shield_orange.png", "desc": "Hits the target for 110% and stuns it: it loses its next action and any wind-up. Bosses only lose the wind-up."},
+		{"id": "taunt", "name": "Taunt", "level": 6, "cost": 3, "row": "front", "target": "none", "effect": "taunt", "value": 0.3,
+			"icon": "res://assets/skills/helm.png", "desc": "Every foe aims its attacks at this hero until the round ends, and this hero takes 30% less from them."},
+	],
+	"ranger": [
+		{"id": "aimed_shot", "name": "Aimed Shot", "level": 1, "cost": 2, "row": "back", "target": "foe", "effect": "pierce", "value": 1.8,
+			"icon": "res://assets/skills/eye_gem.png", "desc": "A 180% shot at the target that ignores armor and wards."},
+		{"id": "volley", "name": "Volley", "level": 6, "cost": 3, "row": "back", "target": "none", "effect": "volley", "value": 0.7,
+			"icon": "res://assets/skills/shard_green.png", "desc": "Hits every foe for 70%."},
+	],
+	"mage": [
+		{"id": "arcane_bolt", "name": "Arcane Bolt", "level": 1, "cost": 2, "row": "any", "target": "foe", "effect": "strike", "value": 1.7,
+			"icon": "res://assets/skills/gem_blue_a.png", "desc": "A 170% bolt at the target."},
+		{"id": "frost_nova", "name": "Frost Nova", "level": 6, "cost": 4, "row": "any", "target": "none", "effect": "nova", "value": 0.6,
+			"icon": "res://assets/skills/shard_blue.png", "desc": "Hits every foe for 60% and breaks every wind-up."},
+	],
+	"cleric": [
+		{"id": "heal", "name": "Heal", "level": 1, "cost": 2, "row": "any", "target": "none", "effect": "heal", "value": 0.3,
+			"icon": "res://assets/skills/potion_red.png", "desc": "Heals the most-hurt ally for 30% of their max HP."},
+		{"id": "sanctuary", "name": "Sanctuary", "level": 6, "cost": 3, "row": "any", "target": "none", "effect": "sanctuary", "value": 0.15,
+			"icon": "res://assets/skills/heart.png", "desc": "Wards every ally for 15% of their max HP and cleanses burn, poison, chill, stun and curses."},
+	],
+	"rogue": [
+		{"id": "backstab", "name": "Backstab", "level": 1, "cost": 2, "row": "front", "target": "foe", "effect": "backstab", "value": 1.5,
+			"icon": "res://assets/skills/dagger_red.png", "desc": "Hits the target for 150%, or 250% if it is winding up or below half health."},
+		{"id": "smoke_bomb", "name": "Smoke Bomb", "level": 6, "cost": 3, "row": "any", "target": "none", "effect": "smoke", "value": 0.3,
+			"icon": "res://assets/skills/cloak_a.png", "desc": "+30% dodge for the whole party until the round ends."},
+	],
+}
+
+
+## The role skills `h` has learned by level.
+static func hero_role_skills(h: Hero) -> Array:
+	return (ROLE_SKILLS.get(h.cls_id, []) as Array).filter(func(sk): return h.level >= int(sk["level"]))
+
+
+static func find_role_skill(id: String) -> Dictionary:
+	for role in ROLE_SKILLS:
+		for sk in ROLE_SKILLS[role]:
+			if sk["id"] == id:
+				return sk
+	return {}
+

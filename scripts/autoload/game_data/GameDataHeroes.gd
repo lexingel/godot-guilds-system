@@ -121,7 +121,7 @@ const RELIC_SPECIALS := [
 	{"kind": "boss_alpha_strike", "value": 0.3, "domain": "damage", "label": "+30% opening volley vs Bosses"},
 	{"kind": "loot_rarity_pct", "value": 0.06, "domain": "droprate", "label": "+6% odds toward Rare/Epic loot"},
 	{"kind": "counter_pct", "value": 0.15, "domain": "chance", "label": "+15% chance to counter-attack when evading or taking a heavy hit"},
-	{"kind": "cooldown_shave_pct", "value": 0.25, "domain": "chance", "label": "+25% chance to shave 1 round off every ability cooldown when evading or taking a heavy hit"},
+	{"kind": "momentum_pct", "value": 0.25, "domain": "chance", "label": "+25% chance to gain 1 Momentum when evading or hit hard"},
 	{"kind": "kill_shield_pct", "value": 0.2, "domain": "defense", "label": "On a kill, shields the lowest-HP ally for 20% of their max HP"},
 ]
 
@@ -129,7 +129,7 @@ const RELIC_SPECIALS := [
 const RELIC_SPECIAL_SUFFIX := {
 	"mend_pct": "of Renewal", "dodge_pct": "of the Wind", "escalate_pct": "of the Pyre", "hazard_guard_pct": "of Warding",
 	"first_round_pct": "of First Light", "wipe_guard": "of the Last Stand", "boss_alpha_strike": "of the Warhorn",
-	"loot_rarity_pct": "of Fortune", "counter_pct": "of Thorns", "cooldown_shave_pct": "of Haste", "kill_shield_pct": "of the Bulwark",
+	"loot_rarity_pct": "of Fortune", "counter_pct": "of Thorns", "momentum_pct": "of Haste", "kill_shield_pct": "of the Bulwark",
 }
 
 ## Relic triggers (rare+): effects in Combat's hero-effect shape that fire in

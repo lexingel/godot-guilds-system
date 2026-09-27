@@ -29,7 +29,7 @@ const BOONS := [
 	{"id": "bulwark", "family": "steel", "name": "Bulwark", "desc": "20% chance to take a hit meant for a wounded ally.", "trigger": {"trigger": "ally_targeted", "effect": "intercept", "value": 0.20}},
 	{"id": "tempered", "family": "steel", "name": "Tempered", "desc": "Once a fight, survive a wipe at 25% HP.", "kind": "wipe_guard", "value": 0.25},
 	{"id": "surge", "family": "storm", "name": "Surge", "desc": "+30% first-strike damage.", "kind": "first_round_pct", "value": 0.30},
-	{"id": "static", "family": "storm", "name": "Static", "desc": "+30% chance to cool abilities when evading or hit hard.", "kind": "cooldown_shave_pct", "value": 0.30},
+	{"id": "static", "family": "storm", "name": "Static", "desc": "+30% chance to gain 1 Momentum when evading or hit hard.", "kind": "momentum_pct", "value": 0.30},
 	{"id": "chain", "family": "storm", "name": "Chain Lightning", "desc": "Each kill arcs lightning into every foe for 30% of party damage.", "trigger": {"trigger": "on_kill", "effect": "nova", "value": 0.30}},
 	{"id": "reaper", "family": "shadow", "name": "Reaper", "desc": "Hits finish off foes left below 12% HP.", "trigger": {"trigger": "before_hit", "effect": "execute_below", "value": 0.12}},
 	{"id": "ambush", "family": "shadow", "name": "Ambush", "desc": "+40% opening volley against bosses.", "kind": "boss_alpha_strike", "value": 0.40},
@@ -113,7 +113,7 @@ const DIFFICULTIES := [
 ]
 
 ## The power the Rift Hall compares against for the Endless Rift (survivors).
-const ENDLESS_REC_POWER := 1000   # median survival ~8 min (balance_sim -- calibrate)
+const ENDLESS_REC_POWER := 1000   # median survival ~6 min (balance_sim -- calibrate)
 
 ## Recovery in rift runs rather than real time: a downed hero sits out this
 ## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
@@ -144,7 +144,7 @@ const RIFT_EVENTS := [
 	{"id": "echo", "name": "Rift Echo", "text": "Shimmering memories of old battles replay in the air around you.",
 		"choices": [
 			{"label": "Study the fighting", "desc": "Every hero in the party gains 20 XP", "effect": {"xp_all": 20}},
-			{"label": "Absorb its energy", "desc": "All abilities ready · +5 Essence", "effect": {"ready": true, "crystals": 5}},
+			{"label": "Absorb its energy", "desc": "+3 Momentum next fight · +5 Essence", "effect": {"ready": true, "crystals": 5}},
 		]},
 	{"id": "gambler", "name": "The Gambler", "text": "A cloaked figure shuffles cards on an upturned crate and grins at you.",
 		"choices": [
@@ -178,7 +178,7 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "frozen_knight", "name": "Frozen Knight", "text": "A knight from another guild, frozen mid-stride in rift-ice. Still breathing.",
 		"choices": [
-			{"label": "Thaw them out", "desc": "Costs 15 Gold · +3 Renown · every ability ready", "cost": {"coins": 15}, "effect": {"reputation": 3, "ready": true}},
+			{"label": "Thaw them out", "desc": "Costs 15 Gold · +3 Renown · +3 Momentum next fight", "cost": {"coins": 15}, "effect": {"reputation": 3, "ready": true}},
 			{"label": "Take their shield", "desc": "A Rare-or-better item · -2 Renown", "effect": {"item": "rare", "reputation": -2}},
 			{"label": "Move on", "desc": "Nothing happens", "effect": {}},
 		]},
@@ -194,7 +194,7 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "storm_totem", "name": "Storm Totem", "text": "A totem crackles with trapped lightning. Channelled right, it could charge your party.",
 		"choices": [
-			{"label": "Channel it", "desc": "Focus check · pass: +12-20 Essence, every ability ready · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"crystals": [12, 20], "ready": true}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Channel it", "desc": "Focus check · pass: +12-20 Essence, +3 Momentum next fight · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"crystals": [12, 20], "ready": true}, "lose": {"hurt_pct": 0.10}}},
 			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "shade", "name": "A Hungry Shade", "text": "A shade drifts toward you, hungry for anything bright: gold, light, warmth.",
@@ -220,7 +220,7 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "mirror", "name": "Rift Mirror", "text": "Your reflection moves a moment after you do. It seems to be showing you something.",
 		"choices": [
-			{"label": "Study it", "desc": "Focus check · pass: every ability ready, +25 XP each · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"ready": true, "xp_all": 25}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Study it", "desc": "Focus check · pass: +3 Momentum next fight, +25 XP each · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"ready": true, "xp_all": 25}, "lose": {"hurt_pct": 0.10}}},
 			{"label": "Smash it", "desc": "+8 Essence", "effect": {"crystals": 8}},
 		]},
 	{"id": "golem", "name": "Sleeping Golem", "text": "A stone golem dozes on top of a treasure chest. Its snores shake the floor.",
@@ -241,7 +241,7 @@ const RIFT_EVENTS := [
 	{"id": "crossroads", "name": "Rift Crossroads", "text": "Two paths: one dives deeper into raw rift energy, one leads to a quiet alcove.",
 		"choices": [
 			{"label": "Push deeper", "desc": "Everyone loses 8% HP · +10-16 Essence", "effect": {"hurt_pct": 0.08, "crystals": [10, 16]}},
-			{"label": "Regroup", "desc": "Every hero heals 15% HP · every ability ready", "effect": {"heal_pct": 0.15, "ready": true}},
+			{"label": "Regroup", "desc": "Every hero heals 15% HP · +3 Momentum next fight", "effect": {"heal_pct": 0.15, "ready": true}},
 		]},
 	{"id": "banner", "name": "Fallen Banner", "text": "A guild banner lies in the dust, its bearer long gone. The cloth is still good.",
 		"choices": [
@@ -269,13 +269,13 @@ const WOUND_HEAL_PER_RUN := 0.5
 const RIFT_RANKS := [
 	{"id": "F", "rec": 65, "base": "lesser", "hp": 0.8, "dmg": 0.85, "reward": 1.0},
 	{"id": "E", "rec": 160, "base": "lesser", "hp": 1.8, "dmg": 1.6, "reward": 1.4},
-	{"id": "D", "rec": 390, "base": "lesser", "hp": 3.2, "dmg": 2.6, "reward": 2.0},
-	{"id": "C", "rec": 500, "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
-	{"id": "B", "rec": 725, "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
+	{"id": "D", "rec": 440, "base": "lesser", "hp": 3.2, "dmg": 2.6, "reward": 2.0},
+	{"id": "C", "rec": 480, "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
+	{"id": "B", "rec": 680, "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
 	{"id": "A", "rec": 900, "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
 	{"id": "S", "rec": 1270, "base": "greater", "hp": 3.0, "dmg": 2.2, "reward": 2.2, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true},
-	{"id": "SS", "rec": 1610, "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
-	{"id": "SSS", "rec": 2120, "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "SS", "rec": 1700, "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "SSS", "rec": 2200, "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
 ]
 
 ## What each rank's extra rules read as on the Rift Hall.

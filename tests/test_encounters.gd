@@ -144,7 +144,7 @@ func run() -> void:
 	st2["turn_idx"] = 0
 	check(str(Combat.auto_action(st2, ha)["action"]) == "defend", "auto Defends against a heavy blow aimed at it")
 	st2["monsters"][0]["_charged"] = false
-	ha.ability_cooldown = 5
+	st2["momentum"] = 0   # nothing to spend
 	check(str(Combat.auto_action(st2, ha)["action"]) == "attack", "auto attacks otherwise")
 	GameState.run["node_state"] = {}
 	GameState.choose_node_type("combat")

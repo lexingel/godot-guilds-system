@@ -1479,7 +1479,7 @@ const _KIND_LABEL := {
 	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance", "ability_power": "Ability Power",
 	"wipe_guard": "Wipe Guard (survive a wipe)", "boss_alpha_strike": "Boss Alpha Strike",
 	"loot_rarity_pct": "Loot Rarity", "counter_pct": "Counter-Attack Chance",
-	"cooldown_shave_pct": "Ability Cooldown Shave", "kill_shield_pct": "On-Kill Shield",
+	"momentum_pct": "Momentum on Evade", "kill_shield_pct": "On-Kill Shield",
 }
 
 

@@ -215,7 +215,7 @@ func load_save() -> bool:
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
-			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
+			"finale": int(run_data.get("finale", 0)), "momentum_bonus": int(run_data.get("momentum_bonus", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []), "events_seen": run_data.get("events_seen", []),
 		}
 		if int(run_data.get("daily", -1)) >= 0:
@@ -365,8 +365,7 @@ func start_tower(hero_ids: Array[String]) -> void:
 	}
 	var snap := {}
 	for h in current_party():
-		snap[h.id] = [h.hp, h.down_runs, h.bedded, h.ability_cooldown]
-		h.ability_cooldown = 0
+		snap[h.id] = [h.hp, h.down_runs, h.bedded]
 	run["tower_snap"] = snap
 	auto_resolve_single_option()
 	save()

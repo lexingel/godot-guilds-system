@@ -69,7 +69,6 @@ func run() -> void:
 	var ids := _heroes(4, "A", 10)
 	var h0 := GameState.find_hero(ids[0])
 	h0.hp = 5
-	h0.ability_cooldown = 2
 	var coins0 := GameState.coins
 	var day0 := GameState.day
 	GameState.start_tower(ids)
@@ -86,7 +85,7 @@ func run() -> void:
 	check(GameState.tower_best == 1 and GameState.coins == coins0 + int(GameState.tower_reward(1)["coins"]), "floor 1 pays its first-clear coins")
 	GameState.finish_run()
 	h0 = GameState.find_hero(ids[0])
-	check(GameState.run.is_empty() and h0.hp == 5 and h0.ability_cooldown == 2 and GameState.day == day0, "heroes leave as they came; no day passes")
+	check(GameState.run.is_empty() and h0.hp == 5 and GameState.day == day0, "heroes leave as they came; no day passes")
 	check(GameState.tower_next_floor() == 2, "next floor is 2")
 
 	# A loss downs no one and pays nothing.

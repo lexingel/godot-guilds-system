@@ -249,7 +249,7 @@ func _cond_ok(cond: Dictionary, h: Hero, state: Dictionary, ctx: Dictionary) -> 
 func _party_effects(state: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = [
 		{"trigger": "evade_or_heavy", "effect": "counter_attack", "value": float(state["counter"]), "source": "counter"},
-		{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": float(state["cooldown_shave"]), "source": "Chronometer"},
+		{"trigger": "evade_or_heavy", "effect": "gain_momentum", "value": float(state["momentum_proc"]), "source": "Chronometer"},
 		{"trigger": "on_kill", "effect": "shield_lowest", "value": float(state["kill_shield"]), "source": "Lantern"},
 	]
 	# Every equipped relic's trigger fires for the whole party, and so does
@@ -306,13 +306,11 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 				m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
 				log.append("%s counters, striking %s for %d!" % [h.name, m["name"], counter_dmg])
 				_proc(state, h, "Counter!")
-		"shave_cooldowns":
+		"gain_momentum":
 			if randf() < value:
-				for h2 in state["party"]:
-					if h2.ability_cooldown > 0:
-						h2.ability_cooldown -= 1
-				log.append("The %s hums — abilities cool faster!" % source)
-				_proc(state, h, "Cooldowns -1")
+				state["momentum"] = mini(GameData.MOMENTUM_MAX, int(state.get("momentum", 0)) + 1)
+				log.append("The %s hums — +1 Momentum!" % source)
+				_proc(state, h, "Momentum +1")
 		"extra_turn":
 			var used: Dictionary = state.get("_extra_turned", {})
 			if not used.has(h.id) and h.hp > 0:
@@ -380,7 +378,7 @@ func describe_effect(e: Dictionary) -> String:
 			"lifesteal": what = "heal for %s of damage dealt" % pct.call(v)
 			"shield_lowest": what = "shield the lowest-HP ally for %s of their max HP" % pct.call(v)
 			"counter_attack": what = "%s chance to counter-attack" % pct.call(v)
-			"shave_cooldowns": what = "%s chance to cool every Ability by 1 round" % pct.call(v)
+			"gain_momentum": what = "%s chance to gain 1 Momentum" % pct.call(v)
 			"extra_turn": what = "act again (once per round)"
 			"intercept": what = "%s chance to take the hit for an ally below half HP" % pct.call(v)
 			"weaken_attacker": what = "cut the attacker's damage by %s" % pct.call(v)
@@ -459,7 +457,7 @@ func synergy_value_for(kind: String) -> float:
 
 ## Kinds read through relic_special_total rather than synergy_value_for;
 ## boons join whichever channel a kind already flows through (never both).
-const BOON_VIA_RELIC := ["counter_pct", "cooldown_shave_pct", "kill_shield_pct", "wipe_guard", "boss_alpha_strike"]
+const BOON_VIA_RELIC := ["counter_pct", "momentum_pct", "kill_shield_pct", "wipe_guard", "boss_alpha_strike"]
 
 
 ## Every stat entry and trigger the current run's boons (and their family

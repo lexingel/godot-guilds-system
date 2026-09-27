@@ -43,7 +43,6 @@ var battered: bool = false # patched up mid-rift: -BATTERED_HP_PCT max HP until 
 var hp: int = 0
 var is_champion: bool = false
 var oath: int = 0   # rifts sealed together as Champion (see GameData.CHAMPION_OATH_SEALS)
-var ability_cooldown: int = 0    # rounds until Ability is usable again; ticks down once per node, not per fight
 var formation: String = "front"  # "front" or "back" — biases monster retaliation targeting
 var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed secondary rider on the Ability's effect, see GameData.ABILITY_AWAKENING_BUCKET
 var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds earned quirks (GameData.QUIRKS)
@@ -68,7 +67,7 @@ func to_dict() -> Dictionary:
 		"level": level, "xp": xp, "skill_points": skill_points, "skills": skills,
 		"base_hp": base_hp, "base_dmg": base_dmg, "base_spd": base_spd, "quirks": quirks,
 		"down_runs": down_runs, "bedded": bedded, "busy_runs": busy_runs, "battered": battered, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
-		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
+		"formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
 "ability_awakened": ability_awakened,
 		"history": history,
@@ -148,6 +147,5 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.hp = d.get("hp", 0)
 	h.is_champion = d.get("is_champion", false)
 	h.oath = int(d.get("oath", 0))
-	h.ability_cooldown = d.get("ability_cooldown", 0)
 	h.formation = d.get("formation", "front")
 	return h

@@ -345,7 +345,7 @@ func tower_reward(f: int) -> Dictionary:
 ## Fit to the balance sim: a party of this power clears about half its tries.
 ## Party power whose climb typically ends around floor f (balance_sim
 ## -- calibrate), interpolated between measured points.
-const TOWER_REC := [[1, 65], [5, 130], [10, 200], [15, 260], [30, 660], [45, 1000], [60, 1500], [75, 2000], [90, 2300], [100, 2500]]
+const TOWER_REC := [[1, 60], [5, 140], [10, 250], [20, 650], [45, 1000], [70, 1500], [85, 2200], [100, 2600]]
 
 
 func tower_recommended_power(f: int) -> int:
@@ -420,7 +420,6 @@ func _end_tower() -> void:
 			h.hp = int(s[0])
 			h.down_runs = int(s[1])
 			h.bedded = bool(s[2])
-			h.ability_cooldown = int(s[3])
 	run = {}
 	_clamp_hp_to_max()
 	save()

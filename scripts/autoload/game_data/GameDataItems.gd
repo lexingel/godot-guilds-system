@@ -68,7 +68,7 @@ const UNIQUE_ITEMS := [
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "+45% damage while this hero is below 35% HP. -10% HP."},
 	{"id": "chronoblade", "name": "Chronoblade", "category": "weapon", "arch": "evasion",
-	 "effects": [{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": 0.60}],
+	 "effects": [{"trigger": "evade_or_heavy", "effect": "gain_momentum", "value": 0.60}],
 	 "drawback_kind": "dmg_pct", "drawback_value": -0.08,
 	 "locked_role": "", "locked_subclasses": [],
 	 "desc": "60% chance to cool every Ability by 1 round when this hero dodges or takes a heavy hit. -8% damage."},

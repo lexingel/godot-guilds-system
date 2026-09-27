@@ -457,6 +457,13 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 					await _anim_hero_attack(h, hw, hero_rects.get(h.id), tw, tint, arena)
 				"ability", "call":
 					await _anim_hero_ability(h, action, hw, hero_rects.get(h.id), tw, tint, arena, state, hero_wrappers, monster_wrappers, hp_before, shields_before, monster_hp_before)
+				_ when action.begins_with("skill:"):
+					var sk := GameData.find_role_skill(action.substr(6))
+					if str(sk.get("target", "")) == "foe":
+						await _anim_hero_attack(h, hw, hero_rects.get(h.id), tw, tint, arena)
+					else:
+						Fx.sparkles(arena, _center(hw), tint.lerp(Color.WHITE, 0.4), 22, hw.custom_minimum_size.x * 0.7, false, 0.5)
+						await _tween_skill_flash(hw)
 				"defend":
 					Fx.dome(arena, _center(hw), hw.custom_minimum_size.x * 1.15)
 					await _tween_defend(hw)
@@ -497,7 +504,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var mw: Control = monster_wrappers.get(i)
 		# Who it's about to hit: a line from the foe to its target first.
 		var intent: Dictionary = Combat.monster_intent(state, i) if i < monsters.size() and float(monsters[i]["hp"]) > 0 else {}
-		if mw and not intent.is_empty() and not intent.get("charging", false):
+		if mw and not intent.is_empty() and not intent.get("charging", false) and intent.get("target") != null:
 			var th: Hero = intent["target"]
 			if hero_wrappers.has(th.id):
 				Fx.line(arena, _center(mw), _center(hero_wrappers[th.id]), Palette.HAZARD if intent.get("heavy_blow", false) else Color(1.0, 0.65, 0.55), 0.45)
@@ -607,11 +614,8 @@ func _first_wrapper(wrappers: Dictionary) -> Control:
 ## Melee heroes (Warrior, Rogue) close in to strike; the rest attack from range.
 const MELEE_ROLES := ["warrior", "rogue"]
 ## Foes that shoot instead of rushing their target.
-const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir"]
-
-
 func _monster_is_ranged(name: String) -> bool:
-	return RANGED_FOE_WORDS.any(func(w): return name.contains(w))
+	return GameData.RANGED_FOE_WORDS.any(func(w): return name.contains(w))
 
 
 ## Slides a wrapper horizontally to `to_x` (a dash in or the return trip).
@@ -866,7 +870,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if GameState.vanguard():
 			guild_bits.append("Vanguard first strike")
 		if GameState.abilities_ready_each_fight():
-			guild_bits.append("abilities ready")
+			guild_bits.append("+3 starting Momentum")
 		if not guild_bits.is_empty():
 			var gl := _label("Drill Yard: " + ", ".join(guild_bits), 12, true)
 			gl.add_theme_color_override("font_color", Palette.RANK_E)
@@ -1382,8 +1386,12 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 			out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Guarded by %s this round" % g.name, "color": Palette.VIOLET_BRIGHT})
 	if guarding.values().has(h.id):
 		out.append({"icon": "res://assets/skills/shield_split.png", "tip": "Guarding an ally this round (takes their hits, 25% weaker)", "color": Palette.VIOLET_BRIGHT})
-	if h.ability_cooldown == 0 and Combat.qualifies_for_ability(h):
-		out.append({"icon": GameData.ability_icon(h.pool_id), "tip": "Ability ready", "color": Palette.EMBER_BRIGHT})
+	if state.get("_weakened", {}).has(h.id):
+		out.append({"icon": "res://assets/skills/face_hood.png", "tip": "Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it." % [int(GameData.CURSE_WEAKEN * 100), int(state["_weakened"][h.id])], "color": Palette.HAZARD})
+	if str(state.get("_taunt", "")) == h.id:
+		out.append({"icon": "res://assets/skills/helm.png", "tip": "Taunting — every foe's attacks come here this round, %d%% weaker" % int(float(state.get("_taunt_cut", 0.0)) * 100), "color": Palette.VIOLET_BRIGHT})
+	if Combat.qualifies_for_ability(h) and Combat.action_block(state, h, "ability") == "":
+		out.append({"icon": GameData.ability_icon(h.pool_id), "tip": "Enough Momentum for their Ability", "color": Palette.EMBER_BRIGHT})
 	return out
 
 
@@ -1415,7 +1423,13 @@ func _monster_statuses(state: Dictionary, i: int) -> Array:
 		"burn": out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Its hits can set a hero ablaze (damage over time)", "color": Palette.HAZARD})
 		"chill": out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Its hits can chill a hero (acts late next round)", "color": Palette.CRYSTALS})
 	if m.get("_charged", false) or m.get("_winding", false):
-		out.append({"icon": "res://assets/skills/sword_big.png", "tip": "Winding up a heavy blow", "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/skills/sword_big.png", "tip": "Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.", "color": Palette.HAZARD})
+	if state.get("_m_stunned", {}).has(i):
+		out.append({"icon": "res://assets/skills/star.png", "tip": "Stunned — loses its next action", "color": Palette.EMBER_BRIGHT})
+	var kit: Array = m.get("kit", [])
+	if not kit.is_empty():
+		var moves: Array = kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))
+		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": "Can also: %s (telegraphed a round ahead)" % ", ".join(moves), "color": Palette.LINE})
 	var ward := float(state.get("monster_shields", {}).get(i, 0.0))
 	if ward > 0.0:
 		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Ward — absorbs the next %d damage" % int(round(ward)), "color": Palette.CRYSTALS})
@@ -1477,12 +1491,13 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var intent := Combat.monster_intent(state, i)
 		if intent.is_empty():
 			continue
-		var t: Hero = intent["target"]
-		var e: Dictionary = incoming.get(t.id, {"dmg": 0, "heavy": false, "from": []})
-		e["dmg"] = int(e["dmg"]) + int(intent["dmg"])
-		e["heavy"] = bool(e["heavy"]) or bool(intent["heavy"]) or intent.get("charging", false)
-		(e["from"] as Array).append("%s (%s)" % [str(monsters[i]["name"]), "winding up a heavy blow" if intent.get("charging", false) else str(int(intent["dmg"]))])
-		incoming[t.id] = e
+		var hit_list: Array = intent.get("targets", []) if intent.get("kind") == "sweep" else ([intent["target"]] if intent.get("target") != null and int(intent["dmg"]) > 0 or intent.get("charging", false) else [])
+		for t in hit_list:
+			var e: Dictionary = incoming.get(t.id, {"dmg": 0, "heavy": false, "from": []})
+			e["dmg"] = int(e["dmg"]) + int(intent["dmg"])
+			e["heavy"] = bool(e["heavy"]) or bool(intent["heavy"]) or intent.get("charging", false)
+			(e["from"] as Array).append("%s (%s)" % [str(monsters[i]["name"]), "winding up a heavy blow" if intent.get("charging", false) else str(int(intent["dmg"]))])
+			incoming[t.id] = e
 
 	# --- Heroes: back row on the left, front row nearest the enemy. ---
 	var line: Array[Hero] = []
@@ -1594,16 +1609,26 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		if not intent.is_empty():
 			var t: Hero = intent["target"]
 			var chip: PanelContainer
-			if intent.get("charging", false):
+			var ikind := str(intent.get("kind", "attack"))
+			if GameData.INTENT_INFO.has(ikind):
+				var info: Dictionary = GameData.INTENT_INFO[ikind]
+				var label := str(info["name"])
+				match ikind:
+					"sweep": label = "%s %d → all" % [info["name"], int(intent["dmg"])]
+					"snipe": label = "%s %d → %s" % [info["name"], int(intent["dmg"]), t.name.split(" the ")[0]]
+					"curse": label = "%s → %s" % [info["name"], t.name.split(" the ")[0]]
+				var tip := str(info["desc"]) % int(GameData.SWEEP_MULT * 100) if ikind == "sweep" else str(info["desc"]).replace("%%", "%")
+				chip = _intent_chip(label, ikind in ["sweep", "snipe", "roar"], "%s — %s" % [info["name"], tip], str(info["icon"]))
+			elif intent.get("charging", false):
 				chip = _intent_chip("Winding up", true, "Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row." % str(GameData.HEAVY_BLOW_MULT))
 			elif intent.get("heavy_blow", false):
 				chip = _intent_chip("⚠ %d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], true,
-					"HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (3) halves it; Guard (4) takes it for them." % [t.name, int(intent["dmg"])])
+					"HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it." % [t.name, int(intent["dmg"])])
 			else:
 				chip = _intent_chip("%d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], bool(intent["heavy"]),
 					"Attacks %s this round for about %d%s" % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""])
 			chip.position = plate.position + Vector2(0, -22.0)
-			var ring: Control = target_rings.get(t.id)
+			var ring: Control = target_rings.get(t.id) if t != null else null
 			if ring:
 				chip.mouse_entered.connect(func(): if is_instance_valid(ring): ring.visible = true)
 				chip.mouse_exited.connect(func(): if is_instance_valid(ring): ring.visible = false)
@@ -1680,7 +1705,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 
 
 ## A small dark chip with a sword (or skull, for a heavy hit) and text.
-func _intent_chip(text: String, heavy: bool, tip: String) -> PanelContainer:
+func _intent_chip(text: String, heavy: bool, tip: String, icon: String = "") -> PanelContainer:
 	var chip := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(Palette.INK, 0.88)
@@ -1693,7 +1718,7 @@ func _intent_chip(text: String, heavy: bool, tip: String) -> PanelContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 3)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(_icon("res://assets/skills/icon_boss_skull.png" if heavy else "res://assets/skills/sword_a.png", 14))
+	row.add_child(_icon(icon if icon != "" else ("res://assets/skills/icon_boss_skull.png" if heavy else "res://assets/skills/sword_a.png"), 14))
 	var l := _label(text, 12)
 	l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if heavy else Palette.TEXT)
 	row.add_child(l)
@@ -1705,11 +1730,11 @@ func _intent_chip(text: String, heavy: bool, tip: String) -> PanelContainer:
 
 ## One command button: icon over a caption, a hotkey badge in the corner, a
 ## dark cooldown overlay with the rounds left when it can't be used yet.
-func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, tip: String, selected: bool = false, cooldown: int = 0) -> Button:
+func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, tip: String, selected: bool = false, block: String = "", cost: int = 0) -> Button:
 	var b := _button("", cb)
 	b.custom_minimum_size = Vector2(92, 72)
 	b.tooltip_text = tip
-	b.disabled = cooldown > 0
+	b.disabled = block != ""
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
 		var st := StyleBoxFlat.new()
@@ -1739,18 +1764,39 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 		kb.add_theme_color_override("font_color", Palette.MUTED)
 		kb.position = Vector2(6, 3)
 		b.add_child(kb)
-	if cooldown > 0:
+	if cost > 0:
+		var cl := _label("%d◆" % cost, 11)
+		cl.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if block == "" else Palette.MUTED)
+		cl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		cl.offset_left = -36
+		cl.offset_right = -5
+		cl.offset_top = 3
+		cl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		b.add_child(cl)
+	if block != "":
 		ic.modulate = Color(0.45, 0.45, 0.5)
 		cap.add_theme_color_override("font_color", Palette.MUTED2)
-		var cd := _label(str(cooldown), 22)
-		cd.add_theme_font_override("font", DISPLAY_FONT)
-		cd.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		cd.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cd.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cd.offset_bottom = -14
-		_shadow(cd)
-		b.add_child(cd)
 	return b
+
+
+## The party's Momentum as ten pips (filled up to `n`).
+func _momentum_meter(n: int) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 2)
+	row.tooltip_text = "Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it." % [n, GameData.MOMENTUM_MAX]
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	var l := _label("Momentum", 11)
+	l.add_theme_color_override("font_color", Palette.MUTED)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(l)
+	for k in GameData.MOMENTUM_MAX:
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(7, 9)
+		pip.color = Palette.EMBER_BRIGHT if k < n else Color(Palette.LINE, 0.6)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(pip)
+	return row
 
 
 ## Replaces the command buttons with "Guard whom?": one button per ally
@@ -1770,8 +1816,8 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 	for i in monsters.size():
 		var it := Combat.monster_intent(state, i)
 		if not it.is_empty() and not it.get("guarded", false):
-			var t: Hero = it["target"]
-			incoming[t.id] = int(incoming.get(t.id, 0)) + int(it["dmg"])
+			for t in (it.get("targets", []) if it.get("kind") == "sweep" else ([it["target"]] if it.get("target") != null else [])):
+				incoming[t.id] = int(incoming.get(t.id, 0)) + int(it["dmg"])
 	var hid := current_hero.id
 	var n := 0
 	for a in living_heroes:
@@ -1822,8 +1868,9 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 	st.set_corner_radius_all(8)
 	st.set_content_margin_all(10)
 	panel.add_theme_stylebox_override("panel", st)
-	# Wraps on the narrow (portrait) canvas instead of running off the side.
-	var row: Container = HFlowContainer.new() if _narrow() else HBoxContainer.new()
+	# Wraps instead of running off the side (the full kit is wider than a
+	# narrow window).
+	var row: Container = HFlowContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.add_theme_constant_override("h_separation", 10)
 	row.add_theme_constant_override("v_separation", 8)
@@ -1840,6 +1887,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		info.add_child(nm)
 		info.add_child(_label("Lv%d %s · %d/%d HP" % [current_hero.level, GameData.find_class(current_hero.pool_id).get("name", ""), current_hero.hp, Combat.max_hp(current_hero)], 12, true))
+		info.add_child(_momentum_meter(int(state.get("momentum", 0))))
 		who.add_child(info)
 		row.add_child(who)
 
@@ -1849,25 +1897,43 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var tgt := _combat_target
 		var tgt_name := str(monsters[tgt]["name"]) if tgt >= 0 and tgt < monsters.size() else "—"
 		var do_attack := func(): if tgt >= 0: attack_cb.call(tgt)
-		row.add_child(_cmd_button("res://assets/skills/sword_a.png", "Attack", "1", do_attack, "Attack %s (1). Click a foe to pick another, Tab to cycle." % tgt_name, last_action == "attack"))
+		var weak_reach: bool = current_hero.formation == "back" and GameData.MELEE_ROLES.has(current_hero.cls_id)
+		var atk_tip := "Attack %s (1): +1 Momentum. Click a foe to pick another, Tab to cycle." % tgt_name
+		if weak_reach:
+			atk_tip += "\nFrom the back row a %s hits at half strength." % current_hero.cls_id
+		row.add_child(_cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack"))
 		_combat_hotkeys["1"] = do_attack
 		if last_action == "attack":
 			_combat_hotkeys["Space"] = do_attack
+		# Role skills (2, 3) and the subclass Ability (4) spend Momentum.
+		var skill_defs: Array = []
+		for sk in GameData.hero_role_skills(current_hero):
+			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), str(sk["name"]), "%s%s" % [str(sk["desc"]), "" if str(sk["row"]) == "any" else "\n%s row." % str(sk["row"]).capitalize()], int(sk["cost"])])
+		while skill_defs.size() < 2 and GameData.ROLE_SKILLS.has(current_hero.cls_id) and skill_defs.size() < (GameData.ROLE_SKILLS[current_hero.cls_id] as Array).size():
+			var locked_sk: Dictionary = GameData.ROLE_SKILLS[current_hero.cls_id][skill_defs.size()]
+			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), "%s\nLearned at level %d." % [locked_sk["desc"], int(locked_sk["level"])], int(locked_sk["cost"])])
 		if Combat.qualifies_for_ability(current_hero):
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(current_hero.pool_id, {})
-			var cd: int = current_hero.ability_cooldown
-			var do_ability := func(): run_turns.call(func(): GameState.set_hero_action(hid, "ability"))
-			var ab_tip := "%s (2) — %s%s" % [str(ab.get("name", "Ability")), str(ab.get("desc", "")), ("\nReady in %d round(s)." % cd) if cd > 0 else ""]
-			var ab_btn := _cmd_button(GameData.ability_icon(current_hero.pool_id), str(ab.get("name", "Ability")), "2", do_ability, ab_tip, last_action == "ability", cd)
-			ab_btn.custom_minimum_size.x = 120
-			row.add_child(ab_btn)
-			if cd == 0:
-				_combat_hotkeys["2"] = do_ability
-				if last_action == "ability":
-					_combat_hotkeys["Space"] = do_ability
+			skill_defs.append(["ability", GameData.ability_icon(current_hero.pool_id), str(ab.get("name", "Ability")), str(ab.get("desc", "")), GameData.ABILITY_MOMENTUM_COST])
+		var keys := ["2", "3", "4"]
+		for k in skill_defs.size():
+			var d: Array = skill_defs[k]
+			var act_id: String = d[0]
+			var key: String = keys[k] if act_id != "ability" else "4"
+			var block := Combat.action_block(state, current_hero, act_id)
+			var sk_target: bool = act_id == "ability" or str(GameData.find_role_skill(act_id.substr(6)).get("target", "")) == "foe"
+			var do_skill := func(): run_turns.call(func(): GameState.set_hero_action(hid, act_id, tgt if sk_target else 0))
+			var tip := "%s (%s) — %d Momentum. %s%s" % [d[2], key, int(d[4]), d[3], ("\n" + block) if block != "" else ""]
+			var sb := _cmd_button(str(d[1]), str(d[2]), key, do_skill, tip, last_action == act_id, block, int(d[4]))
+			sb.custom_minimum_size.x = 104
+			row.add_child(sb)
+			if block == "":
+				_combat_hotkeys[key] = do_skill
+				if last_action == act_id:
+					_combat_hotkeys["Space"] = do_skill
 		var do_defend := func(): run_turns.call(func(): GameState.set_hero_action(hid, "defend"))
-		row.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "3", do_defend, "Defend (3) — take half damage from hits this round.", last_action == "defend"))
-		_combat_hotkeys["3"] = do_defend
+		row.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "5", do_defend, "Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow).", last_action == "defend"))
+		_combat_hotkeys["5"] = do_defend
 		if last_action == "defend":
 			_combat_hotkeys["Space"] = do_defend
 		var allies: Array = living_heroes.filter(func(a): return a != current_hero)
@@ -1877,28 +1943,28 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_ally_pick = "guard"
 				render()
-			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "4", start_guard, "Guard (4) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker.", last_action == "guard")
+			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "6", start_guard, "Guard (6) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker, for +1 Momentum each.", last_action == "guard")
 			row.add_child(gb)
-			_combat_hotkeys["4"] = start_guard
+			_combat_hotkeys["6"] = start_guard
 		if GameState.champion_call_ready(current_hero):
 			var call := GameState.champion_call(current_hero)
 			var do_call := func(): run_turns.call(func(): GameState.set_hero_action(hid, "call"))
-			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "7", do_call, "Champion's Call (7) — %s. Once per rift." % call["desc"], false)
+			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, "Champion's Call (9) — %s. Once per rift." % call["desc"], false)
 			cb.modulate = Color(1.15, 1.0, 0.7)
 			row.add_child(cb)
-			_combat_hotkeys["7"] = do_call
+			_combat_hotkeys["9"] = do_call
 		var to_row := "back" if current_hero.formation != "back" else "front"
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
-		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "5", do_swap, "Move (5) — step to the %s row. Front draws attacks; some classes fight better from one row." % to_row, false))
-		_combat_hotkeys["5"] = do_swap
+		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "7", do_swap, "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row." % to_row, false))
+		_combat_hotkeys["7"] = do_swap
 		if GameState.tonics > 0:
 			var start_tonic := func():
 				if _combat_animating:
 					return
 				_ally_pick = "tonic"
 				render()
-			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonic ×%d" % GameState.tonics, "6", start_tonic, "Field Tonic (6) — heal an ally %d%% HP. Uses this hero's turn." % int(GameData.TONIC_HEAL_PCT * 100), false))
-			_combat_hotkeys["6"] = start_tonic
+			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonic ×%d" % GameState.tonics, "8", start_tonic, "Field Tonic (8) — heal an ally %d%% HP. Uses this hero's turn." % int(GameData.TONIC_HEAL_PCT * 100), false))
+			_combat_hotkeys["8"] = start_tonic
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
 		var living_idx: Array[int] = []

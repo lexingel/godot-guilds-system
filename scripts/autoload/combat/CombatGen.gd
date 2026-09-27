@@ -143,7 +143,7 @@ func relic_special_label(kind: String, v: float) -> String:
 		"wipe_guard": return "Relic ward: survive a wipe at %d%% HP" % int(round(v * 100))
 		"boss_alpha_strike": return "+%d%% opening volley vs Bosses" % int(round(v * 100))
 		"counter_pct": return "+%d%% chance to counter when evading or hit hard" % int(round(v * 100))
-		"cooldown_shave_pct": return "+%d%% chance to cool abilities when evading or hit hard" % int(round(v * 100))
+		"momentum_pct": return "+%d%% chance to gain 1 Momentum when evading or hit hard" % int(round(v * 100))
 		"kill_shield_pct": return "On a kill, shield the weakest ally for %d%% of max HP" % int(round(v * 100))
 	return describe_skill(kind, v)
 
@@ -554,3 +554,31 @@ func _check_phases(state: Dictionary) -> void:
 			"summon":
 				for k in 2:
 					monsters.append(_make_add(state["diff"], int(state["floor_idx"]), 0.3, 0.3))
+
+
+## The special moves a foe can telegraph besides attacking (see Combat's
+## _start_round): bosses sweep and roar, healers mend, shielded foes ward,
+## ranged foes snipe, elites and most species get one more by name.
+func monster_kit(m: Dictionary) -> Array:
+	var name := str(m["name"])
+	var ab := str(m.get("ability", {}).get("kind", ""))
+	var tier := str(m.get("tier", "combat"))
+	if tier == "boss":
+		return ["sweep", "roar"]
+	var kit: Array = []
+	if ab == "healer":
+		kit.append("mend")
+	if ab == "shielded":
+		kit.append("ward")
+	if GameData.RANGED_FOE_WORDS.any(func(w): return name.contains(w)):
+		kit.append("snipe")
+	if tier == "elite":
+		kit.append(["sweep", "snipe", "curse"][absi(hash(name)) % 3])
+	if (m.get("affixes", []) as Array).has("commander"):
+		kit.append("roar")
+	if kit.is_empty():
+		var k: int = absi(hash(name)) % 4
+		if k < 3:
+			kit.append(["snipe", "curse", "sweep"][k])
+	return kit
+

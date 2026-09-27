@@ -376,7 +376,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	if kind == "":
 		_coach(v, "path", "Choosing a path", "Each floor offers a choice. Fights give gold and loot; elites hit harder and pay more; shops, campfires, events and treasure help in other ways. The last floor is the boss.")
 	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result"):
-		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows who it will hit next — Defend (3) halves damage, Guard (4) takes a hit for an ally. Watch for foes \"winding up\": next round they land a heavy blow that stuns unless the target Defends. Armored foes shrug off basic attacks — abilities ignore armor.")
+		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows its next move: who it hits, or a Sweep, Snipe, Curse, Ward, Mend or Roar. Attacks build Momentum (the pips under the hero's name); skills (2-4) spend it. Defend (5) halves damage and Guard (6) takes a hit for an ally, both earning Momentum. Foes \"winding up\" land a heavy blow next round: Defend, or break it with Shield Bash or Frost Nova. Melee heroes hit at half strength from the back row.")
 	elif ns_tip.has("result") and bool(ns_tip["result"].get("won", false)) and not ns_tip.get("reward_chosen", false):
 		_coach(v, "reward", "Picking loot", "Choose one reward. Items are worn by one hero (equip them on the Roster's Hero tab); relics go on the Relic Altar and help the whole party.")
 	if not GameState.pending_injuries().is_empty():
@@ -624,9 +624,8 @@ func _render_campfire_node(v: VBoxContainer) -> void:
 	row.add_child(_hazard_option("res://assets/skills/star.png", "Train",
 		["Every hero gains %d XP" % GameData.CAMPFIRE_TRAIN_XP], [],
 		func(): GameState.campfire_choose("train"); render()))
-	var cooling := party.filter(func(h): return h.ability_cooldown > 0).size()
 	row.add_child(_hazard_option("res://assets/skills/sword_silver.png", "Sharpen",
-		["Every ability is ready for the next fight", "%d on cooldown right now" % cooling], [],
+		["The next fight starts with +4 Momentum"], [],
 		func(): GameState.campfire_choose("sharpen"); render()))
 	v.add_child(row)
 

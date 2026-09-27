@@ -191,3 +191,28 @@ const ELITE_AFFIXES := {
 	"hasted": {"name": "Hasted", "desc": "Acts twice each round (each hit a little weaker) and never winds up.", "icon": "res://assets/skills/boots.png", "hasted": true},
 	"commander": {"name": "Commander", "desc": "Always brings two (weaker) escorts.", "icon": "res://assets/skills/helm.png", "adds": 2},
 }
+
+
+# ---------------- Enemy intents ----------------
+## Foes whose names read as ranged (they snipe the back row).
+const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir"]
+## Besides attacking, a foe can telegraph one of its kit's moves a round
+## ahead (Combat.monster_kit / monster_intent). Numbers used by Combat.
+const INTENT_SPECIAL_CHANCE := 0.3
+const SWEEP_MULT := 0.55      # hits every hero for this share of a normal hit
+const SNIPE_MULT := 1.25      # a heavier hit on the most-hurt back-row hero
+const CURSE_WEAKEN := 0.4     # a cursed hero deals this much less damage...
+const CURSE_ROUNDS := 2       # ...for this many rounds
+const WARD_PCT := 0.2         # of the warded foe's max HP
+const MEND_PCT := 0.15        # of the mended foe's max HP (a healer's own value if it has one)
+const ROAR_MULT := 1.2        # every foe hits this much harder, up to twice a fight
+const INTENT_INFO := {
+	"sweep": {"name": "Sweep", "icon": "res://assets/skills/sword_slash.png", "desc": "Hits every hero for %d%% of a normal hit. Defend halves it for whoever Defends."},
+	"snipe": {"name": "Snipe", "icon": "res://assets/skills/dagger_blue.png", "desc": "A heavier shot at the most-hurt hero in the back row. Guard can take it for them."},
+	"curse": {"name": "Curse", "icon": "res://assets/skills/face_hood.png", "desc": "No damage, but the target deals 40%% less for 2 rounds. Sanctuary cleanses it."},
+	"ward": {"name": "Ward", "icon": "res://assets/skills/shield_blue.png", "desc": "Shields its most-hurt ally for 20%% of their max HP. Aimed Shot ignores wards."},
+	"mend": {"name": "Mend", "icon": "res://assets/skills/potion_red_sm.png", "desc": "Heals its most-hurt ally. Kill or stun it first."},
+	"roar": {"name": "Roar", "icon": "res://assets/skills/gem_red.png", "desc": "Every foe hits 20%% harder for the rest of the fight (up to twice). Stun it to stop it."},
+	"stunned": {"name": "Stunned", "icon": "res://assets/skills/star.png", "desc": "Loses its next action."},
+}
+
