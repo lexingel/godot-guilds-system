@@ -151,6 +151,18 @@ func _input_dir() -> Vector2:
 		d.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN):
 		d.y += 1
+	for dev in Input.get_connected_joypads():
+		var stick := Vector2(Input.get_joy_axis(dev, JOY_AXIS_LEFT_X), Input.get_joy_axis(dev, JOY_AXIS_LEFT_Y))
+		if stick.length() > 0.25:
+			d += stick
+		if Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_LEFT):
+			d.x -= 1
+		if Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_RIGHT):
+			d.x += 1
+		if Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_UP):
+			d.y -= 1
+		if Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_DOWN):
+			d.y += 1
 	if d == Vector2.ZERO and _drag_from != Vector2.INF and _drag_to != Vector2.INF:
 		var v := _drag_to - _drag_from
 		if v.length() > 12.0:
@@ -159,6 +171,9 @@ func _input_dir() -> Vector2:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START and not run.over and run.pending_levels == 0:
+		_toggle_pause()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode in [KEY_ESCAPE, KEY_P] and not run.over and run.pending_levels == 0:
 			_toggle_pause()
@@ -474,7 +489,7 @@ func _show_level_up() -> void:
 		var u: Dictionary = run.upgrade_info(id)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(200, 150)
-		b.focus_mode = Control.FOCUS_NONE
+		b.focus_mode = Control.FOCUS_ALL if not Input.get_connected_joypads().is_empty() else Control.FOCUS_NONE
 		var col := VBoxContainer.new()
 		col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 10)
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -506,6 +521,8 @@ func _show_level_up() -> void:
 			run.pick(id)
 			_close_panel())
 		row.add_child(b)
+		if i == 0 and b.focus_mode == Control.FOCUS_ALL:
+			b.grab_focus.call_deferred()
 	if offer.is_empty():
 		var ok := Button.new()
 		ok.text = "Everything is maxed — carry on"

@@ -249,13 +249,80 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color, big: boo
 ## several procs on one hero stack instead of overlapping. Fire-and-forget:
 ## never awaited, so it can't hold up the turn's own animation chain.
 ## Combat hotkeys (see _combat_hotkeys, filled while the action bar builds).
+## Gamepad buttons stand in for hotkeys. In a fight: A repeats the last
+## action, X Defend, Y the Ability, LB/RB the two role skills, the D-pad
+## cycles targets, Select toggles Auto. Everywhere: B goes back; in camp
+## LB/RB switch tabs. Menus are otherwise driven by focus (D-pad + A).
+const PAD_BATTLE := {JOY_BUTTON_A: "Space", JOY_BUTTON_X: "5", JOY_BUTTON_Y: "4", JOY_BUTTON_LEFT_SHOULDER: "2", JOY_BUTTON_RIGHT_SHOULDER: "3",
+	JOY_BUTTON_DPAD_LEFT: "Tab", JOY_BUTTON_DPAD_RIGHT: "Tab", JOY_BUTTON_BACK: "A"}
+var _pad_mode := false   # the last input came from a gamepad: keep a button focused after each rebuild
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
+		if not _pad_mode:
+			_pad_mode = true
+			_pad_focus.call_deferred()
+	elif event is InputEventMouseMotion and event.relative.length() > 2.0:
+		_pad_mode = false
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed:
+		var pk := ""
+		if screen == "rift_run" and PAD_BATTLE.has(event.button_index) and _ally_pick == "":
+			pk = PAD_BATTLE[event.button_index]
+		elif event.button_index == JOY_BUTTON_B:
+			pk = "Escape"
+		elif screen != "rift_run" and event.button_index in [JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_SHOULDER]:
+			call("_pad_cycle_tab", 1 if event.button_index == JOY_BUTTON_RIGHT_SHOULDER else -1)
+			get_viewport().set_input_as_handled()
+			return
+		if pk != "" and _combat_hotkeys.has(pk):
+			get_viewport().set_input_as_handled()
+			_combat_hotkeys[pk].call()
+		return
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	var key := OS.get_keycode_string(event.keycode)
 	if _combat_hotkeys.has(key):
 		get_viewport().set_input_as_handled()
 		_combat_hotkeys[key].call()
+
+
+## True if `n` or one of its parents is about to be freed (a screen rebuild
+## queues the old one for deletion; it lingers until the frame ends).
+func _dying(n: Node) -> bool:
+	while n != null:
+		if n.is_queued_for_deletion():
+			return true
+		n = n.get_parent()
+	return false
+
+
+var _pad_focus_text := ""   # the focused button's text, to find it again after a rebuild
+
+
+## Keeps a button focused for gamepad players: the one that was focused
+## before the screen rebuilt if it's still there, else the first one.
+func _pad_focus() -> void:
+	if not _pad_mode or not is_inside_tree():
+		return
+	var owner_now := get_viewport().gui_get_focus_owner()
+	if owner_now != null and owner_now.is_visible_in_tree() and not _dying(owner_now):
+		return
+	var first: Button = null
+	for n in find_children("*", "Button", true, false):
+		var b := n as Button
+		if b == null or b.disabled or not b.is_visible_in_tree() or b.focus_mode == Control.FOCUS_NONE or _dying(b):
+			continue
+		if _pad_focus_text != "" and b.text == _pad_focus_text:
+			b.grab_focus()
+			return
+		if first == null:
+			first = b
+	if first:
+		first.grab_focus()
 
 
 func _spawn_procs(state: Dictionary, hero_wrappers: Dictionary) -> void:

@@ -131,7 +131,12 @@ func _drain_toasts() -> void:
 
 
 func render() -> void:
+	var was_focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if was_focused is Button:
+		_pad_focus_text = (was_focused as Button).text
 	_combat_hotkeys.clear()
+	if _pad_mode:
+		_pad_focus.call_deferred()
 	# Combat speed only ever applies inside a rift — camp animations (embers,
 	# day/night drift) always run at normal speed.
 	Engine.time_scale = minf(GameState.combat_speed, 3.0) if screen == "rift_run" else 1.0
@@ -449,6 +454,21 @@ func _quick_nav_current() -> String:
 
 func _nav_locked(id: String) -> bool:
 	return NAV_FEATURE.has(id) and not GameState.feature_unlocked(NAV_FEATURE[id])
+
+
+## Camp tabs by gamepad shoulder button: the next (or previous) open tab.
+func _pad_cycle_tab(step: int) -> void:
+	var cur := _quick_nav_current()
+	var gi := 0
+	for i in NAV_GROUPS.size():
+		if (NAV_GROUPS[i][2] as Array).any(func(m): return str(m[0]) == cur):
+			gi = i
+	for k in NAV_GROUPS.size():
+		gi = (gi + step + NAV_GROUPS.size()) % NAV_GROUPS.size()
+		var open: Array = (NAV_GROUPS[gi][2] as Array).filter(func(m): return not _nav_locked(str(m[0])))
+		if not open.is_empty():
+			_quick_go(str(open[0][0]))
+			return
 
 
 func _quick_go(id: String) -> void:
