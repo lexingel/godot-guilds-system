@@ -45,8 +45,7 @@ the walls. The recommended power is fit to those numbers
 | | Trait reroll | 60 |
 | | Field Tonic · Incense · Runestone | 25 · 40 · 60 |
 | | Shop item/relic | ~25–40, reroll 8 + 6 per reroll |
-| Crystals | Guild Management levels | ~4,150 for every level |
-| | Management capstones | 350–400 each |
+| Crystals | Guild Management | 50 × next level per step; 750 per upgrade, 6,750 for all 9 (perks included) |
 | | Relic upgrade to Lv5 | 15 × rarity mult × level per step (epic ≈ 285) |
 | | Relic effect reroll / item reforge | 10 × mult × n / 8 × mult × n |
 | Seal Tokens | Attribute reset | 5 × hero level |
@@ -56,11 +55,11 @@ the walls. The recommended power is fit to those numbers
 
 - **First session (runs 1–3):** hire a second and third hero (D-rank after one
   run), a few Management levels, first relic.
-- **Act I → II (runs 5–15):** a full roster, first Management capstone,
+- **Act I → II (runs 5–15):** a full roster, first Management upgrades at Lv3,
   relics climbing to Lv3.
 - **Act II → III (runs 15–40):** training heroes toward the 8-point cap,
   epic relics to Lv5, most Management branches.
-- **Post-campaign:** Endless and quests fund the remaining capstones and
+- **Post-campaign:** Endless and quests fund the last Management levels and
   rerolls; coins keep a use through training and recruits for new heroes.
 
 ## Watch list

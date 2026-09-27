@@ -134,3 +134,9 @@ func _orders() -> void:
 	var o0: Array = GameState.run["node_state"]["result"]["reward_options"]
 	check(GameState.use_order("requisition") == "" and GameState.run["node_state"]["result"]["reward_options"] != o0, "Requisition rerolls loot")
 	GameState.finish_run()
+	_camp_props()
+
+
+func _camp_props() -> void:
+	for key in GameData.CAMP_PROPS:
+		check(not GameData.find_branch_node(key).is_empty() and ResourceLoader.exists(str(GameData.CAMP_PROPS[key][0])), "camp prop for %s exists" % key)

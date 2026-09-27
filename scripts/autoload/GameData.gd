@@ -1920,6 +1920,21 @@ const MANAGEMENT_NODE_ICON := {
 	"res.lab": "res://assets/skills/potion_blue.png",
 }
 
+## A prop each upgrade adds to the camp scene at Lv3 (it glows at Lv5):
+## [texture, bottom-centre on camp_bg.png's native 400x157 canvas, name].
+const CAMP_PROP_LEVEL := 3
+const CAMP_PROPS := {
+	"ops.barracks": ["res://assets/camp/props/barracks.png", Vector2(24, 157), "soldiers' tents"],
+	"ops.infirmary": ["res://assets/camp/props/infirmary.png", Vector2(122, 156), "a field cot and lantern"],
+	"ops.drill": ["res://assets/camp/props/drill.png", Vector2(157, 153), "a training dummy"],
+	"infra.amplifiers": ["res://assets/camp/props/amplifiers.png", Vector2(240, 140), "a crystal pylon"],
+	"infra.wardstones": ["res://assets/camp/props/wardstones.png", Vector2(342, 156), "a runed wardstone"],
+	"log.trade": ["res://assets/camp/props/trade.png", Vector2(298, 157), "merchant crates"],
+	"log.scouts": ["res://assets/camp/props/scouts.png", Vector2(172, 112), "a lookout tower"],
+	"res.vault": ["res://assets/camp/props/vault.png", Vector2(386, 157), "a relic shrine"],
+	"res.lab": ["res://assets/camp/props/lab.png", Vector2(74, 157), "a telescope"],
+}
+
 const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
 
 const BOSS_ENRAGE_ROUND := 4

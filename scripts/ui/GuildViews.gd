@@ -101,6 +101,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		["Command Tent", Rect2(358, 60, 42, 80), func(): hub_cluster = "command"; render()],
 	]
 	var scene_scale := SCENE_SIZE / Vector2(400, 157)
+	_add_camp_props(bg, scene_scale)
 	var badges := _camp_badges()
 	var plaques: Array = []
 	for entry in area_entries:
@@ -137,6 +138,32 @@ func _render_camp(v: VBoxContainer) -> void:
 	var fire_native_pos := Vector2(206, 112)
 	_start_ember_loop(scene, fire_native_pos * scene_scale)
 	v.add_child(scene)
+
+
+## Guild Management's mark on the camp: each upgrade at Lv3 adds its prop
+## (children of the background, so they follow the day/night tint), and at
+## max level the prop glows softly.
+func _add_camp_props(bg: Control, scene_scale: Vector2) -> void:
+	for key in GameData.CAMP_PROPS:
+		var lv := GameState.lvl(key)
+		if lv < GameData.CAMP_PROP_LEVEL:
+			continue
+		var def: Array = GameData.CAMP_PROPS[key]
+		var tex: Texture2D = load(str(def[0]))
+		var prop := TextureRect.new()
+		prop.texture = tex
+		prop.stretch_mode = TextureRect.STRETCH_SCALE
+		prop.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		prop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var size := tex.get_size() * scene_scale
+		var anchor: Vector2 = def[1]
+		prop.size = size
+		prop.position = Vector2(anchor.x * scene_scale.x - size.x * 0.5, anchor.y * scene_scale.y - size.y)
+		bg.add_child(prop)
+		if lv >= int(GameData.find_branch_node(key)["max"]):
+			var tw := prop.create_tween().set_loops()
+			tw.tween_property(prop, "self_modulate", Color(1.35, 1.3, 1.1), 1.6).set_trans(Tween.TRANS_SINE)
+			tw.tween_property(prop, "self_modulate", Color.WHITE, 1.6).set_trans(Tween.TRANS_SINE)
 
 
 ## A short first-guild checklist under the camp scene, each step ticking off
@@ -1172,6 +1199,11 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 		var pr := _wrap_label("%s Lv%d — %s" % ["✓" if got else ("⚑" if is_order else "★"), int(pl), perks[pl]], 12)
 		pr.add_theme_color_override("font_color", Palette.RANK_E if got else (Palette.EMBER_BRIGHT if is_order else Palette.RANK_S))
 		cv.add_child(pr)
+
+	var prop: Array = GameData.CAMP_PROPS.get(key, [])
+	if not prop.is_empty():
+		var built := cur >= GameData.CAMP_PROP_LEVEL
+		cv.add_child(_wrap_label("%s Camp: %s%s" % ["✓" if built else "⌂", str(prop[2]).capitalize(), " (glows at Lv5)" if built else " appears at Lv%d" % GameData.CAMP_PROP_LEVEL], 11, true))
 
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
