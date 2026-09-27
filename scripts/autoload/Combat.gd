@@ -1442,7 +1442,13 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 		escort = {"name": ename, "hp": ehp, "max_hp": ehp}
 		log.append("A %s tags along, hoping to survive the crossing." % ename)
 
+	var hp_now := 0.0
+	var hp_max := 0.0
+	for h in party:
+		hp_now += max(0, h.hp)
+		hp_max += max_hp(h)
 	var state := {
+		"_start_hp_pct": hp_now / maxf(1.0, hp_max),
 		"party": party, "kind": kind, "diff": diff, "floor_idx": floor_idx, "hardcore": hardcore,
 		"is_boss": is_boss, "is_elite": is_elite,
 		"monsters": monsters, "background_idx": _biome_background(diff),
@@ -1804,6 +1810,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			state["_guarding"] = guards
 			log.append("%s moves to guard %s." % [h.name, ally.name])
 	elif (action == "ability" and h.ability_cooldown == 0) or (action == "call" and GameState.champion_call_ready(h)):
+		_tally(state, "abilities")
 		var team_dmg_base: float = float(state["team_dmg_base"])
 		var ab: Dictionary
 		if action == "call":
@@ -2061,6 +2068,10 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 		else:
 			target.hp = max(0, target.hp - dealt_back)
 			log.append("The %s hits %s for %d." % [m["name"], target.name, dealt_back])
+			_tally(state, "taken", dealt_back)
+			if heavy_blow and not state["_defending"].has(target.id):
+				_tally(state, "undefended_heavy")
+				_tally(state, "heavy_dmg", dealt_back)
 			if heavy_blow and target.hp > 0 and not state["_defending"].has(target.id):
 				state.get_or_add("_stunned", {})[target.id] = true
 				log.append("%s is stunned by the blow!" % target.name)
@@ -2085,6 +2096,60 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 				_fire("ally_down", state, target)
 
 
+# ---------------- Defeat analysis ----------------
+
+## Fight tallies for the "why you lost" card (state["_stats"]).
+func _tally(state: Dictionary, key: String, amount: float = 1.0) -> void:
+	var st: Dictionary = state.get_or_add("_stats", {})
+	st[key] = float(st.get(key, 0.0)) + amount
+
+
+## The top reasons a fight was lost, each [title, tip], most important first.
+func defeat_reasons(state: Dictionary) -> Array:
+	var st: Dictionary = state.get("_stats", {})
+	var party: Array = state["party"]
+	var out: Array = []   # [weight, title, tip]
+	var power := party_power(party)
+	var rec := int(state.get("diff", {}).get("rec_power", 0))
+	if state.get("is_boss", false):
+		rec = int(round(rec * 1.1))
+	if rec > 0 and power < rec * 0.9:
+		out.append([3.0 + float(rec - power) / rec * 5.0, "Underpowered: party power %d vs %d recommended" % [power, rec],
+			"Level heroes, train attributes and upgrade gear at camp, or pick an easier rift for now."])
+	var heavy := int(st.get("undefended_heavy", 0))
+	if heavy > 0:
+		out.append([2.5 + heavy, "%d heavy blow%s landed undefended (%d damage)" % [heavy, "" if heavy == 1 else "s", int(st.get("heavy_dmg", 0.0))],
+			"When a foe is \"Winding up\", its target should Defend (3): half damage and no stun. Guard (4) moves the hit onto a sturdier ally."])
+	var taken := float(st.get("taken", 0.0))
+	var dot := float(st.get("dot", 0.0))
+	if taken > 0.0 and dot / taken >= 0.2:
+		out.append([2.0 + dot / taken * 4.0, "Burn and poison did %d damage (%d%% of the total)" % [int(dot), int(dot / taken * 100.0)],
+			"A Field Tonic cleanses burn, poison, chill and stun. Kill the fire and poison foes first."])
+	var healed := float(st.get("enemy_heal", 0.0))
+	var foe_hp := 0.0
+	for m in state["monsters"]:
+		foe_hp += float(m["max_hp"])
+	if foe_hp > 0.0 and healed / foe_hp >= 0.15:
+		out.append([2.0 + healed / foe_hp * 4.0, "Your foes healed %d HP" % int(healed),
+			"Focus the healer first, and save Abilities to burst a regenerating foe from low HP."])
+	var start_pct := float(state.get("_start_hp_pct", 1.0))
+	if start_pct < 0.6:
+		out.append([2.0 + (0.6 - start_pct) * 5.0, "The party started the fight at %d%% HP" % int(start_pct * 100.0),
+			"Rest at a campfire, use a Supply Drop order, or retreat and come back healed."])
+	if int(state.get("round_num", 0)) >= 3 and int(st.get("abilities", 0)) == 0:
+		out.append([1.8, "No Abilities were used",
+			"Abilities (2) hit much harder than attacks. Use them whenever they're ready."])
+	var squishy_front := party.filter(func(h): return h.formation == "front" and GameData.hero_role(h) in ["mage", "cleric", "ranger"] and h.hp <= 0)
+	if not squishy_front.is_empty():
+		out.append([1.5, "%s fell in the front row" % ", ".join(squishy_front.map(func(h): return h.name.split(" the ")[0])),
+			"The front row takes most of the hits. Put Mages, Clerics and Rangers in the back row."])
+	if not party.any(func(h): return GameData.hero_role(h) == "cleric") and int(state.get("round_num", 0)) >= 6:
+		out.append([1.2, "No healer in a long fight",
+			"A Cleric (or healing relics and skills) keeps the party standing through long fights."])
+	out.sort_custom(func(a, b): return float(a[0]) > float(b[0]))
+	return out.slice(0, 3).map(func(x): return [x[1], x[2]])
+
+
 ## Passive round-cadence effects (monster regen/healer-heal, hero poison tick,
 ## party mend) — fired once, after every actor in the round's turn order has
 ## acted, rather than at the old "after heroes, before monsters" phase
@@ -2102,6 +2167,7 @@ func _end_round_effects(state: Dictionary) -> void:
 			var regen_heal: float = round(float(m["max_hp"]) * 0.08)
 			m["hp"] = min(float(m["max_hp"]), float(m["hp"]) + regen_heal)
 			log.append("%s regenerates %d HP." % [m["name"], regen_heal])
+			_tally(state, "enemy_heal", regen_heal)
 
 	for m in monsters:
 		if float(m["hp"]) <= 0 or m.get("ability", {}).get("kind") != "healer":
@@ -2119,6 +2185,7 @@ func _end_round_effects(state: Dictionary) -> void:
 			var heal_amt: float = round(float(monsters[lowest_idx]["max_hp"]) * float(m["ability"]["value"]))
 			monsters[lowest_idx]["hp"] = min(float(monsters[lowest_idx]["max_hp"]), float(monsters[lowest_idx]["hp"]) + heal_amt)
 			log.append("%s mends %s for %d." % [m["name"], monsters[lowest_idx]["name"], heal_amt])
+			_tally(state, "enemy_heal", heal_amt)
 
 	var burn: Dictionary = state.get("hero_burn", {})
 	for bid in burn.keys().duplicate():
@@ -2129,6 +2196,8 @@ func _end_round_effects(state: Dictionary) -> void:
 		var btick: int = max(1, int(round(max_hp(hb) * float(burn[bid]["value"]))))
 		hb.hp = max(0, hb.hp - btick)
 		log.append("%s burns for %d." % [hb.name, btick])
+		_tally(state, "dot", btick)
+		_tally(state, "taken", btick)
 		if hb.hp <= 0:
 			log.append("%s is knocked out!" % hb.name)
 		burn[bid]["rounds"] = int(burn[bid]["rounds"]) - 1
@@ -2148,6 +2217,8 @@ func _end_round_effects(state: Dictionary) -> void:
 		var tick: int = max(1, int(round(max_hp(h5) * float(entry["value"]))))
 		h5.hp = max(0, h5.hp - tick)
 		log.append("%s suffers %d poison damage." % [h5.name, tick])
+		_tally(state, "dot", tick)
+		_tally(state, "taken", tick)
 		if h5.hp <= 0:
 			log.append("%s is knocked out!" % h5.name)
 		entry["rounds"] = int(entry["rounds"]) - 1

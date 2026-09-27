@@ -1320,6 +1320,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 	var state: Dictionary = ns.get("combat_state", {})
 	if outcome["done"]:
 		var result: Dictionary = outcome["result"]
+		if not result["won"] and not bool(result.get("retreated", false)):
+			result["defeat_reasons"] = Combat.defeat_reasons(state)
 		if run.has("tower"):
 			# The Tower pays per floor (first clear), not per fight.
 			result["reward_options"] = []

@@ -1001,6 +1001,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			_sfx_seen[defeat_key] = true
 			AudioManager.play_sfx(GameData.SFX_PATH["defeat"])
 		v.add_child(_label(defeat_text))
+		var reasons: Array = result.get("defeat_reasons", [])
+		if not reasons.is_empty():
+			v.add_child(_defeat_card(reasons))
 		if result.has("riftbreak_compensation_coins"):
 			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
 		if str(result.get("flavor", "")) != "":
@@ -1014,6 +1017,29 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			screen = "tower" if in_tower else "terminal"
 			render()
 		))
+
+
+## "Why you lost": the fight's top causes, each with what to do about it.
+func _defeat_card(reasons: Array) -> Control:
+	var p := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = Palette.HAZARD
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(8)
+	st.set_content_margin_all(12)
+	p.add_theme_stylebox_override("panel", st)
+	var col := _vbox(8)
+	var head := _label("Why you lost", 16)
+	head.add_theme_color_override("font_color", Palette.HAZARD)
+	col.add_child(head)
+	for r in reasons:
+		var t := _wrap_label("• " + str(r[0]), 14)
+		col.add_child(t)
+		var tip := _wrap_label(str(r[1]), 12, true)
+		col.add_child(tip)
+	p.add_child(col)
+	return p
 
 
 ## The boon pick after an elite: three cards (family, what it does, what it
