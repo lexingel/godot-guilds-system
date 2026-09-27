@@ -16,6 +16,7 @@ func _apply_rift_rank_modifiers(diff: Dictionary, rift_rank: String) -> Dictiona
 	out["coin"] = [int(round(float(out["coin"][0]) * rw)), int(round(float(out["coin"][1]) * rw))]
 	out["crystal"] = [int(round(float(out["crystal"][0]) * rw)), int(round(float(out["crystal"][1]) * rw))]
 	out["seal_essence"] = int(round(float(out["seal_essence"]) * rw))
+	out["rec_power"] = int(mods["rec"])
 	out["hazard_severity_up"] = int(mods.get("hazard_severity_up", 0))
 	out["elite_chance_up"] = bool(mods.get("elite_chance_up", false))
 	out["shop_chance_down"] = bool(mods.get("shop_chance_down", false))
@@ -342,8 +343,18 @@ func tower_reward(f: int) -> Dictionary:
 
 
 ## Fit to the balance sim: a party of this power clears about half its tries.
+## Party power whose climb typically ends around floor f (balance_sim
+## -- calibrate), interpolated between measured points.
+const TOWER_REC := [[1, 65], [5, 130], [10, 200], [15, 260], [30, 660], [45, 1000], [60, 1500], [75, 2000], [90, 2300], [100, 2500]]
+
+
 func tower_recommended_power(f: int) -> int:
-	return int(round(90.0 * pow(1.015, f - 1)))
+	for i in range(1, TOWER_REC.size()):
+		if f <= int(TOWER_REC[i][0]):
+			var a: Array = TOWER_REC[i - 1]
+			var b: Array = TOWER_REC[i]
+			return int(round(lerpf(float(a[1]), float(b[1]), clampf(float(f - int(a[0])) / float(int(b[0]) - int(a[0])), 0.0, 1.0))))
+	return int(TOWER_REC[-1][1])
 
 
 func _tower_diff(info: Dictionary) -> Dictionary:

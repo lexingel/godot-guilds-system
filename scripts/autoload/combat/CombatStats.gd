@@ -153,32 +153,19 @@ func spd_of(h: Hero) -> float:
 	return h.base_spd * (1.0 + hero_skill_total(h, "speed_pct"))
 
 
-func power_of(h: Hero) -> int:
-	return dmg_of(h) * 2 + round(max_hp(h) / 3.0)
-
-
-## The power a party should bring to a rift: its difficulty's rec_power,
-## scaled by a ladder rank's foe multipliers (a rank also picks its own base).
-## The difficulty curve was tuned against this ratio — see MONSTER_FLOOR_SCALE.
+## The party power that clears a rift about 65% of the time: a ladder
+## rank's own "rec", else the difficulty's rec_power (both measured with
+## balance_sim -- calibrate).
 func recommended_power(diff_id: String, rift_rank: String = "") -> int:
 	if diff_id == "endless":
 		return GameData.ENDLESS_REC_POWER
-	var mods: Dictionary = GameData.find_rift_rank(rift_rank) if rift_rank != "" else {}
-	if not mods.is_empty():
-		diff_id = str(mods["base"])
+	if rift_rank != "":
+		return int(GameData.find_rift_rank(rift_rank)["rec"])
 	var diff: Dictionary = GameData.DIFFICULTIES[0]
 	for d in GameData.DIFFICULTIES:
 		if d["id"] == diff_id:
 			diff = d
-	return int(round(float(diff["rec_power"]) * sqrt(float(mods.get("hp", 1.0)) * float(mods.get("dmg", 1.0)))))
-
-
-## Summed power_of for a party (the Champion included by the caller).
-func party_power(party: Array) -> int:
-	var total := 0
-	for h in party:
-		total += power_of(h)
-	return total
+	return int(diff["rec_power"])
 
 
 func xp_to_next(level: int) -> int:

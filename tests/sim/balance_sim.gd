@@ -3,7 +3,8 @@ extends Node
 ## heroes sit out, the Champion joins (levelled, Boon, Call on the boss), and
 ## loot/XP/attribute gains inside a run are modelled. Never saves. ~1 min:
 ##   godot --headless --path . res://tests/sim/balance_sim.tscn
-## (`-- ranks`: only the ladder-rank profiles; `-- tower`, `-- survivors`)
+## (`-- ranks`: only the ladder-rank profiles; `-- calibrate`: power at a
+## 65% clear per rank; `-- tower`, `-- survivors`)
 
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
@@ -40,6 +41,10 @@ var TOWER_ONLY := false   # `-- tower` on the command line: skip the rift profil
 func _ready() -> void:
 	GameState.active_slot = 9
 	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
+	if OS.get_cmdline_user_args().has("calibrate"):
+		_calibrate()
+		get_tree().quit()
+		return
 	if OS.get_cmdline_user_args().has("survivors"):
 		for name in PROFILES:
 			if PROFILES[name][0] in ["greater", "endless"]:   # Endless opens in Act III
@@ -120,8 +125,7 @@ func _profile(name: String, p: Array) -> void:
 	for s in N:
 		seed(20000 + s)
 		var party := _build_party(p)
-		for h in party:
-			power_sum += Combat.power_of(h)
+		power_sum += Combat.party_power(party)
 		var diff: Dictionary = _diff_for(str(p[0]))
 		var res := _run_rift(party, diff)
 		if res["cleared"]:
@@ -140,6 +144,95 @@ func _profile(name: String, p: Array) -> void:
 	print("   %s income per run: %.0f gold, %.0f essence, loot worth %.0f gold" % [name, _coins / runs, _crystals / runs, _loot_value / runs])
 	print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
 		name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
+
+
+## Party templates from a fresh guild to a maxed one, for `-- calibrate`:
+## [hero ranks, level, skill depth, gear rarity, relics, relic rarity].
+const TEMPLATES := [
+	[["F", "F", "F"], 1, 0, "", 0, "common"],
+	[["F", "E", "E"], 2, 0, "common", 0, "common"],
+	[["E", "E", "D"], 3, 1, "common", 1, "common"],
+	[["E", "D", "D"], 4, 1, "common", 1, "common"],
+	[["E", "D", "D", "D"], 5, 1, "rare", 1, "common"],
+	[["D", "D", "C", "C"], 6, 2, "rare", 2, "rare"],
+	[["D", "C", "C", "C"], 7, 2, "rare", 2, "rare"],
+	[["C", "C", "B", "B"], 8, 2, "epic", 2, "rare"],
+	[["C", "B", "B", "A"], 10, 3, "epic", 3, "epic"],
+	[["B", "A", "A", "S"], 10, 3, "legendary", 3, "legendary"],
+]
+
+
+## Party power at which each ladder rank clears ~65% of the time — what its
+## "Recommended" should say. Sweeps TEMPLATES upward until one clears 95%.
+func _calibrate() -> void:
+	for r in GameData.RIFT_RANKS:
+		var id := str(r["id"])
+		var diff := _diff_for(id)
+		var pts: Array = []
+		for t in TEMPLATES:
+			var p: Array = [id]
+			p.append_array(t)
+			var clears := 0
+			var power := 0.0
+			for s in 30:
+				seed(30000 + s)
+				var party := _build_party(p)
+				power += Combat.party_power(party)
+				if _run_rift(party, diff)["cleared"]:
+					clears += 1
+			pts.append([power / 30.0, clears / 30.0])
+			if clears >= 29:
+				break
+		var at := -1.0
+		for i in range(1, pts.size()):
+			if pts[i - 1][1] < 0.65 and pts[i][1] >= 0.65:
+				var f: float = (0.65 - pts[i - 1][1]) / maxf(0.01, pts[i][1] - pts[i - 1][1])
+				at = lerpf(pts[i - 1][0], pts[i][0], f)
+				break
+		print("%-4s recommended %4d  power at 65%% clear %4.0f   %s" % [id, Combat.recommended_power("", id), at, ", ".join(pts.map(func(x): return "%.0f:%d%%" % [x[0], int(x[1] * 100)]))])
+	# Tower: median floor each template reaches, and Endless: median survival.
+	for t in TEMPLATES:
+		var p: Array = ["tower"]
+		p.append_array(t)
+		var party := _build_party(p)
+		var power := Combat.party_power(party)
+		var tops: Array[int] = []
+		for s in 6:
+			seed(30000 + s)
+			party = _build_party(p)
+			var top := 0
+			for f in range(1, GameData.TOWER_FLOORS + 1):
+				var info := GameState.tower_floor_info(f)
+				var fighters: Array[Hero] = [party[0]]
+				fighters.append_array(party.slice(1, 1 + int(info["party_cap"])))
+				var cleared := false
+				for attempt in 3:
+					for h in fighters:
+						h.hp = Combat.max_hp(h)
+						h.ability_cooldown = 0
+					GameState.run = {"sim": true, "tower": f}
+					seed(hash([int(info["seed"]), 0, 0]))
+					if _fight(fighters, str(info["kind"]), GameState._tower_diff(info), GameData.TOWER_FIGHT_DEPTH):
+						cleared = true
+						break
+				if not cleared:
+					break
+				top = f
+			tops.append(top)
+		tops.sort()
+		var times: Array = []
+		for i in 3:
+			party = _build_party(p)
+			var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
+			while not r.over and r.time < 900.0:
+				r.step(0.25, r.autopilot_dir())
+				r.events.clear()
+				while r.pending_levels > 0:
+					var o := r.offer()
+					r.pick(o[randi() % o.size()] if not o.is_empty() else "")
+			times.append(int(r.time))
+		times.sort()
+		print("power %4d  tower median floor %3d (rec there %d)  endless median %d:%02d" % [power, tops[3], GameState.tower_recommended_power(maxi(1, tops[3])), times[1] / 60, times[1] % 60])
 
 
 func _diff_for(id: String) -> Dictionary:

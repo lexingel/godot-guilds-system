@@ -515,3 +515,46 @@ func bond_bonus_for(party: Array[Hero], kind: String) -> float:
 					grown += GameData.BOND_DMG_PER_LEVEL * GameData.bond_level(GameState.bond_rifts(party[i].id, party[j].id))
 		total += min(grown, GameData.BOND_DMG_CAP)
 	return total
+
+
+## Power: what heroes bring to a fight in one number — damage (ability power
+## and ramp folded in) x2 plus effective health (dodge, mending, relic ward)
+## /3. Mirrors start_combat's party-wide numbers, so it moves with everything
+## that actually changes a fight. A hero's own power leaves out the party-
+## wide terms (relics, synergy, bonds); party_power counts them once.
+func party_power(party: Array) -> int:
+	return _power(party, true)
+
+
+func power_of(h: Hero) -> int:
+	return _power([h], false)
+
+
+func _power(heroes: Array, party_terms: bool) -> int:
+	if heroes.is_empty():
+		return 0
+	var party: Array[Hero] = []
+	party.assign(heroes)
+	var dmg := 0.0
+	var hp := 0.0
+	for h in party:
+		dmg += dmg_of(h) * (1.0 + 0.3 * hero_skill_total(h, "ability_power"))
+		hp += max_hp(h)
+	dmg *= GameState.tactical_bonus()
+	var dodge := party_skill_total(party, "dodge_pct")
+	var mend := party_skill_total(party, "mend_pct")
+	var ramp := party_skill_total(party, "escalate_pct") * 4.0 + party_skill_total(party, "first_round_pct") * 0.15
+	if party_terms:
+		dmg += relic_dmg_bonus()
+		dmg *= 1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party) + bond_bonus_for(party, "dmg_pct")
+		dodge += relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct")
+		mend += relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct")
+		ramp += (relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct")) * 4.0 + (relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct")) * 0.15
+		if party_has_unique_relic("bloodpact"):
+			mend = 0.0
+		for r in equipped_relics():
+			hp += r.hp
+	dmg *= 1.0 + maxf(ramp, -0.5)
+	hp = hp / (1.0 - clampf(dodge, 0.0, 0.6)) * (1.0 + 6.0 * clampf(mend, 0.0, 0.4))
+	return int(round(dmg * 2.0 + hp / 3.0))
+

@@ -833,15 +833,19 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 
 
 ## "Party power 142 / Recommended 150 — Even fight", colored like a traffic
-## light. rec_power is where a party clears about half its runs (full-run sim
-## with the Champion's Boon and Call, Sep 2026): under 0.9x clears ~20-30%,
-## 0.9-1.0x under half, 1.0-1.25x half to most, 1.25x+ nearly always.
+## light. Recommended clears about 65% of runs (balance_sim -- calibrate):
+## under 0.8x clears under a third, 0.8-0.95x about half, 0.95-1.2x most,
+## 1.2x+ nearly always.
 func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Label:
 	var ratio := float(power) / float(max(1, rec))
-	var verdict := "Deadly" if ratio < 0.9 else ("Risky" if ratio < 1.0 else ("Even fight" if ratio < 1.25 else "Favored"))
-	var color: Color = Palette.HAZARD if ratio < 1.0 else (Palette.COINS if ratio < 1.25 else Palette.good())
+	var verdict := "Deadly" if ratio < 0.8 else ("Risky" if ratio < 0.95 else ("Even fight" if ratio < 1.2 else "Favored"))
+	var color: Color = Palette.HAZARD if ratio < 0.95 else (Palette.COINS if ratio < 1.2 else Palette.good())
 	var l := _label("%s %d / Recommended %d — %s" % [prefix, power, rec, verdict], 13)
 	l.add_theme_color_override("font_color", color)
+	l.tooltip_text = "Power = damage ×2 + effective health ÷3.
+Damage counts ability power and ramp; health counts dodge, mending and relic wards.
+At Recommended, a party seals about 2 rifts in 3."
+	l.mouse_filter = Control.MOUSE_FILTER_STOP
 	return l
 
 

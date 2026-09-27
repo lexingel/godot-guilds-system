@@ -235,16 +235,22 @@ func item_stat_map(it: Item) -> Dictionary:
 	return m
 
 
-## How much an item helps, for "Equip best": its stat lines weighted (damage
-## and health count most) plus a flat bonus per special effect.
-## ponytail: role-blind weights; weigh by the hero's archetype if picks feel off.
-func gear_score(it: Item) -> float:
-	var s := 0.0
+## How much an item helps `h`, for "Equip best": the hero power it adds on
+## top of what they wear now (or loses, if already worn), plus a little per
+## special effect, which power doesn't see. Stat weights break ties.
+func gear_score(it: Item, h: Hero) -> float:
+	var was_to := it.equipped_to
+	it.equipped_to = h.id
+	var p_with := Combat.power_of(h)
+	it.equipped_to = ""
+	var p_without := Combat.power_of(h)
+	it.equipped_to = was_to
+	var tie := 0.0
 	var stats := item_stat_map(it)
 	for k in stats:
-		s += float(stats[k]) * float(GEAR_SCORE_WEIGHT.get(k, 0.4))
+		tie += float(stats[k]) * float(GEAR_SCORE_WEIGHT.get(k, 0.4))
 	var fx: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
-	return s + 0.08 * fx.size()
+	return float(p_with - p_without) + 3.0 * fx.size() + 0.1 * tie
 
 
 ## The best free (or already worn) gear for a hero: {slot_type: [items]},
@@ -254,7 +260,17 @@ func best_gear(h: Hero) -> Dictionary:
 	for st in ["weapon", "gear"]:
 		var cap := GameData.weapon_slots(h.pool_id) if st == "weapon" else GameData.gear_slots(h.rank)
 		var pool: Array = items.filter(func(it): return it.slot_type() == st and (it.equipped_to == "" or it.equipped_to == h.id) and item_fits_hero(it, h) and attr_req_met(it, h))
-		pool.sort_custom(func(a, b): return gear_score(a) > gear_score(b))
+		# Score each piece alone on the hero with this slot type emptied, so
+		# the ranking doesn't depend on what they happen to wear now.
+		var worn: Array = pool.filter(func(it): return it.equipped_to == h.id)
+		for it in worn:
+			it.equipped_to = ""
+		var score := {}
+		for it in pool:
+			score[it] = gear_score(it, h)
+		for it in worn:
+			it.equipped_to = h.id
+		pool.sort_custom(func(a, b): return score[a] > score[b])
 		out[st] = pool.slice(0, cap)
 	return out
 

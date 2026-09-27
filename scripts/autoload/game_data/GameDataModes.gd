@@ -105,15 +105,15 @@ const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spir
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers (the
 # Endless Rift is a survival mode, scripts/survivors).
 const DIFFICULTIES := [
-	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 20, "monster_dmg": 2.6, "coin": [18, 34], "crystal": [5, 11], "seal_essence": 10, "cache_chance": 0.08, "power": "Low", "rec_power": 48},
+	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 20, "monster_dmg": 2.6, "coin": [18, 34], "crystal": [5, 11], "seal_essence": 10, "cache_chance": 0.08, "power": "Low", "rec_power": 90},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
 	# Guild Management currency — sits between Lesser and the Ascendant-
 	# First-draft numbers, tunable after playing.
-	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 80, "monster_dmg": 8.6, "coin": [40, 70], "crystal": [11, 20], "seal_essence": 18, "cache_chance": 0.14, "power": "Medium", "rec_power": 118},
+	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 80, "monster_dmg": 8.6, "coin": [40, 70], "crystal": [11, 20], "seal_essence": 18, "cache_chance": 0.14, "power": "Medium", "rec_power": 500},
 ]
 
 ## The power the Rift Hall compares against for the Endless Rift (survivors).
-const ENDLESS_REC_POWER := 280
+const ENDLESS_REC_POWER := 1000   # median survival ~8 min (balance_sim -- calibrate)
 
 ## Recovery in rift runs rather than real time: a downed hero sits out this
 ## many runs (Medical upgrades shorten it, a bed takes one off), and a wounded
@@ -263,18 +263,19 @@ const DOWNED_RECOVERY_RUNS := 2
 const WOUND_HEAL_PER_RUN := 0.5
 ## The rift ladder, F to SSS. Each rank sits on a base difficulty (Lesser for
 ## F-D, Greater from C) scaled by its own foe multipliers and reward
-## multiplier, plus the rules it adds. Sealing a rank opens the next; C and up
+## multiplier, plus the rules it adds. "rec" is the party power that clears
+## it about 65% of the time (balance_sim -- calibrate). Sealing a rank opens the next; C and up
 ## also need the Greater Rift (Act II).
 const RIFT_RANKS := [
-	{"id": "F", "base": "lesser", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
-	{"id": "E", "base": "lesser", "hp": 1.5, "dmg": 1.4, "reward": 1.3},
-	{"id": "D", "base": "lesser", "hp": 2.4, "dmg": 2.0, "reward": 1.6},
-	{"id": "C", "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
-	{"id": "B", "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
-	{"id": "A", "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
-	{"id": "S", "base": "greater", "hp": 3.0, "dmg": 2.2, "reward": 2.2, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true},
-	{"id": "SS", "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
-	{"id": "SSS", "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "F", "rec": 65, "base": "lesser", "hp": 0.8, "dmg": 0.85, "reward": 1.0},
+	{"id": "E", "rec": 160, "base": "lesser", "hp": 1.8, "dmg": 1.6, "reward": 1.4},
+	{"id": "D", "rec": 390, "base": "lesser", "hp": 3.2, "dmg": 2.6, "reward": 2.0},
+	{"id": "C", "rec": 500, "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
+	{"id": "B", "rec": 725, "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
+	{"id": "A", "rec": 900, "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
+	{"id": "S", "rec": 1270, "base": "greater", "hp": 3.0, "dmg": 2.2, "reward": 2.2, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true},
+	{"id": "SS", "rec": 1610, "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "SSS", "rec": 2120, "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
 ]
 
 ## What each rank's extra rules read as on the Rift Hall.

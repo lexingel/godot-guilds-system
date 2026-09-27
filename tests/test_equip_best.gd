@@ -25,7 +25,7 @@ func run() -> void:
 			GameState.items.append(it)
 	# The other hero wears the single best weapon.
 	var weapons: Array = GameState.items.filter(func(it): return it.slot_type() == "weapon")
-	weapons.sort_custom(func(a, b): return GameState.gear_score(a) > GameState.gear_score(b))
+	weapons.sort_custom(func(a, b): return GameState.gear_score(a, h) > GameState.gear_score(b, h))
 	var taken: Item = weapons[0]
 	taken.equipped_to = "h2"
 	taken.equipped_idx = 0
@@ -48,7 +48,7 @@ func run() -> void:
 	check(GameState.equip_best_changes(h) == 0, "nothing left to improve")
 
 	# A stronger drop replaces the weakest worn piece.
-	var best_now: float = worn.map(func(it): return GameState.gear_score(it)).max()
+	var best_now: float = worn.map(func(it): return GameState.item_stat_map(it).values().max()).max()
 	var drop := Combat.gen_item("legendary", "armor")
 	drop.id = "i_new"
 	drop.attr_req = 0
