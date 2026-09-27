@@ -428,9 +428,10 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	var main := gen_monster(diff, floor_idx, kind)
 	main["is_main"] = true
 	main["ability"] = {}
+	var profile: Dictionary = GameData.BOSS_PROFILES.get(str(main["name"]).split(",")[0], {}) if kind == "boss" else {}
 	if kind == "boss":
 		var mechanic: Dictionary = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
-		var fixed: Array = diff.get("boss_mechanics", [])   # a Tower guardian's own
+		var fixed: Array = diff.get("boss_mechanics", profile.get("mechanics", []))   # a Tower guardian's own, or the boss's profile
 		if not fixed.is_empty():
 			mechanic = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] == fixed[0])[0]
 		if mechanic["id"] == "frenzied":
@@ -442,6 +443,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		# "mechanic2" via .get() with an empty-dict default, so this is additive
 		# and doesn't touch the normal single-mechanic path at all.
 		if bool(diff.get("boss_double_mechanic", false)) or fixed.size() > 1:
+			fixed = fixed.duplicate()
 			var pool: Array = GameData.BOSS_MECHANICS.filter(func(bm): return bm["id"] != mechanic["id"])
 			var mechanic2: Dictionary = pool[randi() % pool.size()]
 			if fixed.size() > 1:
@@ -456,6 +458,9 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		if diff.get("tower_single", false):
 			phases.erase("summon")
 		main["phase"] = str(phases[randi() % phases.size()])
+		if not profile.is_empty() and phases.has(str(profile["phase"])):
+			main["phase"] = str(profile["phase"])
+			main["encounter"] = {"name": str(main["name"]), "hint": str(profile["hint"])}
 	elif kind == "elite":
 		_roll_affixes(main, 2 if diff.get("elite_chance_up", false) else 1)
 	main["max_hp"] = main["hp"]
@@ -592,8 +597,16 @@ func _check_phases(state: Dictionary) -> void:
 				var ws: Dictionary = state["monster_shields"]
 				ws[i] = float(ws.get(i, 0.0)) + round(float(m["max_hp"]) * 0.12)
 			"summon":
+				var calls: Array = GameData.BOSS_PROFILES.get(str(m["name"]).split(",")[0], {}).get("summons", [])
 				for k in 2:
-					monsters.append(_make_add(state["diff"], int(state["floor_idx"]), 0.3, 0.3))
+					var add := _make_add(state["diff"], int(state["floor_idx"]), 0.3, 0.3)
+					if k < calls.size():
+						var cn := str(calls[k])
+						add["name"] = cn
+						add["armor"] = float(GameData.MONSTER_ARMOR.get(cn, 0.0))
+						add["status"] = str(GameData.MONSTER_STATUS.get(cn, ""))
+						add["ability"] = GameData.MONSTER_ABILITIES.get(cn, {})
+					monsters.append(add)
 
 
 ## The special moves a foe can telegraph besides attacking (see Combat's
@@ -604,7 +617,7 @@ func monster_kit(m: Dictionary) -> Array:
 	var ab := str(m.get("ability", {}).get("kind", ""))
 	var tier := str(m.get("tier", "combat"))
 	if tier == "boss":
-		return ["sweep", "roar"]
+		return (GameData.BOSS_PROFILES.get(name.split(",")[0], {}).get("kit", ["sweep", "roar"]) as Array).duplicate()
 	var kit: Array = (GameData.MONSTER_KIT.get(name, []) as Array).duplicate()
 	if not kit.is_empty():
 		if tier == "elite" and not kit.has("roar"):

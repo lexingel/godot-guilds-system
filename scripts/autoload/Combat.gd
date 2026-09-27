@@ -316,7 +316,7 @@ func _ability_target(state: Dictionary, h: Hero) -> int:
 	var danger := false
 	for mi in monsters.size():
 		var it := monster_intent(state, mi)
-		if it.get("kind") in ["sweep", "heavy", "windup"] or (it.get("target") != null and int(it.get("dmg", 0)) >= max_hp(it["target"]) * 0.25):
+		if it.get("kind") in ["sweep", "heavy", "windup", "harvest", "drown", "immolate", "sunder"] or (it.get("target") != null and int(it.get("dmg", 0)) >= max_hp(it["target"]) * 0.25):
 			danger = true
 	match eff:
 		"revive":
@@ -360,14 +360,17 @@ func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	var round_num := int(state.get("round_num", 0))
 	if kind in ["ward", "mend", "roar"]:
 		return {"kind": kind, "target": null, "dmg": 0, "heavy": false}
-	if kind == "sweep":
+	if kind in ["sweep", "harvest", "drown", "immolate", "sunder"]:
 		var living: Array = (state["party"] as Array).filter(func(h): return h.hp > 0)
-		return {"kind": "sweep", "target": null, "targets": living, "dmg": int(_monster_hit(m, round_num) * GameData.SWEEP_MULT), "heavy": false}
+		if kind == "sunder":
+			living = living.filter(func(h): return h.formation != "back")
+		var mult: float = {"sweep": GameData.SWEEP_MULT, "harvest": GameData.HARVEST_MULT, "drown": GameData.DROWN_MULT, "immolate": GameData.IMMOLATE_MULT, "sunder": GameData.SUNDER_MULT}[kind]
+		return {"kind": kind, "target": null, "targets": living, "dmg": int(_monster_hit(m, round_num) * mult), "heavy": kind == "sunder"}
 	var t := _find_party_hero(state["party"], str(it.get("target", "")))
 	if t == null or t.hp <= 0:
 		return {}
-	if kind == "curse":
-		return {"kind": "curse", "target": t, "dmg": 0, "heavy": false}
+	if kind in ["curse", "brand"]:
+		return {"kind": kind, "target": t, "dmg": 0, "heavy": false}
 	if m.get("_winding", false):
 		return {"kind": "windup", "target": t, "dmg": 0, "heavy": false, "guarded": false, "charging": true}
 	var taunter := _find_party_hero(state["party"], str(state.get("_taunt", "")))
@@ -493,6 +496,12 @@ func _start_round(state: Dictionary) -> void:
 	state["_taunt"] = ""
 	state["_smoke"] = 0.0
 	state["_undying"] = {}
+	var branded: Dictionary = state.get("_branded", {})
+	for bid in branded.keys().duplicate():
+		branded[bid] = int(branded[bid]) - 1
+		if int(branded[bid]) <= 0:
+			branded.erase(bid)
+	state["_branded"] = branded
 	var weakened: Dictionary = state.get("_weakened", {})
 	for wid in weakened.keys().duplicate():
 		weakened[wid] = int(weakened[wid]) - 1
@@ -558,7 +567,7 @@ func _roll_intent(state: Dictionary, mi: int, living: Array[Hero]) -> Dictionary
 		var kit: Array = m["kit"]
 		if not kit.is_empty():
 			var pick := str(kit[randi() % kit.size()])
-			var chance := GameData.INTENT_SPECIAL_CHANCE
+			var chance := GameData.BOSS_SPECIAL_CHANCE if str(m.get("tier", "")) == "boss" else GameData.INTENT_SPECIAL_CHANCE
 			var monsters: Array = state["monsters"]
 			match pick:
 				"mend":
@@ -570,7 +579,7 @@ func _roll_intent(state: Dictionary, mi: int, living: Array[Hero]) -> Dictionary
 				m["_special_round"] = round_num
 	var target := ""
 	match kind:
-		"attack", "curse":
+		"attack", "curse", "brand":
 			target = weighted_formation_target(living).id
 		"snipe":
 			var back: Array = living.filter(func(h): return h.formation == "back")
@@ -726,7 +735,7 @@ func _role_skill_effect(state: Dictionary, h: Hero, sk: Dictionary, target_idx: 
 			var shields: Dictionary = state["hero_shields"]
 			for x in living:
 				shields[x.id] = float(shields.get(x.id, 0.0)) + max_hp(x) * val
-				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened", "_branded"]:
 					state.get(key, {}).erase(x.id)
 			log.append("A sanctuary shelters the party.")
 		"smoke":
@@ -779,7 +788,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 		GameState.tonics[tid] = GameState.tonic_count(tid) - 1
 		match tid:
 			"healing":
-				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened", "_branded"]:
 					state.get(key, {}).erase(patient.id)
 				var healed: int = min(max_hp(patient) - patient.hp, int(round(max_hp(patient) * GameData.TONIC_HEAL_PCT)))
 				patient.hp += healed
@@ -994,7 +1003,7 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 			"cleanse_heal":
 				for x in living:
 					x.hp = mini(max_hp(x), x.hp + int(round(max_hp(x) * val)))
-					for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+					for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened", "_branded"]:
 						state.get(key, {}).erase(x.id)
 				log.append("A cleansing light washes over the party.")
 			"shield_wall_front":
@@ -1164,6 +1173,56 @@ func _resolve_monster_action(state: Dictionary, i: int) -> void:
 				if h.hp > 0:
 					_monster_strike(state, i, h, GameData.SWEEP_MULT, false)
 			return
+		"harvest":
+			log.append("%s reaps the whole party!" % m["name"])
+			var before := 0
+			for h in alive_now:
+				before += h.hp
+			for h in alive_now:
+				if h.hp > 0:
+					_monster_strike(state, i, h, GameData.HARVEST_MULT, false)
+			var taken := before
+			for h in alive_now:
+				taken -= h.hp
+			if taken > 0:
+				m["hp"] = minf(float(m["max_hp"]), float(m["hp"]) + taken * 0.5)
+				log.append("%s drinks in the harvest (+%d)." % [m["name"], int(taken * 0.5)])
+				_tally(state, "enemy_heal", taken * 0.5)
+			return
+		"drown":
+			log.append("%s calls the Drowning Tide!" % m["name"])
+			for h in alive_now:
+				if h.hp > 0:
+					_monster_strike(state, i, h, GameData.DROWN_MULT, false)
+					if h.hp > 0:
+						state.get_or_add("_chilled", {})[h.id] = 2
+						state.get_or_add("_weakened", {})[h.id] = maxi(int(state.get("_weakened", {}).get(h.id, 0)), 2)
+			return
+		"immolate":
+			log.append("%s sets the party ablaze!" % m["name"])
+			for h in alive_now:
+				if h.hp > 0:
+					_monster_strike(state, i, h, GameData.IMMOLATE_MULT, false)
+					if h.hp > 0:
+						state.get_or_add("hero_burn", {})[h.id] = {"rounds": 3, "value": float(GameData.STATUS_INFO["burn"]["value"])}
+			return
+		"sunder":
+			var front: Array = alive_now.filter(func(h): return h.formation != "back")
+			if front.is_empty():
+				front = alive_now
+			log.append("%s sunders the front line!" % m["name"])
+			for h in front:
+				if h.hp > 0:
+					(state["hero_shields"] as Dictionary).erase(h.id)
+					_monster_strike(state, i, h, GameData.SUNDER_MULT, false)
+			return
+		"brand":
+			var bt: Hero = _find_party_hero(party, str(it.get("target", "")))
+			if bt == null or bt.hp <= 0:
+				bt = alive_now[randi() % alive_now.size()]
+			state.get_or_add("_branded", {})[bt.id] = GameData.BRAND_ROUNDS
+			log.append("%s brands %s: they take %d%% more damage for %d rounds." % [m["name"], bt.name, int(GameData.BRAND_TAKEN * 100), GameData.BRAND_ROUNDS])
+			return
 	# The target was rolled at round start (state["intents"]) so the combat
 	# screen can show it; re-roll only if that hero has since dropped.
 	var target: Hero = _find_party_hero(party, str(it.get("target", "")))
@@ -1221,6 +1280,8 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 		gain_momentum(state, 2 if heavy_blow else 1)
 	if taunted:
 		back *= 1.0 - float(state.get("_taunt_cut", 0.0))
+	if state.get("_branded", {}).has(target.id):
+		back *= 1.0 + GameData.BRAND_TAKEN
 	var undying: bool = state.get("_undying", {}).has(target.id)
 	if undying:
 		back *= 0.5

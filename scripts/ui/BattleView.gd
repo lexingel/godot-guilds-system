@@ -1395,6 +1395,8 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 		out.append({"icon": "res://assets/skills/heart.png", "tip": "Undying — half damage and can't fall this round", "color": Palette.EMBER_BRIGHT})
 	if state.get("_evade_next", {}).has(h.id):
 		out.append({"icon": "res://assets/skills/cloak_a.png", "tip": "Will dodge the next hit aimed at them", "color": Palette.CRYSTALS})
+	if state.get("_branded", {}).has(h.id):
+		out.append({"icon": "res://assets/skills/gem_red.png", "tip": "Branded — takes %d%% more damage for %d more round(s). Guard them." % [int(GameData.BRAND_TAKEN * 100), int(state["_branded"][h.id])], "color": Palette.HAZARD})
 	if str(state.get("_taunt", "")) == h.id:
 		out.append({"icon": "res://assets/skills/helm.png", "tip": "Taunting — every foe's attacks come here this round, %d%% weaker" % int(float(state.get("_taunt_cut", 0.0)) * 100), "color": Palette.VIOLET_BRIGHT})
 	if Combat.qualifies_for_ability(h) and Combat.action_block(state, h, "ability") == "":
@@ -1503,7 +1505,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var intent := Combat.monster_intent(state, i)
 		if intent.is_empty():
 			continue
-		var hit_list: Array = intent.get("targets", []) if intent.get("kind") == "sweep" else ([intent["target"]] if intent.get("target") != null and int(intent["dmg"]) > 0 or intent.get("charging", false) else [])
+		var hit_list: Array = intent.get("targets", []) if intent.has("targets") else ([intent["target"]] if intent.get("target") != null and int(intent["dmg"]) > 0 or intent.get("charging", false) else [])
 		for t in hit_list:
 			var e: Dictionary = incoming.get(t.id, {"dmg": 0, "heavy": false, "from": []})
 			e["dmg"] = int(e["dmg"]) + int(intent["dmg"])
@@ -1625,12 +1627,12 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			if GameData.INTENT_INFO.has(ikind):
 				var info: Dictionary = GameData.INTENT_INFO[ikind]
 				var label := str(info["name"])
-				match ikind:
-					"sweep": label = "%s %d → all" % [info["name"], int(intent["dmg"])]
-					"snipe": label = "%s %d → %s" % [info["name"], int(intent["dmg"]), t.name.split(" the ")[0]]
-					"curse": label = "%s → %s" % [info["name"], t.name.split(" the ")[0]]
+				if intent.has("targets"):
+					label = "%s %d → %s" % [info["name"], int(intent["dmg"]), "front" if ikind == "sunder" else "all"]
+				elif t != null:
+					label = ("%s %d → %s" % [info["name"], int(intent["dmg"]), t.name.split(" the ")[0]]) if int(intent["dmg"]) > 0 else ("%s → %s" % [info["name"], t.name.split(" the ")[0]])
 				var tip := str(info["desc"]) % int(GameData.SWEEP_MULT * 100) if ikind == "sweep" else str(info["desc"]).replace("%%", "%")
-				chip = _intent_chip(label, ikind in ["sweep", "snipe", "roar"], "%s — %s" % [info["name"], tip], str(info["icon"]))
+				chip = _intent_chip(label, ikind in ["sweep", "snipe", "roar", "harvest", "drown", "immolate", "sunder", "brand"], "%s — %s" % [info["name"], tip], str(info["icon"]))
 			elif intent.get("charging", false):
 				chip = _intent_chip("Winding up", true, "Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row." % str(GameData.HEAVY_BLOW_MULT))
 			elif intent.get("heavy_blow", false):
@@ -1928,7 +1930,7 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 	for i in monsters.size():
 		var it := Combat.monster_intent(state, i)
 		if not it.is_empty() and not it.get("guarded", false):
-			for t in (it.get("targets", []) if it.get("kind") == "sweep" else ([it["target"]] if it.get("target") != null else [])):
+			for t in (it.get("targets", []) if it.has("targets") else ([it["target"]] if it.get("target") != null else [])):
 				incoming[t.id] = int(incoming.get(t.id, 0)) + int(it["dmg"])
 	var hid := current_hero.id
 	var n := 0

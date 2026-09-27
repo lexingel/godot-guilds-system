@@ -82,3 +82,67 @@ func run() -> void:
 		for k in range(1, ms.size()):
 			seen_adds[ms[k]["name"]] = true
 	check(not seen_adds.is_empty() and seen_adds.keys().all(func(n): return (GameData.BIOMES["marsh"]["retinue"] as Array).has(n)), "marsh elites bring marsh supports %s" % [seen_adds.keys()])
+
+	# Designed bosses: a fixed identity each.
+	var bdiff: Dictionary = GameData.DIFFICULTIES[0].duplicate()
+	bdiff["biome"] = "vale"
+	bdiff["boss_name"] = "Vaelith, the Vale-Render"
+	var bms := Combat.gen_monsters(bdiff, 6, "boss")
+	var vb: Dictionary = bms[0]
+	check(vb["mechanic"]["id"] == "regen" and vb["phase"] == "summon" and str(vb.get("encounter", {}).get("hint", "")).contains("Harvest"), "Vaelith: regenerates, summons at half health, and opens with her hint")
+	check(Combat.monster_kit(vb) == ["harvest", "curse"], "Vaelith's moves include her Harvest")
+	bdiff["boss_name"] = "Sythrane, the Ashen Crown"
+	var sb: Dictionary = Combat.gen_monsters(bdiff, 6, "boss")[0]
+	check(sb["mechanic"]["id"] == "enrage" and sb.get("mechanic2", {}).get("id", "") == "regen", "Sythrane: enrage and regenerate")
+	var rdiff: Dictionary = GameData.DIFFICULTIES[0].duplicate()
+	rdiff["biome"] = "ashen"
+	var any_profiled := false
+	for t in 20:
+		var rb: Dictionary = Combat.gen_monsters(rdiff, 6, "boss")[0]
+		if GameData.BOSS_PROFILES.has(str(rb["name"]).split(",")[0]) and rb.has("encounter"):
+			any_profiled = true
+	check(any_profiled, "rift bosses use their profiles too")
+
+	# The signature moves.
+	var hA := Combat.gen_hero("C", 6)
+	hA.id = "bA"
+	hA.formation = "front"
+	var hB := Combat.gen_hero("C", 6)
+	hB.id = "bB"
+	hB.formation = "back"
+	var bparty: Array[Hero] = [hA, hB]
+	bdiff["boss_name"] = "Vaelith, the Vale-Render"
+	var bst := Combat.start_combat(bparty, "boss", bdiff, 6)
+	var boss: Dictionary = bst["monsters"][0]
+	bst["monsters"] = [boss]
+	bst["turn_order"] = []
+	bst["dodge"] = 0.0
+	bst["escort"] = {}
+	boss["hp"] = float(boss["max_hp"]) * 0.8
+	boss["_winding"] = false
+	boss["_charged"] = false
+	var hp_b := float(boss["hp"])
+	bst["intents"] = {0: {"kind": "harvest", "target": ""}}
+	check(Combat.monster_intent(bst, 0)["targets"].size() == 2, "Harvest shows every hero as a target")
+	Combat._resolve_monster_action(bst, 0)
+	check(float(boss["hp"]) > hp_b and hA.hp < Combat.max_hp(hA) and hB.hp < Combat.max_hp(hB), "Harvest hits everyone and heals the boss")
+	hA.hp = Combat.max_hp(hA)
+	hB.hp = Combat.max_hp(hB)
+	bst["hero_shields"] = {hA.id: 5.0}
+	bst["intents"] = {0: {"kind": "sunder", "target": ""}}
+	Combat._resolve_monster_action(bst, 0)
+	check(hB.hp == Combat.max_hp(hB) and hA.hp < Combat.max_hp(hA) and not bst["hero_shields"].has(hA.id), "Sunder hits only the front row and tears off its wards")
+	bst["intents"] = {0: {"kind": "brand", "target": hB.id}}
+	Combat._resolve_monster_action(bst, 0)
+	check(bst["_branded"].has(hB.id), "Brand marks a hero")
+	bst["intents"] = {0: {"kind": "immolate", "target": ""}}
+	Combat._resolve_monster_action(bst, 0)
+	check(bst["hero_burn"].has(hB.id), "Immolate sets the party burning")
+	bst["intents"] = {0: {"kind": "drown", "target": ""}}
+	Combat._resolve_monster_action(bst, 0)
+	check(bst["_chilled"].has(hB.id) and bst["_weakened"].has(hB.id), "the Drowning Tide chills and weakens")
+	boss["hp"] = float(boss["max_hp"]) * 0.45
+	var n0: int = (bst["monsters"] as Array).size()
+	Combat._check_phases(bst)
+	var called: Array = (bst["monsters"] as Array).slice(n0).map(func(x): return x["name"])
+	check(called == ["Carrion Crier", "Hedge Warden"], "Vaelith calls a Crier and a Warden %s" % [called])

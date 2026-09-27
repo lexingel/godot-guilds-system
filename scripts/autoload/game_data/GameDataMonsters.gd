@@ -221,6 +221,11 @@ const INTENT_INFO := {
 	"mend": {"name": "Mend", "icon": "res://assets/skills/potion_red_sm.png", "desc": "Heals its most-hurt ally. Kill or stun it first."},
 	"roar": {"name": "Roar", "icon": "res://assets/skills/gem_red.png", "desc": "Every foe hits 20%% harder for the rest of the fight (up to twice). Stun it to stop it."},
 	"stunned": {"name": "Stunned", "icon": "res://assets/skills/star.png", "desc": "Loses its next action."},
+	"harvest": {"name": "Harvest", "icon": "res://assets/skills/dagger_red.png", "desc": "Hits every hero and heals the boss for half of it. Defend, or ward the party."},
+	"drown": {"name": "Drowning Tide", "icon": "res://assets/skills/potion_blue_sm.png", "desc": "Chills and weakens every hero (they act late and deal 40%% less next round). Sanctuary or a Healing Tonic cleanses it."},
+	"sunder": {"name": "Sunder", "icon": "res://assets/skills/armor_shoulder.png", "desc": "Tears the wards off every front-row hero and hits them hard. Move a hurt hero back, or Defend."},
+	"brand": {"name": "Brand", "icon": "res://assets/skills/gem_red.png", "desc": "Marks a hero: they take 50%% more damage for 2 rounds. Guard them."},
+	"immolate": {"name": "Immolate", "icon": "res://assets/relics/escalate_pct.png", "desc": "Sets every hero burning for 3 rounds. Sanctuary or a Healing Tonic puts it out."},
 }
 
 
@@ -276,4 +281,29 @@ const ENCOUNTERS := {
 	],
 }
 const ENCOUNTER_CHANCE := 0.6
+
+
+## Each of the five bosses is always the same fight: its mechanics, its
+## half-health phase, the foes it summons, and its moves (with its signature
+## move among them). A hint opens the fight. Bosses not listed here (Tower
+## guardians) keep their own fixed rules.
+const BOSS_PROFILES := {
+	"Vaelith": {"mechanics": ["regen"], "phase": "summon", "summons": ["Carrion Crier", "Hedge Warden"], "kit": ["harvest", "curse"],
+		"hint": "Her Harvest hits everyone and heals her. At half health she calls a Crier and a Warden. Defend through the Harvest; kill the Crier fast."},
+	"Nyxara": {"mechanics": ["warded"], "phase": "barrier", "summons": [], "kit": ["drown", "snipe"],
+		"hint": "The Drowning Tide chills and weakens the whole party, and her ward shrugs off early defence. Cleanse the curse; save your burst for after her barrier rises."},
+	"Korrath": {"mechanics": ["enrage"], "phase": "fury", "summons": [], "kit": ["sunder", "sweep"],
+		"hint": "Sunder tears the wards off the front row and hits hard, and he angers every round. Rotate the front row and end it quickly."},
+	"Drevok": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Ember Oracle", "Ash Harrier"], "kit": ["brand", "roar"],
+		"hint": "Brand marks a hero to take 50% more damage. At half health he calls fire cultists. Guard the branded hero."},
+	"Sythrane": {"mechanics": ["enrage", "regen"], "phase": "barrier", "summons": [], "kit": ["immolate", "roar", "sweep"],
+		"hint": "Immolate sets the whole party burning while she regenerates and grows angrier. Cleanse the burns and never let up."},
+}
+const HARVEST_MULT := 0.45       # of her hit, on every hero; she heals half of it
+const DROWN_MULT := 0.3
+const SUNDER_MULT := 1.1         # on each front-row hero, after tearing off their wards
+const BRAND_TAKEN := 0.5         # a branded hero takes this much more damage...
+const BRAND_ROUNDS := 2          # ...for this many rounds
+const IMMOLATE_MULT := 0.25
+const BOSS_SPECIAL_CHANCE := 0.4
 
