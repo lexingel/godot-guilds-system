@@ -471,7 +471,7 @@ func _show_level_up() -> void:
 	var offer := run.offer()
 	for i in offer.size():
 		var id: String = offer[i]
-		var u: Dictionary = SurvivorsRun.UPGRADES[id]
+		var u: Dictionary = run.upgrade_info(id)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(200, 150)
 		b.focus_mode = Control.FOCUS_NONE
@@ -488,7 +488,7 @@ func _show_level_up() -> void:
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(ic)
 		var nm := Label.new()
-		var have := int(run.upgrades.get(id, 0))
+		var have := int(u["have"])
 		nm.text = "%d. %s%s" % [i + 1, u["name"], "  (%d/%d)" % [have + 1, u["max"]] if have > 0 else ""]
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
@@ -523,7 +523,7 @@ func _toggle_pause() -> void:
 		return
 	paused = true
 	var v := _modal("Paused")
-	var owned: Array = run.upgrades.keys().map(func(id): return "%s ×%d" % [SurvivorsRun.UPGRADES[id]["name"], run.upgrades[id]])
+	var owned: Array = run.owned_lines()
 	var l := Label.new()
 	l.text = "Upgrades: " + (", ".join(owned) if not owned.is_empty() else "none yet")
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

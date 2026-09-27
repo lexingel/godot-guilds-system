@@ -66,6 +66,18 @@ func _ready() -> void:
 const SURV_RUNS := 12
 
 
+## A sensible player's level-up pick: Ability ranks, then damage and health,
+## then damage-dealing skills, else whatever is offered.
+func _best_pick(o: Array) -> String:
+	if o.is_empty():
+		return ""
+	for pref in ["ability:", "might", "vigor", "skill:", "haste", "area"]:
+		for id in o:
+			if str(id).begins_with(pref) and not (pref == "skill:" and str(id).split(":")[2] in ["heal", "sanctuary", "taunt", "smoke_bomb"]):
+				return str(id)
+	return str(o[randi() % o.size()])
+
+
 func _survivors(name: String, p: Array) -> void:
 	var times: Array = []
 	var kills := 0
@@ -78,7 +90,7 @@ func _survivors(name: String, p: Array) -> void:
 			r.events.clear()
 			while r.pending_levels > 0:
 				var o := r.offer()
-				r.pick(o[randi() % o.size()] if not o.is_empty() else "")
+				r.pick(_best_pick(o))
 		times.append(int(r.time))
 		kills += r.kills
 		levels += r.level
@@ -230,7 +242,7 @@ func _calibrate() -> void:
 				r.events.clear()
 				while r.pending_levels > 0:
 					var o := r.offer()
-					r.pick(o[randi() % o.size()] if not o.is_empty() else "")
+					r.pick(_best_pick(o))
 			times.append(int(r.time))
 		times.sort()
 		print("power %4d  tower median floor %3d (rec there %d)  endless median %d:%02d" % [power, tops[3], GameState.tower_recommended_power(maxi(1, tops[3])), times[1] / 60, times[1] % 60])

@@ -46,6 +46,27 @@ const ABILITY_STYLE := {
 	"trap": "slow", "freeze_target": "slow",
 	"riposte": "rally", "evasion_round": "rally", "lifesteal_surge": "rally", "blood_price": "rally",
 }
+## Role skills learned at level-up become auto-moves on their own timer.
+const SKILL_MOVES := {
+	"shield_bash": {"cd": 5.0, "desc": "Every 5s: shoves foes around the hero, stunning them"},
+	"taunt": {"cd": 10.0, "desc": "Every 10s: draws every foe to this hero for 3s, taking 40% less"},
+	"aimed_shot": {"cd": 3.0, "desc": "Every 3s: a piercing shot at the toughest foe in sight"},
+	"volley": {"cd": 4.0, "desc": "Every 4s: a ring of arrows"},
+	"arcane_bolt": {"cd": 2.5, "desc": "Every 2.5s: a bursting bolt at the toughest foe near"},
+	"frost_nova": {"cd": 7.0, "desc": "Every 7s: freezes every foe close by"},
+	"heal": {"cd": 6.0, "desc": "Every 6s: heals the most-hurt hero 20%"},
+	"sanctuary": {"cd": 12.0, "desc": "Every 12s: heals the whole party 12%"},
+	"backstab": {"cd": 3.0, "desc": "Every 3s: a heavy stab, heavier on a wounded foe"},
+	"smoke_bomb": {"cd": 10.0, "desc": "Every 10s: +40% dodge for the party for 3s"},
+}
+const ABILITY_RANK_MAX := 3
+const ABILITY_RANK_CD := 0.8      # cooldown multiplier per rank
+const ABILITY_RANK_POWER := 0.3   # extra power per rank
+const TWIST_TEXT := {
+	"guardian": "also heals the party 8%", "sustain": "also heals this hero 25%",
+	"evasion": "and the party dodges more for 2s", "attrition": "and slows foes around the hero",
+	"opener": "fires twice", "executioner": "hits 50% harder",
+}
 const RALLY_MULT := 1.25
 const RALLY_TIME := 4.0
 const SLOW_TIME := 4.0
@@ -92,6 +113,7 @@ var _next_boss := BOSS_EVERY
 var dodge := 0.0
 var mend := 0.0
 var rally_t := 0.0
+var dodge_t := 0.0   # a Smoke Bomb or an evasion twist: extra dodge while > 0
 
 
 func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
@@ -112,7 +134,8 @@ func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
 		heroes.append({"hero": h, "role": GameData.hero_role(h), "pos": Vector2(-40.0 * i, 30.0 * (i % 2)), "hp": mhp, "max_hp": mhp,
 			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * 0.5, "facing": 1.0,
 			"has_ability": not ab.is_empty(), "ability_name": str(ab.get("name", "")), "style": str(ABILITY_STYLE.get(str(ab.get("effect", "")), "")),
-			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct"))})
+			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct")),
+			"skills": {}, "ab_rank": 0, "arch": Combat.hero_main_arch(h), "taunt_t": 0.0})
 
 
 func lead() -> Dictionary:
@@ -159,6 +182,7 @@ func step(dt: float, move_dir: Vector2) -> void:
 	_contact(dt)
 	_pickups(dt)
 	rally_t = maxf(0.0, rally_t - dt)
+	dodge_t = maxf(0.0, dodge_t - dt)
 	# Mending: a round's worth (see Combat) spread over ~10 seconds.
 	var regen := 0.01 * _stat("regen") + mend * 0.1
 	if regen > 0.0:
@@ -254,6 +278,9 @@ func _add_foe(tier: String, at: Vector2 = Vector2.INF) -> Dictionary:
 
 
 func _nearest_hero(p: Vector2) -> Dictionary:
+	for h in heroes:
+		if h["alive"] and float(h.get("taunt_t", 0.0)) > 0.0 and p.distance_squared_to(h["pos"]) <= 500.0 * 500.0:
+			return h
 	var best := {}
 	var bd := INF
 	for h in heroes:
@@ -291,7 +318,8 @@ func _move_foes(dt: float) -> void:
 					var l := d.length()
 					if l < min_d and l > 0.01:
 						push += d / l * (min_d - l)
-		var slow := 0.4 if float(f.get("slow_t", 0.0)) > 0.0 else 1.0
+		f["stun_t"] = maxf(0.0, float(f.get("stun_t", 0.0)) - dt)
+		var slow := 0.0 if float(f["stun_t"]) > 0.0 else (0.4 if float(f.get("slow_t", 0.0)) > 0.0 else 1.0)
 		f["slow_t"] = maxf(0.0, float(f.get("slow_t", 0.0)) - dt)
 		f["pos"] += dir * f["speed"] * slow * dt + push * 0.5
 		if absf(dir.x) > 0.2:
@@ -332,8 +360,16 @@ func _attacks(dt: float) -> void:
 		if h["has_ability"]:
 			h["ab_cd"] -= dt
 			if h["ab_cd"] <= 0.0 and _nearest_foe(h["pos"], 400.0) >= 0:
-				h["ab_cd"] = ABILITY_CD * pow(0.8, _stat("focus"))
+				h["ab_cd"] = ABILITY_CD * pow(0.8, _stat("focus")) * pow(ABILITY_RANK_CD, int(h["ab_rank"]))
 				_ability(h, w, area)
+				if int(h["ab_rank"]) >= ABILITY_RANK_MAX:
+					_twist(h, w, area)
+		h["taunt_t"] = maxf(0.0, float(h["taunt_t"]) - dt)
+		var skills: Dictionary = h["skills"]
+		for sid in skills:
+			skills[sid] = float(skills[sid]) - dt
+			if float(skills[sid]) <= 0.0:
+				skills[sid] = float(SKILL_MOVES[sid]["cd"]) * cd_mult if _skill_move(h, str(sid), area) else 0.3
 		if w["kind"] == "pulse":
 			h["heal_cd"] = float(h.get("heal_cd", 4.0)) - dt
 			if h["heal_cd"] <= 0.0:
@@ -368,8 +404,93 @@ func _fire(h: Dictionary, w: Dictionary, area: float, power: float) -> bool:
 	return true
 
 
+## A hero's Ability at rank 3 adds their archetype's twist (TWIST_TEXT).
+func _twist(h: Dictionary, w: Dictionary, area: float) -> void:
+	match str(h.get("arch", "")):
+		"guardian":
+			_heal_all(0.08)
+		"sustain":
+			h["hp"] = minf(h["max_hp"], h["hp"] + h["max_hp"] * 0.25)
+		"evasion":
+			dodge_t = maxf(dodge_t, 2.0)
+		"attrition":
+			for f in foes:
+				if f["pos"].distance_squared_to(h["pos"]) <= 260.0 * 260.0:
+					f["slow_t"] = SLOW_TIME
+		"opener":
+			_ability(h, w, area)
+
+
+## The power an Ability hits with: its ranks, and an executioner's rank-3 twist.
+func _ability_power(h: Dictionary) -> float:
+	var p := 1.0 + ABILITY_RANK_POWER * int(h.get("ab_rank", 0))
+	if int(h.get("ab_rank", 0)) >= ABILITY_RANK_MAX and str(h.get("arch", "")) == "executioner":
+		p *= 1.5
+	return p
+
+
+## A learned role skill's auto-move; false if it had nothing to hit.
+func _skill_move(h: Dictionary, id: String, area: float) -> bool:
+	match id:
+		"shield_bash", "frost_nova":
+			var r := (100.0 if id == "shield_bash" else 170.0) * area
+			var hit := false
+			for i in range(foes.size() - 1, -1, -1):
+				if i < foes.size() and foes[i]["pos"].distance_squared_to(h["pos"]) <= r * r:
+					foes[i]["stun_t"] = 1.2 if id == "shield_bash" else 2.0
+					hit = true
+					_damage(i, _hero_dmg(h, 1.5 if id == "shield_bash" else 1.0))
+			if hit:
+				events.append({"type": "shockwave", "pos": h["pos"], "r": r})
+			return hit
+		"taunt":
+			if _nearest_foe(h["pos"], 300.0) < 0:
+				return false
+			h["taunt_t"] = 3.0
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 80.0})
+			return true
+		"aimed_shot", "arcane_bolt", "backstab":
+			var reach: float = {"aimed_shot": 600.0, "arcane_bolt": 400.0, "backstab": 130.0}[id]
+			var best := -1
+			for i in foes.size():
+				if foes[i]["pos"].distance_squared_to(h["pos"]) <= reach * reach and (best < 0 or float(foes[i]["hp"]) > float(foes[best]["hp"])):
+					best = i
+			if best < 0:
+				return false
+			var tpos: Vector2 = foes[best]["pos"]
+			if id == "backstab":
+				var mult := 3.0 * (1.7 if float(foes[best]["hp"]) < float(foes[best]["max_hp"]) * 0.5 else 1.0)
+				events.append({"type": "stab", "from": h["pos"], "to": tpos})
+				_damage(best, _hero_dmg(h, mult))
+			else:
+				var dir: Vector2 = (tpos - h["pos"]).normalized()
+				shots.append({"pos": h["pos"], "vel": dir * (700.0 if id == "aimed_shot" else 420.0), "dmg": _hero_dmg(h, 4.0 if id == "aimed_shot" else 3.0), "r": 12.0,
+					"life": 1.2, "pierce": 5 if id == "aimed_shot" else 0, "burst": 0.0 if id == "aimed_shot" else 70.0 * area, "hit": [], "kind": "shot" if id == "aimed_shot" else "bolt"})
+			return true
+		"volley":
+			if _nearest_foe(h["pos"], 400.0) < 0:
+				return false
+			for k in 8:
+				shots.append({"pos": h["pos"], "vel": Vector2.RIGHT.rotated(TAU * k / 8.0) * 520.0, "dmg": _hero_dmg(h, 1.2), "r": 10.0,
+					"life": 1.0, "pierce": 1, "burst": 0.0, "hit": [], "kind": "shot"})
+			return true
+		"heal":
+			_heal_lowest(0.2)
+			return true
+		"sanctuary":
+			_heal_all(0.12)
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 140.0})
+			return true
+		"smoke_bomb":
+			dodge_t = maxf(dodge_t, 3.0)
+			events.append({"type": "sanctuary", "pos": h["pos"], "r": 110.0})
+			return true
+	return false
+
+
 func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", ""))})
+	var pw := _ability_power(h)
 	match str(h.get("style", "")):
 		"strike":
 			var best := -1
@@ -379,14 +500,14 @@ func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 			if best >= 0:
 				var at: Vector2 = foes[best]["pos"]
 				events.append({"type": "meteor", "pos": at, "r": 60.0})
-				_damage(best, _hero_dmg(h, 4.0))
+				_damage(best, _hero_dmg(h, 4.0 * pw))
 			return
 		"nova":
-			_hit_area(h["pos"], 200.0 * area, _hero_dmg(h, 2.5))
+			_hit_area(h["pos"], 200.0 * area, _hero_dmg(h, 2.5 * pw))
 			events.append({"type": "shockwave", "pos": h["pos"], "r": 200.0 * area})
 			return
 		"mend":
-			_heal_all(0.1)
+			_heal_all(0.1 * pw)
 			events.append({"type": "sanctuary", "pos": h["pos"], "r": 160.0})
 			return
 		"slow":
@@ -401,7 +522,7 @@ func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 			return
 	match w["kind"]:
 		"arc":
-			_hit_area(h["pos"], 170.0 * area, _hero_dmg(h, 3.0))
+			_hit_area(h["pos"], 170.0 * area, _hero_dmg(h, 3.0 * pw))
 			events.append({"type": "shockwave", "pos": h["pos"], "r": 170.0 * area})
 		"stab":
 			for k in 6:
@@ -409,18 +530,18 @@ func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
 				if t < 0:
 					break
 				events.append({"type": "stab", "from": h["pos"], "to": foes[t]["pos"]})
-				_damage(t, _hero_dmg(h, 1.6))
+				_damage(t, _hero_dmg(h, 1.6 * pw))
 		"shot":
 			for k in 12:
-				shots.append({"pos": h["pos"], "vel": Vector2.RIGHT.rotated(TAU * k / 12.0) * 520.0, "dmg": _hero_dmg(h, 1.4), "r": 10.0,
+				shots.append({"pos": h["pos"], "vel": Vector2.RIGHT.rotated(TAU * k / 12.0) * 520.0, "dmg": _hero_dmg(h, 1.4 * pw), "r": 10.0,
 					"life": 1.0, "pierce": 2, "burst": 0.0, "hit": [], "kind": "shot"})
 		"bolt":
 			var t := _densest_point(h["pos"], 320.0)
-			_hit_area(t, 120.0 * area, _hero_dmg(h, 3.5))
+			_hit_area(t, 120.0 * area, _hero_dmg(h, 3.5 * pw))
 			events.append({"type": "meteor", "pos": t, "r": 120.0 * area})
 		"pulse":
 			_heal_all(0.25)
-			_hit_area(h["pos"], 200.0 * area, _hero_dmg(h, 1.8))
+			_hit_area(h["pos"], 200.0 * area, _hero_dmg(h, 1.8 * pw))
 			events.append({"type": "sanctuary", "pos": h["pos"], "r": 200.0 * area})
 
 
@@ -507,17 +628,17 @@ func _contact(dt: float) -> void:
 			continue
 		var f: Dictionary = foes[i]
 		f["hit_cd"] -= dt
-		if f["hit_cd"] > 0.0:
+		if f["hit_cd"] > 0.0 or float(f.get("stun_t", 0.0)) > 0.0:
 			continue
 		for h in heroes:
 			if not h["alive"]:
 				continue
 			if f["pos"].distance_squared_to(h["pos"]) <= (f["r"] + HERO_R + 4.0) * (f["r"] + HERO_R + 4.0):
 				f["hit_cd"] = CONTACT_CD
-				if rng.randf() < dodge:
+				if rng.randf() < dodge + (0.4 if dodge_t > 0.0 else 0.0):
 					events.append({"type": "dodge", "hero": h["hero"].id})
 					break
-				h["hp"] -= f["dmg"] * guard
+				h["hp"] -= f["dmg"] * guard * (0.6 if float(h.get("taunt_t", 0.0)) > 0.0 else 1.0)
 				events.append({"type": "hurt", "hero": h["hero"].id, "dmg": f["dmg"] * guard})
 				if _stat("thorns") > 0:
 					_damage(i, float(Combat.dmg_of(h["hero"])) * 0.4 * _stat("thorns") * dmg_mult())
@@ -573,6 +694,13 @@ func _heal_all(frac: float) -> void:
 ## Three upgrade ids that aren't maxed yet.
 func offer() -> Array:
 	var pool: Array = UPGRADES.keys().filter(func(id): return _stat(id) < int(UPGRADES[id]["max"]))
+	for i in heroes.size():
+		var h: Dictionary = heroes[i]
+		for sk in GameData.ROLE_SKILLS.get(h["hero"].cls_id, []):
+			if not (h["skills"] as Dictionary).has(sk["id"]) and SKILL_MOVES.has(sk["id"]):
+				pool.append("skill:%d:%s" % [i, sk["id"]])
+		if h["has_ability"] and int(h["ab_rank"]) < ABILITY_RANK_MAX:
+			pool.append("ability:%d" % i)
 	var out: Array = []
 	while out.size() < 3 and not pool.is_empty():
 		out.append(pool.pop_at(rng.randi() % pool.size()))
@@ -585,12 +713,49 @@ func pick(id: String) -> void:
 	pending_levels -= 1
 	if id == "":
 		return
+	var parts := id.split(":")
+	if parts[0] == "skill":
+		(heroes[int(parts[1])]["skills"] as Dictionary)[parts[2]] = 0.5
+		return
+	if parts[0] == "ability":
+		heroes[int(parts[1])]["ab_rank"] = int(heroes[int(parts[1])]["ab_rank"]) + 1
+		return
 	upgrades[id] = _stat(id) + 1
 	if id == "vigor":
 		for h in heroes:
 			h["max_hp"] *= 1.2
 			if h["alive"]:
 				h["hp"] = minf(h["max_hp"], h["hp"] + h["max_hp"] * 0.3)
+
+
+## What a level-up pick is, for the offer screen: {name, desc, icon, have, max}.
+func upgrade_info(id: String) -> Dictionary:
+	var parts := id.split(":")
+	if parts[0] == "skill":
+		var h: Dictionary = heroes[int(parts[1])]
+		var sk := GameData.find_role_skill(parts[2])
+		return {"name": "%s: %s" % [h["hero"].name.split(" the ")[0], sk["name"]], "desc": str(SKILL_MOVES[parts[2]]["desc"]), "icon": str(sk["icon"]), "have": 0, "max": 1}
+	if parts[0] == "ability":
+		var h2: Dictionary = heroes[int(parts[1])]
+		var r := int(h2["ab_rank"])
+		var d := "Fires 20% sooner and hits 30% harder"
+		if r + 1 >= ABILITY_RANK_MAX and TWIST_TEXT.has(str(h2["arch"])):
+			d += "; %s twist: %s" % [GameData.ARCHETYPES[h2["arch"]], TWIST_TEXT[h2["arch"]]]
+		return {"name": "%s: %s" % [h2["hero"].name.split(" the ")[0], h2["ability_name"]], "desc": d, "icon": GameData.ability_icon(h2["hero"].pool_id), "have": r, "max": ABILITY_RANK_MAX}
+	var u: Dictionary = UPGRADES[id]
+	return {"name": u["name"], "desc": u["desc"], "icon": u["icon"], "have": _stat(id), "max": int(u["max"])}
+
+
+## Everything picked so far, for the pause screen.
+func owned_lines() -> Array:
+	var out: Array = upgrades.keys().map(func(id): return "%s ×%d" % [UPGRADES[id]["name"], upgrades[id]])
+	for h in heroes:
+		var who: String = h["hero"].name.split(" the ")[0]
+		for sid in h["skills"]:
+			out.append("%s: %s" % [who, GameData.find_role_skill(str(sid))["name"]])
+		if int(h["ab_rank"]) > 0:
+			out.append("%s: %s rank %d" % [who, h["ability_name"], int(h["ab_rank"])])
+	return out
 
 
 ## Auto-pilot for tests and the balance sim, playing like a careful player:

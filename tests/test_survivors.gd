@@ -90,3 +90,37 @@ func run() -> void:
 	check(m_rally > r4.dmg_mult(), "a rally ability raises party damage")
 	GameState.relics.erase(rl)
 	check(styled.size() >= 0, "styles resolve")
+
+	# Level-ups offer each hero's role skills and signature Ability.
+	var r5 := SurvivorsRun.new(party, "vale", 21)
+	var all_offers := {}
+	for k in 60:
+		for id in r5.offer():
+			all_offers[id] = true
+	check(all_offers.keys().any(func(id): return str(id).begins_with("skill:")), "role skills are offered at level-up")
+	var ab_i := -1
+	for i in r5.heroes.size():
+		if r5.heroes[i]["has_ability"]:
+			ab_i = i
+	if ab_i >= 0:
+		check(all_offers.has("ability:%d" % ab_i), "a hero's own Ability is offered")
+		r5.pending_levels = 3
+		for k in 3:
+			r5.pick("ability:%d" % ab_i)
+		check(int(r5.heroes[ab_i]["ab_rank"]) == SurvivorsRun.ABILITY_RANK_MAX and r5._ability_power(r5.heroes[ab_i]) >= 1.9, "three ranks: stronger Ability")
+		check(not r5.offer().has("ability:%d" % ab_i), "a maxed Ability isn't offered again")
+	var sk_id := str(GameData.ROLE_SKILLS[r5.heroes[0]["hero"].cls_id][0]["id"])
+	r5.pending_levels = 1
+	r5.pick("skill:0:%s" % sk_id)
+	check((r5.heroes[0]["skills"] as Dictionary).has(sk_id), "a picked role skill is learned")
+	check(str(r5.upgrade_info("skill:0:%s" % sk_id)["name"]).contains(GameData.find_role_skill(sk_id)["name"]), "the offer names the skill")
+	var foe := r5._add_foe("combat", r5.heroes[0]["pos"] + Vector2(40, 0))
+	foe["stun_t"] = 1.0
+	var p0: Vector2 = foe["pos"]
+	r5._move_foes(0.1)
+	check(foe["pos"] == p0, "a stunned foe doesn't move")
+	r5.heroes[0]["skills"][sk_id] = 0.0
+	var t0 := r5.time
+	for k in 20:
+		r5.step(0.1, Vector2.ZERO)
+	check(float(r5.heroes[0]["skills"][sk_id]) > 0.0, "the learned skill fires and goes on cooldown")
