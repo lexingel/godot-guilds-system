@@ -137,9 +137,11 @@ func render() -> void:
 		if not GameState.check_feature_unlocks().is_empty():
 			AudioManager.play_sfx(GameData.SFX_PATH["unlock"])
 	var newly_claimed := GameState.check_milestones()
-	if not newly_claimed.is_empty():
+	if newly_claimed.size() == 1:
 		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Milestone reached", "text": str(m["label"])})
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Achievement earned", "text": str(m["label"])})
+	elif newly_claimed.size() > 1:
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "%d achievements earned" % newly_claimed.size(), "text": "See Records in the Guild Hall."})
 	if _flavor_toast != "":
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "", "text": _flavor_toast})
 		_flavor_toast = ""
@@ -545,6 +547,8 @@ func _header_back() -> Array:
 		"party_assembly":
 			if _pending_tower:
 				return [func(): _pending_tower = false; screen = "tower"; render(), "Tower"]
+			if _pending_daily:
+				return [func(): _pending_daily = false; screen = "rift_hall"; render(), "Rift Hall"]
 			var from_map := _pending_rift_rank != ""
 			return [func():
 				screen = "rift_map" if _pending_rift_rank != "" else "rift_hall"
@@ -843,6 +847,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var go := func(diff_id: String, endless: bool):
 		pending_party.clear()
 		_pending_tower = false
+		_pending_daily = false
 		screen = "party_assembly"
 		_pending_diff_id = diff_id
 		_pending_endless = endless
@@ -891,6 +896,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			"" if endless_open else "Opens when you complete Act II"],
 		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
+		_daily_card_def(),
 	]
 	for cd in card_defs:
 		var card := PanelContainer.new()
@@ -1060,6 +1066,28 @@ func _tower_strip(next_f: int) -> Control:
 	return flow
 
 
+## The Daily Rift's Rift Hall card (same shape as the other card_defs rows).
+func _daily_card_def() -> Array:
+	var info := GameState.daily_info()
+	var sub := "Today: %s · starts with %s" % [info["rule"]["name"], GameData.find_boon(str(info["boon"]))["name"]]
+	if GameState.daily_streak > 0:
+		sub += " · streak %d" % GameState.daily_streak
+	var lock := ""
+	if GameState.rifts_sealed < 1:
+		lock = "Opens after you seal your first rift"
+	elif not GameState.daily_available():
+		lock = "Done for today. A new Daily Rift opens tomorrow (%s)." % sub.split(" · ")[0]
+	return ["Daily Rift", sub, Combat.recommended_power(str(info["diff_id"]), false), func():
+		pending_party.clear()
+		_pending_daily = true
+		_pending_tower = false
+		_pending_finale = false
+		_pending_diff_id = str(info["diff_id"])
+		_pending_endless = false
+		screen = "party_assembly"
+		render(), lock, "Assemble party"]
+
+
 func _render_rift_map_hub(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Map", 20))
 	v.add_child(_wrap_label("Rifts open at random ranks and stay open for a few runs. Each time a run ends (or the guild rests) they count down; leave one until it closes and its threat spills out as a forced fight at the Terminal.", 12, true))
@@ -1148,7 +1176,11 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
 	var tower_info := GameState.tower_floor_info(GameState.tower_next_floor()) if _pending_tower else {}
-	if _pending_tower:
+	if _pending_daily:
+		var dinfo := GameState.daily_info()
+		v.add_child(_label("Daily Rift — %s" % dinfo["rule"]["name"], 20))
+		v.add_child(_wrap_label("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Crystals and +%d Seal Tokens." % [dinfo["rule"]["desc"], GameData.find_boon(str(dinfo["boon"]))["name"], GameData.find_boon(str(dinfo["boon"]))["desc"], GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3), GameData.DAILY_CLEAR_TOKENS], 12, true))
+	elif _pending_tower:
 		v.add_child(_label("Tower of Trials — Floor %d" % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]
 		v.add_child(_wrap_label("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s" % [_party_cap(), (" Rules: " + ", ".join(rules.map(func(r): return "%s (%s)" % [r["name"], r["desc"]]))) if not rules.is_empty() else ""], 12, true))
@@ -1293,7 +1325,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			v.add_child(_info_row("%s — %s" % [def["name"], def["desc"]], 14, [], ib))
 
 	v.add_child(_hsep())
-	if _pending_tower:
+	if _pending_tower or _pending_daily:
 		pass
 	elif _pending_rift_rank == "":
 		var hc_toggle := CheckButton.new()
@@ -1356,6 +1388,8 @@ func _party_launch_bar(champ: Hero) -> Control:
 			pending_incense_id = ""
 		if _pending_tower:
 			GameState.start_tower(ids)
+		elif _pending_daily:
+			GameState.start_daily(ids)
 		elif _pending_finale:
 			GameState.start_finale(ids, chosen)
 		elif _pending_rift_rank != "":
@@ -1364,6 +1398,7 @@ func _party_launch_bar(champ: Hero) -> Control:
 			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
 		_pending_finale = false
 		_pending_tower = false
+		_pending_daily = false
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_hardcore = false

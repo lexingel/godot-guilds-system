@@ -361,6 +361,11 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		bl.add_child(bt)
 		bl.add_child(_boon_chips())
 		v.add_child(bl)
+	if GameState.run.has("daily"):
+		var drule: Dictionary = GameState.daily_info(int(GameState.run["daily"]))["rule"]
+		var dl := _wrap_label("Daily Rift · Rule · %s — %s" % [drule["name"], drule["desc"]], 12)
+		dl.add_theme_color_override("font_color", Palette.RANK_S)
+		v.add_child(dl)
 	if GameState.run.has("tower"):
 		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
 			var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 12)
@@ -408,6 +413,11 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			" · %s-Rank Evolution Stone found!" % stone_tier if stone_tier != "" else "",
 		]))
 		v.add_child(sealed_row)
+		var dbonus: Dictionary = sealed_dict.get("daily", {})
+		if not dbonus.is_empty():
+			var dl := _label("Daily Rift sealed! +%d Crystals, +%d Seal Tokens · streak %d" % [int(dbonus["crystals"]), int(dbonus["tokens"]), int(dbonus["streak"])], 14)
+			dl.add_theme_color_override("font_color", Palette.RANK_S)
+			v.add_child(dl)
 		var bounty: Dictionary = sealed_dict.get("bounty", {})
 		if not bounty.is_empty():
 			v.add_child(_label("Bounty claimed: +%d Coins, +%d Reputation" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))

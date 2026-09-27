@@ -34,6 +34,8 @@ func _render_terminal(v: VBoxContainer) -> void:
 		"management": _render_management(v)
 		"bestiary": _render_bestiary(v)
 		"compendium": _render_compendium(v)
+		"records": _render_records(v)
+		"memorial": _render_memorial(v)
 		"quests": _render_quests(v)
 		_: _render_roster(v)
 
@@ -279,6 +281,144 @@ func _guild_status_lines() -> Array:
 	return out
 
 
+# ---------------- Records & Memorial ----------------
+
+func _render_records(v: VBoxContainer) -> void:
+	v.add_child(_label("Records", 20))
+	var done := GameData.MILESTONES.filter(func(m): return GameState.milestones_claimed.has(str(m["id"]))).size()
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	for t in [["achievements", "Achievements %d/%d" % [done, GameData.MILESTONES.size()]], ["stats", "Statistics"], ["history", "Run history"]]:
+		var b := _button(str(t[1]), func(id=t[0]):
+			records_tab = id
+			render()
+		)
+		b.toggle_mode = true
+		b.button_pressed = records_tab == t[0]
+		tabs.add_child(b)
+	v.add_child(tabs)
+	match records_tab:
+		"stats": _render_stats(v)
+		"history": _render_history(v)
+		_: _render_achievements(v)
+
+
+func _render_achievements(v: VBoxContainer) -> void:
+	for m in GameData.MILESTONES:
+		var got := GameState.milestones_claimed.has(str(m["id"]))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var mark := _label("✓" if got else "○", 16)
+		mark.add_theme_color_override("font_color", Palette.RANK_E if got else Palette.MUTED)
+		mark.custom_minimum_size.x = 20
+		row.add_child(mark)
+		var lab := _wrap_label(str(m["label"]), 13)
+		lab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not got:
+			lab.add_theme_color_override("font_color", Palette.MUTED)
+		row.add_child(lab)
+		var prog := mini(GameState.milestone_progress(m), int(m["target"]))
+		var rw: Dictionary = m["reward"]
+		var bits: Array[String] = []
+		for k in ["coins", "crystals", "tokens", "reputation"]:
+			if int(rw.get(k, 0)) > 0:
+				bits.append("+%d %s" % [int(rw[k]), {"coins": "Coins", "crystals": "Crystals", "tokens": "Tokens", "reputation": "Rep"}[k]])
+		var right := _label(("Done" if got else "%d/%d" % [prog, int(m["target"])]) + "  ·  " + ", ".join(bits), 12, true)
+		row.add_child(right)
+		v.add_child(row)
+
+
+func _render_stats(v: VBoxContainer) -> void:
+	var kills := 0
+	var top_foe := ""
+	var top_n := 0
+	for k in GameState.monster_kill_counts:
+		var n := int(GameState.monster_kill_counts[k])
+		kills += n
+		if n > top_n:
+			top_n = n
+			top_foe = str(k)
+	var best_hero := ""
+	var best_p := 0
+	for h in GameState.heroes:
+		if Combat.power_of(h) > best_p:
+			best_p = Combat.power_of(h)
+			best_hero = "%s (power %d)" % [h.name.split(" the ")[0], best_p]
+	var rows := [
+		["Days passed", str(GameState.day)],
+		["Runs finished", str(GameState.runs_finished)],
+		["Rifts sealed", str(GameState.rifts_sealed)],
+		["Monsters defeated", str(kills)],
+		["Elites / Bosses defeated", "%d / %d" % [GameState.elites_won, GameState.bosses_won]],
+		["Flawless fights", str(GameState.flawless_wins)],
+		["Campaign", "complete" if GameState.campaign_done() else "Act %s" % GameState._roman(GameState.campaign_act)],
+		["Tower of Trials, best floor", str(GameState.tower_best)],
+		["Endless Rift, best cycle", str(GameState.best_endless_cycle)],
+		["Daily Rifts cleared", "%d (streak %d)" % [GameState.daily_clears, GameState.daily_streak]],
+		["Items and relics crafted", str(GameState.crafts_performed)],
+		["Reputation", str(GameState.reputation)],
+		["Heroes lost", str(GameState.heroes_lost_total)],
+		["Strongest hero", best_hero if best_hero != "" else "—"],
+		["Most-defeated foe", "%s (%d)" % [top_foe, top_n] if top_foe != "" else "—"],
+	]
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 6)
+	for r in rows:
+		grid.add_child(_label(str(r[0]), 13, true))
+		grid.add_child(_label(str(r[1]), 13))
+	v.add_child(grid)
+
+
+func _render_history(v: VBoxContainer) -> void:
+	if GameState.run_history.is_empty():
+		v.add_child(_label("No runs yet. Your last %d runs will be listed here." % GameData.RUN_HISTORY_MAX, 13, true))
+		return
+	for e in GameState.run_history:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var res := str(e["result"])
+		var rl := _label(res, 13)
+		rl.custom_minimum_size.x = 80
+		rl.add_theme_color_override("font_color", Palette.RANK_E if res == "Sealed" else (Palette.HAZARD if res == "Defeated" else Palette.MUTED))
+		row.add_child(rl)
+		var what := "Day %d · %s · floor %s" % [int(e["day"]), e["kind"], e["floor"]]
+		if int(e.get("cycle", 0)) > 0:
+			what += " · cycle %d" % (int(e["cycle"]) + 1)
+		var wl := _label(what, 13)
+		wl.custom_minimum_size.x = 300
+		row.add_child(wl)
+		row.add_child(_label("%+dc  %+dcr" % [int(e["coins"]), int(e["crystals"])], 12, true))
+		var tip := "Party: " + ", ".join(e["heroes"])
+		if not (e.get("boons", []) as Array).is_empty():
+			tip += "\nBoons: " + ", ".join((e["boons"] as Array).map(func(b): return str(GameData.find_boon(str(b)).get("name", b))))
+		row.tooltip_text = tip
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		v.add_child(row)
+
+
+func _render_memorial(v: VBoxContainer) -> void:
+	v.add_child(_label("Memorial", 20))
+	v.add_child(_wrap_label("Heroes lost for good. Their names stay with the guild.", 13, true))
+	if GameState.fallen.is_empty():
+		v.add_child(_label("No one has fallen. May it stay that way.", 14))
+		return
+	for f in GameState.fallen:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var portrait := GameData.portrait_for_hero(str(f["cls_id"]), str(f["pool_id"]))
+		if portrait != "":
+			var ic := _icon_trimmed(portrait, 44)
+			ic.modulate = Color(0.55, 0.55, 0.6)
+			row.add_child(ic)
+		var col := _vbox(2)
+		col.add_child(_label("%s — Rank %s, Level %d" % [f["name"], f["rank"], int(f["level"])], 14))
+		col.add_child(_wrap_label("%s, on day %d. %d rift%s sealed, %d foe%s felled." % [f["cause"], int(f["day"]), int(f["rifts"]), "" if int(f["rifts"]) == 1 else "s", int(f["kills"]), "" if int(f["kills"]) == 1 else "s"], 12, true))
+		row.add_child(col)
+		v.add_child(row)
+
+
 ## A short first-guild checklist under the camp scene, each step ticking off
 ## from real game state. Gone once every step is done, the guild has sealed
 ## a few rifts, or the player hides it.
@@ -400,6 +540,8 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 			entries = [
 				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
 				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Compendium", func(): hub_cluster = ""; term_tab = "compendium"; render()],
+				["res://assets/skills/trophy.png", "Records", func(): hub_cluster = ""; term_tab = "records"; render()],
+				["res://assets/skills/helm.png", "Memorial", func(): hub_cluster = ""; term_tab = "memorial"; render()],
 			]
 		"arcane_lab":
 			title = "Arcane Lab"
@@ -954,6 +1096,7 @@ func _render_compendium_crafting(v: VBoxContainer) -> void:
 func _render_compendium_systems(v: VBoxContainer) -> void:
 	var entries := [
 		["Guild Management", "Spend Crystals on 9 upgrades across 4 branches. Every level adds its effect; Lv3 and Lv5 unlock a perk (a first-strike bonus, a boss Crystal cache, extra relic slots…). Guild Tier tracks total levels."],
+		["Daily Rift", "Once you have sealed a rift, the Rift Hall offers one Daily Rift attempt per day. Its rule, starting boon, region and layout come from the date, so every guild faces the same rift that day. Sealing it pays bonus Crystals and Seal Tokens and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
 		["Boons", "Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower."],
 		["Guild Orders", "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."],
 		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],

@@ -2210,7 +2210,29 @@ const MILESTONES := [
 	{"id": "full_roster", "label": "Full Roster — fill every hero slot", "type": "full_roster", "target": 1, "reward": {"reputation": 10}},
 	{"id": "renowned", "label": "Renowned Guild — reach Renowned Guild tier", "type": "guild_tier_renowned", "target": 1, "reward": {"reputation": 15}},
 	{"id": "greater_threat", "label": "Greater Threat — unlock the Greater Rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
+	{"id": "act_one", "label": "The Vale Holds — complete Act I", "type": "campaign_act", "target": 2, "reward": {"crystals": 25}},
+	{"id": "act_two", "label": "Out of the Marshes — complete Act II", "type": "campaign_act", "target": 3, "reward": {"crystals": 40}},
+	{"id": "act_three", "label": "Crownbreaker — complete the campaign", "type": "campaign_act", "target": 4, "reward": {"crystals": 60, "tokens": 10}},
+	{"id": "veteran_sealer", "label": "Rift Warden — seal 25 rifts", "type": "rifts_sealed", "target": 25, "reward": {"crystals": 40}},
+	{"id": "centurion", "label": "Centurion — defeat 250 monsters", "type": "total_kills", "target": 250, "reward": {"coins": 150}},
+	{"id": "kingslayer", "label": "Kingslayer — defeat 20 Bosses", "type": "bosses_won", "target": 20, "reward": {"reputation": 10}},
+	{"id": "untouched", "label": "Untouched — seal 5 rifts with no one knocked out", "type": "flawless_rifts", "target": 5, "reward": {"crystals": 30}},
+	{"id": "climber", "label": "Climber — reach floor 25 of the Tower", "type": "tower_best", "target": 25, "reward": {"crystals": 30}},
+	{"id": "summit", "label": "Summit — clear floor 100 of the Tower", "type": "tower_best", "target": 100, "reward": {"crystals": 100, "tokens": 20}},
+	{"id": "endless_five", "label": "Beyond the Edge — clear 5 Endless cycles", "type": "endless_cycle", "target": 5, "reward": {"crystals": 50}},
+	{"id": "daily_first", "label": "Daily Duty — clear a Daily Rift", "type": "daily_clears", "target": 1, "reward": {"crystals": 15}},
+	{"id": "daily_streak", "label": "Dedicated — clear Daily Rifts 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 60, "tokens": 5}},
+	{"id": "full_set", "label": "Build Complete — own a 4-piece boon set", "type": "boon_set4", "target": 1, "reward": {"crystals": 20}},
+	{"id": "legendary_guild", "label": "Legendary Guild — reach Legendary Guild tier", "type": "guild_tier_legendary", "target": 1, "reward": {"reputation": 25}},
+	{"id": "max_level", "label": "Paragon — raise a hero to Level 10", "type": "max_level", "target": 1, "reward": {"crystals": 25}},
+	{"id": "big_guild", "label": "Great Hall — have 10 heroes on the roster", "type": "roster_size", "target": 10, "reward": {"reputation": 10}},
 ]
+## The Daily Rift: one attempt per day; its rule and starting boon come from
+## the date, so the fight layout is the same for every guild that day.
+const DAILY_CLEAR_CRYSTALS := 30
+const DAILY_CLEAR_CRYSTALS_PER_ACT := 10
+const DAILY_CLEAR_TOKENS := 5
+const RUN_HISTORY_MAX := 30
 ## One-shot SFX, all CC0 (Kenney.nl — Interface Sounds/RPG Audio/Impact
 ## Sounds packs, see assets/audio/sfx/KENNEY_LICENSE.txt). Every key here is
 ## safe to reference from any call site regardless of whether the file

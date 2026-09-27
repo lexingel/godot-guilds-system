@@ -47,6 +47,15 @@ var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
 var champion_offers: Array[Hero] = []   # pick one to replace current_champion (refreshed each seal)
 var best_endless_cycle: int = 0
+var daily_attempt_day: int = -1  # daily_id() of the last Daily Rift started (one a day)
+var daily_clears: int = 0
+var daily_streak: int = 0
+var daily_last_clear: int = -1
+var run_history: Array = []      # newest first, capped (GameData.RUN_HISTORY_MAX)
+var runs_finished: int = 0
+var fallen: Array = []           # memorial: heroes lost for good
+var heroes_lost_total: int = 0
+var boon_set4_reached: bool = false
 var tower_best: int = 0          # highest Tower of Trials floor ever cleared
 var tower_week: int = 0          # tower_week_id() the weekly ladder progress belongs to
 var tower_week_cleared: int = 0  # ladder floors (91+) cleared this week
@@ -331,6 +340,15 @@ func reset() -> void:
 	current_champion = null
 	champion_offers = []
 	best_endless_cycle = 0
+	daily_attempt_day = -1
+	daily_clears = 0
+	daily_streak = 0
+	daily_last_clear = -1
+	run_history = []
+	runs_finished = 0
+	fallen = []
+	heroes_lost_total = 0
+	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
 	tower_week_cleared = 0
@@ -394,7 +412,7 @@ func _run_for_save() -> Dictionary:
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
-		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []), "events_seen": run.get("events_seen", []),
+		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []), "events_seen": run.get("events_seen", []), "daily": run.get("daily", -1),
 	}
 	if run.has("tower"):
 		out["tower"] = run["tower"]
@@ -526,6 +544,8 @@ func save() -> void:
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"best_endless_cycle": best_endless_cycle,
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
+		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
+		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "boon_set4_reached": boon_set4_reached,
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
@@ -695,6 +715,15 @@ func load_save() -> bool:
 	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
 	best_endless_cycle = data.get("best_endless_cycle", 0)
 	tower_best = int(data.get("tower_best", 0))
+	daily_attempt_day = int(data.get("daily_attempt_day", -1))
+	daily_clears = int(data.get("daily_clears", 0))
+	daily_streak = int(data.get("daily_streak", 0))
+	daily_last_clear = int(data.get("daily_last_clear", -1))
+	run_history = data.get("run_history", [])
+	runs_finished = int(data.get("runs_finished", 0))
+	fallen = data.get("fallen", [])
+	heroes_lost_total = int(data.get("heroes_lost_total", 0))
+	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))
 	tower_week_cleared = int(data.get("tower_week_cleared", 0))
 	rifts_sealed = data.get("rifts_sealed", 0)
@@ -748,6 +777,8 @@ func load_save() -> bool:
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []), "events_seen": run_data.get("events_seen", []),
 		}
+		if int(run_data.get("daily", -1)) >= 0:
+			run["daily"] = int(run_data["daily"])
 		if run_data.has("tower"):
 			run["tower"] = int(run_data["tower"])
 			run["tower_snap"] = run_data.get("tower_snap", {})
@@ -1128,6 +1159,8 @@ func _diff() -> Dictionary:
 	if not run.is_empty() and not run.get("is_riftbreak", false):
 		diff = diff.duplicate()
 		diff["biome"] = run_biome()
+	if run.has("daily"):
+		diff = _apply_daily(diff)
 	if int(run.get("finale", 0)) > 0:
 		return _apply_finale(diff)
 	return _apply_training(diff) if run.get("training", false) else diff
@@ -1382,6 +1415,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			for h in party:
 				if not h.is_champion:
 					lost += 1
+					_memorialize(h, "Fell in a Hardcore %s against %s" % [_run_label(), str(result.get("monster_name", "the rift")).split(",")[0]])
 				heroes.erase(h)
 			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
 			if lost > 0:
@@ -1986,6 +2020,8 @@ func seal_rift() -> void:
 		state_changed.emit()
 		return
 	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "flavor": flavor, "bounty": bounty}
+	if run.has("daily"):
+		run["sealed"]["daily"] = _complete_daily()
 	save()
 	state_changed.emit()
 
@@ -2114,6 +2150,124 @@ static func _roman(n: int) -> String:
 	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
 
 
+# ---------------- Daily Rift ----------------
+
+static func daily_id() -> int:
+	return int(Time.get_unix_time_from_system() / 86400.0)
+
+
+## Today's Daily Rift: difficulty, rule, starting boon, region and seed.
+func daily_info(day: int = -1) -> Dictionary:
+	if day < 0:
+		day = daily_id()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(["daily", day])
+	var rules: Array = GameData.TOWER_RULES.filter(func(r): return not r.has("party_cap"))
+	var rule: Dictionary = rules[rng.randi() % rules.size()]
+	var boon: Dictionary = GameData.BOONS[rng.randi() % GameData.BOONS.size()]
+	var biomes := ["vale", "marsh", "ashen"]
+	return {"day": day, "diff_id": "greater" if greater_rift_unlocked() else "lesser", "rule": rule, "boon": str(boon["id"]),
+		"biome": biomes[rng.randi() % biomes.size()], "seed": rng.randi()}
+
+
+func daily_available() -> bool:
+	return rifts_sealed >= 1 and daily_attempt_day != daily_id()
+
+
+func start_daily(hero_ids: Array[String]) -> void:
+	if not daily_available():
+		return
+	var info := daily_info()
+	start_run(str(info["diff_id"]), hero_ids, null, false, false)
+	run["daily"] = int(info["day"])
+	run["training"] = false
+	run["seed"] = int(info["seed"])
+	run["biome"] = str(info["biome"])
+	run["boons"] = [info["boon"]]
+	seed(int(info["seed"]))
+	run["layers"] = Combat.build_layers(_diff())
+	randomize()
+	run["pos"] = 0
+	run["chosen"] = {}
+	auto_resolve_single_option()
+	daily_attempt_day = int(info["day"])
+	save()
+	state_changed.emit()
+
+
+func _apply_daily(diff: Dictionary) -> Dictionary:
+	var rule: Dictionary = daily_info(int(run["daily"]))["rule"]
+	var d := diff.duplicate(true)
+	d.merge(rule.get("diff", {}), true)
+	var hp := float(d["monster_hp"]) * float(d.get("hp_mult", 1.0)) * (2.0 if d.get("tower_single", false) else 1.0)
+	d["monster_hp"] = int(round(hp))
+	d["monster_dmg"] = int(round(float(d["monster_dmg"]) * float(d.get("dmg_mult", 1.0))))
+	return d
+
+
+## Sealing today's Daily Rift: the bonus, and the streak.
+func _complete_daily() -> Dictionary:
+	var day := int(run["daily"])
+	daily_clears += 1
+	daily_streak = daily_streak + 1 if daily_last_clear == day - 1 else 1
+	daily_last_clear = day
+	var cr := GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(campaign_act, 3)
+	crystals += cr
+	tokens += GameData.DAILY_CLEAR_TOKENS
+	return {"crystals": cr, "tokens": GameData.DAILY_CLEAR_TOKENS, "streak": daily_streak}
+
+
+# ---------------- Records: run history, memorial ----------------
+
+func _run_label() -> String:
+	if run.has("daily"):
+		return "Daily Rift"
+	if run.get("endless", false):
+		return "Endless Rift"
+	if str(run.get("rift_rank", "")) != "":
+		return "Rank %s rift" % run["rift_rank"]
+	if int(run.get("finale", 0)) > 0:
+		return "Act %s finale" % _roman(int(run["finale"]))
+	return str(_diff().get("name", "Rift"))
+
+
+## Appends the run that's ending to run_history (newest first).
+func _record_run(outcome: String) -> void:
+	if run.is_empty() or run.has("tower") or run.get("is_riftbreak", false):
+		return
+	var names: Array = []
+	for h in current_party():
+		names.append(h.name.split(" the ")[0])
+	var entry := {"day": day, "kind": _run_label(), "result": outcome,
+		"floor": "%d/%d" % [mini(int(run.get("pos", 0)) + 1, (run.get("layers", []) as Array).size()), (run.get("layers", []) as Array).size()],
+		"cycle": int(run.get("cycle", 0)), "heroes": names, "boons": run.get("boons", []),
+		"coins": coins - int(run.get("start_coins", coins)), "crystals": crystals - int(run.get("start_crystals", crystals))}
+	run_history.push_front(entry)
+	if run_history.size() > GameData.RUN_HISTORY_MAX:
+		run_history.resize(GameData.RUN_HISTORY_MAX)
+	runs_finished += 1
+
+
+func _run_outcome() -> String:
+	if run.get("sealed") != null:
+		return "Sealed"
+	var res: Dictionary = run.get("node_state", {}).get("result", {})
+	if bool(res.get("retreated", false)):
+		return "Retreated"
+	if not res.is_empty() and not bool(res.get("won", true)):
+		return "Defeated"
+	return "Left"
+
+
+## Remembers a hero lost for good (Hardcore, or left behind in a rift).
+func _memorialize(h: Hero, cause: String) -> void:
+	if h.is_champion:
+		return
+	fallen.push_front({"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "rank": h.rank, "level": h.level,
+		"day": day, "cause": cause, "rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0))})
+	heroes_lost_total += 1
+
+
 # ---------------- Run boons ----------------
 
 func boon_family_counts() -> Dictionary:
@@ -2159,6 +2313,8 @@ func pick_boon(idx: int) -> void:
 		var boons: Array = run.get("boons", [])
 		boons.append(str(offer[idx]))
 		run["boons"] = boons
+		if boon_family_counts().values().any(func(n): return int(n) >= 4):
+			boon_set4_reached = true
 	ns["boon_chosen"] = true
 	run["node_state"] = ns
 	save()
@@ -2548,6 +2704,7 @@ func _lose_left_behind() -> void:
 				it.equipped_to = ""
 				it.equipped_idx = -1
 		push_toast(h, "Lost in the rift", "%s was left behind and never came back" % h.name.split(" the ")[0])
+		_memorialize(h, "Left behind in a %s" % _run_label())
 		heroes.erase(h)
 		run["heroes_lost"] = int(run.get("heroes_lost", 0)) + 1
 	run["left_behind"] = []
@@ -2869,6 +3026,7 @@ func retreat_now() -> void:
 	if run.has("tower"):
 		_end_tower()
 		return
+	_record_run("Retreated")
 	_lose_left_behind()
 	run = {}
 	active_incense = {}
@@ -2882,6 +3040,7 @@ func finish_run() -> void:
 	if run.has("tower"):
 		_end_tower()
 		return
+	_record_run(_run_outcome())
 	_lose_left_behind()
 	run = {}
 	active_incense = {}
@@ -3855,6 +4014,16 @@ func milestone_progress(m: Dictionary) -> int:
 			var tname := str(Combat.guild_tier_info()["name"])
 			return 1 if tname == "Renowned Guild" or tname == "Legendary Guild" else 0
 		"greater_unlocked": return 1 if greater_rift_unlocked() else 0
+		"campaign_act": return campaign_act
+		"flawless_rifts": return int(quest_tally.get("flawless_rifts", 0))
+		"tower_best": return tower_best
+		"endless_cycle": return best_endless_cycle
+		"daily_clears": return daily_clears
+		"daily_streak": return daily_streak
+		"boon_set4": return 1 if boon_set4_reached else 0
+		"guild_tier_legendary": return 1 if str(Combat.guild_tier_info()["name"]) == "Legendary Guild" else 0
+		"max_level": return 1 if heroes.any(func(h): return h.level >= 10) else 0
+		"roster_size": return heroes.size()
 		_: return 0
 
 
