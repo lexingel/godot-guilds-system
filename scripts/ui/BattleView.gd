@@ -1647,7 +1647,11 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			arena.add_child(chip)
 
 	# Round chip + frame.
-	var round_chip := _label("Round %d" % next_round, 16)
+	var enc_name := str(monsters[0].get("encounter", {}).get("name", "")) if not monsters.is_empty() else ""
+	var round_chip := _label("Round %d%s" % [next_round, (" · " + enc_name) if enc_name != "" else ""], 16)
+	if enc_name != "":
+		round_chip.tooltip_text = str(monsters[0]["encounter"]["hint"])
+		round_chip.mouse_filter = Control.MOUSE_FILTER_STOP
 	round_chip.add_theme_font_override("font", DISPLAY_FONT)
 	_shadow(round_chip)
 	round_chip.position = Vector2(14, 8)

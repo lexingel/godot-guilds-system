@@ -44,6 +44,9 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var alpha_strikes: float = (party_skill_total(party, "boss_alpha_strike") + relic_special_total("boss_alpha_strike")) if is_boss else 0.0
 
 	var log: Array[String] = []
+	var enc: Dictionary = monsters[0].get("encounter", {})
+	if not enc.is_empty():
+		log.append("%s! %s" % [enc["name"], enc["hint"]])
 	if monsters.size() == 1:
 		log.append("A %s blocks the way (%d HP)." % [monsters[0]["name"], monsters[0]["hp"]])
 	else:

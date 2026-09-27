@@ -50,6 +50,12 @@ const MONSTER_ABILITIES := {
 	"Silt Crawler": {"kind": "drain", "name": "Leeching Mire", "value": 0.35},
 	"Glass Wisp": {"kind": "reflect", "name": "Mirrored Edge", "value": 0.25},
 	"Mirror Fiend": {"kind": "reflect", "name": "Mirrored Edge", "value": 0.25},
+	# Content depth: foes built around the telegraphed moves (MONSTER_KIT).
+	"Hedge Warden": {"kind": "shielded", "name": "Thorn Bulwark", "value": 0.25},
+	"Leech Priest": {"kind": "healer", "name": "Leech Blessing", "value": 0.12},
+	"Ember Oracle": {"kind": "shielded", "name": "Ash Veil", "value": 0.2},
+	"Ash Harrier": {"kind": "frenzy", "name": "Cornered Fury", "value": 0.4},
+	"Rootbound Thrall": {"kind": "drain", "name": "Root Grasp", "value": 0.25},
 }
 
 ## Badge icons for MONSTER_ABILITIES — reuses BOSS_MECHANIC_ICON's picks where
@@ -82,7 +88,8 @@ const HAZARD_BG := {
 	"vault": "res://assets/screens/hazard_vault.png",
 }
 const FIRST_NAMES := ["Aldric", "Bryn", "Coren", "Dessa", "Elowen", "Fenwick", "Gara", "Hollis", "Ianthe", "Joric", "Kestrel", "Liora", "Maren", "Nyx", "Oren", "Petra", "Quill", "Roth", "Sable", "Tavin", "Ysolde", "Zeph"]
-const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth", "Bog Wretch", "Silt Crawler", "Glass Wisp", "Mirror Fiend", "Frost Stalker", "Ashclad Ghoul", "Deep Anchorite", "Voidling Sprite"]
+const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth", "Bog Wretch", "Silt Crawler", "Glass Wisp", "Mirror Fiend", "Frost Stalker", "Ashclad Ghoul", "Deep Anchorite", "Voidling Sprite",
+	"Hedge Warden", "Carrion Crier", "Rootbound Thrall", "Leech Priest", "Mire Sniper", "Drowned Bellringer", "Slag Golem", "Ember Oracle", "Ash Harrier"]
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]
 const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 
@@ -90,11 +97,11 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 ## BATTLE_BACKGROUNDS). A finale fights in its act's biome; other rifts pick
 ## from the biomes the campaign has reached (GameState.pick_biome).
 const BIOMES := {
-	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver"],
+	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver", "Hedge Warden", "Carrion Crier", "Rootbound Thrall"],
 		"elites": ["Warbound Elite", "Iron Revenant"], "backgrounds": [1, 3, 0]},
-	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite"],
+	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite", "Leech Priest", "Mire Sniper", "Drowned Bellringer"],
 		"elites": ["Blightfang Elite", "Storm-Called Elite"], "backgrounds": [5, 6, 2]},
-	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend"],
+	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend", "Slag Golem", "Ember Oracle", "Ash Harrier"],
 		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "backgrounds": [4, 8, 7, 9]},
 }
 const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
@@ -102,21 +109,21 @@ const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
 ## Armor: the share of every basic attack an armored foe shrugs off. Each hit
 ## that lands chips it by ARMOR_SUNDER; abilities, relic strikes and counters
 ## ignore it.
-const MONSTER_ARMOR := {"Husk Brute": 0.35, "Hollow Reaver": 0.3, "Deep Anchorite": 0.35, "Iron Revenant": 0.4,
+const MONSTER_ARMOR := {"Hedge Warden": 0.3, "Slag Golem": 0.4, "Husk Brute": 0.35, "Hollow Reaver": 0.3, "Deep Anchorite": 0.35, "Iron Revenant": 0.4,
 	"Warbound Elite": 0.3, "Rift-Touched Colossus": 0.35, "Korrath": 0.3, "Drevok": 0.25}
 const ARMOR_SUNDER := 0.05
 
 ## Statuses foes inflict on a hit (chance per hit): burn deals `value` of max
 ## HP per round for `rounds`; chill makes the hero act late next round. A
 ## heavy blow stuns (the hero loses their next turn) unless they Defended.
-const MONSTER_STATUS := {"Ember Whelp": "burn", "Cinder Moth": "burn", "Ashclad Ghoul": "burn", "Ashen Broodlord": "burn",
+const MONSTER_STATUS := {"Ember Oracle": "burn", "Slag Golem": "burn", "Ash Harrier": "burn", "Drowned Bellringer": "chill", "Ember Whelp": "burn", "Cinder Moth": "burn", "Ashclad Ghoul": "burn", "Ashen Broodlord": "burn",
 	"Frost Stalker": "chill", "Glass Wisp": "chill", "Storm-Called Elite": "chill", "Nyxara": "chill", "Sythrane": "burn"}
 const STATUS_INFO := {"burn": {"chance": 0.5, "rounds": 3, "value": 0.05}, "chill": {"chance": 0.5, "rounds": 1}}
 
 ## Wind-ups: some foes spend a turn gathering strength, then land a heavy
 ## blow (HEAVY_BLOW_MULT damage + stun). The intent tag warns a turn ahead.
 const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
-const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
+const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver", "Rootbound Thrall", "Slag Golem"]
 const HEAVY_BLOW_MULT := 3.0
 
 ## ---------------- Hero voices ----------------
@@ -195,7 +202,7 @@ const ELITE_AFFIXES := {
 
 # ---------------- Enemy intents ----------------
 ## Foes whose names read as ranged (they snipe the back row).
-const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir"]
+const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir", "Sniper", "Crier", "Harrier", "Bellringer", "Priest"]
 ## Besides attacking, a foe can telegraph one of its kit's moves a round
 ## ahead (Combat.monster_kit / monster_intent). Numbers used by Combat.
 const INTENT_SPECIAL_CHANCE := 0.3
@@ -215,4 +222,58 @@ const INTENT_INFO := {
 	"roar": {"name": "Roar", "icon": "res://assets/skills/gem_red.png", "desc": "Every foe hits 20%% harder for the rest of the fight (up to twice). Stun it to stop it."},
 	"stunned": {"name": "Stunned", "icon": "res://assets/skills/star.png", "desc": "Loses its next action."},
 }
+
+
+## The moves a species telegraphs besides attacking (see Combat.monster_kit);
+## species not listed get one by ability, range and name.
+const MONSTER_KIT := {
+	"Hedge Warden": ["ward"], "Carrion Crier": ["curse", "roar"], "Rootbound Thrall": ["sweep"],
+	"Leech Priest": ["mend"], "Mire Sniper": ["snipe"], "Drowned Bellringer": ["curse"],
+	"Slag Golem": ["sweep"], "Ember Oracle": ["ward", "curse"], "Ash Harrier": ["snipe"],
+}
+
+## Hand-designed fights per region: a named group whose members play off each
+## other, with a hint shown at the start. Members: [name, share of the fight's
+## health, share of its damage] — shares sum to about 1, so a designed fight
+## is no harder overall than a random one. The first member leads (front).
+## min_floor keeps the nastier ones out of a rift's first floors.
+const ENCOUNTERS := {
+	"vale": [
+		{"name": "Scarecrow Line", "min_floor": 0, "hint": "The Warden wards its friends and the Wisp mends them. Take the Wisp first, or strip the wards.",
+			"members": [["Hedge Warden", 0.45, 0.25], ["Husk Brute", 0.35, 0.45], ["Rift Wisp", 0.2, 0.3]]},
+		{"name": "Murder of Crows", "min_floor": 1, "hint": "Criers curse and roar from the back. Silence them before the roars stack.",
+			"members": [["Gloom Stalker", 0.4, 0.3], ["Carrion Crier", 0.3, 0.35], ["Carrion Crier", 0.3, 0.35]]},
+		{"name": "Rootbound Ambush", "min_floor": 0, "hint": "The Thrall's sweeps hit the whole party. Defend, or stun its wind-up.",
+			"members": [["Rootbound Thrall", 0.5, 0.5], ["Sable Fang", 0.25, 0.25], ["Sable Fang", 0.25, 0.25]]},
+		{"name": "Graveyard Shift", "min_floor": 2, "hint": "The Crawler mends the Reaver while the Crier curses. Break the healer, then the brute.",
+			"members": [["Hollow Reaver", 0.45, 0.45], ["Marrow Crawler", 0.25, 0.25], ["Carrion Crier", 0.3, 0.3]]},
+		{"name": "Stalker Pack", "min_floor": 0, "hint": "Poison stacks fast. A Healing Tonic or Sanctuary washes it out.",
+			"members": [["Gloom Stalker", 0.34, 0.34], ["Gloom Stalker", 0.33, 0.33], ["Gloom Stalker", 0.33, 0.33]]},
+	],
+	"marsh": [
+		{"name": "The Leech Mass", "min_floor": 0, "hint": "The Priest keeps the Wretches fed. Kill it first.",
+			"members": [["Bog Wretch", 0.35, 0.4], ["Bog Wretch", 0.35, 0.4], ["Leech Priest", 0.3, 0.2]]},
+		{"name": "Reed Snipers", "min_floor": 1, "hint": "Snipers hunt the back row behind their Anchorite. Guard your healer, or Taunt.",
+			"members": [["Deep Anchorite", 0.5, 0.3], ["Mire Sniper", 0.25, 0.35], ["Mire Sniper", 0.25, 0.35]]},
+		{"name": "Bell and Mirror", "min_floor": 1, "hint": "The Fiend reflects basic hits and the Bell curses. Skills and Aimed Shot go around the mirror.",
+			"members": [["Mirror Fiend", 0.4, 0.4], ["Drowned Bellringer", 0.3, 0.3], ["Glass Wisp", 0.3, 0.3]]},
+		{"name": "Silt Swarm", "min_floor": 0, "hint": "Three drainers heal off every hit. Volley and Frost Nova hit them all.",
+			"members": [["Silt Crawler", 0.34, 0.34], ["Silt Crawler", 0.33, 0.33], ["Silt Crawler", 0.33, 0.33]]},
+		{"name": "Frozen Watch", "min_floor": 2, "hint": "Chills slow your turns and the Priest mends. Burst the Priest down.",
+			"members": [["Frost Stalker", 0.35, 0.4], ["Frost Stalker", 0.35, 0.4], ["Leech Priest", 0.3, 0.2]]},
+	],
+	"ashen": [
+		{"name": "Forge Guard", "min_floor": 1, "hint": "The Oracle wards the Golem, and the Golem's sweeps burn. Take the Oracle first.",
+			"members": [["Slag Golem", 0.6, 0.5], ["Ember Oracle", 0.4, 0.5]]},
+		{"name": "Ash Flock", "min_floor": 0, "hint": "Harriers snipe and hit harder when hurt. Finish each one quickly.",
+			"members": [["Cinder Moth", 0.4, 0.3], ["Ash Harrier", 0.3, 0.35], ["Ash Harrier", 0.3, 0.35]]},
+		{"name": "Cinder Cult", "min_floor": 0, "hint": "Everything here burns. Keep a cleanse ready.",
+			"members": [["Ashclad Ghoul", 0.35, 0.35], ["Ashclad Ghoul", 0.35, 0.35], ["Ember Oracle", 0.3, 0.3]]},
+		{"name": "Void Tear", "min_floor": 1, "hint": "The Reaver winds up while the Sprites harry. Break the wind-up.",
+			"members": [["Hollow Reaver", 0.5, 0.4], ["Voidling Sprite", 0.25, 0.3], ["Voidling Sprite", 0.25, 0.3]]},
+		{"name": "Molten Wall", "min_floor": 2, "hint": "Two armored brutes. Armor breakers and stuns shine here.",
+			"members": [["Slag Golem", 0.5, 0.5], ["Slag Golem", 0.5, 0.5]]},
+	],
+}
+const ENCOUNTER_CHANCE := 0.6
 

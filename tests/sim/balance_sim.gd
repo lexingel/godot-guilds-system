@@ -140,7 +140,8 @@ func _profile(name: String, p: Array) -> void:
 		seed(20000 + s)
 		var party := _build_party(p)
 		power_sum += Combat.party_power(party)
-		var diff: Dictionary = _diff_for(str(p[0]))
+		var diff: Dictionary = _diff_for(str(p[0])).duplicate()
+		diff["biome"] = ["vale", "marsh", "ashen"][s % 3]   # regions set the foes and designed encounters
 		var res := _run_rift(party, diff)
 		if res["cleared"]:
 			clears += 1
@@ -181,7 +182,8 @@ const TEMPLATES := [
 func _calibrate() -> void:
 	for r in GameData.RIFT_RANKS:
 		var id := str(r["id"])
-		var diff := _diff_for(id)
+		var diff := _diff_for(id).duplicate()
+		diff["biome"] = ["vale", "marsh", "ashen"][GameData.rift_rank_index(id) % 3]
 		var pts: Array = []
 		for t in TEMPLATES:
 			var p: Array = [id]

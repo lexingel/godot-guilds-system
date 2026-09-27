@@ -380,6 +380,15 @@ const MONSTER_SPRITE_PATH := {
 	"nyxara": "res://assets/monsters/nyxara.png",
 	"drevok": "res://assets/monsters/drevok.png",
 	"sythrane": "res://assets/monsters/sythrane.png",
+	"hedge_warden": "res://assets/monsters/hedge_warden.png",
+	"carrion_crier": "res://assets/monsters/carrion_crier.png",
+	"rootbound_thrall": "res://assets/monsters/rootbound_thrall.png",
+	"leech_priest": "res://assets/monsters/leech_priest.png",
+	"mire_sniper": "res://assets/monsters/mire_sniper.png",
+	"drowned_bellringer": "res://assets/monsters/drowned_bellringer.png",
+	"slag_golem": "res://assets/monsters/slag_golem.png",
+	"ember_oracle": "res://assets/monsters/ember_oracle.png",
+	"ash_harrier": "res://assets/monsters/ash_harrier.png",
 }
 const MONSTER_NAME_SPRITE := {
 	"Gloom Stalker": "gloom_stalker", "Rift Wisp": "rift_wisp", "Husk Brute": "husk_brute",
@@ -394,6 +403,9 @@ const MONSTER_NAME_SPRITE := {
 	"Storm-Called Elite": "storm_called_elite", "Ashen Broodlord": "ashen_broodlord",
 	"Vaelith": "vaelith", "Korrath": "korrath", "Nyxara": "nyxara",
 	"Drevok": "drevok", "Sythrane": "sythrane",
+	"Hedge Warden": "hedge_warden", "Carrion Crier": "carrion_crier", "Rootbound Thrall": "rootbound_thrall",
+	"Leech Priest": "leech_priest", "Mire Sniper": "mire_sniper", "Drowned Bellringer": "drowned_bellringer",
+	"Slag Golem": "slag_golem", "Ember Oracle": "ember_oracle", "Ash Harrier": "ash_harrier",
 	# Tower of Trials guardians reuse elite/boss art.
 	"The Gatekeeper": "iron_revenant", "Mirelord Oskan": "deep_anchorite", "Cindermaw": "ashen_broodlord",
 	"The Hollow Choir": "hollow_reaver", "Tidewarden Selk": "blightfang_elite", "The Ember Regent": "drevok",

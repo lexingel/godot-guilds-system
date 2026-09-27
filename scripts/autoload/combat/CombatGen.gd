@@ -401,6 +401,10 @@ func _lowest_hp_living_monster_idx(monsters: Array) -> int:
 ## "combat"-tier adds alongside it, not a dilution of the main unit itself.
 func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dictionary]:
 	var monsters: Array[Dictionary] = []
+	if kind == "combat" and not diff.get("tower_single", false) and not diff.get("tower_swarm", false):
+		var designed := _designed_encounter(diff, floor_idx)
+		if not designed.is_empty():
+			return designed
 	if kind == "combat":
 		var count := 1 + randi() % 3
 		var share := float(count)
@@ -473,6 +477,34 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 		for i in add_count:
 			monsters.append(_make_add(diff, floor_idx, add_mult, add_mult))
 	return monsters
+
+
+## Now and then (ENCOUNTER_CHANCE) a regular fight is one of the region's
+## hand-designed groups instead of a random draw; [] when it isn't. The lead
+## carries the encounter's name and hint for the fight log and arena.
+func _designed_encounter(diff: Dictionary, floor_idx: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var pool: Array = (GameData.ENCOUNTERS.get(str(diff.get("biome", "")), []) as Array).filter(func(e): return int(e["min_floor"]) <= floor_idx)
+	if pool.is_empty() or randf() >= GameData.ENCOUNTER_CHANCE:
+		return out
+	var enc: Dictionary = pool[randi() % pool.size()]
+	for k in (enc["members"] as Array).size():
+		var mem: Array = enc["members"][k]
+		var m := gen_monster(diff, floor_idx, "combat")
+		var nm := str(mem[0])
+		m["name"] = nm
+		m["hp"] = maxi(1, int(round(float(m["hp"]) * float(mem[1]))))
+		m["dmg"] = maxi(1, int(round(float(m["dmg"]) * float(mem[2]))))
+		m["max_hp"] = m["hp"]
+		m["armor"] = maxf(float(GameData.MONSTER_ARMOR.get(nm, 0.0)), float(diff.get("tower_armor", 0.0)))
+		m["status"] = str(GameData.MONSTER_STATUS.get(nm, ""))
+		m["mechanic"] = {}
+		m["ability"] = GameData.MONSTER_ABILITIES.get(nm, {})
+		m["is_main"] = k == 0
+		if k == 0:
+			m["encounter"] = {"name": enc["name"], "hint": enc["hint"]}
+		out.append(m)
+	return out
 
 
 ## A weaker "combat"-tier foe fighting alongside an elite or boss.
@@ -565,7 +597,11 @@ func monster_kit(m: Dictionary) -> Array:
 	var tier := str(m.get("tier", "combat"))
 	if tier == "boss":
 		return ["sweep", "roar"]
-	var kit: Array = []
+	var kit: Array = (GameData.MONSTER_KIT.get(name, []) as Array).duplicate()
+	if not kit.is_empty():
+		if tier == "elite" and not kit.has("roar"):
+			kit.append("roar")
+		return kit
 	if ab == "healer":
 		kit.append("mend")
 	if ab == "shielded":

@@ -1078,6 +1078,9 @@ func _bestiary_card(mname: String, tier: String) -> PanelContainer:
 		var ability: Dictionary = GameData.MONSTER_ABILITIES.get(mname, {})
 		if not ability.is_empty():
 			cv.add_child(_wrap_label("%s — %s" % [str(ability["name"]), MONSTER_ABILITY_DESC.get(str(ability["kind"]), "")], 12, true))
+		var kit: Array = Combat.monster_kit({"name": mname, "tier": {"Monster": "combat", "Elite": "elite", "Boss": "boss"}.get(tier, "combat"), "ability": ability})
+		if not kit.is_empty():
+			cv.add_child(_wrap_label("Telegraphs: %s" % ", ".join(kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))), 12, true))
 		elif tier == "Boss":
 			var beaten: bool = GameState.bosses_defeated.has(mname)
 			cv.add_child(_wrap_label("Brings a random warden mechanic each fight. %s" % ("Defeated." if beaten else "Not yet defeated."), 12, true))
@@ -1160,6 +1163,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Formation", "Heroes stand in the front or back row. Foes aim most attacks at the front row; Snipes hunt the back. Warriors and rogues hit at half strength with a basic attack from the back row, and some skills need a row. Move (7) switches rows for a turn. Back-row foes take less damage from attacks."],
 		["Momentum and skills", "Momentum is the party's shared pool (up to 10, starting at 3). Each basic attack adds 1, each kill 1, and each hit taken while Defending or Guarding 1 (2 for a heavy blow). Every hero has two role skills (Lv1 and Lv6) and their subclass Ability (Lv3). Skills cost 2-4 Momentum, Abilities 4."],
 		["Enemy moves", "Each round a foe shows its next move above its health bar: an attack on a hero, a wind-up (a heavy blow next round), or a special move: Sweep (hits everyone), Snipe (the most-hurt back-row hero), Curse (40% less damage for 2 rounds), Ward, Mend or Roar. Shield Bash stuns a foe; Shield Bash and Frost Nova break wind-ups."],
+		["Designed encounters", "About six regular fights in ten are one of a region's named encounters (Scarecrow Line, Reed Snipers, Forge Guard...), groups whose members play off each other: a warder shielding a brute, a healer behind a wall, snipers behind a tank. The name and a tactical hint open the fight log; hover the round label to read the hint again."],
 		["Bestiary", "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."],
 		["Hero Scars", "A knocked-out hero has a chance to pick up a lasting scar (mild stat penalty) on top of their base trait, up to 2 at once. Scrubbed the same way as a trait, once unlocked."],
 		["Greater Rift", "Unlocked after sealing 3 rifts of any kind — a new difficulty tier between Lesser and Endless."],
