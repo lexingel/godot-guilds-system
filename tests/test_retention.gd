@@ -61,6 +61,7 @@ func run() -> void:
 	GameState.finish_run()
 
 	# Run history: a retreat, and the cap.
+	GameState.coins = 100000   # forty days of wages
 	GameState.start_run("lesser", ids, null)
 	GameState.retreat_now()
 	check(GameState.run_history[0]["result"] == "Retreated", "a retreat is recorded")
