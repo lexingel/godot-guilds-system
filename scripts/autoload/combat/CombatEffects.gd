@@ -2,17 +2,6 @@ extends "res://scripts/autoload/combat/CombatStats.gd"
 ## Combat, part 2: relics, item/hero effects and triggers, synergies, boons and bonds — what the party brings to a fight — and the loot-rarity rolls they tilt.
 
 
-func affinity_bonus(party: Array[Hero]) -> float:
-	var equipped_types := {}
-	for r in equipped_relics():
-		equipped_types[r.type] = true
-	var matched := {}
-	for h in party:
-		if h.type != "" and equipped_types.has(h.type):
-			matched[h.type] = true
-	return matched.size() * 0.03
-
-
 func weighted_rarity() -> String:
 	var bonus := drop_rate_bonus()
 	var weights: Array[float] = []
@@ -81,7 +70,7 @@ func relic_dmg_bonus() -> int:
 
 
 func relic_special_total(kind: String) -> float:
-	var s := boon_total(kind) if BOON_VIA_RELIC.has(kind) else 0.0
+	var s := 0.0
 	for r in equipped_relics():
 		for sp in r.specials:
 			if str(sp["kind"]) == kind:
@@ -96,7 +85,7 @@ func relic_special_total(kind: String) -> float:
 			for sp in best.specials:
 				if str(sp["kind"]) == kind:
 					s += float(sp["value"])
-	return s
+	return s * GameState.relic_power_mult() + (boon_total(kind) if BOON_VIA_RELIC.has(kind) else 0.0)
 
 
 ## Mirrors relic_special_total but for a Legendary relic's drawback — only
@@ -429,31 +418,10 @@ func _shield_lowest(state: Dictionary, frac: float) -> Array:
 	return [lowest, amt]
 
 
-## Active element-set bonuses: [{name, kind, value}] — 2 of a type give half
-## its SYNERGY_BONUS, 3+ the full amount; 3+ different types give the Prism
-## bonus. Optimal Synergy (Theorycrafting) makes them all 50% stronger.
-func relic_sets() -> Array:
-	var counts := {}
-	for r in equipped_relics():
-		counts[r.type] = int(counts.get(r.type, 0)) + 1
-	var mult := GameState.set_bonus_mult()
-	var out: Array = []
-	for type in counts:
-		if int(counts[type]) >= 2 and GameData.SYNERGY_BONUS.has(type):
-			var s: Dictionary = GameData.SYNERGY_BONUS[type]
-			var v: float = float(s["value"]) * (1.0 if int(counts[type]) >= 3 else 0.5) * mult
-			out.append({"name": "%s ×%d" % [type, min(int(counts[type]), 3)], "kind": s["kind"], "value": v})
-	if counts.size() >= 3:
-		out.append({"name": "Prism", "kind": GameData.PRISM_BONUS["kind"], "value": float(GameData.PRISM_BONUS["value"]) * mult})
-	return out
-
-
+## The run's boons for a stat kind (kinds in BOON_VIA_RELIC come through
+## relic_special_total instead).
 func synergy_value_for(kind: String) -> float:
-	var total := 0.0
-	for s in relic_sets():
-		if s["kind"] == kind:
-			total += float(s["value"])
-	return total + (0.0 if BOON_VIA_RELIC.has(kind) else boon_total(kind))
+	return 0.0 if BOON_VIA_RELIC.has(kind) else boon_total(kind)
 
 ## Kinds read through relic_special_total rather than synergy_value_for;
 ## boons join whichever channel a kind already flows through (never both).
@@ -492,18 +460,10 @@ func drop_rate_bonus() -> float:
 	return relic_special_total("loot_rarity_pct") + synergy_value_for("loot_rarity_pct")
 
 
-## Sums every HERO_BONDS entry of this `kind` whose both pool_ids are present
-## among *living* party members — "living" matches the same standard
-## sable_standard's mono_role_dmg already uses (not just "in the roster").
+## Party damage from grown bonds (heroes who have sealed rifts together),
+## counted while both stand.
 func bond_bonus_for(party: Array[Hero], kind: String) -> float:
-	var living_pool_ids := {}
-	for h in party:
-		if h.hp > 0:
-			living_pool_ids[h.pool_id] = true
 	var total := 0.0
-	for bond in GameData.HERO_BONDS:
-		if bond["kind"] == kind and living_pool_ids.has(bond["a"]) and living_pool_ids.has(bond["b"]):
-			total += float(bond["value"])
 	# Grown bonds between specific heroes (GameState.bonds) — damage only.
 	if kind == "dmg_pct":
 		var grown := 0.0
@@ -544,7 +504,7 @@ func _power(heroes: Array, party_terms: bool) -> int:
 	var ramp := party_skill_total(party, "escalate_pct") * 4.0 + party_skill_total(party, "first_round_pct") * 0.15
 	if party_terms:
 		dmg += relic_dmg_bonus()
-		dmg *= 1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party) + bond_bonus_for(party, "dmg_pct")
+		dmg *= 1.0 + synergy_value_for("dmg_pct") + bond_bonus_for(party, "dmg_pct")
 		dodge += relic_special_total("dodge_pct") + relic_drawback_total("dodge_pct") + synergy_value_for("dodge_pct") + bond_bonus_for(party, "dodge_pct")
 		mend += relic_special_total("mend_pct") + relic_drawback_total("mend_pct") + synergy_value_for("mend_pct") + bond_bonus_for(party, "mend_pct")
 		ramp += (relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct")) * 4.0 + (relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct")) * 0.15

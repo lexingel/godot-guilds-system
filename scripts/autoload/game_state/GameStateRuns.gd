@@ -477,9 +477,8 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 		run["momentum_bonus"] = int(run.get("momentum_bonus", 0)) + 3
 		log.append("The next fight starts with +3 Momentum.")
 	if e.has("tonic"):
-		var add := mini(int(e["tonic"]), GameData.TONIC_CAP - tonics)
-		tonics += add
-		log.append("+%d Field Tonic." % add if add > 0 else "You can't carry another tonic.")
+		var add := add_tonic("healing", int(e["tonic"]))
+		log.append("+%d Healing Tonic." % add if add > 0 else "You can't carry another tonic.")
 	if e.has("shield"):
 		run["shield"] = int(run.get("shield", 0)) + int(e["shield"])
 		log.append("A %d-point shield against hazards." % int(e["shield"]))
@@ -1093,7 +1092,6 @@ func retreat_now() -> void:
 	_record_run("Retreated")
 	_lose_left_behind()
 	run = {}
-	active_incense = {}
 	_clamp_hp_to_max()
 	pass_time()
 	save()
@@ -1111,7 +1109,6 @@ func finish_run() -> void:
 	_record_run(outcome)
 	_lose_left_behind()
 	run = {}
-	active_incense = {}
 	_clamp_hp_to_max()
 	pass_time()
 	save()

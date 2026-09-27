@@ -35,9 +35,7 @@ var crystals: int = 15
 var heroes: Array[Hero] = []
 var relics: Array[Relic] = []
 var items: Array[Item] = []
-var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
-var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
-var tonics: int = 0   # Field Tonics carried (see GameData.TONIC_*)
+var tonics: Dictionary = {}   # tonic id -> count carried (GameData.TONIC_TYPES; belt of TONIC_CAP)
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
@@ -272,9 +270,9 @@ func inherited_power() -> bool:
 	return lvl("res.vault") >= 5
 
 
-## Multiplier on relic element-set bonuses (Arcane Lab).
-func set_bonus_mult() -> float:
-	return 1.0 + 0.10 * lvl("res.lab")
+## Multiplier on every relic effect (Arcane Lab).
+func relic_power_mult() -> float:
+	return 1.0 + 0.05 * lvl("res.lab")
 
 
 func recycle_unlocked() -> bool:
@@ -506,7 +504,7 @@ func save() -> void:
 		"recruit_pool": recruit_pool.map(func(h): return h.to_dict()),
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
-		"consumables": consumables, "active_incense": active_incense, "tonics": tonics,
+		"tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
@@ -588,3 +586,20 @@ func endless_unlocked() -> bool:
 ## can roll toward), so epic is the ceiling a craft can produce.
 const CRAFT_RARITY_UP := {"common": "rare", "rare": "epic"}
 const GEAR_SCORE_WEIGHT := {"dmg_pct": 1.0, "hp_pct": 0.9, "dodge_pct": 0.8, "mend_pct": 0.8, "ability_power": 0.7, "speed_pct": 0.6, "escalate_pct": 0.5}
+
+
+func tonic_count(id: String = "") -> int:
+	if id != "":
+		return int(tonics.get(id, 0))
+	var n := 0
+	for k in tonics:
+		n += int(tonics[k])
+	return n
+
+
+func add_tonic(id: String, n: int = 1) -> int:
+	var add := mini(n, GameData.TONIC_CAP - tonic_count())
+	if add > 0:
+		tonics[id] = tonic_count(id) + add
+	return add
+

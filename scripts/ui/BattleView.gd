@@ -1224,7 +1224,8 @@ var _hero_plates: Dictionary = {}      # hero id -> unit plate (live HP updates 
 var _monster_plates: Dictionary = {}   # monster index -> unit plate
 var _combat_target: int = -1           # the foe Attack / key 1 hits; click a foe or Tab to change
 var _combat_log_open: bool = false
-var _ally_pick: String = ""       # "guard"/"tonic": the command bar is asking which ally
+var _ally_pick: String = ""       # "guard"/"tonic": the command bar is asking which ally; "tonic_kind": which tonic
+var _tonic_kind: String = "healing"
 var _guard_picker_for: String = ""     # the hero that picker belongs to
 var _banner_state: Dictionary = {}     # the fight + round whose "Round N" slide-in already played
 var _banner_round: int = -1
@@ -1371,7 +1372,7 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Shield — absorbs the next %d damage" % int(round(sh)), "color": Palette.CRYSTALS})
 	var burn: Dictionary = state.get("hero_burn", {})
 	if burn.has(h.id):
-		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s). A Field Tonic puts it out." % [int(round(float(burn[h.id]["value"]) * Combat.max_hp(h))), int(burn[h.id]["rounds"])], "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out." % [int(round(float(burn[h.id]["value"]) * Combat.max_hp(h))), int(burn[h.id]["rounds"])], "color": Palette.HAZARD})
 	if state.get("_chilled", {}).has(h.id):
 		out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Chilled — acts late next round", "color": Palette.CRYSTALS})
 	if state.get("_stunned", {}).has(h.id):
@@ -1871,7 +1872,39 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 			c.queue_free()
 	_combat_hotkeys.clear()
 	var action := _ally_pick
-	var ask := _label("Guard whom?" if action == "guard" else "Tonic for whom?", 15)
+	if action == "tonic_kind":
+		var ask_k := _label("Which tonic?", 15)
+		ask_k.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		ask_k.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ask_k)
+		var hid_k := current_hero.id
+		var nk := 0
+		for def in GameData.TONIC_TYPES:
+			var tid: String = def["id"]
+			var have := GameState.tonic_count(tid)
+			nk += 1
+			var choose := func():
+				if str(def["target"]) == "ally":
+					_tonic_kind = tid
+					_ally_pick = "tonic"
+					render()
+				else:
+					_ally_pick = ""
+					run_turns.call(func(): GameState.set_hero_action(hid_k, "tonic:" + tid))
+			var tb := _button("%s ×%d" % [def["name"], have], choose)
+			tb.tooltip_text = "%s (key %d)" % [def["desc"], nk]
+			tb.disabled = have <= 0
+			tb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(tb)
+			if have > 0:
+				_combat_hotkeys[str(nk)] = choose
+		var cancel_k := func():
+			_ally_pick = ""
+			render()
+		row.add_child(_button("Cancel", cancel_k))
+		_combat_hotkeys["Escape"] = cancel_k
+		return
+	var ask := _label("Guard whom?" if action == "guard" else "%s for whom?" % GameData.find_tonic(_tonic_kind).get("name", "Tonic"), 15)
 	ask.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	ask.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(ask)
@@ -1890,7 +1923,7 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 		n += 1
 		var pick := func(aid=a.id):
 			_ally_pick = ""
-			run_turns.call(func(): GameState.set_hero_action(hid, action, 0, aid))
+			run_turns.call(func(): GameState.set_hero_action(hid, action if action == "guard" else "tonic:" + _tonic_kind, 0, aid))
 		var text := "%s  %d/%d" % [a.name.split(" the ")[0], a.hp, Combat.max_hp(a)]
 		if incoming.has(a.id):
 			text += "  (%d dmg incoming)" % int(incoming[a.id])
@@ -1899,7 +1932,7 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 		b.tooltip_text = "Key %d" % n
 		row.add_child(b)
 		# A tonic on a hero at full HP would heal nothing.
-		if action == "tonic" and a.hp >= Combat.max_hp(a):
+		if action == "tonic" and _tonic_kind == "healing" and a.hp >= Combat.max_hp(a):
 			b.disabled = true
 			b.tooltip_text = "Already at full HP"
 			continue
@@ -2021,13 +2054,13 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
 		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "7", do_swap, "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row." % to_row, false))
 		_combat_hotkeys["7"] = do_swap
-		if GameState.tonics > 0:
+		if GameState.tonic_count() > 0:
 			var start_tonic := func():
 				if _combat_animating:
 					return
-				_ally_pick = "tonic"
+				_ally_pick = "tonic_kind"
 				render()
-			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonic ×%d" % GameState.tonics, "8", start_tonic, "Field Tonic (8) — heal an ally %d%% HP. Uses this hero's turn." % int(GameData.TONIC_HEAL_PCT * 100), false))
+			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonics ×%d" % GameState.tonic_count(), "8", start_tonic, "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.", false))
 			_combat_hotkeys["8"] = start_tonic
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
@@ -2105,7 +2138,7 @@ func _turn_sfx(lines: Array) -> void:
 	var text := " ".join(lines)
 	for pair in [["gathers its strength", "windup"], ["stunned", "stun"], ["ablaze", "burn"], ["chilled", "chill"],
 			["strikes every foe", "relic"], ["Phoenix", "relic"], ["uses ", "ability"], ["shield", "shield"],
-			["mends", "heal"], ["Field Tonic", "heal"]]:
+			["mends", "heal"], ["Tonic", "heal"]]:
 		if text.contains(pair[0]):
 			AudioManager.play_sfx(GameData.SFX_PATH[pair[1]])
 			return

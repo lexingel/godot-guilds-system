@@ -878,11 +878,11 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 
 func _render_inventory_items(v: VBoxContainer) -> void:
 	var loose: Array = GameState.items.filter(func(it): return it.equipped_to == "")
-	# Gear | Supplies — the gear grid and the tonic/incense shop each get
+	# Gear | Supplies — the gear grid and the tonic shop each get
 	# the full width instead of sharing one long page.
 	var tab_row := HBoxContainer.new()
 	tab_row.add_theme_constant_override("separation", 4)
-	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.tonics)]]:
+	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % GameState.tonic_count()]]:
 		var tb := _button(str(td[1]), func(t=str(td[0])):
 			inv_view = t
 			selected_item_id = ""
@@ -1109,34 +1109,21 @@ func _item_modal(it: Item) -> void:
 
 
 func _render_inventory_supplies(v: VBoxContainer) -> void:
-	v.add_child(_label("Field Tonics — use one in battle to heal an ally (takes the hero's turn)", 16))
-	var tonic_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func():
-		var err := GameState.buy_tonic()
-		if err != "":
-			push_warning(err)
-		render()
-	)
-	tonic_btn.disabled = GameState.tonics >= GameData.TONIC_CAP or GameState.coins < GameData.TONIC_COST
-	v.add_child(_info_row("Field Tonic (%d Gold) — heals %d%% HP · carrying %d/%d" % [GameData.TONIC_COST, int(GameData.TONIC_HEAL_PCT * 100), GameState.tonics, GameData.TONIC_CAP], 12, [tonic_btn], _icon("res://assets/ui/icon_tonic.png", 24)))
-	v.add_child(_hsep())
-	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
-	if not GameState.consumables.is_empty():
-		v.add_child(_label("Owned:", 12, true))
-		for c in GameState.consumables:
-			var def := GameData.find_incense(str(c["incense_id"]))
-			v.add_child(_wrap_label("%s — %s" % [def["name"], def["desc"]], 12))
-	for def in GameData.INCENSE_TYPES:
-		var buy_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(iid=def["id"]):
-			var err := GameState.buy_incense(iid)
+	v.add_child(_label("Tonics — belt %d/%d · drink one in a fight on a hero's turn (Tonics, key 8)" % [GameState.tonic_count(), GameData.TONIC_CAP], 16))
+	for def in GameData.TONIC_TYPES:
+		var tid: String = def["id"]
+		var buy := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func():
+			var err := GameState.buy_tonic(tid)
 			if err != "":
-				push_warning(err)
+				_flavor_toast = err
 			render()
 		)
-		v.add_child(_info_row("%s (%d Gold) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12, [buy_btn]))
+		buy.disabled = GameState.tonic_count() >= GameData.TONIC_CAP or GameState.coins < int(def["cost"])
+		v.add_child(_info_row("%s (%d Gold) — %s · carrying %d" % [def["name"], int(def["cost"]), def["desc"], GameState.tonic_count(tid)], 12, [buy], _icon(str(def["icon"]), 24)))
 
 
 ## Inventory → Relics: the Relic Altar. Equipped relics sit in the altar's
-## slots, active element sets underneath, and the rest of the collection as a
+## slots, and the rest of the collection as a
 ## grid of tiles; clicking any relic opens its card in a pop-up.
 func _render_inventory_relics(v: VBoxContainer) -> void:
 	var equipped := Combat.equipped_relics()
@@ -1151,22 +1138,6 @@ func _render_inventory_relics(v: VBoxContainer) -> void:
 	for i in cap:
 		slots.add_child(_relic_slot_card(equipped[i] if i < equipped.size() else null))
 	av.add_child(slots)
-	# Element sets: what's active, and what one more relic would turn on.
-	var sets := Combat.relic_sets()
-	var set_line := HFlowContainer.new()
-	set_line.add_theme_constant_override("h_separation", 14)
-	set_line.add_child(_label("Sets:", 13, true))
-	if sets.is_empty():
-		set_line.add_child(_label("none yet — 2 relics of one element, or 3 different elements, start a set", 12, true))
-	for s in sets:
-		var sl := _label("%s: %s" % [s["name"], Combat.describe_skill(str(s["kind"]), float(s["value"]))], 13)
-		sl.add_theme_color_override("font_color", Palette.RANK_E)
-		set_line.add_child(sl)
-	var hint := _label("ⓘ", 13, true)
-	hint.tooltip_text = "2 of an element: half its bonus · 3: the full bonus · 3 different elements: Prism (+6% damage).\nEmber +15% damage · Frost +12% dodge · Verdant mends 8% · Umbral -15% hazard · Arcane +10% loot odds." + ("\nArcane Lab: every set bonus is %d%% stronger." % int(round((GameState.set_bonus_mult() - 1.0) * 100)) if GameState.lvl("res.lab") > 0 else "")
-	hint.mouse_filter = Control.MOUSE_FILTER_STOP
-	set_line.add_child(hint)
-	av.add_child(set_line)
 	altar.add_child(av)
 	v.add_child(altar)
 

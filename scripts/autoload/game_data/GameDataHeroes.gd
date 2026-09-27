@@ -149,38 +149,13 @@ const RELIC_TRIGGERS := [
 	{"trigger": "ally_down", "effect": "mend_party", "value": 0.10},
 ]
 
-## Element sets: 2 relics of a type give half of SYNERGY_BONUS, 3 the full
-## amount; 3 different types give PRISM_BONUS. The Arcane Lab scales every set
-## bonus (GameState.set_bonus_mult).
-const PRISM_BONUS := {"kind": "dmg_pct", "value": 0.06, "label": "+6% team damage"}
 const RELIC_REROLL_CRYSTALS := 10
 const TYPE_DOMAIN := {
 	"Ember": "damage", "Verdant": "heal", "Frost": "chance",
 	"Umbral": "defense", "Arcane": "droprate",
 }
 
-# Mirrors UNIQUE_RELICS' existing "combo_with" named-partner pattern, as a
-# standing party-composition mechanic instead of a rare-relic-gated one.
-# Keyed by pool_id (subclass), not specific hero instances, so any two heroes
-# of those subclasses trigger it. Checked against Combat.bond_bonus_for.
-const HERO_BONDS := [
-	{"name": "Dueling Rivals", "a": "duelist", "b": "blade-dancer", "kind": "first_round_pct", "value": 0.08},
-	{"name": "Won't Let You Fall", "a": "sanctified-shield", "b": "ashen-templar", "kind": "wipe_guard", "value": 0.10},
-	{"name": "Half-Step Ahead", "a": "runaway", "b": "voidwalker", "kind": "dodge_pct", "value": 0.08},
-	{"name": "Shield and Spark", "a": "iron-guard", "b": "rift-medic", "kind": "mend_pct", "value": 0.06},
-	{"name": "Twin Shadows", "a": "nightblade", "b": "wraithstep", "kind": "dmg_pct", "value": 0.08},
-	{"name": "Kindled Together", "a": "berserker", "b": "pyromancer", "kind": "dmg_pct", "value": 0.08},
-	{"name": "Read the Room", "a": "rift-ranger", "b": "wardweaver", "kind": "hazard_guard_pct", "value": 0.06},
-]
 
-# Equipping 3+ of one element grants that element's own bonus.
-const SYNERGY_BONUS := {
-	"Ember": {"kind": "dmg_pct", "value": 0.15, "label": "+15% team damage"},
-	"Frost": {"kind": "dodge_pct", "value": 0.12, "label": "+12% dodge chance"},
-	"Verdant": {"kind": "mend_pct", "value": 0.08, "label": "Mends 8% of the party's HP pool each round"},
-	"Umbral": {"kind": "hazard_guard_pct", "value": 0.15, "label": "-15% hazard severity"},
-	"Arcane": {"kind": "loot_rarity_pct", "value": 0.10, "label": "+10% odds toward Rare/Epic loot"},
-}
 
 # A small combinatorial line-generator: each event id has an "openers" and
 # "closers" pool, joined at random (narrative_line below picks one of each) —
@@ -537,9 +512,27 @@ const RESPEC_CRYSTALS_PER_LEVEL := 10
 
 ## Field Tonic: a battle consumable (Inventory → Supplies). Using one takes the
 ## hero's turn and heals one ally.
-const TONIC_COST := 25
-const TONIC_HEAL_PCT := 0.35
+## Tonics: the one consumable line. Bought at Supplies, carried on a belt of
+## TONIC_CAP, and used in a fight on a hero's turn.
 const TONIC_CAP := 5
+const TONIC_HEAL_PCT := 0.35
+const TONIC_WARD_PCT := 0.3
+const TONIC_FOCUS := 3
+const TONIC_TYPES := [
+	{"id": "healing", "name": "Healing Tonic", "cost": 25, "target": "ally", "icon": "res://assets/ui/icon_tonic.png",
+		"desc": "Heals an ally 35% of max HP and cleanses burn, poison, chill, stun and curses."},
+	{"id": "iron", "name": "Iron Tonic", "cost": 30, "target": "ally", "icon": "res://assets/skills/shield_blue.png",
+		"desc": "Wards an ally for 30% of their max HP."},
+	{"id": "focus", "name": "Focus Tonic", "cost": 35, "target": "none", "icon": "res://assets/skills/gem_blue_big.png",
+		"desc": "+3 Momentum for the party."},
+]
+
+
+static func find_tonic(id: String) -> Dictionary:
+	for t in TONIC_TYPES:
+		if t["id"] == id:
+			return t
+	return {}
 
 ## Downed mid-rift (after a regular/elite fight or a hazard) the player picks:
 ## carry them out (+1 day), send idle heroes to fetch them (busy 1-2 runs),
@@ -597,24 +590,6 @@ const ITEM_COND_AFFIXES := [
 	{"arch": "executioner", "kind": "dmg_pct", "value": 0.25, "cond": {"hp_below": 0.4}},
 	{"arch": "guardian", "kind": "dmg_pct", "value": 0.15, "cond": {"ally_below": 0.5}},
 ]
-
-## Field Incense: a one-shot consumable bought with Coins (not looted, not
-## hero-bound) and used at Party Assembly — its bonus applies party-wide for
-## every fight in the run about to start, cleared when that run ends. Reuses
-## the same BUILD_KINDS vocabulary as skills/items/relics rather than
-## inventing a new stat, so it flows through hero_skill_total for free.
-const INCENSE_TYPES := [
-	{"id": "vigor", "name": "Vigor Incense", "kind": "hp_pct", "value": 0.15, "cost": 40, "desc": "+15% party Max HP for the whole rift"},
-	{"id": "warding", "name": "Warding Incense", "kind": "hazard_guard_pct", "value": 0.10, "cost": 40, "desc": "-10% hazard severity for the whole rift"},
-]
-
-
-static func find_incense(incense_id: String) -> Dictionary:
-	for i in INCENSE_TYPES:
-		if i["id"] == incense_id:
-			return i
-	return {}
-
 
 # Rank ladder shared by recruited heroes and the Champion (see GameState's
 # recruit_hero/reroll_champion). Rank sets weight (pull odds), stat

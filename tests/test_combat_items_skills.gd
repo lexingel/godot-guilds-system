@@ -18,12 +18,12 @@ func run() -> void:
 
 	# ---- Tonics
 	for i in 7:
-		GameState.buy_tonic()
-	check(GameState.tonics == GameData.TONIC_CAP and GameState.coins == 1000 - GameData.TONIC_COST * GameData.TONIC_CAP, "tonics capped at %d" % GameData.TONIC_CAP)
+		GameState.buy_tonic(["healing", "iron", "focus"][i % 3])
+	check(GameState.tonic_count() == GameData.TONIC_CAP and GameState.tonic_count("healing") == 2 and GameState.tonic_count("focus") == 1, "one belt of %d across kinds" % GameData.TONIC_CAP)
 	var t2 := Hero.from_dict(GameState.heroes[0].to_dict())
 	GameState.save()
 	GameState.load_save()
-	check(GameState.tonics == GameData.TONIC_CAP, "tonics saved")
+	check(GameState.tonic_count() == GameData.TONIC_CAP and GameState.tonic_count("iron") == 2, "tonics saved")
 
 	# ---- Swap + tonic in a fight
 	GameState.start_run("lesser", ids, null)
@@ -49,10 +49,10 @@ func run() -> void:
 				var patient: Hero = GameState.find_hero(ids[1])
 				patient.hp = max(1, patient.hp - 20)
 				var hp0 := patient.hp
-				var t0 := GameState.tonics
-				GameState.set_hero_action(h.id, "tonic", 0, patient.id)
+				var t0 := GameState.tonic_count("healing")
+				GameState.set_hero_action(h.id, "tonic:healing", 0, patient.id)
 				GameState.resolve_turn_now()
-				tonic_ok = GameState.tonics == t0 - 1 and patient.hp > hp0
+				tonic_ok = GameState.tonic_count("healing") == t0 - 1 and patient.hp > hp0
 				continue
 		GameState.resolve_turn_now()
 	check(swapped, "swap action changes row")

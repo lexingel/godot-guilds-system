@@ -484,14 +484,6 @@ static func awakening_bonus_text(pool_id: String) -> String:
 	var bucket: String = ABILITY_AWAKENING_BUCKET.get(str(ab.get("effect", "")), "buff")
 	return ABILITY_AWAKENING_BUCKET_DESC.get(bucket, "")
 
-# Party-kind synergy (GameState.party_resonance_bonus/party_eclectic_bonus,
-# read by Combat.hero_skill_total) — computed live from the active run's
-# roster, never cached, so it can't go stale if the party ever changes.
-# Resonance rewards bringing 2+ heroes who currently share a kind (their
-# builds reinforce each other); Eclectic rewards the opposite, a genuinely
-# varied 3+ party with no repeats. Never both at once for the same party.
-const PARTY_RESONANCE_BONUS := 0.05
-const PARTY_ECLECTIC_BONUS := 0.03
 
 # Recruitment-screen reroll fees. Flat rather than rank-scaled, so a bad
 # opening pull is always cheap to retry (below even the F-rank recruit cost)

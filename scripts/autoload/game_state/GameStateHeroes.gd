@@ -334,9 +334,8 @@ func evolve_rank_gate(rank_id: String) -> String:
 	return ""
 
 
-## A hero topped up to a buffed max_hp (e.g. by Vigor Incense's +hp_pct)
-## while active_incense was active would otherwise be left with hp above
-## their real max once the buff drops off back at camp.
+## A hero topped up to a buffed max_hp during a run (a boon's +hp_pct, say)
+## would otherwise be left with hp above their real max back at camp.
 func _clamp_hp_to_max() -> void:
 	for h in heroes:
 		h.battered = false   # back at camp, the field patch-up no longer holds them back
@@ -419,42 +418,6 @@ func awaken_ability(hero_id: String) -> String:
 	save()
 	state_changed.emit()
 	return ""
-
-
-## Kind -> hero-count across the CURRENT run's party — {} outside a run, so
-## every synergy helper below naturally returns 0/false with no active run.
-func _party_kind_counts() -> Dictionary:
-	var counts := {}
-	for hid in run.get("hero_ids", []):
-		var h2 := find_hero(str(hid))
-		if not h2:
-			continue
-		var cls := GameData.find_class(h2.pool_id)
-		if cls.is_empty():
-			continue
-		var k: String = cls.get("kind", "")
-		counts[k] = int(counts.get(k, 0)) + 1
-	return counts
-
-
-## Resonance — this run's party has 2+ heroes CURRENTLY building the same
-## kind. Computed live off run["hero_ids"], never cached, so it can't drift
-## if the party or a hero's tree ever changes mid-assembly.
-func party_resonance_bonus(kind: String) -> float:
-	if run.is_empty():
-		return 0.0
-	return GameData.PARTY_RESONANCE_BONUS if int(_party_kind_counts().get(kind, 0)) >= 2 else 0.0
-
-
-## Eclectic — the opposite of Resonance: 3+ party members, no kind repeated.
-func party_eclectic_bonus() -> float:
-	if run.is_empty():
-		return 0.0
-	var counts := _party_kind_counts()
-	for k in counts:
-		if int(counts[k]) >= 2:
-			return 0.0
-	return GameData.PARTY_ECLECTIC_BONUS if counts.size() >= 3 else 0.0
 
 
 ## For a KIND_SKILL_PACKAGE finisher's `combo_kind` field (GameData doc

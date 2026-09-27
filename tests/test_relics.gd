@@ -58,17 +58,16 @@ func run() -> void:
 	var k: String = c.specials[0]["kind"]
 	check(is_equal_approx(Combat.relic_special_total(k), float(c.specials[0]["value"])), "special total")
 
-	# Sets.
+	# No set bonuses any more; the Arcane Lab strengthens every relic effect.
 	var e1 := Combat.gen_relic("common", "Ember")
 	var e2 := Combat.gen_relic("common", "Ember")
-	var f1 := Combat.gen_relic("common", "Frost")
-	_equip_only([e1, e2])
-	check(is_equal_approx(Combat.synergy_value_for("dmg_pct"), 0.075), "2 Ember: +7.5%% dmg (%.3f)" % Combat.synergy_value_for("dmg_pct"))
 	var e3 := Combat.gen_relic("common", "Ember")
 	_equip_only([e1, e2, e3])
-	check(is_equal_approx(Combat.synergy_value_for("dmg_pct"), 0.15), "3 Ember: +15%")
-	_equip_only([e1, f1, Combat.gen_relic("common", "Verdant")])
-	check(Combat.relic_sets().any(func(s): return s["name"] == "Prism"), "3 elements: Prism")
+	check(Combat.synergy_value_for("dmg_pct") == 0.0, "three of an element: no set bonus")
+	_equip_only([c])
+	GameState.upgrades["res.lab"] = 2
+	check(is_equal_approx(Combat.relic_special_total(k), float(c.specials[0]["value"]) * 1.1), "Arcane Lab Lv2: relic effects +10%")
+	GameState.upgrades["res.lab"] = 0
 
 	# Triggers fire in battle: a round_third nova.
 	var nova := Combat.gen_relic("rare")

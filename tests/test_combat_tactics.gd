@@ -162,3 +162,14 @@ func run() -> void:
 	ran.hp = Combat.max_hp(ran)
 	st["monsters"][0]["_winding"] = true
 	check(str(Combat.auto_action(st, war)["action"]) == "skill:shield_bash", "auto breaks a wind-up with Shield Bash")
+
+	# Tonics: Iron wards an ally, Focus gives Momentum; each uses up one.
+	st = _state(party)
+	GameState.tonics = {"iron": 1, "focus": 1}
+	st["pending_actions"][war.id] = {"action": "tonic:iron", "target": 0, "ally": cle.id}
+	Combat._resolve_hero_action(st, war)
+	check(float(st["hero_shields"].get(cle.id, 0.0)) > 0.0 and GameState.tonic_count("iron") == 0, "an Iron Tonic wards the ally")
+	var mom0 := int(st["momentum"])
+	st["pending_actions"][war.id] = {"action": "tonic:focus", "target": 0}
+	Combat._resolve_hero_action(st, war)
+	check(int(st["momentum"]) == mini(GameData.MOMENTUM_MAX, mom0 + GameData.TONIC_FOCUS) and GameState.tonic_count() == 0, "a Focus Tonic adds Momentum")

@@ -1243,42 +1243,6 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			bench_flow.add_child(_party_card(bh, bh.is_champion, false))
 		v.add_child(bench_flow)
 
-	# Surface any Hero Bond among the currently-picked heroes so it's
-	# discoverable while assembling a party, not just a silent combat bonus.
-	var picked_pool_ids := {}
-	for h in GameState.heroes:
-		if pending_party.has(h.id):
-			picked_pool_ids[h.pool_id] = true
-	var active_bonds: Array[String] = []
-	for bond in GameData.HERO_BONDS:
-		if picked_pool_ids.has(bond["a"]) and picked_pool_ids.has(bond["b"]):
-			active_bonds.append(str(bond["name"]))
-	if not active_bonds.is_empty():
-		v.add_child(_label("Bond active: %s" % ", ".join(active_bonds), 12, true))
-
-	# Party-kind synergy preview (Resonance/Eclectic) — computed here from
-	# pending_party rather than GameState.party_resonance_bonus(), since that
-	# reads the already-started run and this screen runs BEFORE the run
-	# exists. Same rule, just previewed off the picks-in-progress.
-	var picked_kind_counts := {}
-	for h2 in GameState.heroes:
-		if pending_party.has(h2.id):
-			var cls2 := GameData.find_class(h2.pool_id)
-			if not cls2.is_empty():
-				var k2: String = cls2.get("kind", "")
-				picked_kind_counts[k2] = int(picked_kind_counts.get(k2, 0)) + 1
-	var resonant_kinds: Array[String] = []
-	for k2 in picked_kind_counts:
-		if int(picked_kind_counts[k2]) >= 2:
-			resonant_kinds.append(k2)
-	if not resonant_kinds.is_empty():
-		var kind_bonuses: Array[String] = []
-		for rk in resonant_kinds:
-			kind_bonuses.append(Combat.describe_skill(rk, GameData.PARTY_RESONANCE_BONUS))
-		v.add_child(_label("Resonance active - shared builds reinforce each other (%s)" % ", ".join(kind_bonuses), 12, true))
-	elif picked_kind_counts.size() >= 3:
-		v.add_child(_label("Eclectic active - a fully varied party (+%s to everything)" % Combat.describe_skill("dmg_pct", GameData.PARTY_ECLECTIC_BONUS), 12, true))
-
 	v.add_child(_hsep())
 	var choice_count := 0 if _pending_tower else GameState.relic_choice_count()
 	if choice_count > 0:
@@ -1302,20 +1266,6 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			render()
 		)
 		v.add_child(_info_row("%s (%s) — %s" % [r.name, r.type, r.desc()], 14, [], rb))
-
-	if not GameState.consumables.is_empty() and not _pending_tower:
-		v.add_child(_hsep())
-		v.add_child(_label("Field Incense (pick one, optional) — lasts the whole rift"))
-		for c in GameState.consumables:
-			var cid: String = str(c["id"])
-			var def := GameData.find_incense(str(c["incense_id"]))
-			var ib := CheckButton.new()
-			ib.button_pressed = pending_incense_id == cid
-			ib.toggled.connect(func(on: bool, id=cid):
-				pending_incense_id = id if on else ""
-				render()
-			)
-			v.add_child(_info_row("%s — %s" % [def["name"], def["desc"]], 14, [], ib))
 
 
 	var launch := _party_launch_bar()
@@ -1368,9 +1318,6 @@ func _party_launch_bar() -> Control:
 		if _pending_endless and _pending_rift_rank == "":
 			_start_survivors(ids)
 			return
-		if pending_incense_id != "":
-			GameState.use_incense(pending_incense_id)
-			pending_incense_id = ""
 		if _pending_tower:
 			GameState.start_tower(ids)
 		elif _pending_daily:

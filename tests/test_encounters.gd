@@ -111,7 +111,7 @@ func run() -> void:
 	var hb := h0.hp
 	Combat._end_round_effects(st)
 	check(h0.hp < hb and int(st["hero_burn"][h0.id]["rounds"]) == 1, "burn ticks")
-	GameState.tonics = 1
+	GameState.tonics = {"healing": 1}
 	st["pending_actions"][h0.id] = {"action": "tonic", "target": 0, "ally": h0.id}
 	Combat._resolve_hero_action(st, h0)
 	check(not st["hero_burn"].has(h0.id), "a tonic puts out the burn")

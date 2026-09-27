@@ -14,9 +14,7 @@ func reset() -> void:
 	heroes = []
 	relics = []
 	items = []
-	consumables = []
-	active_incense = {}
-	tonics = 0
+	tonics = {}
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
@@ -133,9 +131,8 @@ func load_save() -> bool:
 		refresh_recruit_pool()
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
-	consumables.assign(data.get("consumables", []))
-	active_incense = data.get("active_incense", {})
-	tonics = int(data.get("tonics", 0))
+	var tn = data.get("tonics", {})
+	tonics = tn if tn is Dictionary else ({"healing": int(tn)} if int(tn) > 0 else {})
 	monsters_seen.assign(data.get("monsters_seen", []))
 	bosses_defeated.assign(data.get("bosses_defeated", []))
 	hazards_seen.assign(data.get("hazards_seen", []))

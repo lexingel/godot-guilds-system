@@ -865,11 +865,57 @@ func _best_party_power(cap: int = 4) -> int:
 ## A Roster stat line's tooltip: the total, then every source feeding it
 ## (Combat.hero_skill_sources), then situational bonuses that only apply in
 ## the right moment (Combat.hero_effects stat entries of this kind).
+const HERO_SOURCE_PREFIXES := ["Skill:", "Combo:", "Keystone", "Innate", "Quirk:", "Morale:", "Battered"]
+
+
+## Where a hero_skill_sources label belongs: Hero (skills, class, attributes,
+## quirks, morale), Gear (equipped items) or Party (the Champion's boon).
+func _source_bucket(label: String) -> String:
+	if label == "Champion Boon":
+		return "Party"
+	for p in HERO_SOURCE_PREFIXES:
+		if label.begins_with(p):
+			return "Hero"
+	for a in GameData.ATTRIBUTES:
+		if label.begins_with(str(GameData.ATTR_LABEL[a]) + " "):
+			return "Hero"
+	return "Gear"
+
+
+func _pct_bb(v: float) -> String:
+	return _bb(Palette.good() if v > 0 else Palette.HAZARD, "%s%d%%" % ["+" if v > 0 else "-", int(round(absf(v) * 100))])
+
+
+## A stat's tooltip: the total, then its sources in four groups — Hero, Gear,
+## Relics and Party (the last two party-wide, in fights) — each with a subtotal.
 func _stat_breakdown_card(h: Hero, kind: String, total: float) -> String:
 	var lines: Array[String] = ["[b]%s[/b]" % Combat.describe_skill(kind, total).replace("[", "[lb]")]
+	var groups := {"Hero": [], "Gear": [], "Relics": [], "Party": []}
 	for src in Combat.hero_skill_sources(h, kind):
-		var v: float = src[1]
-		lines.append("%s  %s" % [_bb(Palette.good() if v > 0 else Palette.HAZARD, "%s%d%%" % ["+" if v > 0 else "-", int(round(absf(v) * 100))]), str(src[0]).replace("[", "[lb]")])
+		(groups[_source_bucket(str(src[0]))] as Array).append([str(src[0]), float(src[1])])
+	var party: Array[Hero] = []
+	party.assign(GameState.current_party())
+	var relic_v := Combat.relic_special_total(kind) + Combat.relic_drawback_total(kind)
+	if absf(relic_v) > 0.0005:
+		(groups["Relics"] as Array).append(["Equipped relics (whole party)", relic_v])
+	var boons := Combat.synergy_value_for(kind)
+	if absf(boons) > 0.0005:
+		(groups["Party"] as Array).append(["This rift's boons", boons])
+	var bonds := Combat.bond_bonus_for(party, kind) if not party.is_empty() else 0.0
+	if absf(bonds) > 0.0005:
+		(groups["Party"] as Array).append(["Bonds in the party", bonds])
+	if kind in ["dmg_pct", "hp_pct"] and GameState.tactical_bonus() > 1.0:
+		(groups["Party"] as Array).append(["Drill Yard", GameState.tactical_bonus() - 1.0])
+	for g in ["Hero", "Gear", "Relics", "Party"]:
+		var rows: Array = groups[g]
+		if rows.is_empty():
+			continue
+		var sub := 0.0
+		for r in rows:
+			sub += float(r[1])
+		lines.append("%s  %s" % [_bb(Palette.EMBER_BRIGHT, g), _pct_bb(sub)])
+		for r in rows:
+			lines.append("    %s  %s" % [_pct_bb(float(r[1])), str(r[0]).replace("[", "[lb]")])
 	var situational: Array[String] = []
 	for e in Combat.hero_effects(h):
 		if e.get("kind", "") == kind:
@@ -1137,7 +1183,6 @@ var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_actio
 var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 
 
-var pending_incense_id: String = ""
 
 
 ## The ladder rank Party Assembly launches (start_ladder_rift); "" for the

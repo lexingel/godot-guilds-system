@@ -62,7 +62,7 @@ func run() -> void:
 	GameState.upgrades["res.vault"] = 5
 	GameState.upgrades["res.lab"] = 5
 	check(GameState.relic_slot_cap() == 5 and GameState.relic_choice_count() == 4 and GameState.inherited_power(), "Relic Vault perks")
-	check(GameState.relic_upgrade_cost(r) < c0 and GameState.quirk_treat_cost() == 21 and GameState.recycle_unlocked() and is_equal_approx(GameState.set_bonus_mult(), 1.5), "Arcane Lab perks")
+	check(GameState.relic_upgrade_cost(r) < c0 and GameState.quirk_treat_cost() == 21 and GameState.recycle_unlocked() and is_equal_approx(GameState.relic_power_mult(), 1.25), "Arcane Lab perks")
 
 	# A boss win with Resonance pays a Crystal cache.
 	var champ := Combat.gen_hero("S", 10)

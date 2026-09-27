@@ -203,7 +203,7 @@ func _render_rift_map(v: VBoxContainer) -> void:
 
 # ---------------- Rift Run ----------------
 ## The strip at the top of every rift screen (StS/Hades-style run HUD):
-## rift name, node pips, run tags (incense, rank, relic ward),
+## rift name, node pips, run tags (rank, relic ward),
 ## then — outside combat, where the arena already shows HP — every party
 ## member's portrait with an HP bar, and the equipped relics (hover for
 ## what each does). HP carries across nodes, so this is the number that
@@ -241,8 +241,6 @@ func _run_bar(in_combat: bool) -> Control:
 	var rank: String = str(GameState.run.get("rift_rank", ""))
 	if rank != "":
 		tags.append("Rank %s" % rank)
-	if not GameState.active_incense.is_empty():
-		tags.append(str(GameState.active_incense["name"]))
 	if int(GameState.run.get("shield", 0)) > 0:
 		tags.append("Relic ward %d" % int(GameState.run["shield"]))
 	if not tags.is_empty():

@@ -31,7 +31,7 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 	var raw_sum := 0.0
 	for h in party:
 		raw_sum += dmg_of(h)
-	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + affinity_bonus(party) + bond_bonus_for(party, "dmg_pct"))
+	var team_dmg_base: float = (raw_sum * GameState.tactical_bonus() + relic_dmg_bonus()) * (1.0 + synergy_value_for("dmg_pct") + bond_bonus_for(party, "dmg_pct"))
 
 	var first_round_bonus: float = (0.25 if GameState.vanguard() else 0.0) + party_skill_total(party, "first_round_pct") + relic_special_total("first_round_pct") + relic_drawback_total("first_round_pct") + synergy_value_for("first_round_pct") + bond_bonus_for(party, "first_round_pct")
 	var escalate: float = party_skill_total(party, "escalate_pct") + relic_special_total("escalate_pct") + relic_drawback_total("escalate_pct") + synergy_value_for("escalate_pct")
@@ -131,6 +131,11 @@ func start_combat(party: Array[Hero], kind: String, diff: Dictionary, floor_idx:
 ## gate both the combat action-button row and the Ability's cooldown ticking.
 static func qualifies_for_ability(h: Hero) -> bool:
 	return GameData.SUBCLASS_ABILITIES.has(h.pool_id) and h.level >= 3
+
+
+## "tonic:<id>" -> id ("tonic" alone is a Healing Tonic).
+static func _tonic_id(action: String) -> String:
+	return action.substr(6) if action.begins_with("tonic:") else "healing"
 
 
 func gain_momentum(state: Dictionary, n: int) -> void:
@@ -665,16 +670,27 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 	elif action == "swap":
 		h.formation = "back" if h.formation != "back" else "front"
 		log.append("%s moves to the %s row." % [h.name, h.formation])
-	elif action == "tonic" and GameState.tonics > 0:
+	elif action.begins_with("tonic") and GameState.tonic_count(_tonic_id(action)) > 0:
+		var tid := _tonic_id(action)
 		var patient := _find_party_hero(party, str(act.get("ally", "")))
 		if patient == null or patient.hp <= 0:
 			patient = h
-		GameState.tonics -= 1
-		for key in ["hero_poison", "hero_burn", "_chilled", "_stunned"]:
-			state.get(key, {}).erase(patient.id)
-		var healed: int = min(max_hp(patient) - patient.hp, int(round(max_hp(patient) * GameData.TONIC_HEAL_PCT)))
-		patient.hp += healed
-		log.append("%s gives %s a Field Tonic: +%d HP." % [h.name, patient.name, healed])
+		GameState.tonics[tid] = GameState.tonic_count(tid) - 1
+		match tid:
+			"healing":
+				for key in ["hero_poison", "hero_burn", "_chilled", "_stunned", "_weakened"]:
+					state.get(key, {}).erase(patient.id)
+				var healed: int = min(max_hp(patient) - patient.hp, int(round(max_hp(patient) * GameData.TONIC_HEAL_PCT)))
+				patient.hp += healed
+				log.append("%s gives %s a Healing Tonic: +%d HP." % [h.name, patient.name, healed])
+			"iron":
+				var ward := max_hp(patient) * GameData.TONIC_WARD_PCT
+				var shields: Dictionary = state["hero_shields"]
+				shields[patient.id] = float(shields.get(patient.id, 0.0)) + ward
+				log.append("%s gives %s an Iron Tonic: a %d ward." % [h.name, patient.name, int(round(ward))])
+			"focus":
+				gain_momentum(state, GameData.TONIC_FOCUS)
+				log.append("%s drinks a Focus Tonic: +%d Momentum." % [h.name, GameData.TONIC_FOCUS])
 	elif action == "guard":
 		# Until the round ends, attacks aimed at the ally hit this hero
 		# instead, 25% weaker (see _resolve_monster_action).
@@ -1068,7 +1084,7 @@ func defeat_reasons(state: Dictionary) -> Array:
 	var dot := float(st.get("dot", 0.0))
 	if taken > 0.0 and dot / taken >= 0.2:
 		out.append([2.0 + dot / taken * 4.0, "Burn and poison did %d damage (%d%% of the total)" % [int(dot), int(dot / taken * 100.0)],
-			"A Field Tonic cleanses burn, poison, chill and stun. Kill the fire and poison foes first."])
+			"A Healing Tonic cleanses burn, poison, chill and stun. Kill the fire and poison foes first."])
 	var healed := float(st.get("enemy_heal", 0.0))
 	var foe_hp := 0.0
 	for m in state["monsters"]:

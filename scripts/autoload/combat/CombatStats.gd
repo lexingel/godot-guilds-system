@@ -32,8 +32,6 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 		var ks := GameData.keystone_node(tree_kind)
 		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
 			s += float(ks["value"])
-	s += GameState.party_resonance_bonus(kind)
-	s += GameState.party_eclectic_bonus()
 	s += GameState.champion_boon(kind)
 	if h.battered and kind == "hp_pct":
 		s -= GameData.BATTERED_HP_PCT
@@ -49,8 +47,6 @@ func hero_skill_total(h: Hero, kind: String) -> float:
 		s += float(GameData.morale_tier(h.morale)[2])
 	for q in h.quirks:
 		s += float(GameData.quirk(q).get("stats", {}).get(kind, 0.0))
-	if GameState.active_incense.get("kind", "") == kind:
-		s += float(GameState.active_incense["value"])
 	return s
 
 
@@ -79,8 +75,6 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 		var ks := GameData.keystone_node(tree_kind)
 		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
 			add.call("Keystone drawback: %s" % ks["name"], float(ks["value"]))
-	add.call("Party Resonance", GameState.party_resonance_bonus(kind))
-	add.call("Party Eclectic", GameState.party_eclectic_bonus())
 	add.call("Champion Boon", GameState.champion_boon(kind))
 	if h.battered and kind == "hp_pct":
 		add.call("Battered (patched up mid-rift)", -GameData.BATTERED_HP_PCT)
@@ -105,8 +99,6 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 		add.call("Morale: %s" % mt[1], float(mt[2]))
 	for q in h.quirks:
 		add.call("Quirk: %s" % q, float(GameData.quirk(q).get("stats", {}).get(kind, 0.0)))
-	if GameState.active_incense.get("kind", "") == kind:
-		add.call("Incense: %s" % GameState.active_incense.get("name", "active"), float(GameState.active_incense["value"]))
 	return out
 
 

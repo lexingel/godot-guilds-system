@@ -2,43 +2,16 @@ extends "res://scripts/autoload/game_state/GameStateHeroes.gd"
 ## GameState, part 3: gear and relics — equipping, crafting, reforging, selling, supplies.
 
 
-func buy_incense(incense_id: String) -> String:
-	var def := GameData.find_incense(incense_id)
+func buy_tonic(id: String = "healing") -> String:
+	var def := GameData.find_tonic(id)
 	if def.is_empty():
 		return ""
-	var cost := int(def["cost"])
-	if coins < cost:
+	if tonic_count() >= GameData.TONIC_CAP:
+		return "Your belt is full (%d tonics)" % GameData.TONIC_CAP
+	if coins < int(def["cost"]):
 		return "Not enough Gold"
-	coins -= cost
-	consumables.append({"id": "cs" + str(next_id), "incense_id": incense_id})
-	next_id += 1
-	save()
-	state_changed.emit()
-	return ""
-
-
-## Consuming an incense applies its bonus for the rift about to start —
-## cleared on retreat_now()/finish_run() same as the rest of run state.
-func use_incense(consumable_id: String) -> void:
-	for c in consumables:
-		if c["id"] == consumable_id:
-			var def := GameData.find_incense(str(c["incense_id"]))
-			if def.is_empty():
-				return
-			active_incense = {"kind": def["kind"], "value": def["value"], "name": def["name"]}
-			consumables.erase(c)
-			save()
-			state_changed.emit()
-			return
-
-
-func buy_tonic() -> String:
-	if tonics >= GameData.TONIC_CAP:
-		return "You can carry %d at most" % GameData.TONIC_CAP
-	if coins < GameData.TONIC_COST:
-		return "Not enough Gold"
-	coins -= GameData.TONIC_COST
-	tonics += 1
+	coins -= int(def["cost"])
+	add_tonic(id)
 	save()
 	state_changed.emit()
 	return ""
