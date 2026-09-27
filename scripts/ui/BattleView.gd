@@ -1523,13 +1523,16 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			line.append(h)
 	var hz_x := W * 0.03
 	var hz_w := W * 0.49
+	# One pixel scale for every combatant: heroes and monsters share the same
+	# 200px canvas, drawn at a clean factor of it (the boss a step larger).
+	var px := _battle_px_scale(H)
 	var h_slot: float = minf(150.0, hz_w / max(1, line.size()))
 	var h_start: float = hz_x + hz_w - h_slot * line.size()
 	var target_rings := {}   # hero id -> hover ring shown while an intent aimed at them is hovered
 	for k in line.size():
 		var h: Hero = line[k]
 		var is_back := h.formation == "back"
-		var size: float = roundf(H * (0.26 if is_back else 0.29))
+		var size: float = roundf(200.0 * px)
 		var feet: float = ground - (H * 0.06 if is_back else 0.0)
 		var cx: float = h_start + h_slot * (k + 0.5) + (10.0 if h == current_hero else 0.0)
 		var ring_w: float = size * 0.8
@@ -1583,7 +1586,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		# Monster art is drawn on the same 200px canvas as the heroes, so one
 		# scale for all keeps every sprite at the heroes' pixel size (and a
 		# small creature small); the boss/elite is drawn a size class up.
-		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), H * (0.46 if i == big_i else 0.33) / 200.0, m_slot * 1.1)
+		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), minf(1.0, px + 0.25) if i == big_i else px, m_slot * 1.1)
 		var msz: Vector2 = m_rect.custom_minimum_size
 		var ring_w: float = minf(msz.x, msz.y * 1.2) * 0.8
 		var cx: float = mz_x + m_slot * (i + 0.5)
@@ -1781,6 +1784,13 @@ func _tutorial_panel(tut: Dictionary) -> Control:
 	row.add_child(b)
 	p.add_child(row)
 	return p
+
+
+## The on-screen size of one art pixel in the arena: a clean factor (0.5,
+## 0.75 or 1) so nearest filtering keeps pixels even, the same for everyone.
+func _battle_px_scale(arena_h: float) -> float:
+	var raw := 0.31 * arena_h / 200.0
+	return 1.0 if raw >= 0.875 else (0.75 if raw >= 0.625 else 0.5)
 
 
 ## A small dark chip with a sword (or skull, for a heavy hit) and text.

@@ -1349,6 +1349,36 @@ func _start_daynight_cycle(bg: CanvasItem) -> void:
 	tween.tween_property(bg, "modulate", Color(0.9, 0.95, 1.1), 40.0)
 
 
+## Hub scenes are 320x200 pixel art shown at exactly 2x, so every art pixel
+## is a square 2x2 block. Their hotspot layouts were written for the old
+## 700x340 stage; _hub_rect maps those rects onto the 640x400 one.
+const HUB_SCENE := Vector2(640, 400)
+const HUB_ART_SCALE := Vector2(2, 2)
+const HUB_FROM_LEGACY := Vector2(640.0 / 700.0, 400.0 / 340.0)
+
+
+func _hub_rect(r: Rect2) -> Rect2:
+	return Rect2((r.position * HUB_FROM_LEGACY).round(), (r.size * HUB_FROM_LEGACY).round())
+
+
+## A 320x200 scene as a wide banner: the art at exactly 2x behind a window
+## `height` tall (its middle band), instead of squashing it to fit.
+func _hub_banner(path: String, height: float) -> Control:
+	var win := Control.new()
+	win.custom_minimum_size = Vector2(HUB_SCENE.x, height)
+	win.size = win.custom_minimum_size
+	win.clip_contents = true
+	var bg := TextureRect.new()
+	bg.texture = load(path)
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	bg.size = HUB_SCENE
+	bg.position = Vector2(0, -roundf((HUB_SCENE.y - height) * 0.5))
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	win.add_child(bg)
+	return win
+
+
 ## An invisible clickable region over a prop already drawn in the background
 ## art — the prop itself stays untouched (no duplicated/cropped copy of it,
 ## which read as an awkward seam when scaled). Hovering instead fades in a

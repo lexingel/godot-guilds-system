@@ -851,7 +851,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
 		_ladder_pick = GameState.highest_open_rank()
 
-	var scene_size := Vector2(700, 340)
+	var scene_size := HUB_SCENE
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
 	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -864,7 +864,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	scene.add_child(bg)
 
-	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	var camp_scale := HUB_ART_SCALE
 	var unlocked := GameState.greater_rift_unlocked()
 	var go := func(rank_id: String, endless: bool):
 		pending_party.clear()
@@ -893,22 +893,25 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	]
 	if endless_open:
 		gate_entries.append(["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("", true)])
-	if unlocked:
-		var greater_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "greater" else best_of.call("greater")
+	var greater_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "greater" else best_of.call("greater")
+	var greater_open: bool = unlocked and greater_pick != ""
+	if greater_open:
 		gate_entries.append(["Rank %s Rift" % greater_pick, Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(greater_pick, false)])
 	for entry in gate_entries:
 		var native_rect: Rect2 = entry[2]
 		var glow_rect := Rect2(native_rect.position * camp_scale, native_rect.size * camp_scale)
-		var hotspot := _camp_area_hotspot(entry[1], glow_rect, str(entry[0]), entry[3])
-		hotspot.position = (entry[1] as Rect2).position
+		var hotspot := _camp_area_hotspot(_hub_rect(entry[1]), glow_rect, str(entry[0]), entry[3])
+		hotspot.position = _hub_rect(entry[1]).position
 		scene.add_child(hotspot)
-	if not unlocked:
-		var lock_plaque := _camp_plaque("Ranks C-SSS — locked")
-		lock_plaque.position = Vector2(470 + (230 - lock_plaque.size.x) * 0.5, 340 - lock_plaque.size.y - 6)
+	if not greater_open:
+		var lock_plaque := _camp_plaque("Ranks C-SSS — locked" if not unlocked else "Rank C — %s" % GameState.ladder_rank_lock("C"))
+		var lr := _hub_rect(Rect2(470, 0, 230, 340))
+		lock_plaque.position = Vector2(lr.position.x + (lr.size.x - lock_plaque.size.x) * 0.5, lr.end.y - lock_plaque.size.y - 6)
 		scene.add_child(lock_plaque)
 	if not endless_open:
 		var endless_plaque := _camp_plaque("Endless Rift — locked")
-		endless_plaque.position = Vector2(230 + (240 - endless_plaque.size.x) * 0.5, 340 - endless_plaque.size.y - 6)
+		var er := _hub_rect(Rect2(230, 0, 240, 340))
+		endless_plaque.position = Vector2(er.position.x + (er.size.x - endless_plaque.size.x) * 0.5, er.end.y - endless_plaque.size.y - 6)
 		scene.add_child(endless_plaque)
 	v.add_child(scene)
 

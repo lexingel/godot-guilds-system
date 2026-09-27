@@ -854,7 +854,7 @@ func _render_inventory(v: VBoxContainer) -> void:
 ## for Supplies) — same background-prop-as-button + hover-glow pattern as
 ## the camp/management screens.
 func _render_inventory_hub(v: VBoxContainer) -> void:
-	var scene_size := Vector2(700, 340)
+	var scene_size := HUB_SCENE
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
 	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -874,11 +874,11 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 		["relics", "Relics", Rect2(230, 0, 240, 340), Rect2(133, 58, 62, 100)],
 		["supplies", "Supplies", Rect2(470, 0, 230, 340), Rect2(210, 65, 110, 95)],
 	]
-	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	var camp_scale := HUB_ART_SCALE
 	for entry in cat_entries:
 		var cid: String = entry[0]
 		var label_text: String = entry[1]
-		var hit_rect: Rect2 = entry[2]
+		var hit_rect: Rect2 = _hub_rect(entry[2])
 		var native_rect: Rect2 = entry[3]
 		var glow_rect := Rect2(
 			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,

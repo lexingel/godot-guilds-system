@@ -59,10 +59,13 @@ func _render_camp(v: VBoxContainer) -> void:
 
 	var scene_w: float = v.custom_minimum_size.x
 	var native: Vector2 = GameData.HAMLET_SIZE
-	var SCENE_SIZE := Vector2(scene_w, roundf(scene_w * native.y / native.x))
-	var sc := SCENE_SIZE / native
+	# A whole-number scale keeps the village's pixels square.
+	var whole: float = maxf(1.0, floorf(scene_w / native.x))
+	var SCENE_SIZE := native * whole
+	var sc := Vector2(whole, whole)
 	var scene := Control.new()
 	scene.custom_minimum_size = SCENE_SIZE
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.HAMLET_BG)
@@ -782,17 +785,9 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	if GameState.field_triage_available():
 		v.add_child(_wrap_label("Field Triage: once per rift, get a downed hero back up mid-rift.", 12, true))
 
-	var scene_size := Vector2(700, 200)
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.MEDICAL_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
+	var scene_size := Vector2(HUB_SCENE.x, 200)
+	var scene := _hub_banner(GameData.MEDICAL_BG, scene_size.y)
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bedded: Array[Hero] = []
 	bedded.assign(GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and h.bedded))
@@ -917,16 +912,8 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 	v.add_child(_label("Crafting Hall", 20))
 	v.add_child(_label("Combine 3 of the same kind and rarity into 1 of the next rarity up.", 12, true))
 
-	var scene_size := Vector2(700, 200)
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.CRAFTING_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
+	var scene := _hub_banner(GameData.CRAFTING_BG, 200)
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(scene)
 
 	var craft_icon: String = GameData.CAMP_HUB_ICON_PATH["crafting"]
@@ -1426,9 +1413,10 @@ func _render_management(v: VBoxContainer) -> void:
 ## coin pouch/ledger for Logistics, a spellbook/crystal for Research) — same
 ## background-prop-as-button + hover-glow pattern as the camp screen.
 func _render_management_hub(v: VBoxContainer) -> void:
-	var scene_size := Vector2(700, 340)
+	var scene_size := HUB_SCENE
 	var scene := Control.new()
 	scene.custom_minimum_size = scene_size
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.MANAGEMENT_BG)
@@ -1448,11 +1436,11 @@ func _render_management_hub(v: VBoxContainer) -> void:
 		["log", "Logistics", Rect2(180, 210, 280, 130), Rect2(102, 133, 121, 34)],
 		["res", "Research", Rect2(0, 60, 220, 170), Rect2(30, 50, 57, 67)],
 	]
-	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
+	var camp_scale := HUB_ART_SCALE
 	for entry in branch_entries:
 		var bid: String = entry[0]
 		var label_text: String = entry[1]
-		var hit_rect: Rect2 = entry[2]
+		var hit_rect: Rect2 = _hub_rect(entry[2])
 		var native_rect: Rect2 = entry[3]
 		var glow_rect := Rect2(
 			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
