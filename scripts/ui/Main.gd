@@ -422,21 +422,18 @@ func _count_label(key: String, value: int, size: int) -> Label:
 	return l
 
 
-## Every camp destination, reachable from any camp-side screen in one click
-## or one key (1-9, 0), instead of Camp -> building -> picker -> screen.
-## [id, label, camp building whose attention badge it shares]
-const QUICK_NAV := [
-	["roster", "Roster", "Command Tent"],
-	["recruits", "Recruits", "Hero Recruits"],
-	["medical", "Medical", "Medical Tent"],
-	["inventory", "Inventory", "Inventory"],
-	["crafting", "Crafting", "Trading Post"],
-	["quests", "Quests", "Scholar's Lodge"],
-	["rift", "Rift Hall", "Rift Gate"],
-	["management", "Manage", ""],
-	["bestiary", "Bestiary", ""],
-	["compendium", "Codex", ""],
+## The five camp tabs, reachable from any camp-side screen in one click or
+## one key (1-5). Each groups screens that belong together; a group with more
+## than one shows them as sub-tabs underneath.
+## [label, icon id, [[screen id, sub-tab label, camp building whose attention badge it shares], ...]]
+const NAV_GROUPS := [
+	["Roster", "roster", [["roster", "Heroes", "Command Tent"], ["recruits", "Recruits", "Hero Recruits"], ["medical", "Medical", "Medical Tent"]]],
+	["Inventory", "inventory", [["inventory", "Items", "Inventory"], ["crafting", "Crafting", "Trading Post"]]],
+	["Rift Hall", "rift", [["rift", "Rift Hall", "Rift Gate"]]],
+	["Guild", "management", [["management", "Manage", ""], ["quests", "Quests", "Scholar's Lodge"], ["records", "Records", ""], ["memorial", "Memorial", ""]]],
+	["Library", "bestiary", [["bestiary", "Bestiary", ""], ["compendium", "Codex", ""]]],
 ]
+const NAV_FEATURE := {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}
 
 
 func _quick_nav_current() -> String:
@@ -445,6 +442,10 @@ func _quick_nav_current() -> String:
 		"rift_hall": return "rift"
 		"terminal": return "" if term_tab == "camp" else term_tab
 	return ""
+
+
+func _nav_locked(id: String) -> bool:
+	return NAV_FEATURE.has(id) and not GameState.feature_unlocked(NAV_FEATURE[id])
 
 
 func _quick_go(id: String) -> void:
@@ -462,57 +463,82 @@ func _quick_go(id: String) -> void:
 
 
 func _quick_nav() -> Control:
+	var col := _vbox(6)
 	# Wraps to two rows on the narrow (portrait) canvas.
 	var bar := HFlowContainer.new()
 	bar.add_theme_constant_override("h_separation", 6)
 	bar.add_theme_constant_override("v_separation", 6)
 	bar.alignment = FlowContainer.ALIGNMENT_CENTER
+	col.add_child(bar)
 	var badges := _camp_badges()
 	var current := _quick_nav_current()
-	for i in QUICK_NAV.size():
-		var e: Array = QUICK_NAV[i]
-		var id: String = e[0]
-		var key := str((i + 1) % 10) if i < 10 else ""
-		var go := _quick_go.bind(id)
-		var feature_id: String = {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}.get(id, "")
-		var locked := feature_id != "" and not GameState.feature_unlocked(feature_id)
+	for i in NAV_GROUPS.size():
+		var g: Array = NAV_GROUPS[i]
+		var members: Array = g[2]
+		var ids: Array = members.map(func(m): return str(m[0]))
+		var open: Array = ids.filter(func(id): return not _nav_locked(id))
+		var key := str(i + 1)
+		var locked := open.is_empty()
+		var go := _quick_go.bind(str(open[0]) if not locked else "")
 		var b := _button("", go)
-		b.custom_minimum_size = Vector2(76, 54)
+		b.custom_minimum_size = Vector2(88, 54)
 		b.toggle_mode = true
-		b.button_pressed = id == current
-		b.tooltip_text = "%s%s" % [e[1], "  (key %s)" % key if key != "" else ""]
+		b.button_pressed = ids.has(current)
+		b.tooltip_text = "%s  (key %s)" % [g[0], key]
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		if locked:
 			b.disabled = true
 			b.modulate = Color(1, 1, 1, 0.45)
-			b.tooltip_text = "%s — %s" % [e[1], GameData.FEATURE_UNLOCKS[feature_id]["hint"]]
+			b.tooltip_text = "%s — %s" % [g[0], GameData.FEATURE_UNLOCKS[NAV_FEATURE[ids[0]]]["hint"]]
 		var tile := VBoxContainer.new()
 		tile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tile.alignment = BoxContainer.ALIGNMENT_CENTER
 		tile.add_theme_constant_override("separation", 1)
 		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var ic := _icon(GameData.CAMP_HUB_ICON_PATH[id], 26)
+		var ic := _icon(GameData.CAMP_HUB_ICON_PATH[str(g[1])], 26)
 		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tile.add_child(ic)
-		var nl := _label(str(e[1]), 12)
+		var nl := _label(str(g[0]), 12)
 		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tile.add_child(nl)
 		b.add_child(tile)
-		if key != "":
-			if not locked:
-				_combat_hotkeys[key] = go
-			var kl := _label(key, 12)
-			kl.add_theme_color_override("font_color", Palette.MUTED)
-			kl.position = Vector2(3, 0)
-			b.add_child(kl)
-		var badge: Array = badges.get(str(e[2]), [])
-		if not badge.is_empty():
-			var chip := _count_badge(str(badge[0]), str(badge[1]))
-			chip.position = Vector2(58, -6)
-			b.add_child(chip)
+		if not locked:
+			_combat_hotkeys[key] = go
+		var kl := _label(key, 12)
+		kl.add_theme_color_override("font_color", Palette.MUTED)
+		kl.position = Vector2(3, 0)
+		b.add_child(kl)
+		for m in members:
+			var badge: Array = badges.get(str(m[2]), [])
+			if not badge.is_empty() and not _nav_locked(str(m[0])):
+				var chip := _count_badge(str(badge[0]), str(badge[1]))
+				chip.position = Vector2(70, -6)
+				b.add_child(chip)
+				break
 		bar.add_child(b)
-	return bar
+		# Sub-tabs for the open group.
+		if ids.has(current) and members.size() > 1:
+			var sub := HFlowContainer.new()
+			sub.add_theme_constant_override("h_separation", 4)
+			sub.alignment = FlowContainer.ALIGNMENT_CENTER
+			for m in members:
+				var sid := str(m[0])
+				var sb := _button(str(m[1]), _quick_go.bind(sid))
+				sb.toggle_mode = true
+				sb.button_pressed = sid == current
+				sb.custom_minimum_size = Vector2(92, 32)
+				var badge: Array = badges.get(str(m[2]), [])
+				if _nav_locked(sid):
+					sb.disabled = true
+					sb.modulate = Color(1, 1, 1, 0.45)
+					sb.tooltip_text = GameData.FEATURE_UNLOCKS[NAV_FEATURE[sid]]["hint"]
+				elif not badge.is_empty():
+					sb.text = "%s  %s" % [m[1], badge[0]]
+					sb.tooltip_text = str(badge[1])
+				sub.add_child(sb)
+			col.add_child(sub)
+	return col
 
 
 ## The header's back button for this screen: [callback, destination name],

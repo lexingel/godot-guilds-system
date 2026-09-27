@@ -16,7 +16,7 @@ func _render_terminal(v: VBoxContainer) -> void:
 
 	if term_tab == "camp":
 		if GameState.heroes.is_empty():
-			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero at the Scouts' Lodge (key 2), then head to the Rift Gate to seal a rift.")
+			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero under Roster > Recruits (key 1), then head to the Rift Hall (key 3) to seal a rift.")
 		elif GameState.runs_started >= 1 and GameState.run.is_empty():
 			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
