@@ -860,13 +860,14 @@ func _best_party_power(cap: int = 4) -> int:
 ## A Roster stat line's tooltip: the total, then every source feeding it
 ## (Combat.hero_skill_sources), then situational bonuses that only apply in
 ## the right moment (Combat.hero_effects stat entries of this kind).
-const HERO_SOURCE_PREFIXES := ["Skill:", "Combo:", "Keystone", "Innate", "Quirk:", "Morale:", "Battered"]
+const HERO_SOURCE_PREFIXES := ["Skill:", "Combo:", "Keystone", "Innate", "Quirk:", "Battered"]
 
 
 ## Where a hero_skill_sources label belongs: Hero (skills, class, attributes,
-## quirks, morale), Gear (equipped items) or Party (the Champion's boon).
+## quirks), Gear (equipped items) or Party (morale and the Champion's boon —
+## the guild around them).
 func _source_bucket(label: String) -> String:
-	if label == "Champion Boon":
+	if label == "Champion Boon" or label.begins_with("Morale:"):
 		return "Party"
 	for p in HERO_SOURCE_PREFIXES:
 		if label.begins_with(p):

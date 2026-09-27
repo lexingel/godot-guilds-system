@@ -52,6 +52,7 @@ func run() -> void:
 	var st := _fight(ids)
 	var m: Dictionary = st["monsters"][0]
 	m["hp"] = 99999.0; m["max_hp"] = 99999.0; m["armor"] = 0.4
+	st["escort"] = {}   # an escort can soak a foe's turn; keep these checks exact
 	for other in (st["monsters"] as Array).slice(1):
 		other["hp"] = 0.0
 	var h0: Hero = (st["party"] as Array).filter(func(h): return not h.is_champion)[0]

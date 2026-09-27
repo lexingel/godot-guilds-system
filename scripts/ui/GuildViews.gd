@@ -478,6 +478,25 @@ func _render_ledger(v: VBoxContainer) -> void:
 	rival.add_child(rv)
 	v.add_child(rival)
 
+	v.add_child(_label("Guild Standings", 16))
+	var table := GridContainer.new()
+	table.columns = 5
+	table.add_theme_constant_override("h_separation", 18)
+	table.add_theme_constant_override("v_separation", 4)
+	for head in ["", "Guild", "Renown", "Tower floor", "Endless best"]:
+		table.add_child(_label(head, 12, true))
+	var rows: Array = GameState.guild_standings()
+	for k in rows.size():
+		var r: Dictionary = rows[k]
+		var col: Color = Palette.EMBER_BRIGHT if r["you"] else Palette.TEXT
+		for cell in ["#%d" % (k + 1), str(r["name"]) + (" (you)" if r["you"] else (" — rival" if r["name"] == GameState.rival_name else "")),
+				str(r["renown"]), str(r["tower"]), "%d:%02d" % [int(r["endless"]) / 60, int(r["endless"]) % 60]]:
+			var l := _label(cell, 13)
+			l.add_theme_color_override("font_color", col)
+			table.add_child(l)
+	v.add_child(table)
+	v.add_child(_wrap_label("The other guilds' records grow every day. Top the Renown column for an achievement.", 11, true))
+
 	v.add_child(_label("Heroes — wages and morale", 16))
 	var sorted: Array = GameState.heroes.duplicate()
 	sorted.sort_custom(func(a, b): return a.morale < b.morale)

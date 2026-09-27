@@ -113,3 +113,11 @@ func run() -> void:
 	GameState.save()
 	GameState.load_save()
 	check(GameState.rival_ahead == 1 and GameState.find_hero(a.id).morale == a.morale, "rival and morale survive a reload")
+
+	# Guild Standings: five guilds, best Renown first, you among them.
+	GameState.day = 40
+	var rows := GameState.guild_standings()
+	check(rows.size() == 5 and rows.filter(func(r): return r["you"]).size() == 1, "five guilds in the standings, yours among them")
+	check(rows[0]["renown"] >= rows[-1]["renown"], "sorted by Renown")
+	GameState.reputation = 9999
+	check(GameState.guild_standings()[0]["you"] and GameState.milestone_progress({"type": "standings_top"}) == 1, "topping the Renown column counts for the achievement")

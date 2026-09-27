@@ -453,6 +453,11 @@ const QUEST_TYPE_LABEL := {
 ## A static checklist, each auto-granted the moment its condition becomes
 ## true (GameState.check_milestones, called once per render) — distinct from
 ## Bestiary, which tracks encounters with no reward attached.
+## Guild Standings: besides the rival (who is real, see rival_day), three
+## other guilds whose records grow with the days: [strength] scales their
+## Renown pace, Tower climb and Endless survival.
+const STANDING_STRENGTH := [0.7, 0.95, 1.2]
+
 const MILESTONES := [
 	{"id": "first_seal", "label": "First Blood — seal your first Rift", "type": "rifts_sealed", "target": 1, "reward": {"crystals": 10}},
 	{"id": "monster_hunter", "label": "Monster Hunter — defeat 25 monsters total", "type": "total_kills", "target": 25, "reward": {"coins": 50, "reputation": 5}},
@@ -460,6 +465,7 @@ const MILESTONES := [
 	{"id": "boss_breaker", "label": "Boss Breaker — defeat 3 Bosses", "type": "bosses_won", "target": 3, "reward": {"reputation": 5}},
 	{"id": "artisan", "label": "Artisan — craft 3 items or relics", "type": "crafts_performed", "target": 3, "reward": {"crystals": 30}},
 	{"id": "full_roster", "label": "Full Roster — fill every hero slot", "type": "full_roster", "target": 1, "reward": {"reputation": 10}},
+	{"id": "top_guild", "label": "Guild of the Realm — top the Guild Standings in Renown", "type": "standings_top", "target": 1, "reward": {"coins": 150, "reputation": 5}},
 	{"id": "renowned", "label": "Renowned Guild — reach Renowned Guild tier", "type": "guild_tier_renowned", "target": 1, "reward": {"reputation": 15}},
 	{"id": "greater_threat", "label": "Greater Threat — open the Rank C rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
 	{"id": "act_one", "label": "The Vale Holds — complete Act I", "type": "campaign_act", "target": 2, "reward": {"crystals": 25}},
