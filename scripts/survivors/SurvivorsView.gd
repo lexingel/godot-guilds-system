@@ -548,7 +548,7 @@ func _show_results() -> void:
 	var lines := [
 		"Survived %d:%02d%s" % [t / 60, t % 60, "  — a new best!" if _summary.get("best", false) else ""],
 		"%d kills · %d elites · %d wardens · reached level %d" % [run.kills, run.elites_killed, run.bosses_killed, run.level],
-		"+%d coins · +%d crystals · +%d XP for every hero" % [_summary["coins"], _summary["crystals"], _summary["xp"]],
+		"+%d gold · +%d essence · +%d XP for every hero" % [_summary["coins"], _summary["crystals"], _summary["xp"]],
 	]
 	for name in _summary.get("loot", []):
 		lines.append("Found: %s" % name)

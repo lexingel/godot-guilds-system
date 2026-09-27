@@ -317,10 +317,10 @@ func _start_round(state: Dictionary) -> void:
 	if party_has_unique_relic("gamblers_coin"):
 		if randf() < 0.5:
 			attack_mult *= 2.0
-			log.append("The Gambler's Coin shines bright — damage is doubled this round!")
+			log.append("The Gambler's Gold shines bright — damage is doubled this round!")
 		else:
 			attack_mult *= 0.5
-			log.append("The Gambler's Coin shows its dark face — damage is halved this round.")
+			log.append("The Gambler's Gold shows its dark face — damage is halved this round.")
 	if party_has_unique_relic("ashes_of_the_fallen"):
 		var desperation_cap := 0.30
 		if party_has_unique_relic("twin_embers"):

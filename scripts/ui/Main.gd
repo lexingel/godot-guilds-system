@@ -408,10 +408,9 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 ## already uses (CardPanelEmber/StatTileEmber).
 ## What each header currency is for (keyed by its icon path).
 var CURRENCY_TIPS := {
-	GameData.CURRENCY_ICON_PATH["coins"]: "Coins — recruit heroes, buy from rift shops, reroll offers, buy incense and runestones.",
-	GameData.CURRENCY_ICON_PATH["crystals"]: "Crystals — evolve heroes, upgrade relics, buy Guild Management upgrades, bypass hazards.",
-	GameData.CURRENCY_ICON_PATH["tokens"]: "Seal Tokens — earned by sealing rifts and from Guild Board dailies. Spent on resetting a hero's attributes (Roster → Hero).",
-	GameData.CURRENCY_ICON_PATH["reputation"]: "Reputation — from rift bounties and quests. Every 20 guarantees an Epic relic at your next rift shop.",
+	GameData.CURRENCY_ICON_PATH["coins"]: "Gold — recruit and train heroes, buy from rift shops and supplies, reroll offers.",
+	GameData.CURRENCY_ICON_PATH["crystals"]: "Essence — earned by fighting and sealing rifts. Evolves heroes, upgrades relics and the guild, reforges gear, resets attributes.",
+	GameData.CURRENCY_ICON_PATH["reputation"]: "Renown — from rift bounties and quests. Every 20 guarantees an Epic at your next rift shop.",
 }
 
 
@@ -629,7 +628,6 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	for entry in [
 		[GameData.CURRENCY_ICON_PATH["coins"], GameState.coins],
 		[GameData.CURRENCY_ICON_PATH["crystals"], GameState.crystals],
-		[GameData.CURRENCY_ICON_PATH["tokens"], GameState.tokens],
 		[GameData.CURRENCY_ICON_PATH["reputation"], GameState.reputation],
 	]:
 		var stat_row := HBoxContainer.new()
@@ -1033,9 +1031,6 @@ func _tower_reward_line(info: Dictionary) -> Control:
 	row.add_child(_label("+%d" % (int(rw["coins"]) if first else int(rw["coins"]) / 2), 13))
 	row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 16))
 	row.add_child(_label("+%d" % (int(rw["crystals"]) if first else int(rw["crystals"]) / 2), 13))
-	if first and int(rw["tokens"]) > 0:
-		row.add_child(_icon(GameData.CURRENCY_ICON_PATH["tokens"], 16))
-		row.add_child(_label("+%d" % int(rw["tokens"]), 13))
 	var rdef: Dictionary = rw["relic"]
 	if first and not rdef.is_empty():
 		var rl := _label("+ %s" % rdef["name"], 13)
@@ -1163,7 +1158,7 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 		tl.tooltip_text = "Counts down each time a run ends (or the guild rests). An unaddressed rift spills out as a forced fight."
 		row.add_child(tl)
 		var bounty: Dictionary = slot.get("bounty", {})
-		var bl := _label("Bounty +%dc, +%d Rep" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))] if not bounty.is_empty() else "", 13)
+		var bl := _label("Bounty +%d Gold, +%d Renown" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))] if not bounty.is_empty() else "", 13)
 		bl.add_theme_color_override("font_color", Palette.COINS)
 		bl.custom_minimum_size.x = 160
 		row.add_child(bl)
@@ -1189,7 +1184,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if _pending_daily:
 		var dinfo := GameState.daily_info()
 		v.add_child(_label("Daily Rift — %s" % dinfo["rule"]["name"], 20))
-		v.add_child(_wrap_label("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Crystals and +%d Seal Tokens." % [dinfo["rule"]["desc"], GameData.find_boon(str(dinfo["boon"]))["name"], GameData.find_boon(str(dinfo["boon"]))["desc"], GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3), GameData.DAILY_CLEAR_TOKENS], 12, true))
+		v.add_child(_wrap_label("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence." % [dinfo["rule"]["desc"], GameData.find_boon(str(dinfo["boon"]))["name"], GameData.find_boon(str(dinfo["boon"]))["desc"], GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)], 12, true))
 	elif _pending_tower:
 		v.add_child(_label("Tower of Trials — Floor %d" % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]

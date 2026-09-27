@@ -50,9 +50,6 @@ func _render_roster(v: VBoxContainer) -> void:
 	], func(new_id): roster_sort = new_id)
 	sort_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	left.add_child(sort_btn)
-	var stones_text := GameData.evolution_stones_text(GameState.evolution_stones)
-	if stones_text != "":
-		left.add_child(_wrap_label("Evolution Stones: %s" % stones_text, 12, true))
 	var sorted := _sorted_heroes()
 	if selected_hero_id == "":
 		selected_hero_id = sorted[0].id
@@ -134,16 +131,14 @@ func _render_roster(v: VBoxContainer) -> void:
 				cv.add_child(ab_row)
 				if not evolve_choices.is_empty() or h.prior_pool_id != "":
 					cv.add_child(_label("Evolving replaces this Ability, but skill trees carry over.", 10, true))
-			# Evolution runs on Evolution Stones for the B/A/S jump (dropped by Rift
-			# Map clears — see GameState.seal_rift/evolve_hero). The player picks the
-			# path: "Evolve" opens every candidate with what it would change (stat,
-			# element, Ability, passive), each with its own confirm button.
+			# Evolving costs Crystals; the B/A/S jump also needs a rift of that rank
+			# sealed once. The player picks the path: "Evolve" opens every candidate
+			# with what it would change, each with its own confirm button.
 			if not evolve_choices.is_empty():
 				var next_rank_id: String = evolve_choices[0]["rank"]
 				var next_rank := GameData.find_rank(next_rank_id)
-				var needs_stone: bool = next_rank_id in ["B", "A", "S"]
-				var stone_count: int = int(GameState.evolution_stones.get(next_rank_id, 0))
-				var evolve_label := "Evolve (%dcr, %d %s-Stone)" % [int(next_rank["cost"]), stone_count, next_rank_id] if needs_stone else "Evolve (%dcr)" % int(next_rank["cost"])
+				var gate := GameState.evolve_rank_gate(next_rank_id)
+				var evolve_label := "Evolve (%d Essence)" % int(next_rank["cost"]) if gate == "" else "Evolve — %s" % gate
 				var picking := evolve_picker_hero_id == h.id
 				cv.add_child(_icon_button("res://assets/skills/star.png", "Hide evolution paths" if picking else evolve_label, func(id=h.id):
 					evolve_picker_hero_id = "" if evolve_picker_hero_id == id else id
@@ -170,15 +165,6 @@ func _render_roster(v: VBoxContainer) -> void:
 							render()
 						)], _icon_trimmed(GameData.portrait_for_hero(str(c["role"]), str(c["id"])), 32) if GameData.portrait_for_hero(str(c["role"]), str(c["id"])) != "" else null))
 
-			var reinforce_count: int = int(GameState.evolution_stones.get(h.rank, 0))
-			var reinforce_used: int = int(h.stone_bonus_used.get(h.pool_id, 0))
-			if reinforce_count > 0 and reinforce_used < GameData.EVOLUTION_STONE_BONUS_SP_CAP:
-				cv.add_child(_icon_button("res://assets/skills/gem_red.png", "Reinforce (+1 SP, %d/%d used)" % [reinforce_used, GameData.EVOLUTION_STONE_BONUS_SP_CAP], func(id=h.id):
-					var err := GameState.reinforce_hero(id)
-					if err != "":
-						push_warning(err)
-					render()
-				))
 			# One pill per tree the hero has unlocked — evolving keeps every past
 			# stage's tree reachable instead of replacing it, so a heavily-evolved
 			# hero can have several; only one tree's grid shows at a time (accordion
@@ -205,7 +191,7 @@ func _render_roster(v: VBoxContainer) -> void:
 				var tree_prefix := "%s:" % expanded_skill_tree_kind
 				var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
 				if tree_spent:
-					cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec this tree (%dc)" % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
+					cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Respec this tree (%d Gold)" % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
 						var err := GameState.respec_hero(id, k)
 						if err != "":
 							push_warning(err)
@@ -338,7 +324,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var tl := _label("Trait: %s" % (h.trait_name if h.trait_name != "" else "Steadfast"), 12, true)
 	tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	trait_row.add_child(tl)
-	trait_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (%dc)" % GameState.trait_reroll_cost(), func(id=h.id):
+	trait_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll Trait (%d Gold)" % GameState.trait_reroll_cost(), func(id=h.id):
 		var err := GameState.reroll_trait(id)
 		if err != "":
 			push_warning(err)
@@ -422,7 +408,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 			plus.tooltip_text = "+1 %s" % GameData.ATTR_LABEL[a]
 			row.add_child(plus)
 		v.add_child(row)
-	# Camp training (Coins) and a full reset (Seal Tokens).
+	# Camp training (Gold) and a full reset (Essence).
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 8)
 	if not h.is_champion:
@@ -435,7 +421,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 			render()
 		)
 		train.disabled = maxed or GameState.coins < tcost
-		train.tooltip_text = "Buy an attribute point with Coins (%d/%d trained; each costs %d more)" % [h.attr_trained, GameData.ATTR_TRAIN_CAP, GameData.ATTR_TRAIN_COST]
+		train.tooltip_text = "Buy an attribute point with Gold (%d/%d trained; each costs %d more)" % [h.attr_trained, GameData.ATTR_TRAIN_CAP, GameData.ATTR_TRAIN_COST]
 		foot.add_child(train)
 	var fsp := Control.new()
 	fsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -445,7 +431,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		var cost := GameState.attr_respec_cost(h)
 		var reset: Button
 		if _confirm_respec_id == h.id:
-			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Confirm — %d" % cost, func(id=h.id):
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Confirm — %d" % cost, func(id=h.id):
 				_confirm_respec_id = ""
 				var err := GameState.respec_attrs(id)
 				if err != "":
@@ -454,12 +440,12 @@ func _attr_panel(h: Hero) -> PanelContainer:
 			)
 			foot.add_child(_button("Keep", func(): _confirm_respec_id = ""; render()))
 		else:
-			reset = _icon_button(GameData.CURRENCY_ICON_PATH["tokens"], "Reset %d" % cost, func(id=h.id):
+			reset = _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Reset %d" % cost, func(id=h.id):
 				_confirm_respec_id = id
 				render()
 			)
-			reset.disabled = GameState.tokens < cost
-		reset.tooltip_text = "Refund all %d spent points for %d Seal Tokens (you have %d)" % [refund, cost, GameState.tokens]
+			reset.disabled = GameState.crystals < cost
+		reset.tooltip_text = "Refund all %d spent points for %d Essence (you have %d)" % [refund, cost, GameState.crystals]
 		foot.add_child(reset)
 	if foot.get_child_count() > 1:
 		v.add_child(foot)
@@ -532,7 +518,7 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	var cost := GameState.skill_node_cost(h, kind, n)
 	var missing_sp: bool = h.skill_points < cost
 	var missing_rift: bool = n.has("rift_rank") and GameState.best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"]))
-	var missing_stone: bool = n.get("stone", false) and not GameState.evolution_stones.values().any(func(c): return int(c) > 0)
+	var missing_stone: bool = n.get("stone", false) and GameState.crystals < GameData.STONEBOUND_CRYSTALS
 	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out and not missing_rift and not missing_stone
 
 	var reason := "Learned"
@@ -546,11 +532,11 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		elif missing_rift:
 			reason = "Seal a Rank %s+ Rift Map rift first" % n["rift_rank"]
 		elif missing_stone:
-			reason = "Needs an Evolution Stone"
+			reason = "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS
 		elif missing_sp:
 			reason = "Needs %d SP" % cost
 		else:
-			reason = "Learn (%d SP%s)" % [cost, " + 1 Evolution Stone" if n.get("stone", false) else ""]
+			reason = "Learn (%d SP%s)" % [cost, " + %d Essence" % GameData.STONEBOUND_CRYSTALS if n.get("stone", false) else ""]
 		if cost < int(n["cost"]):
 			reason += "\nCheaper: your trait or scar suits this path"
 
@@ -802,19 +788,6 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 			GameState.equip_item(hid, st, i, "")
 			render()
 		))
-		if equipped.socketed_kind != "":
-			eactions.add_child(_label("Socketed: %s" % Combat.describe_skill(equipped.socketed_kind, equipped.socketed_value), 11, true))
-		else:
-			for r in GameState.runestones:
-				var rdef := GameData.find_runestone(str(r["runestone_id"]))
-				if rdef.get("category", "") != slot_type:
-					continue
-				eactions.add_child(_icon_button("res://assets/skills/ring.png", "Socket %s" % str(rdef["name"]), func(rid=r["id"], iid=equipped.id):
-					var err := GameState.socket_runestone(rid, iid)
-					if err != "":
-						push_warning(err)
-					render()
-				))
 		pv.add_child(eactions)
 		pv.add_child(_hsep())
 
@@ -849,13 +822,15 @@ func _render_inventory(v: VBoxContainer) -> void:
 		return
 	match inv_category:
 		"relics": _render_inventory_relics(v)
-		"detectors": _render_inventory_detectors(v)
+		"supplies":
+			inv_view = "supplies"
+			_render_inventory_items(v)
 		_: _render_inventory_items(v)
 
 
 ## The 3 Inventory categories as clickable stations on a storage-vault scene
 ## (a chest for Items, a glowing altar for Relics, a table with a spyglass
-## for Detectors) — same background-prop-as-button + hover-glow pattern as
+## for Supplies) — same background-prop-as-button + hover-glow pattern as
 ## the camp/management screens.
 func _render_inventory_hub(v: VBoxContainer) -> void:
 	var scene_size := Vector2(700, 340)
@@ -876,7 +851,7 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 	var cat_entries := [
 		["items", "Items", Rect2(0, 0, 230, 340), Rect2(3, 103, 97, 70)],
 		["relics", "Relics", Rect2(230, 0, 240, 340), Rect2(133, 58, 62, 100)],
-		["detectors", "Rift Detectors", Rect2(470, 0, 230, 340), Rect2(210, 65, 110, 95)],
+		["supplies", "Supplies", Rect2(470, 0, 230, 340), Rect2(210, 65, 110, 95)],
 	]
 	var camp_scale := Vector2(700.0 / 320.0, 340.0 / 200.0)
 	for entry in cat_entries:
@@ -900,11 +875,11 @@ func _render_inventory_hub(v: VBoxContainer) -> void:
 
 func _render_inventory_items(v: VBoxContainer) -> void:
 	var loose: Array = GameState.items.filter(func(it): return it.equipped_to == "")
-	# Gear | Supplies — the gear grid and the incense/runestone shop each get
+	# Gear | Supplies — the gear grid and the tonic/incense shop each get
 	# the full width instead of sharing one long page.
 	var tab_row := HBoxContainer.new()
 	tab_row.add_theme_constant_override("separation", 4)
-	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.runestones.size() + GameState.tonics)]]:
+	for td in [["gear", "Gear  %d" % loose.size()], ["supplies", "Supplies  %d" % (GameState.consumables.size() + GameState.tonics)]]:
 		var tb := _button(str(td[1]), func(t=str(td[0])):
 			inv_view = t
 			selected_item_id = ""
@@ -1088,7 +1063,7 @@ func _item_modal(it: Item) -> void:
 		cv.add_child(_wrap_label("Needs %d %s: %s" % [it.attr_req, GameData.ATTR_LABEL.get(it.attr, it.attr), ", ".join(blocked)], 12, true))
 	if it.unique_id == "":
 		var rcost := GameState.reforge_cost(it)
-		cv.add_child(_label("Reforge — reroll one stat (%d Crystals)" % rcost, 13, true))
+		cv.add_child(_label("Reforge — reroll one stat (%d Essence)" % rcost, 13, true))
 		var ref_row := HFlowContainer.new()
 		ref_row.add_theme_constant_override("h_separation", 6)
 		ref_row.add_theme_constant_override("v_separation", 6)
@@ -1139,7 +1114,7 @@ func _render_inventory_supplies(v: VBoxContainer) -> void:
 		render()
 	)
 	tonic_btn.disabled = GameState.tonics >= GameData.TONIC_CAP or GameState.coins < GameData.TONIC_COST
-	v.add_child(_info_row("Field Tonic (%dcr) — heals %d%% HP · carrying %d/%d" % [GameData.TONIC_COST, int(GameData.TONIC_HEAL_PCT * 100), GameState.tonics, GameData.TONIC_CAP], 12, [tonic_btn], _icon("res://assets/ui/icon_tonic.png", 24)))
+	v.add_child(_info_row("Field Tonic (%d Gold) — heals %d%% HP · carrying %d/%d" % [GameData.TONIC_COST, int(GameData.TONIC_HEAL_PCT * 100), GameState.tonics, GameData.TONIC_CAP], 12, [tonic_btn], _icon("res://assets/ui/icon_tonic.png", 24)))
 	v.add_child(_hsep())
 	v.add_child(_label("Field Incense — used at Party Assembly, lasts the whole rift", 16))
 	if not GameState.consumables.is_empty():
@@ -1154,23 +1129,7 @@ func _render_inventory_supplies(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		)
-		v.add_child(_info_row("%s (%dcr) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12, [buy_btn]))
-
-	v.add_child(_hsep())
-	v.add_child(_label("Runestones — socket into an equipped item from its Roster card", 16))
-	if not GameState.runestones.is_empty():
-		v.add_child(_label("Owned:", 12, true))
-		for r in GameState.runestones:
-			var rdef := GameData.find_runestone(str(r["runestone_id"]))
-			v.add_child(_wrap_label("%s — %s" % [rdef["name"], rdef["desc"]], 12))
-	for rdef in GameData.RUNESTONE_TYPES:
-		var buy_btn := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func(rid=rdef["id"]):
-			var err := GameState.buy_runestone(rid)
-			if err != "":
-				push_warning(err)
-			render()
-		)
-		v.add_child(_info_row("%s (%dcr) — %s" % [rdef["name"], int(rdef["cost"]), rdef["desc"]], 12, [buy_btn]))
+		v.add_child(_info_row("%s (%d Gold) — %s" % [def["name"], int(def["cost"]), def["desc"]], 12, [buy_btn]))
 
 
 ## Inventory → Relics: the Relic Altar. Equipped relics sit in the altar's
@@ -1400,7 +1359,7 @@ func _relic_modal(r: Relic) -> void:
 				render()
 			)
 			rb.disabled = GameState.crystals < rcost
-			rb.tooltip_text = "Reroll this effect for %d Crystals (each reroll costs more)" % rcost
+			rb.tooltip_text = "Reroll this effect for %d Essence (each reroll costs more)" % rcost
 			er.add_child(rb)
 			effects.add_child(er)
 		if r.level < GameState.RELIC_MAX_LEVEL and not r.awakened:
@@ -1455,24 +1414,3 @@ func _relic_modal(r: Relic) -> void:
 	card.add_child(cv)
 	center.add_child(card)
 	root.add_child(overlay)
-
-
-func _render_inventory_detectors(v: VBoxContainer) -> void:
-	v.add_child(_label("Rift Detectors", 16))
-	if GameState.detectors.is_empty():
-		v.add_child(_label("No Detectors.", 12))
-	for d in GameState.detectors:
-		var drow := HBoxContainer.new()
-		var det_id: String = d["id"]
-		drow.add_child(_label("%s Detector" % str(d["tier"]).capitalize(), 12))
-		drow.add_child(_icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Sell", func(id=det_id):
-			GameState.sell_detector(id)
-			render()
-		))
-		drow.add_child(_icon_button("res://assets/skills/star.png", "Use for Shop Boost", func(id=det_id):
-			var err := GameState.use_detector_for_shop_boost(id)
-			if err != "":
-				push_warning(err)
-			render()
-		))
-		v.add_child(drow)

@@ -107,11 +107,11 @@ func run() -> void:
 	for n in t2n:
 		GameState.learn_skill(h1.id, kind, str(n["id"]))
 	GameState.learn_skill(h1.id, kind, "cap")
-	GameState.evolution_stones = {}
-	check(GameState.learn_skill(h1.id, kind, "stonebound") == "Needs an Evolution Stone", "stonebound needs a stone")
-	GameState.evolution_stones = {"D": 1}
+	GameState.crystals = 0
+	check(GameState.learn_skill(h1.id, kind, "stonebound") == "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS, "stonebound needs Essence")
+	GameState.crystals = GameData.STONEBOUND_CRYSTALS
 	var ap0 := Combat.hero_skill_total(h1, "ability_power")
-	check(GameState.learn_skill(h1.id, kind, "stonebound") == "" and int(GameState.evolution_stones["D"]) == 0, "stonebound consumes the stone")
+	check(GameState.learn_skill(h1.id, kind, "stonebound") == "" and GameState.crystals == 0, "stonebound spends the Essence")
 	check(Combat.hero_skill_total(h1, "ability_power") > ap0, "stonebound adds ability power")
 
 	# ---- Fork discount + consistent refund

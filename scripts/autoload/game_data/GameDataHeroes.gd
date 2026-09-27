@@ -274,7 +274,7 @@ const NARRATIVE_LINES := {
 		"closers": ["It was always waiting.", "Whatever's behind it, the guild has earned the right to find out.", "Not every gate opens with a key. Some just need proof.", "The easy floors are behind you now."],
 	},
 	"guild_tier_reached": {
-		"openers": ["Word spreads.", "Other guilds have started asking who you are.", "The name on the banner starts to mean something.", "Reputation is its own kind of currency."],
+		"openers": ["Word spreads.", "Other guilds have started asking who you are.", "The name on the banner starts to mean something.", "Renown is its own kind of currency."],
 		"closers": ["The guild's name means something now.", "Not everyone gets to hear it and stay calm.", "Whatever you're building, people have noticed.", "Growth like this doesn't go unnoticed for long."],
 	},
 }
@@ -579,8 +579,8 @@ const UNIQUE_ARCH_ATTR := {"executioner": "might", "attrition": "might", "guardi
 const ITEM_ATTR_BONUS := {"common": 1, "rare": 2, "epic": 3, "legendary": 4}
 const ITEM_ATTR_REQ := {"common": 0, "rare": 7, "epic": 10, "legendary": 13}
 
-## Resetting a hero's attributes costs this many Seal Tokens per hero level.
-const RESPEC_TOKENS_PER_LEVEL := 5
+## Resetting a hero's attributes costs this many Crystals per hero level.
+const RESPEC_CRYSTALS_PER_LEVEL := 10
 
 ## Field Tonic: a battle consumable (Inventory → Supplies). Using one takes the
 ## hero's turn and heals one ally.
@@ -662,22 +662,6 @@ static func find_incense(incense_id: String) -> Dictionary:
 			return i
 	return {}
 
-## Runestones: bought with Coins like Incense, but socketed permanently into
-## one equipped Item instead of consumed at Party Assembly — the bonus stacks
-## on top of that item's own stat for as long as it stays equipped. "category"
-## matches Item.slot_type() ("weapon"/"gear") so a runestone only fits the
-## matching socket.
-const RUNESTONE_TYPES := [
-	{"id": "impact", "name": "Runestone of Impact", "category": "weapon", "kind": "dmg_pct", "value": 0.08, "cost": 60, "desc": "Weapon socket: +8% damage"},
-	{"id": "aegis", "name": "Runestone of Aegis", "category": "gear", "kind": "hazard_guard_pct", "value": 0.08, "cost": 60, "desc": "Gear socket: -8% hazard severity"},
-]
-
-
-static func find_runestone(runestone_id: String) -> Dictionary:
-	for r in RUNESTONE_TYPES:
-		if r["id"] == runestone_id:
-			return r
-	return {}
 
 # Rank ladder shared by recruited heroes and the Champion (see GameState's
 # recruit_hero/reroll_champion). Rank sets weight (pull odds), stat

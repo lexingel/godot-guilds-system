@@ -62,9 +62,9 @@ func describe_node_effect(node_id: String, level: int) -> String:
 		"barracks": return "+%d hero slots" % (level * 2)
 		"infirmary": return "-%d%% recovery time · %d bed%s" % [level * 15, 1 + int(ceil(level / 2.0)), "" if level == 0 else "s"]
 		"drill": return "+%d%% party damage and max HP" % (level * 4)
-		"amplifiers": return "+%d%% Crystals from fights" % (level * 8)
-		"wardstones": return "-%d%% hazard damage · +%d%% Seal Tokens" % [level * 12, level * 10]
-		"trade": return "-%d%% shop prices · -%d%% auction fees · +%d%% detector drops" % [level * 6, level * 2, level * 5]
+		"amplifiers": return "+%d%% Essence from fights" % (level * 8)
+		"wardstones": return "-%d%% hazard damage · +%d%% Essence for sealing" % [level * 12, level * 10]
+		"trade": return "-%d%% shop prices · -%d%% auction fees · +%d%% Rift Cache chance" % [level * 6, level * 2, level * 5]
 		"scouts": return "%d recruit offers" % (4 + (1 if level >= 1 else 0) + (1 if level >= 4 else 0))
 		"vault":
 			var choices := 4 if level >= 4 else (3 if level >= 2 else 2)

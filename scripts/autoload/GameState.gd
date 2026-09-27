@@ -11,14 +11,11 @@ func reset() -> void:
 	next_id = 1
 	coins = 60
 	crystals = 15
-	tokens = 0
 	heroes = []
 	relics = []
 	items = []
-	detectors = []
 	consumables = []
 	active_incense = {}
-	runestones = []
 	tonics = 0
 	recruit_pool = []
 	upgrades = {}
@@ -118,7 +115,6 @@ func load_save() -> bool:
 	next_id = data.get("next_id", 1)
 	coins = data.get("coins", 60)
 	crystals = data.get("crystals", 15)
-	tokens = data.get("tokens", 0)
 	Hero.attrs_migrated = 0
 	heroes.assign(data.get("heroes", []).map(func(d): return Hero.from_dict(d)))
 	if Hero.attrs_migrated > 0:
@@ -138,11 +134,8 @@ func load_save() -> bool:
 		refresh_recruit_pool()
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
-	detectors.assign(data.get("detectors", []))
-	evolution_stones = data.get("evolution_stones", {})
 	consumables.assign(data.get("consumables", []))
 	active_incense = data.get("active_incense", {})
-	runestones.assign(data.get("runestones", []))
 	tonics = int(data.get("tonics", 0))
 	rift_map.assign(data.get("rift_map", []))
 	if rift_map.is_empty() and guild_name != "":
@@ -171,7 +164,7 @@ func load_save() -> bool:
 	caps = data.get("caps", {})
 	if int(data.get("_mgmt_refund", 0)) > 0:
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild Management rebuilt",
-			"text": "Upgrades are fewer and much stronger now. %d Crystals spent on the old tree were refunded." % int(data["_mgmt_refund"])})
+			"text": "Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded." % int(data["_mgmt_refund"])})
 	var champ_data = data.get("current_champion")
 	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
 	if current_champion:
@@ -236,7 +229,7 @@ func load_save() -> bool:
 			"node_kind": run_data.get("node_kind", ""), "node_state": _unpack(run_data.get("node_state", {})), "seed": int(run_data.get("seed", randi())),
 			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
 			"start_coins": run_data.get("start_coins", coins), "start_crystals": run_data.get("start_crystals", crystals),
-			"start_tokens": run_data.get("start_tokens", tokens), "heroes_lost": run_data.get("heroes_lost", 0),
+			"heroes_lost": run_data.get("heroes_lost", 0),
 			"rift_rank": run_data.get("rift_rank", ""), "is_riftbreak": run_data.get("is_riftbreak", false),
 			"riftbreak_severity": run_data.get("riftbreak_severity", 0),
 			"riftbreak_worst_index": run_data.get("riftbreak_worst_index", 0),
@@ -390,7 +383,7 @@ func start_tower(hero_ids: Array[String]) -> void:
 		"layers": [{"options": [info["kind"]]}], "pos": 0, "chosen": {},
 		"hero_ids": ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
-		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
+		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
 		"rift_rank": "", "seed": int(info["seed"]), "biome": str(info["biome"]), "tower": f,
 	}
 	ensure_champion()

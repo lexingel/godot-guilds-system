@@ -32,7 +32,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
-		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
+		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
 		"rift_rank": rift_rank, "seed": randi(), "training": training, "biome": pick_biome(),
 	}
 	if training:
@@ -276,7 +276,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			var escort: Dictionary = state.get("escort", {})
 			if not run.get("is_riftbreak", false) and not escort.is_empty() and float(escort.get("hp", 0.0)) > 0.0:
 				add_reputation(2)
-				tokens += 1
+				crystals += 1
 				result["escort_saved"] = str(escort["name"])
 		elif hardcore and not bool(result.get("retreated", false)):
 			var party: Array[Hero] = state["party"]
@@ -486,15 +486,15 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 	if e.has("coins"):
 		var n := _event_amount(e["coins"])
 		coins += n
-		log.append("+%d Coins." % n)
+		log.append("+%d Gold." % n)
 	if e.has("crystals"):
 		var n2 := _event_amount(e["crystals"])
 		crystals += n2
-		log.append("+%d Crystals." % n2)
+		log.append("+%d Essence." % n2)
 	if e.has("reputation"):
 		var r := int(e["reputation"])
 		add_reputation(r)
-		log.append("%+d Reputation." % r)
+		log.append("%+d Renown." % r)
 	if e.has("xp_all"):
 		for h in party:
 			Combat.gain_xp(h, int(e["xp_all"]))
@@ -511,9 +511,6 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 		for h in party:
 			h.ability_cooldown = 0
 		log.append("Every ability is ready.")
-	if e.has("tokens"):
-		tokens += int(e["tokens"])
-		log.append("+%d Seal Tokens." % int(e["tokens"]))
 	if e.has("tonic"):
 		var add := mini(int(e["tonic"]), GameData.TONIC_CAP - tonics)
 		tonics += add
@@ -659,10 +656,10 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 		var c := randi() % 5 + 2
 		if hz["bonus_type"] == "coins":
 			coins += c
-			log.append("You scavenge %d stray Coins." % c)
+			log.append("You scavenge %d stray Gold." % c)
 		else:
 			crystals += c
-			log.append("Stray Crystals found in the rubble: +%d." % c)
+			log.append("Stray Essence found in the rubble: +%d." % c)
 	ns["resolved"] = true
 	ns["log"] = log
 	run["node_state"] = ns
@@ -693,7 +690,7 @@ func bypass_hazard() -> void:
 	var ns: Dictionary = run["node_state"]
 	crystals -= HAZARD_BYPASS_COST
 	ns["resolved"] = true
-	ns["log"] = ["You pay %d Crystals and bypass the hazard entirely." % HAZARD_BYPASS_COST]
+	ns["log"] = ["You pay %d Essence and bypass the hazard entirely." % HAZARD_BYPASS_COST]
 	run["node_state"] = ns
 	save()
 	state_changed.emit()
@@ -798,26 +795,16 @@ func seal_rift() -> void:
 		_complete_act(campaign_act)
 	var diff := _diff()
 	var fast_clear: bool = int(run.get("boss_rounds", 99)) <= 6
-	var token_mult: float = seal_token_bonus() * (1.5 if run.get("hardcore", false) else 1.0)
-	var earned_tokens := int(round(float(diff["token_base"]) * token_mult))
-	var got_detector := false
-	if randf() < float(diff["detector_chance"]) + detector_drop_bonus():
-		var tier: String = str(diff["id"])
-		detectors.append({"id": "d" + str(next_id), "tier": tier})
-		next_id += 1
-		got_detector = true
-	# Only a Rift Map rift carries a rank at all (run["rift_rank"], set by
-	# start_map_rift) — a Lesser/Greater/Endless Riftbreak never drops one.
-	var got_stone := ""
+	var seal_mult: float = seal_bonus_mult() * (1.5 if run.get("hardcore", false) else 1.0)
+	var earned := int(round(float(diff["seal_essence"]) * seal_mult))
+	crystals += earned
+	var cache := 0
+	if randf() < float(diff["cache_chance"]) + cache_chance_bonus():
+		cache = int(round(float(GameData.RIFT_CACHE_GOLD.get(str(diff["id"]), 70)) * (1.3 if black_market_unlocked() else 1.0)))
+		coins += cache
 	var mapped_rank: String = str(run.get("rift_rank", ""))
 	if mapped_rank != "":
 		best_rift_rank_sealed = max(best_rift_rank_sealed, GameData.rift_rank_index(mapped_rank))
-	if mapped_rank != "":
-		var stone_tier := GameData.stone_tier_for_rift_rank(mapped_rank)
-		if stone_tier != "" and randf() < GameData.EVOLUTION_STONE_DROP_CHANCE:
-			evolution_stones[stone_tier] = int(evolution_stones.get(stone_tier, 0)) + 1
-			got_stone = stone_tier
-	tokens += earned_tokens
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
 	# Guild Board tallies (see _quest_current).
@@ -867,7 +854,7 @@ func seal_rift() -> void:
 	if not bounty.is_empty():
 		coins += int(bounty.get("coins", 0))
 		add_reputation(int(bounty.get("reputation", 0)))
-	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "flavor": flavor, "bounty": bounty}
+	run["sealed"] = {"essence": earned, "fast_clear": fast_clear, "cache": cache, "flavor": flavor, "bounty": bounty}
 	if run.has("daily"):
 		run["sealed"]["daily"] = _complete_daily()
 	save()
@@ -1232,7 +1219,7 @@ func start_riftbreak_encounter() -> void:
 		"layers": [{"options": ["combat"]}], "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": 0, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
-		"start_coins": coins, "start_crystals": crystals, "start_tokens": tokens, "heroes_lost": 0,
+		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
 		"rift_rank": "", "is_riftbreak": true, "riftbreak_severity": severity,
 		"riftbreak_worst_index": worst_index, "riftbreak_flavor": GameData.narrative_line("riftbreak_begins"),
 		"seed": randi(),
@@ -1242,33 +1229,6 @@ func start_riftbreak_encounter() -> void:
 	pending_riftbreak_ranks.clear()
 	save()
 	state_changed.emit()
-
-
-func sell_detector(detector_id: String) -> void:
-	for d in detectors:
-		if d["id"] == detector_id:
-			var base := int(GameData.DETECTOR_BASE_SALE[d["tier"]])
-			var bonus := 1.3 if black_market_unlocked() else 1.0
-			var fee: float = max(0.05, 0.15 - broker_fee_reduction())
-			var sale := int(round(base * bonus * (1.0 - fee)))
-			coins += sale
-			detectors.erase(d)
-			save()
-			state_changed.emit()
-			return
-
-
-func use_detector_for_shop_boost(detector_id: String) -> String:
-	if pending_shop_boost:
-		return "A Shop Boost is already armed"
-	for d in detectors:
-		if d["id"] == detector_id:
-			detectors.erase(d)
-			pending_shop_boost = true
-			save()
-			state_changed.emit()
-			return ""
-	return ""
 
 
 func retreat_now() -> void:

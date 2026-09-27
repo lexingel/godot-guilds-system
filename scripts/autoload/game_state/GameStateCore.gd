@@ -32,15 +32,11 @@ var guild_crest: int = 1   # 1-8, index into GameData.CREST_PATH
 var next_id: int = 1
 var coins: int = 60
 var crystals: int = 15
-var tokens: int = 0
 var heroes: Array[Hero] = []
 var relics: Array[Relic] = []
 var items: Array[Item] = []
-var detectors: Array[Dictionary] = []   # [{"id":..., "tier": "lesser"|"greater"|"ascendant"}]
-var evolution_stones: Dictionary = {}   # rank_id ("E".."S") -> count, dropped by seal_rift() on a ranked Rift Map clear
 var consumables: Array[Dictionary] = []   # owned, unused incense: [{"id":..., "incense_id": "vigor"|"warding"}]
 var active_incense: Dictionary = {}       # {} = none active this run, else {"kind":..., "value":..., "name":...}
-var runestones: Array[Dictionary] = []    # owned, unsocketed: [{"id":..., "runestone_id": "impact"|"aegis"}]
 var tonics: int = 0   # Field Tonics carried (see GameData.TONIC_*)
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
@@ -121,7 +117,7 @@ func upgrade_node(key: String) -> String:
 		return ""
 	var cost: int = int(node["cost_base"]) + int(node["cost_step"]) * cur
 	if crystals < cost:
-		return "Not enough Crystals"
+		return "Not enough Essence"
 	crystals -= cost
 	upgrades[key] = cur + 1
 	save()
@@ -227,7 +223,7 @@ func hazards_nonlethal() -> bool:
 	return lvl("infra.wardstones") >= 5
 
 
-func seal_token_bonus() -> float:
+func seal_bonus_mult() -> float:
 	return 1.0 + 0.10 * lvl("infra.wardstones")
 
 
@@ -243,7 +239,7 @@ func merchant_price_reduction() -> float:
 	return 0.06 * lvl("log.trade")
 
 
-func detector_drop_bonus() -> float:
+func cache_chance_bonus() -> float:
 	return 0.05 * lvl("log.trade")
 
 
@@ -340,7 +336,7 @@ func _run_for_save() -> Dictionary:
 		"node_kind": run.get("node_kind", ""), "node_state": _pack(_saveable_node_state()), "seed": run.get("seed", 0),
 		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
 		"start_coins": run.get("start_coins", coins), "start_crystals": run.get("start_crystals", crystals),
-		"start_tokens": run.get("start_tokens", tokens), "heroes_lost": run.get("heroes_lost", 0),
+		"heroes_lost": run.get("heroes_lost", 0),
 		"rift_rank": run.get("rift_rank", ""), "is_riftbreak": run.get("is_riftbreak", false),
 		"riftbreak_severity": run.get("riftbreak_severity", 0),
 		"riftbreak_worst_index": run.get("riftbreak_worst_index", 0),
@@ -510,13 +506,12 @@ func save() -> void:
 	var data := {
 		"save_version": SAVE_VERSION,
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
-		"crystals": crystals, "tokens": tokens,
+		"crystals": crystals,
 		"heroes": heroes.map(func(h): return h.to_dict()),
 		"recruit_pool": recruit_pool.map(func(h): return h.to_dict()),
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
-		"detectors": detectors, "evolution_stones": evolution_stones,
-		"consumables": consumables, "active_incense": active_incense, "runestones": runestones, "tonics": tonics,
+		"consumables": consumables, "active_incense": active_incense, "tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),

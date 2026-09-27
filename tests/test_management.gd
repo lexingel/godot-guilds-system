@@ -46,7 +46,7 @@ func run() -> void:
 	GameState.upgrades["infra.amplifiers"] = 5
 	GameState.upgrades["infra.wardstones"] = 5
 	check(is_equal_approx(GameState.crystal_yield_bonus(), 1.4) and GameState.energy_extract_chance() > 0.0 and GameState.crystal_resonance(), "Amplifiers perks")
-	check(GameState.anchor_artifact() and GameState.hazards_nonlethal() and is_equal_approx(GameState.seal_token_bonus(), 1.5), "Wardstones perks")
+	check(GameState.anchor_artifact() and GameState.hazards_nonlethal() and is_equal_approx(GameState.seal_bonus_mult(), 1.5), "Wardstones perks")
 
 	# Logistics.
 	GameState.upgrades["log.scouts"] = 5

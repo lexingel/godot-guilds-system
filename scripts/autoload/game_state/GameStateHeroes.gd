@@ -79,7 +79,7 @@ func recruit_hero(offer_id: String) -> String:
 	var offer := recruit_pool[idx]
 	var rank := GameData.find_rank(offer.rank)
 	if coins < int(rank["cost"]):
-		return "Not enough Coins."
+		return "Not enough Gold."
 	coins -= int(rank["cost"])
 	var is_dupe := heroes.any(func(h): return h.pool_id == offer.pool_id)
 	if guild_mentor():
@@ -119,7 +119,7 @@ func reroll_recruit_offer(offer_id: String) -> String:
 	if idx < 0:
 		return ""
 	if coins < recruit_reroll_cost():
-		return "Not enough Coins."
+		return "Not enough Gold."
 	coins -= recruit_reroll_cost()
 	recruit_pool[idx] = gen_recruit_offer()
 	_maybe_flag_s_rank(recruit_pool[idx], "recruit")
@@ -131,7 +131,7 @@ func reroll_recruit_offer(offer_id: String) -> String:
 ## A fresh set of Champion offers for Coins (a free set arrives every seal).
 func reroll_champion() -> String:
 	if coins < GameData.CHAMPION_REROLL_COST:
-		return "Not enough Coins."
+		return "Not enough Gold."
 	coins -= GameData.CHAMPION_REROLL_COST
 	refresh_champion_offers()
 	save()
@@ -276,7 +276,7 @@ func current_party() -> Array[Hero]:
 
 
 ## The B/A/S jump (a real named subclass forking off — see the CLASS_POOL doc
-## comment) additionally consumes one same-tier Evolution Stone; the earlier
+## comment) additionally needs a sealed rift of that rank; the earlier
 ## F-E-D-C climb (still the same un-named identity throughout) doesn't need
 ## one, same as before this system existed. The player picks which candidate
 ## (`target_pool_id`, one of GameData.evolution_choices) — the biggest build
@@ -296,18 +296,16 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	var next_rank_id: String = choices[0]["rank"]
 	var next_rank := GameData.find_rank(next_rank_id)
 	if crystals < int(next_rank["cost"]):
-		return "Not enough Crystals"
-	var needs_stone: bool = next_rank_id in ["B", "A", "S"]
-	if needs_stone and int(evolution_stones.get(next_rank_id, 0)) <= 0:
-		return "Need a %s-Rank Evolution Stone" % next_rank_id
+		return "Not enough Essence"
+	var gate := evolve_rank_gate(next_rank_id)
+	if gate != "":
+		return gate
 	var picked: Array = choices.filter(func(c): return c["id"] == target_pool_id)
 	if picked.is_empty():
 		return "Pick an evolution path"
 	var next: Dictionary = picked[0]
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
-	if needs_stone:
-		evolution_stones[next_rank_id] = int(evolution_stones.get(next_rank_id, 0)) - 1
 	# Keeps exactly the one stage being left behind reachable — see the doc
 	# comment on Hero.prior_pool_id for why this isn't an unbounded history.
 	h.prior_pool_id = h.pool_id
@@ -333,27 +331,10 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	return ""
 
 
-## An Evolution Stone whose tier matches a hero's CURRENT rank (not the rank
-## above) can't evolve them further — they're not sitting one rank below
-## anymore — so it converts into a bonus skill point toward whatever tree
-## they just unlocked instead, capped per subclass (GameData's
-## EVOLUTION_STONE_BONUS_SP_CAP) so a stone stockpile can't become an
-## unbounded SP faucet on one hero.
-func reinforce_hero(hero_id: String) -> String:
-	var h := find_hero(hero_id)
-	if not h:
-		return ""
-	var tier := h.rank
-	if int(evolution_stones.get(tier, 0)) <= 0:
-		return "Need a %s-Rank Evolution Stone" % tier
-	var used := int(h.stone_bonus_used.get(h.pool_id, 0))
-	if used >= GameData.EVOLUTION_STONE_BONUS_SP_CAP:
-		return "Already reinforced this subclass to the max"
-	evolution_stones[tier] = int(evolution_stones.get(tier, 0)) - 1
-	h.stone_bonus_used[h.pool_id] = used + 1
-	h.skill_points += 1
-	save()
-	state_changed.emit()
+## B/A/S evolutions need a rift of that rank sealed once (Rift Map); "" if met.
+func evolve_rank_gate(rank_id: String) -> String:
+	if rank_id in ["B", "A", "S"] and best_rift_rank_sealed < GameData.rift_rank_index(rank_id):
+		return "Seal a Rank %s rift first" % rank_id
 	return ""
 
 
@@ -391,20 +372,14 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 			return "Locked out — you already chose the other path"
 	if n.has("rift_rank") and best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"])):
 		return "Seal a Rank %s or higher Rift Map rift first" % n["rift_rank"]
-	var stone := ""
-	if n.get("stone", false):
-		for r in GameData.RANKS:
-			if int(evolution_stones.get(r["id"], 0)) > 0:
-				stone = str(r["id"])
-				break
-		if stone == "":
-			return "Needs an Evolution Stone"
+	if n.get("stone", false) and crystals < GameData.STONEBOUND_CRYSTALS:
+		return "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS
 	var cost := skill_node_cost(h, kind, n)
 	if h.skill_points < cost:
 		return "Not enough Skill Points"
 	h.skill_points -= cost
-	if stone != "":
-		evolution_stones[stone] = int(evolution_stones[stone]) - 1
+	if n.get("stone", false):
+		crystals -= GameData.STONEBOUND_CRYSTALS
 	h.skills[key] = true
 	save()
 	state_changed.emit()
@@ -561,7 +536,7 @@ func respec_hero(hero_id: String, kind: String = "") -> String:
 	var spent_sp := _skill_keys_sp_cost(target_keys, h)
 	var cost := respec_cost(spent_sp)
 	if coins < cost:
-		return "Need %d Coins" % cost
+		return "Need %d Gold" % cost
 	coins -= cost
 	h.skill_points += spent_sp
 	for key in target_keys:
@@ -576,7 +551,7 @@ func reroll_trait(hero_id: String) -> String:
 	if not h:
 		return ""
 	if coins < trait_reroll_cost():
-		return "Need %d Coins" % trait_reroll_cost()
+		return "Need %d Gold" % trait_reroll_cost()
 	coins -= trait_reroll_cost()
 	h.trait_name = Combat.pick_trait_name(h.cls_id)
 	h.hp = min(Combat.max_hp(h), h.hp)
@@ -593,7 +568,7 @@ func scrub_trait(hero_id: String) -> String:
 	if not scrubbable:
 		return ""
 	if coins < 30:
-		return "Need 30 Coins"
+		return "Need 30 Gold"
 	coins -= 30
 	h.trait_name = ""
 	h.hp = Combat.max_hp(h)
@@ -612,7 +587,7 @@ func scrub_scar(hero_id: String, scar_name: String) -> String:
 	if not h or not h.scars.has(scar_name):
 		return ""
 	if coins < 30:
-		return "Need 30 Coins"
+		return "Need 30 Gold"
 	coins -= 30
 	h.scars.erase(scar_name)
 	save()
@@ -647,10 +622,10 @@ func attr_points_spent(h: Hero) -> int:
 
 
 func attr_respec_cost(h: Hero) -> int:
-	return h.level * GameData.RESPEC_TOKENS_PER_LEVEL
+	return h.level * GameData.RESPEC_CRYSTALS_PER_LEVEL
 
 
-## Refunds every spent attribute point for Seal Tokens. Gear whose requirement
+## Refunds every spent attribute point for Crystals. Gear whose requirement
 ## the hero no longer meets comes off (otherwise a reset could keep gear on
 ## that the new build couldn't equip).
 func respec_attrs(hero_id: String) -> String:
@@ -661,9 +636,9 @@ func respec_attrs(hero_id: String) -> String:
 	if refund <= 0:
 		return "Nothing to reset"
 	var cost := attr_respec_cost(h)
-	if tokens < cost:
-		return "Not enough Seal Tokens"
-	tokens -= cost
+	if crystals < cost:
+		return "Not enough Essence"
+	crystals -= cost
 	h.attrs = GameData.role_attrs(GameData.hero_role(h))
 	h.attr_points += refund
 	for it in items:
@@ -688,7 +663,7 @@ func train_attr(hero_id: String) -> String:
 		return "Fully trained"
 	var cost := attr_train_cost(h)
 	if coins < cost:
-		return "Not enough Coins"
+		return "Not enough Gold"
 	coins -= cost
 	h.attr_trained += 1
 	h.attr_points += 1

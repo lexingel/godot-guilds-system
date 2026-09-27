@@ -959,7 +959,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if int(result.get("guild_crystal", 0)) > 0:
 			crystal_text += " (%d from Amplifiers)" % int(result["guild_crystal"])
 		if int(result.get("crystal_cache", 0)) > 0:
-			crystal_text += "  +%d Crystal cache (Resonance)" % int(result["crystal_cache"])
+			crystal_text += "  +%d Essence cache (Resonance)" % int(result["crystal_cache"])
 			bonus_crystal -= int(result["crystal_cache"])
 		if bonus_crystal > 0:
 			crystal_text += "  +%d extracted" % bonus_crystal
@@ -968,7 +968,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if result.has("heroes"):
 			victory_col.add_child(_victory_party(result))
 		if str(result.get("escort_saved", "")) != "":
-			victory_col.add_child(_label("%s made it through safely — +2 Reputation, +1 Token." % str(result["escort_saved"]), 12, true))
+			victory_col.add_child(_label("%s made it through safely — +2 Renown, +1 Token." % str(result["escort_saved"]), 12, true))
 		if kind == "boss" or kind == "elite":
 			victory_col.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
@@ -1052,7 +1052,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if not reasons.is_empty():
 			v.add_child(_defeat_card(reasons))
 		if result.has("riftbreak_compensation_coins"):
-			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Coins, -%d Crystals)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
+			v.add_child(_label("You paid compensation to the other guilds to help close the rift. (-%d Gold, -%d Essence)" % [int(result["riftbreak_compensation_coins"]), int(result["riftbreak_compensation_crystals"])], 12, true))
 		if str(result.get("flavor", "")) != "":
 			v.add_child(_label(str(result["flavor"]), 12, true))
 		var in_tower := GameState.run.has("tower")
@@ -1193,7 +1193,7 @@ func _tower_victory(result: Dictionary) -> Control:
 	col.add_child(head)
 	var gains := HBoxContainer.new()
 	gains.add_theme_constant_override("separation", 14)
-	for pair in [["coins", "coins"], ["crystals", "crystals"], ["tokens", "tokens"]]:
+	for pair in [["coins", "coins"], ["crystals", "crystals"]]:
 		if int(t[pair[0]]) > 0:
 			gains.add_child(_icon(GameData.CURRENCY_ICON_PATH[pair[1]], 18))
 			gains.add_child(_label("+%d" % int(t[pair[0]]), 14))
@@ -1221,8 +1221,8 @@ func _tower_victory(result: Dictionary) -> Control:
 
 
 ## A short recap for the two screens a run can end on (sealed or wiped/
-## retreated) — floor reached, net currency change this run (coins/crystals/
-## tokens can be spent as well as earned mid-run, e.g. at a shop, so "net
+## retreated) — floor reached, net currency change this run (Gold/Essence
+## can be spent as well as earned mid-run, e.g. at a shop, so "net
 ## change" is the honest framing, not "earned"), and heroes lost to Hardcore
 ## if any. Deliberately reads only numbers that already exist or are a cheap
 ## snapshot diff — no new combat-hot-path instrumentation.
@@ -1233,8 +1233,7 @@ func _run_summary_lines() -> Array[String]:
 		lines.append("Floor %d/%d reached" % [int(GameState.run.get("pos", 0)) + 1, layers.size()])
 	var coin_delta := GameState.coins - int(GameState.run.get("start_coins", GameState.coins))
 	var crystal_delta := GameState.crystals - int(GameState.run.get("start_crystals", GameState.crystals))
-	var token_delta := GameState.tokens - int(GameState.run.get("start_tokens", GameState.tokens))
-	lines.append("%+d Coins, %+d Crystals, %+d Tokens this run" % [coin_delta, crystal_delta, token_delta])
+	lines.append("%+d Gold, %+d Essence this run" % [coin_delta, crystal_delta])
 	var lost := int(GameState.run.get("heroes_lost", 0))
 	if lost > 0:
 		lines.append("%d hero%s lost" % [lost, "es" if lost > 1 else ""])

@@ -74,7 +74,7 @@ var medical_picker_bed: int = -1   # which empty bed slot is showing its hero pi
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
 
 
-var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "detectors"
+var inv_category: String = ""      # "" = category hub, else "items" | "relics" | "supplies"
 
 
 var roster_sort: String = "power"          # "power" | "level" | "rank" — cycled via the Roster tab's Sort button
@@ -808,8 +808,6 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 			lines.append(_bb(Palette.MUTED, "%s only" % it.locked_role.capitalize()))
 	for e in it.effects:
 		lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(e.get("arch", "")))])
-	if it.socketed_kind != "":
-		lines.append(_bb(Palette.CRYSTALS, "Socket: " + Combat.describe_skill(it.socketed_kind, it.socketed_value)))
 	if it.attune_level > 0 or it.attune_wins > 0:
 		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else " · %d/%d wins to next" % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
 		lines.append(_bb(Palette.RANK_E, "Attuned %d/%d (+%d%% stats)%s" % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), nxt]))

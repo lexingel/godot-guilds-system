@@ -11,7 +11,6 @@ var BOONS := true   # a random boon after each elite win
 # Income tallies (reset per profile): what one run earns on average.
 var _coins := 0.0
 var _crystals := 0.0
-var _tokens := 0.0
 var _loot_value := 0.0   # champion levels with the party, Boon in runs, Call on the boss
 const PROFILES := {
 	# name: [difficulty, hero ranks, level, skill depth, gear rarity ("" = none), relics, relic rarity]
@@ -98,7 +97,7 @@ func _tower(name: String, p: Array) -> void:
 
 
 func _profile(name: String, p: Array) -> void:
-	_coins = 0.0; _crystals = 0.0; _tokens = 0.0; _loot_value = 0.0
+	_coins = 0.0; _crystals = 0.0; _loot_value = 0.0
 	var clears := 0
 	var ko_total := 0
 	var boss_hp := 0.0
@@ -114,7 +113,7 @@ func _profile(name: String, p: Array) -> void:
 		var res := _run_rift(party, diff)
 		if res["cleared"]:
 			clears += 1
-			_tokens += float(diff["token_base"])
+			_crystals += float(diff["seal_essence"])
 		else:
 			fail_at[res["fail_kind"]] = int(fail_at.get(res["fail_kind"], 0)) + 1
 		if res["boss_hp"] >= 0.0:
@@ -125,7 +124,7 @@ func _profile(name: String, p: Array) -> void:
 				ko_total += 1
 	print("   %s avg party power %.0f" % [name, power_sum / N])
 	var runs := float(N)
-	print("   %s income per run: %.0f coins, %.0f crystals, %.1f tokens, loot worth %.0f coins" % [name, _coins / runs, _crystals / runs, _tokens / runs, _loot_value / runs])
+	print("   %s income per run: %.0f gold, %.0f essence, loot worth %.0f gold" % [name, _coins / runs, _crystals / runs, _loot_value / runs])
 	print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
 		name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
 

@@ -4,7 +4,7 @@ extends "res://scripts/autoload/game_state/GameStateItems.gd"
 
 # ---------------- Quests: Guild Board (Contracts + Dailies) & Milestones ----------------
 ## Every Reputation gain routes through here so crossing a 20-point tier can
-## auto-arm a Shop Boost (the same mechanic a Detector already grants) —
+## auto-arm a Shop Boost (an Epic at the next rift shop) —
 ## Reputation losses (none exist yet, but kept symmetrical) skip the roll.
 func add_reputation(amount: int) -> void:
 	if amount <= 0:
@@ -26,10 +26,9 @@ func add_reputation(amount: int) -> void:
 func _quest_reward(diff: int) -> Dictionary:
 	match diff:
 		3:
-			var stone := "D" if greater_rift_unlocked() else "E"
-			return {"coins": 110 + randi() % 50, "crystals": 16 + randi() % 9, "tokens": 6 + randi() % 4, "reputation": 4, "stone": stone}
+			return {"coins": 110 + randi() % 50, "crystals": 30 + randi() % 12, "reputation": 5}
 		2:
-			return {"coins": 70 + randi() % 40, "crystals": 10 + randi() % 7, "tokens": 3 + randi() % 3, "reputation": 2}
+			return {"coins": 70 + randi() % 40, "crystals": 14 + randi() % 9, "reputation": 2}
 	return {"coins": 40 + randi() % 30, "crystals": 5 + randi() % 6, "reputation": 1}
 
 
@@ -187,15 +186,11 @@ func quest_desc(q: Dictionary) -> String:
 func quest_reward_desc(reward: Dictionary) -> String:
 	var parts: Array[String] = []
 	if int(reward.get("coins", 0)) > 0:
-		parts.append("%d Coins" % int(reward["coins"]))
+		parts.append("%d Gold" % int(reward["coins"]))
 	if int(reward.get("crystals", 0)) > 0:
-		parts.append("%d Crystals" % int(reward["crystals"]))
-	if int(reward.get("tokens", 0)) > 0:
-		parts.append("%d Tokens" % int(reward["tokens"]))
+		parts.append("%d Essence" % int(reward["crystals"]))
 	if int(reward.get("reputation", 0)) > 0:
-		parts.append("%d Reputation" % int(reward["reputation"]))
-	if str(reward.get("stone", "")) != "":
-		parts.append("a Rank %s Evolution Stone" % reward["stone"])
+		parts.append("%d Renown" % int(reward["reputation"]))
 	return ", ".join(parts)
 
 
@@ -207,10 +202,7 @@ func claim_quest(quest_id: String) -> void:
 		var ledger := 1.5 if Combat.party_has_unique_relic("quartermasters_ledger") else 1.0
 		coins += int(round(int(reward.get("coins", 0)) * ledger))
 		crystals += int(round(int(reward.get("crystals", 0)) * ledger))
-		tokens += int(reward.get("tokens", 0))
 		add_reputation(int(reward.get("reputation", 0)))
-		if str(reward.get("stone", "")) != "":
-			evolution_stones[reward["stone"]] = int(evolution_stones.get(reward["stone"], 0)) + 1
 		guild_board.erase(q)
 		_bump("quests_done")
 		save()
@@ -261,7 +253,6 @@ func check_milestones() -> Array[String]:
 			var reward: Dictionary = m["reward"]
 			coins += int(reward.get("coins", 0))
 			crystals += int(reward.get("crystals", 0))
-			tokens += int(reward.get("tokens", 0))
 			add_reputation(int(reward.get("reputation", 0)))
 			newly.append(mid)
 	if not newly.is_empty():

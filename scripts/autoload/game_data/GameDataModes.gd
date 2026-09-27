@@ -105,11 +105,11 @@ const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spir
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers (the
 # Endless Rift is a survival mode, scripts/survivors).
 const DIFFICULTIES := [
-	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 75},
+	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "seal_essence": 10, "cache_chance": 0.08, "power": "Low", "rec_power": 75},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
 	# Guild Management currency — sits between Lesser and the Ascendant-
 	# First-draft numbers, tunable after playing.
-	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "token_base": 18, "detector_chance": 0.14, "power": "Medium", "rec_power": 150},
+	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "seal_essence": 18, "cache_chance": 0.14, "power": "Medium", "rec_power": 150},
 ]
 
 ## The power the Rift Hall compares against for the Endless Rift (survivors).
@@ -133,8 +133,8 @@ const ENDLESS_REC_POWER := 280
 const RIFT_EVENTS := [
 	{"id": "traveler", "name": "A Wounded Traveler", "text": "A scout from another guild lies bleeding against the wall, clutching a torn map.",
 		"choices": [
-			{"label": "Patch them up", "desc": "Costs 15 Coins · +3 Reputation", "cost": {"coins": 15}, "effect": {"reputation": 3}},
-			{"label": "Ask for the map", "desc": "+6-12 Crystals", "effect": {"crystals": [6, 12]}},
+			{"label": "Patch them up", "desc": "Costs 15 Gold · +3 Renown", "cost": {"coins": 15}, "effect": {"reputation": 3}},
+			{"label": "Ask for the map", "desc": "+6-12 Essence", "effect": {"crystals": [6, 12]}},
 			{"label": "Move on", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "altar", "name": "Blood Altar", "text": "An altar hums with rift-light. It wants something from you.",
@@ -144,23 +144,23 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "cache", "name": "Abandoned Cache", "text": "Supplies left behind by a party that didn't make it out.",
 		"choices": [
-			{"label": "Search it all", "desc": "70%: 20-35 Coins · 30%: a trap hits everyone for 10% HP", "gamble": {"chance": 0.7, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.10}}},
-			{"label": "Take what's on top", "desc": "+8 Coins", "effect": {"coins": 8}},
+			{"label": "Search it all", "desc": "70%: 20-35 Gold · 30%: a trap hits everyone for 10% HP", "gamble": {"chance": 0.7, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Take what's on top", "desc": "+8 Gold", "effect": {"coins": 8}},
 		]},
 	{"id": "echo", "name": "Rift Echo", "text": "Shimmering memories of old battles replay in the air around you.",
 		"choices": [
 			{"label": "Study the fighting", "desc": "Every hero in the party gains 20 XP", "effect": {"xp_all": 20}},
-			{"label": "Absorb its energy", "desc": "All abilities ready · +5 Crystals", "effect": {"ready": true, "crystals": 5}},
+			{"label": "Absorb its energy", "desc": "All abilities ready · +5 Essence", "effect": {"ready": true, "crystals": 5}},
 		]},
 	{"id": "gambler", "name": "The Gambler", "text": "A cloaked figure shuffles cards on an upturned crate and grins at you.",
 		"choices": [
-			{"label": "Bet 20 Coins", "desc": "50%: win 45 Coins (net +25) · 50%: lose the bet", "cost": {"coins": 20}, "gamble": {"chance": 0.5, "win": {"coins": 45}, "lose": {}}},
+			{"label": "Bet 20 Gold", "desc": "50%: win 45 Gold (net +25) · 50%: lose the bet", "cost": {"coins": 20}, "gamble": {"chance": 0.5, "win": {"coins": 45}, "lose": {}}},
 			{"label": "Decline", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "shrine", "name": "Quiet Shrine", "text": "A small shrine the rift somehow left untouched. The air is calm here.",
 		"choices": [
 			{"label": "Pray", "desc": "Every hero heals 20% HP", "effect": {"heal_pct": 0.20}},
-			{"label": "Take the offerings", "desc": "+6-12 Crystals · -1 Reputation", "effect": {"crystals": [6, 12], "reputation": -1}},
+			{"label": "Take the offerings", "desc": "+6-12 Essence · -1 Renown", "effect": {"crystals": [6, 12], "reputation": -1}},
 		]},
 	{"id": "armory", "name": "Collapsed Armory", "text": "A rack of weapons lies pinned under fallen stone. Something good might still be under there.",
 		"choices": [
@@ -170,11 +170,11 @@ const RIFT_EVENTS := [
 	{"id": "tome", "name": "Whispering Tome", "text": "A book floats open in the dark, murmuring techniques in a language almost like yours.",
 		"choices": [
 			{"label": "Read it", "desc": "Focus check · pass: every hero gains 40 XP · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"xp_all": 40}, "lose": {"hurt_pct": 0.10}}},
-			{"label": "Burn it", "desc": "+6 Crystals", "effect": {"crystals": 6}},
+			{"label": "Burn it", "desc": "+6 Essence", "effect": {"crystals": 6}},
 		]},
 	{"id": "bridge", "name": "Frayed Rope Bridge", "text": "A rope bridge sways over a chasm. On the far side, a dead scout's pack.",
 		"choices": [
-			{"label": "Cross quickly", "desc": "Agility check · pass: +20-35 Coins · fail: everyone loses 15% HP", "check": {"attr": "agility", "target": 8, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Cross quickly", "desc": "Agility check · pass: +20-35 Gold · fail: everyone loses 15% HP", "check": {"attr": "agility", "target": 8, "win": {"coins": [20, 35]}, "lose": {"hurt_pct": 0.15}}},
 			{"label": "Go around", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "ember_pit", "name": "Ember Pit", "text": "Something glints at the bottom of a pit of still-glowing coals.",
@@ -184,8 +184,8 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "frozen_knight", "name": "Frozen Knight", "text": "A knight from another guild, frozen mid-stride in rift-ice. Still breathing.",
 		"choices": [
-			{"label": "Thaw them out", "desc": "Costs 15 Coins · +3 Reputation · every ability ready", "cost": {"coins": 15}, "effect": {"reputation": 3, "ready": true}},
-			{"label": "Take their shield", "desc": "A Rare-or-better item · -2 Reputation", "effect": {"item": "rare", "reputation": -2}},
+			{"label": "Thaw them out", "desc": "Costs 15 Gold · +3 Renown · every ability ready", "cost": {"coins": 15}, "effect": {"reputation": 3, "ready": true}},
+			{"label": "Take their shield", "desc": "A Rare-or-better item · -2 Renown", "effect": {"item": "rare", "reputation": -2}},
 			{"label": "Move on", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "blood_pool", "name": "Crimson Pool", "text": "A pool of something thick and red. Drinking it would teach you things. Painful things.",
@@ -195,64 +195,64 @@ const RIFT_EVENTS := [
 		]},
 	{"id": "anvil", "name": "Singing Anvil", "text": "An anvil that rings on its own. A smith's ghost offers to work it, for a price.",
 		"choices": [
-			{"label": "Pay the smith", "desc": "Costs 25 Coins · an Epic item", "cost": {"coins": 25}, "effect": {"item": "epic"}},
-			{"label": "Sell the scrap", "desc": "+12 Coins", "effect": {"coins": 12}},
+			{"label": "Pay the smith", "desc": "Costs 25 Gold · an Epic item", "cost": {"coins": 25}, "effect": {"item": "epic"}},
+			{"label": "Sell the scrap", "desc": "+12 Gold", "effect": {"coins": 12}},
 		]},
 	{"id": "storm_totem", "name": "Storm Totem", "text": "A totem crackles with trapped lightning. Channelled right, it could charge your party.",
 		"choices": [
-			{"label": "Channel it", "desc": "Focus check · pass: +12-20 Crystals, every ability ready · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"crystals": [12, 20], "ready": true}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Channel it", "desc": "Focus check · pass: +12-20 Essence, every ability ready · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"crystals": [12, 20], "ready": true}, "lose": {"hurt_pct": 0.10}}},
 			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
 		]},
-	{"id": "shade", "name": "A Hungry Shade", "text": "A shade drifts toward you, hungry for anything bright: coin, light, warmth.",
+	{"id": "shade", "name": "A Hungry Shade", "text": "A shade drifts toward you, hungry for anything bright: gold, light, warmth.",
 		"choices": [
-			{"label": "Feed it coins", "desc": "Costs 20 Coins · +3 Seal Tokens", "cost": {"coins": 20}, "effect": {"tokens": 3}},
-			{"label": "Drive it off", "desc": "Everyone loses 10% HP · +10 Crystals", "effect": {"hurt_pct": 0.10, "crystals": 10}},
+			{"label": "Feed it gold", "desc": "Costs 20 Gold · +3 Essence", "cost": {"coins": 20}, "effect": {"crystals": 3}},
+			{"label": "Drive it off", "desc": "Everyone loses 10% HP · +10 Essence", "effect": {"hurt_pct": 0.10, "crystals": 10}},
 			{"label": "Flee", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "chapel", "name": "Ruined Chapel", "text": "Half a chapel, the other half somewhere in the rift. The altar still holds warmth.",
 		"choices": [
-			{"label": "Restore the altar", "desc": "Costs 20 Coins · every hero heals 50% HP · +2 Reputation", "cost": {"coins": 20}, "effect": {"heal_pct": 0.5, "reputation": 2}},
+			{"label": "Restore the altar", "desc": "Costs 20 Gold · every hero heals 50% HP · +2 Renown", "cost": {"coins": 20}, "effect": {"heal_pct": 0.5, "reputation": 2}},
 			{"label": "Rest a while", "desc": "Every hero heals 20% HP", "effect": {"heal_pct": 0.20}},
 		]},
 	{"id": "peddler", "name": "Ghostly Peddler", "text": "A translucent merchant lays out wares that flicker in and out of existence.",
 		"choices": [
-			{"label": "Buy a curiosity", "desc": "Costs 30 Coins · an Epic item or relic", "cost": {"coins": 30}, "effect": {"loot": "epic"}},
+			{"label": "Buy a curiosity", "desc": "Costs 30 Gold · an Epic item or relic", "cost": {"coins": 30}, "effect": {"loot": "epic"}},
 			{"label": "Trade stories", "desc": "Every hero gains 12 XP", "effect": {"xp_all": 12}},
 		]},
 	{"id": "caged_beast", "name": "Caged Beast", "text": "A rift beast in a cage of runes, whimpering. The rune-lock is simple enough.",
 		"choices": [
-			{"label": "Free it", "desc": "55%: it bounds off grateful · +4 Reputation, +2 Seal Tokens · 45%: it lashes out, everyone loses 15% HP", "gamble": {"chance": 0.55, "win": {"reputation": 4, "tokens": 2}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Free it", "desc": "55%: it bounds off grateful · +4 Renown, +2 Essence · 45%: it lashes out, everyone loses 15% HP", "gamble": {"chance": 0.55, "win": {"reputation": 4, "crystals": 2}, "lose": {"hurt_pct": 0.15}}},
 			{"label": "Leave it", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "mirror", "name": "Rift Mirror", "text": "Your reflection moves a moment after you do. It seems to be showing you something.",
 		"choices": [
 			{"label": "Study it", "desc": "Focus check · pass: every ability ready, +25 XP each · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"ready": true, "xp_all": 25}, "lose": {"hurt_pct": 0.10}}},
-			{"label": "Smash it", "desc": "+8 Crystals", "effect": {"crystals": 8}},
+			{"label": "Smash it", "desc": "+8 Essence", "effect": {"crystals": 8}},
 		]},
 	{"id": "golem", "name": "Sleeping Golem", "text": "A stone golem dozes on top of a treasure chest. Its snores shake the floor.",
 		"choices": [
-			{"label": "Sneak the chest out", "desc": "Agility check · pass: +30-45 Coins and a Rare-or-better item or relic · fail: everyone loses 20% HP", "check": {"attr": "agility", "target": 10, "win": {"coins": [30, 45], "loot": "rare"}, "lose": {"hurt_pct": 0.20}}},
+			{"label": "Sneak the chest out", "desc": "Agility check · pass: +30-45 Gold and a Rare-or-better item or relic · fail: everyone loses 20% HP", "check": {"attr": "agility", "target": 10, "win": {"coins": [30, 45], "loot": "rare"}, "lose": {"hurt_pct": 0.20}}},
 			{"label": "Let it sleep", "desc": "Nothing happens", "effect": {}},
 		]},
 	{"id": "lost_recruit", "name": "Lost Recruit", "text": "A young recruit from a village guild, lost and terrified, clutching a rusted sword.",
 		"choices": [
-			{"label": "Escort them out", "desc": "Every hero loses 5% HP · +4 Reputation, +1 Seal Token", "effect": {"hurt_pct": 0.05, "reputation": 4, "tokens": 1}},
-			{"label": "Point the way", "desc": "+1 Reputation", "effect": {"reputation": 1}},
+			{"label": "Escort them out", "desc": "Every hero loses 5% HP · +4 Renown, +1 Essence", "effect": {"hurt_pct": 0.05, "reputation": 4, "crystals": 1}},
+			{"label": "Point the way", "desc": "+1 Renown", "effect": {"reputation": 1}},
 		]},
 	{"id": "fungus", "name": "Glowing Fungus", "text": "Pale mushrooms pulse with soft light. They smell faintly of mint and ozone.",
 		"choices": [
 			{"label": "Eat some", "desc": "60%: every hero heals 30% HP and gains 15 XP · 40%: everyone loses 10% HP", "gamble": {"chance": 0.6, "win": {"heal_pct": 0.3, "xp_all": 15}, "lose": {"hurt_pct": 0.10}}},
-			{"label": "Harvest them", "desc": "+6 Crystals", "effect": {"crystals": 6}},
+			{"label": "Harvest them", "desc": "+6 Essence", "effect": {"crystals": 6}},
 		]},
 	{"id": "crossroads", "name": "Rift Crossroads", "text": "Two paths: one dives deeper into raw rift energy, one leads to a quiet alcove.",
 		"choices": [
-			{"label": "Push deeper", "desc": "Everyone loses 8% HP · +10-16 Crystals", "effect": {"hurt_pct": 0.08, "crystals": [10, 16]}},
+			{"label": "Push deeper", "desc": "Everyone loses 8% HP · +10-16 Essence", "effect": {"hurt_pct": 0.08, "crystals": [10, 16]}},
 			{"label": "Regroup", "desc": "Every hero heals 15% HP · every ability ready", "effect": {"heal_pct": 0.15, "ready": true}},
 		]},
 	{"id": "banner", "name": "Fallen Banner", "text": "A guild banner lies in the dust, its bearer long gone. The cloth is still good.",
 		"choices": [
-			{"label": "Raise it", "desc": "+3 Reputation · a 20-point shield against the next hazard", "effect": {"reputation": 3, "shield": 20}},
-			{"label": "Salvage it", "desc": "+10 Coins", "effect": {"coins": 10}},
+			{"label": "Raise it", "desc": "+3 Renown · a 20-point shield against the next hazard", "effect": {"reputation": 3, "shield": 20}},
+			{"label": "Salvage it", "desc": "+10 Gold", "effect": {"coins": 10}},
 		]},
 ]
 
@@ -330,14 +330,14 @@ const BRANCHES := [
 			"perks": {2: "Order: Rally — the party acts first this round and hits 30% harder", 3: "Vanguard: a fight's first strike deals +25% damage", 5: "Abilities are ready at the start of every fight"}},
 	]},
 	{"id": "infra", "name": "Infrastructure Branch", "sub": "Rift Yield & Safety", "nodes": [
-		{"id": "amplifiers", "name": "Crystal Amplifiers", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+8% Crystals from fights",
-			"perks": {3: "Energy extraction: elites often drop bonus Crystals", 5: "Resonance: bosses drop a Crystal cache"}},
-		{"id": "wardstones", "name": "Wardstones", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-12% hazard damage, +10% Seal Tokens",
+		{"id": "amplifiers", "name": "Essence Amplifiers", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+8% Essence from fights",
+			"perks": {3: "Energy extraction: elites often drop bonus Essence", 5: "Resonance: bosses drop an Essence cache"}},
+		{"id": "wardstones", "name": "Wardstones", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-12% hazard damage, +10% Essence for sealing",
 			"perks": {3: "Anchor: the first hazard of each rift is negated", 5: "Hazards can't knock a hero out"}},
 	]},
 	{"id": "log", "name": "Logistics Branch", "sub": "Trade & Recruiting", "nodes": [
-		{"id": "trade", "name": "Trade Network", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-6% shop prices, -2% auction fees, +5% detector drops",
-			"perks": {2: "Order: Requisition — reroll a fight's loot choices", 3: "Black Market: premium bids on rare Rift Detectors", 5: "Every rift shop stocks an Epic relic"}},
+		{"id": "trade", "name": "Trade Network", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-6% shop prices, -2% auction fees, +5% Rift Cache chance",
+			"perks": {2: "Order: Requisition — reroll a fight's loot choices", 3: "Black Market: Rift Caches hold 30% more Gold", 5: "Every rift shop stocks an Epic relic"}},
 		{"id": "scouts", "name": "Scouts' Lodge", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Recruit board: +1 offer at Lv1 and Lv4",
 			"perks": {2: "Order: Scout Ahead — reroll the next fork's paths", 3: "Headhunter: every recruit refresh has a Rank C+ hero", 5: "Recruit rerolls cost half"}},
 	]},
@@ -345,7 +345,7 @@ const BRANCHES := [
 		{"id": "vault", "name": "Relic Vault", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Starting relic choices (2 at Lv1, 3 at Lv2, 4 at Lv4)",
 			"perks": {3: "+1 equipped relic slot", 5: "+1 more relic slot, and starting relics are Rare or better"}},
 		{"id": "lab", "name": "Arcane Lab", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+10% relic element-set bonuses; Lv1 unlocks relic scrapping and trait/scar removal",
-			"perks": {3: "Skill respecs and trait rerolls cost 30% less", 5: "Relic upgrades cost 25% fewer Crystals"}},
+			"perks": {3: "Skill respecs and trait rerolls cost 30% less", 5: "Relic upgrades cost 25% fewer Essence"}},
 	]},
 ]
 
@@ -363,7 +363,7 @@ const ORDER_UNLOCK_LEVEL := 2
 const OLD_MGMT_COSTS := {
 	"ops.roster": [30, 20], "ops.medical": [25, 18], "ops.drill": [35, 22], "ops.trait": [40, 30],
 	"infra.crystal": [30, 20], "infra.stab": [28, 18], "infra.seal": [45, 30], "infra.energy": [26, 16],
-	"log.broker": [30, 20], "log.scout": [35, 25], "log.merchant": [24, 14], "log.detector": [32, 20],
+	"log.broker": [30, 20], "log.scout": [35, 25], "log.merchant": [24, 14], "log.cache": [32, 20],
 	"res.relic": [30, 22], "res.theory": [28, 20], "res.recycle": [22, 14], "res.cart": [26, 16], "res.vault": [50, 40],
 }
 const OLD_MGMT_CAP_COSTS := {"ops.roster": 400, "ops.medical": 350, "ops.drill": 450, "infra.crystal": 400, "infra.stab": 380,
@@ -421,7 +421,8 @@ const HAMLET_BUILDINGS := [
 	{"id": "market", "name": "Market", "tier": "node", "node": "log.trade", "pos": Vector2(322, 177), "row": "front"},
 	{"id": "vault", "name": "Relic Vault", "tier": "node", "node": "res.vault", "pos": Vector2(374, 177), "row": "front"},
 ]
-const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
+## Gold in a Rift Cache (a chance on sealing, DIFFICULTIES "cache_chance").
+const RIFT_CACHE_GOLD := {"lesser": 70, "greater": 170}
 
 ## The very first rift is a shorter, gentler training rift.
 ## The campaign: three acts, each a region with a named foe. Meet an act's
@@ -435,19 +436,19 @@ const CAMPAIGN := [
 	 "intro": "The Vale split open in a single night. Rifts bleed monsters into the farmland, and the old guilds are gone. Yours is all that stands between the villages and whatever Vaelith is pouring through the largest breach.",
 	 "outro": "Vaelith falls back through the Breach, and it seals behind her. The Vale breathes again — but the rifts beyond it only grow deeper. Greater Rifts are open to your guild.",
 	 "objectives": [{"type": "rifts_sealed", "target": 2, "label": "Seal 2 rifts"}, {"type": "heroes", "target": 3, "label": "Have 3 heroes in the guild"}],
-	 "reward": {"crystals": 60, "tokens": 20}},
+	 "reward": {"crystals": 80}},
 	{"act": 2, "name": "The Drowned Marches", "foe": "Nyxara", "boss": "Nyxara, Queen of the Drowned",
 	 "finale": "The Drowned Spire", "tier": "greater", "mult": 1.2, "opens": "the Endless Rift",
 	 "intro": "South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",
 	 "outro": "The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.",
-	 "objectives": [{"type": "greater_seals", "target": 2, "label": "Seal 2 Greater Rifts"}, {"type": "reputation", "target": 20, "label": "Reach 20 Reputation"}, {"type": "map_rank", "target": 3, "label": "Seal a Rank C or higher Rift Map rift"}],
-	 "reward": {"crystals": 120, "tokens": 40}},
+	 "objectives": [{"type": "greater_seals", "target": 2, "label": "Seal 2 Greater Rifts"}, {"type": "reputation", "target": 20, "label": "Reach 20 Renown"}, {"type": "map_rank", "target": 3, "label": "Seal a Rank C or higher Rift Map rift"}],
+	 "reward": {"crystals": 160}},
 	{"act": 3, "name": "The Ashen Crown", "foe": "Sythrane", "boss": "Sythrane, the Ashen Crown",
 	 "finale": "The Heart of the Rift", "tier": "greater", "mult": 1.45, "opens": "",
 	 "intro": "Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",
 	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the Rift Map and the Guild Board carry on.)",
 	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B or higher Rift Map rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 Guild Board quests"}],
-	 "reward": {"crystals": 200, "tokens": 80}},
+	 "reward": {"crystals": 280}},
 ]
 const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}
 const QUEST_POSTED := 6
@@ -477,16 +478,16 @@ const MILESTONES := [
 	{"id": "greater_threat", "label": "Greater Threat — unlock the Greater Rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
 	{"id": "act_one", "label": "The Vale Holds — complete Act I", "type": "campaign_act", "target": 2, "reward": {"crystals": 25}},
 	{"id": "act_two", "label": "Out of the Marshes — complete Act II", "type": "campaign_act", "target": 3, "reward": {"crystals": 40}},
-	{"id": "act_three", "label": "Crownbreaker — complete the campaign", "type": "campaign_act", "target": 4, "reward": {"crystals": 60, "tokens": 10}},
+	{"id": "act_three", "label": "Crownbreaker — complete the campaign", "type": "campaign_act", "target": 4, "reward": {"crystals": 70}},
 	{"id": "veteran_sealer", "label": "Rift Warden — seal 25 rifts", "type": "rifts_sealed", "target": 25, "reward": {"crystals": 40}},
 	{"id": "centurion", "label": "Centurion — defeat 250 monsters", "type": "total_kills", "target": 250, "reward": {"coins": 150}},
 	{"id": "kingslayer", "label": "Kingslayer — defeat 20 Bosses", "type": "bosses_won", "target": 20, "reward": {"reputation": 10}},
 	{"id": "untouched", "label": "Untouched — seal 5 rifts with no one knocked out", "type": "flawless_rifts", "target": 5, "reward": {"crystals": 30}},
 	{"id": "climber", "label": "Climber — reach floor 25 of the Tower", "type": "tower_best", "target": 25, "reward": {"crystals": 30}},
-	{"id": "summit", "label": "Summit — clear floor 100 of the Tower", "type": "tower_best", "target": 100, "reward": {"crystals": 100, "tokens": 20}},
+	{"id": "summit", "label": "Summit — clear floor 100 of the Tower", "type": "tower_best", "target": 100, "reward": {"crystals": 120}},
 	{"id": "endless_five", "label": "Beyond the Edge — survive 10 minutes in the Endless Rift", "type": "endless_time", "target": 600, "reward": {"crystals": 50}},
 	{"id": "daily_first", "label": "Daily Duty — clear a Daily Rift", "type": "daily_clears", "target": 1, "reward": {"crystals": 15}},
-	{"id": "daily_streak", "label": "Dedicated — clear Daily Rifts 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 60, "tokens": 5}},
+	{"id": "daily_streak", "label": "Dedicated — clear Daily Rifts 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 65}},
 	{"id": "full_set", "label": "Build Complete — own a 4-piece boon set", "type": "boon_set4", "target": 1, "reward": {"crystals": 20}},
 	{"id": "legendary_guild", "label": "Legendary Guild — reach Legendary Guild tier", "type": "guild_tier_legendary", "target": 1, "reward": {"reputation": 25}},
 	{"id": "max_level", "label": "Paragon — raise a hero to Level 10", "type": "max_level", "target": 1, "reward": {"crystals": 25}},
@@ -495,7 +496,6 @@ const MILESTONES := [
 
 ## The Daily Rift: one attempt per day; its rule and starting boon come from
 ## the date, so the fight layout is the same for every guild that day.
-const DAILY_CLEAR_CRYSTALS := 30
+const DAILY_CLEAR_CRYSTALS := 35
 const DAILY_CLEAR_CRYSTALS_PER_ACT := 10
-const DAILY_CLEAR_TOKENS := 5
 const RUN_HISTORY_MAX := 30

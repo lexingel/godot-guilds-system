@@ -9,10 +9,10 @@ extends BattleView
 ## still-open preview, or any already-resolved floor) — only the current
 ## floor's still-open fork options are actually clickable.
 const MAP_NODE_DESC := {
-	"combat": "Combat — 1-3 monsters. Coins, Crystals and a loot pick.",
+	"combat": "Combat — 1-3 monsters. Gold, Essence and a loot pick.",
 	"elite": "Elite — one tough foe (double HP, harder hits). +40% rewards.",
-	"shop": "Shop — spend Coins on items and relics. No fighting.",
-	"hazard": "Hazard — a trap that hurts the party (hazard guard helps). May drop Coins or Crystals.",
+	"shop": "Shop — spend Gold on items and relics. No fighting.",
+	"hazard": "Hazard — a trap that hurts the party (hazard guard helps). May drop Gold or Essence.",
 	"boss": "Boss — the rift's warden, with a special mechanic. Win to seal the rift.",
 	"campfire": "Campfire — rest (heal), train (XP) or sharpen (abilities ready). No fighting.",
 	"event": "Event — a strange encounter with a few choices; each says what it does.",
@@ -257,7 +257,7 @@ func _run_bar(in_combat: bool) -> Control:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		top.add_child(spacer)
 		if _confirm_retreat:
-			var q := _label("Leave the rift? You keep your loot but earn no Seal Tokens.", 12)
+			var q := _label("Leave the rift? You keep your loot but miss the sealing reward.", 12)
 			q.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 			top.add_child(q)
 			top.add_child(_icon_domain_button("ember", "res://assets/skills/wing.png", "Leave rift", func():
@@ -269,7 +269,7 @@ func _run_bar(in_combat: bool) -> Control:
 			top.add_child(_button("Stay", func(): _confirm_retreat = false; render()))
 		else:
 			var rb := _icon_button("res://assets/skills/wing.png", "Retreat", func(): _confirm_retreat = true; render())
-			rb.tooltip_text = "Leave the rift now — keep your loot, no Seal Tokens"
+			rb.tooltip_text = "Leave the rift now — keep your loot, no sealing reward"
 			top.add_child(rb)
 	col.add_child(top)
 
@@ -383,7 +383,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(tb)
 	var ns_tip: Dictionary = GameState.run.get("node_state", {})
 	if kind == "":
-		_coach(v, "path", "Choosing a path", "Each floor offers a choice. Fights give coins and loot; elites hit harder and pay more; shops, campfires, events and treasure help in other ways. The last floor is the boss.")
+		_coach(v, "path", "Choosing a path", "Each floor offers a choice. Fights give gold and loot; elites hit harder and pay more; shops, campfires, events and treasure help in other ways. The last floor is the boss.")
 	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result"):
 		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows who it will hit next — Defend (3) halves damage, Guard (4) takes a hit for an ally. Watch for foes \"winding up\": next round they land a heavy blow that stuns unless the target Defends. Armored foes shrug off basic attacks — abilities ignore armor.")
 	elif ns_tip.has("result") and bool(ns_tip["result"].get("won", false)) and not ns_tip.get("reward_chosen", false):
@@ -405,22 +405,20 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var sealed_dict: Dictionary = sealed
 		var sealed_row := HBoxContainer.new()
 		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 28))
-		var stone_tier: String = str(sealed_dict.get("got_stone", ""))
-		sealed_row.add_child(_label("Rift Sealed! +%d Seal Tokens%s%s%s" % [
-			int(sealed_dict["tokens"]),
+		sealed_row.add_child(_label("Rift Sealed! +%d Essence%s%s" % [
+			int(sealed_dict["essence"]),
 			" (+%d%% Wardstones)" % (GameState.lvl("infra.wardstones") * 10) if GameState.lvl("infra.wardstones") > 0 else "",
-			" · Rift Detector found!" if sealed_dict.get("got_detector", false) else "",
-			" · %s-Rank Evolution Stone found!" % stone_tier if stone_tier != "" else "",
+			" · Rift Cache found: +%d Gold!" % int(sealed_dict.get("cache", 0)) if int(sealed_dict.get("cache", 0)) > 0 else "",
 		]))
 		v.add_child(sealed_row)
 		var dbonus: Dictionary = sealed_dict.get("daily", {})
 		if not dbonus.is_empty():
-			var dl := _label("Daily Rift sealed! +%d Crystals, +%d Seal Tokens · streak %d" % [int(dbonus["crystals"]), int(dbonus["tokens"]), int(dbonus["streak"])], 14)
+			var dl := _label("Daily Rift sealed! +%d Essence · streak %d" % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
 			dl.add_theme_color_override("font_color", Palette.RANK_S)
 			v.add_child(dl)
 		var bounty: Dictionary = sealed_dict.get("bounty", {})
 		if not bounty.is_empty():
-			v.add_child(_label("Bounty claimed: +%d Coins, +%d Reputation" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))
+			v.add_child(_label("Bounty claimed: +%d Gold, +%d Renown" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))
 		if str(sealed_dict.get("flavor", "")) != "":
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
 		for line in _run_summary_lines():
@@ -469,7 +467,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
 	var cost := GameState.shop_reroll_cost()
-	var reroll := _icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll offers (%dc)" % cost, func():
+	var reroll := _icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll offers (%d Gold)" % cost, func():
 		GameState.reroll_shop()
 		render()
 	)
@@ -511,7 +509,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		if bought:
 			cv.add_child(_label("Bought", 12, true))
 		else:
-			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Buy — %dc" % int(off["price"]), func(idx=i):
+			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Buy — %d Gold" % int(off["price"]), func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
 			)
@@ -803,7 +801,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 		# Each choice spells out exactly what it does (the damage is fixed,
 		# so GameState.hazard_preview is the real number, not an estimate).
 		var bonus_pct := int(round(float(hz["bonus_chance"]) * 100.0))
-		var bonus_kind := "Coins" if str(hz["bonus_type"]) == "coins" else "Crystals"
+		var bonus_kind := "Gold" if str(hz["bonus_type"]) == "coins" else "Essence"
 		var push := GameState.hazard_preview(1.0)
 		var risk := GameState.hazard_preview(2.0)
 		var choice_row := HBoxContainer.new()
@@ -812,7 +810,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 			[_hazard_damage_text(push), "%d%% chance of 2-6 %s" % [bonus_pct, bonus_kind]], push["downs"],
 			func(): GameState.push_through_hazard(); render()))
 		choice_row.add_child(_hazard_option(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass",
-			["No damage, no reward", "Costs %d Crystals (you have %d)" % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
+			["No damage, no reward", "Costs %d Essence (you have %d)" % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
 			func(): GameState.bypass_hazard(); render(), not GameState.can_afford_hazard_bypass()))
 		choice_row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot",
 			[_hazard_damage_text(risk), "Guaranteed 2-6 %s" % bonus_kind], risk["downs"],

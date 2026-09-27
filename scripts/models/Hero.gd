@@ -29,7 +29,6 @@ var skills: Dictionary = {}      # skill_id -> true. Keys are "<kind>:<node_id>"
 var prior_pool_id: String = ""            # "" = never evolved (or evolved once already superseded by a second evolution)
 var prior_innate_kind: String = ""        # the innate bonus from prior_pool_id's class — same one-stage cap as the tree above
 var prior_innate_value: float = 0.0
-var stone_bonus_used: Dictionary = {}     # pool_id -> count of bonus SP already granted via GameState.reinforce_hero() at that subclass, capped at GameData.EVOLUTION_STONE_BONUS_SP_CAP
 var base_hp: int
 var base_dmg: int
 var base_spd: int = 10   # turn-order speed — role-based at generation, not level-scaled; see Combat.spd_of
@@ -73,7 +72,7 @@ func to_dict() -> Dictionary:
 		"down_runs": down_runs, "bedded": bedded, "busy_runs": busy_runs, "battered": battered, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
 		"ability_cooldown": ability_cooldown, "formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
-		"stone_bonus_used": stone_bonus_used, "ability_awakened": ability_awakened,
+"ability_awakened": ability_awakened,
 		"history": history, "earned_traits": earned_traits,
 	}
 
@@ -110,7 +109,6 @@ static func from_dict(d: Dictionary) -> Hero:
 	# instead of here, since it needs GameData (Hero.gd stays a plain
 	# RefCounted model with no autoload dependencies).
 	h.skills = d.get("skills", {})
-	h.stone_bonus_used = d.get("stone_bonus_used", {})
 	h.ability_awakened = d.get("ability_awakened", false)
 	h.history = d.get("history", {})
 	h.earned_traits.assign(d.get("earned_traits", []))

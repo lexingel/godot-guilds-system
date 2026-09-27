@@ -10,7 +10,7 @@ var kind: String          # dmg_pct/hp_pct/... (BUILD_KINDS) — the item's prim
 var value: float
 # A rolled item's 2nd and 3rd stats (Rare rolls secondary, Epic rolls both) —
 # "" kind means that slot is unused. Same flat accumulator shape as
-# socketed_kind/drawback_kind below rather than an array, so every existing
+# drawback_kind below rather than an array, so every existing
 # kind->value summing site only needs one more `if` instead of a rewrite.
 var secondary_kind: String = ""
 var secondary_value: float = 0.0
@@ -22,8 +22,6 @@ var item_rank: String = ""       # rift rank it dropped at (GameData.RIFT_RANKS 
 var effects: Array = []          # rolled conditional/trigger affixes — Combat.hero_effects entry shape
 var equipped_to: String = ""    # hero id, "" = unequipped
 var equipped_idx: int = -1      # index within that hero's weapon/gear slots
-var socketed_kind: String = ""     # "" = no runestone socketed
-var socketed_value: float = 0.0
 var unique_id: String = ""      # "" = normal generated item; else a GameData.UNIQUE_ITEMS id
 var drawback_kind: String = ""  # "" = no drawback; a Legendary's cost, same BUILD_KINDS vocabulary
 var drawback_value: float = 0.0 # stored negative
@@ -49,7 +47,6 @@ func to_dict() -> Dictionary:
 		"implicit_kind": implicit_kind, "implicit_value": implicit_value,
 		"item_rank": item_rank, "effects": effects,
 		"equipped_to": equipped_to, "equipped_idx": equipped_idx,
-		"socketed_kind": socketed_kind, "socketed_value": socketed_value,
 		"unique_id": unique_id, "drawback_kind": drawback_kind, "drawback_value": drawback_value,
 		"locked_role": locked_role, "locked_subclasses": locked_subclasses,
 		"attr": attr, "attr_bonus": attr_bonus, "attr_req": attr_req,
@@ -75,8 +72,6 @@ static func from_dict(d: Dictionary) -> Item:
 	it.effects = d.get("effects", [])
 	it.equipped_to = d.get("equipped_to", "")
 	it.equipped_idx = d.get("equipped_idx", -1)
-	it.socketed_kind = d.get("socketed_kind", "")
-	it.socketed_value = d.get("socketed_value", 0.0)
 	it.unique_id = d.get("unique_id", "")
 	it.drawback_kind = d.get("drawback_kind", "")
 	it.drawback_value = d.get("drawback_value", 0.0)

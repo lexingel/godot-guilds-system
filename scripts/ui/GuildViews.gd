@@ -273,7 +273,7 @@ func _guild_status_lines() -> Array:
 						best_cost = c
 						best = "%s Lv%d" % [n["name"], lv + 1]
 		if best != "" and GameState.crystals >= best_cost:
-			out.append(["Upgrade ready: %s (%d Crystals)" % [best, best_cost], Palette.CRYSTALS, go_term.call("management")])
+			out.append(["Upgrade ready: %s (%d Essence)" % [best, best_cost], Palette.CRYSTALS, go_term.call("management")])
 	if GameState.feature_unlocked("tower"):
 		var f := GameState.tower_next_floor()
 		if f > 0:
@@ -320,9 +320,9 @@ func _render_achievements(v: VBoxContainer) -> void:
 		var prog := mini(GameState.milestone_progress(m), int(m["target"]))
 		var rw: Dictionary = m["reward"]
 		var bits: Array[String] = []
-		for k in ["coins", "crystals", "tokens", "reputation"]:
+		for k in ["coins", "crystals", "reputation"]:
 			if int(rw.get(k, 0)) > 0:
-				bits.append("+%d %s" % [int(rw[k]), {"coins": "Coins", "crystals": "Crystals", "tokens": "Tokens", "reputation": "Rep"}[k]])
+				bits.append("+%d %s" % [int(rw[k]), {"coins": "Gold", "crystals": "Essence", "reputation": "Renown"}[k]])
 		var right := _label(("Done" if got else "%d/%d" % [prog, int(m["target"])]) + "  ·  " + ", ".join(bits), 12, true)
 		row.add_child(right)
 		v.add_child(row)
@@ -356,7 +356,7 @@ func _render_stats(v: VBoxContainer) -> void:
 		["Endless Rift, best time", "%d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60]],
 		["Daily Rifts cleared", "%d (streak %d)" % [GameState.daily_clears, GameState.daily_streak]],
 		["Items and relics crafted", str(GameState.crafts_performed)],
-		["Reputation", str(GameState.reputation)],
+		["Renown", str(GameState.reputation)],
 		["Heroes lost", str(GameState.heroes_lost_total)],
 		["Strongest hero", best_hero if best_hero != "" else "—"],
 		["Most-defeated foe", "%s (%d)" % [top_foe, top_n] if top_foe != "" else "—"],
@@ -389,7 +389,7 @@ func _render_history(v: VBoxContainer) -> void:
 		var wl := _label(what, 13)
 		wl.custom_minimum_size.x = 300
 		row.add_child(wl)
-		row.add_child(_label("%+dc  %+dcr" % [int(e["coins"]), int(e["crystals"])], 12, true))
+		row.add_child(_label("%+d Gold  %+d Essence" % [int(e["coins"]), int(e["crystals"])], 12, true))
 		var tip := "Party: " + ", ".join(e["heroes"])
 		if not (e.get("boons", []) as Array).is_empty():
 			tip += "\nBoons: " + ", ".join((e["boons"] as Array).map(func(b): return str(GameData.find_boon(str(b)).get("name", b))))
@@ -478,8 +478,7 @@ func _camp_badges() -> Dictionary:
 			var choices := GameData.evolution_choices(GameData.find_class(h.pool_id))
 			if not choices.is_empty():
 				var nr := GameData.find_rank(str(choices[0]["rank"]))
-				var needs_stone: bool = str(choices[0]["rank"]) in ["B", "A", "S"]
-				if GameState.crystals >= int(nr["cost"]) and (not needs_stone or int(GameState.evolution_stones.get(str(choices[0]["rank"]), 0)) > 0):
+				if GameState.crystals >= int(nr["cost"]) and GameState.evolve_rank_gate(str(choices[0]["rank"])) == "":
 					reasons.append("can evolve")
 		for st in ["weapon", "gear"]:
 			if _first_free_slot(h, st) >= 0 and GameState.items.any(func(it): return it.equipped_to == "" and it.slot_type() == st and GameState.item_fits_hero(it, h)):
@@ -662,7 +661,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		for i in GameState.champion_offers.size():
 			offers.add_child(_champion_card(GameState.champion_offers[i], false, i))
 		v.add_child(offers)
-	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "New offers (%dc)" % GameData.CHAMPION_REROLL_COST, func():
+	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "New offers (%d Gold)" % GameData.CHAMPION_REROLL_COST, func():
 		var err := GameState.reroll_champion()
 		if err != "":
 			push_warning(err)
@@ -700,10 +699,10 @@ func _render_recruits(v: VBoxContainer) -> void:
 		var mid := _vbox(2)
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
-		mid.add_child(_label("Rank %s %s · %dc" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
+		mid.add_child(_label("Rank %s %s · %d Gold" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
 		mid.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
-		row.add_child(_button("Reroll (%dc)" % GameState.recruit_reroll_cost(), func(id=h.id):
+		row.add_child(_button("Reroll (%d Gold)" % GameState.recruit_reroll_cost(), func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)
 			if err != "":
 				push_warning(err)
@@ -991,7 +990,7 @@ func _render_bestiary(v: VBoxContainer) -> void:
 		cv.add_child(_label(str(hz["name"]) if seen else "???", 13))
 		if seen:
 			var mult := float(hz["dmg_mult"])
-			var sev := _label("%s · finds %s" % [_hazard_severity_label(mult), "Coins" if str(hz["bonus_type"]) == "coins" else "Crystals"], 12)
+			var sev := _label("%s · finds %s" % [_hazard_severity_label(mult), "Gold" if str(hz["bonus_type"]) == "coins" else "Essence"], 12)
 			sev.add_theme_color_override("font_color", _hazard_severity_color(mult))
 			cv.add_child(sev)
 		card.add_child(cv)
@@ -1095,9 +1094,9 @@ func _render_compendium_crafting(v: VBoxContainer) -> void:
 
 func _render_compendium_systems(v: VBoxContainer) -> void:
 	var entries := [
-		["Guild Management", "Spend Crystals on 9 upgrades across 4 branches. Every level adds its effect; Lv3 and Lv5 unlock a perk (a first-strike bonus, a boss Crystal cache, extra relic slots…). Guild Tier tracks total levels."],
-		["Daily Rift", "Once you have sealed a rift, the Rift Hall offers one Daily Rift attempt per day. Its rule, starting boon, region and layout come from the date, so every guild faces the same rift that day. Sealing it pays bonus Crystals and Seal Tokens and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
-		["Endless Rift", "A real-time survival run. You steer the first hero you pick (WASD, arrows, or drag); the rest follow and every hero attacks on their own, with Abilities firing on a timer. Foes pour in from every side and get tougher each minute; a ring closes in every 45 seconds, an elite comes each minute and a warden every 5 minutes (it calls the horde at half health). Collect shards to level up and pick 1 of 3 upgrades. Fallen companions get back up after 15 seconds; the run ends when your lead falls. Pays coins, crystals and XP for time and kills, plus loot for elites and wardens."],
+		["Guild Management", "Spend Essence on 9 upgrades across 4 branches. Every level adds its effect; Lv3 and Lv5 unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots…). Guild Tier tracks total levels."],
+		["Daily Rift", "Once you have sealed a rift, the Rift Hall offers one Daily Rift attempt per day. Its rule, starting boon, region and layout come from the date, so every guild faces the same rift that day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
+		["Endless Rift", "A real-time survival run. You steer the first hero you pick (WASD, arrows, or drag); the rest follow and every hero attacks on their own, with Abilities firing on a timer. Foes pour in from every side and get tougher each minute; a ring closes in every 45 seconds, an elite comes each minute and a warden every 5 minutes (it calls the horde at half health). Collect shards to level up and pick 1 of 3 upgrades. Fallen companions get back up after 15 seconds; the run ends when your lead falls. Pays gold, essence and XP for time and kills, plus loot for elites and wardens."],
 		["Hero voices", "A hero's trait sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."],
 		["Boss phases", "Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn."],
 		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). B-rank+ mapped rifts give them two. Hover the badges on their plate to read them."],
@@ -1115,10 +1114,10 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Tower of Trials", "Opens with Act II, in the Rift Hall. 100 fixed floors, one fight each: a floor is always the same fight, so a loss is something to plan around. Heroes fight at full HP and leave as they came (no downing, scars or days passing). Most floors carry a rule (armored or burning foes, a swarm, a party cap). Every 10th floor is a guardian that gives a unique relic, and floors 10/25/50/75/100 earn guild titles. Only a first clear pays; floors 91-100 reshuffle their rules every week and pay half for a re-clear."],
 		["Foes & regions", "Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun."],
 		["Campaign", "Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift."],
-		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). 2 relics of one element start a set, 3 complete it, and 3 different elements make a Prism. Level a relic to 5 to awaken a new effect, or reroll any effect for Crystals. Legendary relics have unique powers."],
+		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). 2 relics of one element start a set, 3 complete it, and 3 different elements make a Prism. Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."],
 		["Champions", "A free guest fighter joins every rift. Pick one of three offers each cycle (a new set arrives with every seal). They level with your strongest hero, give the whole party their Boon while standing, and have one Champion Call per rift (key 7 on their turn). Seal 3 rifts with the same Champion and they can swear in to your roster for good."],
-		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Coins, or reset a hero's points for 5 Seal Tokens per level (gear they no longer qualify for comes off)."],
-		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Reputation occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
+		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
+		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -1191,7 +1190,7 @@ func _render_quests(v: VBoxContainer) -> void:
 		empty.position = Vector2(pad_x, pad_top + 20)
 		board.add_child(empty)
 	v.add_child(board)
-	v.add_child(_wrap_label("Every 20 Reputation arms a guaranteed Epic relic at your next Shop.", 12, true))
+	v.add_child(_wrap_label("Every 20 Renown arms a guaranteed Epic relic at your next Shop.", 12, true))
 	v.add_child(_hsep())
 
 	v.add_child(_label("Milestones", 16))
@@ -1482,7 +1481,7 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
 		var next_perk := str(perks.get(cur + 1, ""))
-		var ub := _icon_button(icon_path, "Upgrade to Lv%d — %d Crystals" % [cur + 1, cost], func(k=key):
+		var ub := _icon_button(icon_path, "Upgrade to Lv%d — %d Essence" % [cur + 1, cost], func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)

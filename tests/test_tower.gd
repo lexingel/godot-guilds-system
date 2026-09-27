@@ -120,7 +120,7 @@ func run() -> void:
 	GameState.tower_week = GameState.tower_week_id() - 1   # a new week
 	check(GameState.tower_next_floor() == 91 and GameState.tower_week_cleared == 0, "a new week resets the ladder")
 	var again := GameState._complete_tower_floor(91)
-	check(not bool(again["first"]) and int(again["coins"]) == int(GameState.tower_reward(91)["coins"]) / 2 and int(again["tokens"]) == 0, "a weekly re-clear pays half, no tokens")
+	check(not bool(again["first"]) and int(again["coins"]) == int(GameState.tower_reward(91)["coins"]) / 2 , "a weekly re-clear pays half")
 	GameState.tower_week_cleared = 10
 	check(GameState.tower_next_floor() == 0, "nothing left once the week's ladder is done")
 	GameState.tower_best = 100

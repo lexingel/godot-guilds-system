@@ -13,7 +13,7 @@ func run() -> void:
 	GameState.heroes.append(h)
 	GameState.coins = 120
 	check(GameState.train_attr("h1") == "" and h.attr_points == 1 and GameState.coins == 70, "train costs 50, gives 1 point")
-	check(GameState.train_attr("h1") == "Not enough Coins" and h.attr_trained == 1, "second costs 100")
+	check(GameState.train_attr("h1") == "Not enough Gold" and h.attr_trained == 1, "second costs 100")
 	GameState.coins = 10000
 	for i in GameData.ATTR_TRAIN_CAP + 2:
 		GameState.train_attr("h1")
@@ -28,7 +28,7 @@ func run() -> void:
 	h.attrs[it.attr] = 20
 	GameState.equip_item("h1", "weapon", 0, "i1")
 	check(it.equipped_to == "h1", "epic equipped at 20 %s" % it.attr)
-	GameState.tokens = 100
+	GameState.crystals = 200
 	GameState.respec_attrs("h1")
 	check(it.equipped_to == "", "reset takes off gear the hero no longer qualifies for")
 	check(GameState.recovery_runs() == 1, "new guild recovers in 1 run")

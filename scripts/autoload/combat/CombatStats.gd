@@ -97,7 +97,7 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 		if it.equipped_to == h.id:
 			var v := 0.0
 			for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
-					[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
+					[it.implicit_kind, it.implicit_value], [it.drawback_kind, it.drawback_value]]:
 				if pair[0] == kind:
 					v += float(pair[1])
 			add.call(it.name, v)
@@ -320,8 +320,6 @@ func hero_item_total(h: Hero, kind: String) -> float:
 				s += it.tertiary_value
 			if it.implicit_kind == kind:
 				s += it.implicit_value
-			if it.socketed_kind == kind:
-				s += it.socketed_value
 			if it.drawback_kind == kind:
 				s += it.drawback_value
 	return s

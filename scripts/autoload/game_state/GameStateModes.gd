@@ -138,11 +138,10 @@ func _complete_act(act_num: int) -> void:
 	var act: Dictionary = GameData.CAMPAIGN[act_num - 1]
 	var reward: Dictionary = act["reward"]
 	crystals += int(reward.get("crystals", 0))
-	tokens += int(reward.get("tokens", 0))
 	var relic := Combat.gen_unique_relic()
 	relics.append(relic)
 	campaign_act = act_num + 1
-	var subtitle := "Act %s complete — +%d Crystals, +%d Seal Tokens, %s" % [_roman(act_num), int(reward.get("crystals", 0)), int(reward.get("tokens", 0)), relic.name]
+	var subtitle := "Act %s complete — +%d Essence, %s" % [_roman(act_num), int(reward.get("crystals", 0)), relic.name]
 	if str(act["opens"]) != "":
 		subtitle += " · %s unlocked" % act["opens"]
 	pending_stories.append({"title": act["finale"] + " — sealed", "subtitle": subtitle, "text": str(act["outro"])})
@@ -203,8 +202,7 @@ func _complete_daily() -> Dictionary:
 	daily_last_clear = day
 	var cr := GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(campaign_act, 3)
 	crystals += cr
-	tokens += GameData.DAILY_CLEAR_TOKENS
-	return {"crystals": cr, "tokens": GameData.DAILY_CLEAR_TOKENS, "streak": daily_streak}
+	return {"crystals": cr, "streak": daily_streak}
 
 
 # ---------------- Records: run history, memorial ----------------
@@ -357,10 +355,10 @@ func tower_floor_info(f: int) -> Dictionary:
 		"boss": boss, "rules": rules, "weekly": weekly, "party_cap": cap, "seed": rng.randi(), "reward": tower_reward(f)}
 
 
-## First-clear reward for a floor. A weekly re-clear pays half the Coins and
-## Crystals and nothing else.
+## First-clear reward for a floor (every 5th floor pays extra Crystals). A
+## weekly re-clear pays half the Coins and Crystals and nothing else.
 func tower_reward(f: int) -> Dictionary:
-	return {"coins": 20 + 4 * f, "crystals": 8 + int(1.5 * f), "tokens": (2 + f / 10) if f % 5 == 0 else 0,
+	return {"coins": 20 + 4 * f, "crystals": 8 + int(1.5 * f) + ((2 + f / 10) if f % 5 == 0 else 0),
 		"relic": GameData.TOWER_RELICS.get(f, {})}
 
 
@@ -372,7 +370,7 @@ func tower_recommended_power(f: int) -> int:
 func _tower_diff(info: Dictionary) -> Dictionary:
 	var f := int(info["floor"])
 	var d := {"id": "tower", "name": "Tower of Trials", "floors": 1, "power": "Trial",
-		"coin": [0, 0], "crystal": [0, 0], "token_base": 0, "detector_chance": 0.0,
+		"coin": [0, 0], "crystal": [0, 0], "seal_essence": 0, "cache_chance": 0.0,
 		"rec_power": tower_recommended_power(f), "biome": info["biome"]}
 	for r in info["rules"]:
 		d.merge(r.get("diff", {}), true)
@@ -401,9 +399,8 @@ func tower_title() -> String:
 func _complete_tower_floor(f: int) -> Dictionary:
 	var first := f > tower_best
 	var rw := tower_reward(f)
-	var got := {"floor": f, "first": first, "coins": int(rw["coins"]), "crystals": int(rw["crystals"]), "tokens": 0, "relic": "", "title": ""}
+	var got := {"floor": f, "first": first, "coins": int(rw["coins"]), "crystals": int(rw["crystals"]), "relic": "", "title": ""}
 	if first:
-		got["tokens"] = int(rw["tokens"])
 		var rdef: Dictionary = rw["relic"]
 		if not rdef.is_empty():
 			var r := Combat.relic_from_unique(rdef)
@@ -422,7 +419,6 @@ func _complete_tower_floor(f: int) -> Dictionary:
 		tower_week_cleared = maxi(tower_week_cleared, f - GameData.TOWER_WEEKLY_FROM + 1)
 	coins += int(got["coins"])
 	crystals += int(got["crystals"])
-	tokens += int(got["tokens"])
 	return got
 
 

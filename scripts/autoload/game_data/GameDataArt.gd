@@ -44,7 +44,6 @@ const BATTLE_BACKGROUNDS: Array[String] = [
 const CURRENCY_ICON_PATH := {
 	"coins": "res://assets/ui/icon_coins.png",
 	"crystals": "res://assets/ui/icon_crystals.png",
-	"tokens": "res://assets/ui/icon_tokens.png",
 	"reputation": "res://assets/skills/trophy.png",
 }
 
@@ -66,8 +65,8 @@ const FEATURE_UNLOCKS := {
 	"medical": {"name": "Medical Tent", "hint": "Opens after your first rift run", "news": "Wounded and downed heroes recover faster in a bed."},
 	"bestiary": {"name": "Bestiary", "hint": "Opens after your first fight", "news": "Every foe you meet is recorded here."},
 	"crafting": {"name": "Crafting Hall", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
-	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for coins, crystals and Evolution Stones."},
-	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Crystals on lasting guild upgrades."},
+	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
+	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
 	"rift_map": {"name": "Rift Map", "hint": "Opens after you seal 2 rifts", "news": "Ranked rifts appear on the map — seal them before they break open."},
 	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
 }

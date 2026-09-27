@@ -8,7 +8,7 @@ func buy_incense(incense_id: String) -> String:
 		return ""
 	var cost := int(def["cost"])
 	if coins < cost:
-		return "Not enough Coins"
+		return "Not enough Gold"
 	coins -= cost
 	consumables.append({"id": "cs" + str(next_id), "incense_id": incense_id})
 	next_id += 1
@@ -36,59 +36,9 @@ func buy_tonic() -> String:
 	if tonics >= GameData.TONIC_CAP:
 		return "You can carry %d at most" % GameData.TONIC_CAP
 	if coins < GameData.TONIC_COST:
-		return "Not enough Coins"
+		return "Not enough Gold"
 	coins -= GameData.TONIC_COST
 	tonics += 1
-	save()
-	state_changed.emit()
-	return ""
-
-
-func buy_runestone(runestone_id: String) -> String:
-	var def := GameData.find_runestone(runestone_id)
-	if def.is_empty():
-		return ""
-	var cost := int(def["cost"])
-	if coins < cost:
-		return "Not enough Coins"
-	coins -= cost
-	runestones.append({"id": "rs" + str(next_id), "runestone_id": runestone_id})
-	next_id += 1
-	save()
-	state_changed.emit()
-	return ""
-
-
-## Sockets a runestone permanently into one equipped item — its bonus stacks
-## on top of the item's own stat for as long as it stays equipped. One socket
-## per item (no replacing an already-socketed one), and only into the
-## matching slot_type (weapon runestones into weapon items, gear runestones
-## into armor/focus items).
-func socket_runestone(runestone_consumable_id: String, item_id: String) -> String:
-	var owned: Dictionary = {}
-	for r in runestones:
-		if r["id"] == runestone_consumable_id:
-			owned = r
-			break
-	if owned.is_empty():
-		return ""
-	var def := GameData.find_runestone(str(owned["runestone_id"]))
-	if def.is_empty():
-		return ""
-	var target: Item = null
-	for it in items:
-		if it.id == item_id:
-			target = it
-			break
-	if not target:
-		return ""
-	if target.slot_type() != str(def["category"]):
-		return "Wrong socket type"
-	if target.socketed_kind != "":
-		return "Already socketed"
-	target.socketed_kind = def["kind"]
-	target.socketed_value = def["value"]
-	runestones.erase(owned)
 	save()
 	state_changed.emit()
 	return ""
@@ -207,7 +157,7 @@ func reforge_item(item_id: String, line: int) -> String:
 		return "No such stat"
 	var cost := reforge_cost(it)
 	if crystals < cost:
-		return "Not enough Crystals"
+		return "Not enough Essence"
 	crystals -= cost
 	it.reforges += 1
 	var kind: String = kinds[line]
@@ -279,7 +229,7 @@ func item_stat_map(it: Item) -> Dictionary:
 	if it == null:
 		return m
 	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value],
-			[it.implicit_kind, it.implicit_value], [it.socketed_kind, it.socketed_value], [it.drawback_kind, it.drawback_value]]:
+			[it.implicit_kind, it.implicit_value], [it.drawback_kind, it.drawback_value]]:
 		if str(pair[0]) != "":
 			m[pair[0]] = float(m.get(pair[0], 0.0)) + float(pair[1])
 	return m
@@ -384,7 +334,7 @@ func reroll_relic(relic_id: String, idx: int) -> String:
 			return "Legendaries can't be rerolled"
 		var cost := relic_reroll_cost(r)
 		if crystals < cost:
-			return "Not enough Crystals"
+			return "Not enough Essence"
 		if idx < 0:
 			if r.trigger.is_empty():
 				return "No trigger"
@@ -422,7 +372,7 @@ func upgrade_relic(relic_id: String) -> String:
 			return "Already max level"
 		var cost := relic_upgrade_cost(r)
 		if crystals < cost:
-			return "Not enough Crystals"
+			return "Not enough Essence"
 		crystals -= cost
 		r.dmg = int(round(r.dmg * 1.15))
 		r.hp = int(round(r.hp * 1.15))

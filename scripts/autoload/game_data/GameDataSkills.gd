@@ -360,7 +360,7 @@ const ROLE_SIGNATURES := {
 
 ## The keystone for `kind`'s tree as a full skill node, or {}.
 ## Two more Tier-5 nodes in every tree, earned outside SP alone:
-## "stonebound" also spends an Evolution Stone and makes the hero's Active
+## "stonebound" also costs Crystals (STONEBOUND_CRYSTALS) and makes the hero's Active
 ## Ability hit harder; "riftborn" needs the guild to have sealed a Rift Map
 ## rift of RIFTBORN_MIN_RANK or higher, and adds 40% of the tree's capstone
 ## stat. (A skill respec refunds the SP, never the stone.)
@@ -443,34 +443,8 @@ static func evolution_choices(cls: Dictionary) -> Array:
 			return matches
 	return []
 
-# Evolution Stones — a rank-tiered consumable dropped by clearing a Rift Map
-# rift of that rank (GameState.seal_rift), spent by GameState.evolve_hero()
-# to unlock the E/D/C/B/A/S jump. Nothing evolves into F, so there's no
-# F-tier stone. First-draft numbers, tunable after the loop is playable.
-const EVOLUTION_STONE_DROP_CHANCE := 0.15
-const EVOLUTION_STONE_BONUS_SP_CAP := 3
-
-
-## Rift Map ranks run past S (SS/SSS) but hero rank tops out at S, so a stone
-## from one of those rarer mapped rifts still clamps down to the one hero
-## tier that can use it — it doesn't just get wasted.
-static func stone_tier_for_rift_rank(rift_rank: String) -> String:
-	if rift_rank == "" or rift_rank == "F":
-		return ""
-	if rift_rank == "SS" or rift_rank == "SSS":
-		return "S"
-	return rift_rank
-
-
-## Compact "E×1 · C×2 · B×1" line for whatever Evolution Stones are actually
-## held — RANKS order, zero counts skipped, "" if the player is holding none.
-static func evolution_stones_text(stones: Dictionary) -> String:
-	var parts: Array[String] = []
-	for r in RANKS:
-		var n := int(stones.get(r["id"], 0))
-		if n > 0:
-			parts.append("%s×%d" % [r["id"], n])
-	return " · ".join(parts)
+## The "stonebound" skill node costs this many Crystals on top of its SP.
+const STONEBOUND_CRYSTALS := 40
 
 # Ability Awakening — a second SP sink (GameState.awaken_ability) alongside
 # the skill tree: spend SP once to make a hero's existing Active Ability do
