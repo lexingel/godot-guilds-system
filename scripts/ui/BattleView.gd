@@ -963,7 +963,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 					if str(options[ri]["obj"].rarity) == "legendary":
 						tw.tween_property(tile, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.45 + 0.18 * ri)
 						tw.tween_property(tile, "modulate", Color.WHITE, 0.45).set_delay(0.6 + 0.18 * ri)
-		else:
+		if GameState.boon_pending():
+			victory_col.add_child(_boon_offer_row(result))
+		if (options.is_empty() or ns.get("reward_chosen", false)) and not GameState.boon_pending():
 			var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
 					GameState.seal_rift()
@@ -1012,6 +1014,98 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			screen = "tower" if in_tower else "terminal"
 			render()
 		))
+
+
+## The boon pick after an elite: three cards (family, what it does, what it
+## would complete) and a Skip.
+func _boon_offer_row(result: Dictionary) -> Control:
+	var col := _vbox(6)
+	var head := _label("Choose a boon — it lasts the rest of this rift", 14)
+	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(head)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	row.add_theme_constant_override("v_separation", 10)
+	var counts := GameState.boon_family_counts()
+	var offer: Array = result.get("boon_offer", [])
+	for i in offer.size():
+		var b := GameData.find_boon(str(offer[i]))
+		var fam: Dictionary = GameData.BOON_FAMILIES[b["family"]]
+		var have := int(counts.get(b["family"], 0))
+		var card := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		st.bg_color = Palette.SURFACE2
+		st.border_color = fam["color"]
+		st.set_border_width_all(2)
+		st.set_corner_radius_all(8)
+		st.set_content_margin_all(10)
+		card.add_theme_stylebox_override("panel", st)
+		card.custom_minimum_size = Vector2(200, 0)
+		var cv := _vbox(4)
+		var top := HBoxContainer.new()
+		top.add_theme_constant_override("separation", 6)
+		top.add_child(_icon(str(fam["icon"]), 24))
+		var nm := _label(str(b["name"]), 15)
+		nm.add_theme_color_override("font_color", fam["color"])
+		top.add_child(nm)
+		cv.add_child(top)
+		cv.add_child(_label("%s · you have %d" % [fam["name"], have], 11, true))
+		var d := _wrap_label(str(b["desc"]), 12)
+		d.custom_minimum_size.x = 180
+		cv.add_child(d)
+		for step in GameData.BOON_SETS[b["family"]]:
+			if have + 1 == int(step[0]):
+				var sl := _wrap_label("Completes %s: %s" % [step[1]["name"], step[1]["desc"]], 11)
+				sl.add_theme_color_override("font_color", Palette.RANK_S)
+				sl.custom_minimum_size.x = 180
+				cv.add_child(sl)
+		cv.add_child(_button("Take", func(k=i):
+			GameState.pick_boon(k)
+			render()
+		))
+		card.add_child(cv)
+		row.add_child(card)
+	col.add_child(row)
+	col.add_child(_button("Skip the boon", func():
+		GameState.pick_boon(-1)
+		render()
+	))
+	return col
+
+
+## The run's boons as family chips (count + tooltip listing boons and sets).
+func _boon_chips() -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var counts := GameState.boon_family_counts()
+	for fam_id in counts:
+		var fam: Dictionary = GameData.BOON_FAMILIES[fam_id]
+		var chip := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(fam["color"], 0.18)
+		st.border_color = fam["color"]
+		st.set_border_width_all(1)
+		st.set_corner_radius_all(6)
+		st.content_margin_left = 6
+		st.content_margin_right = 8
+		chip.add_theme_stylebox_override("panel", st)
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 4)
+		h.add_child(_icon(str(fam["icon"]), 16))
+		h.add_child(_label("%s %d" % [fam["name"], int(counts[fam_id])], 12))
+		chip.add_child(h)
+		var lines: Array[String] = []
+		for id in GameState.run.get("boons", []):
+			var b := GameData.find_boon(str(id))
+			if b.get("family", "") == fam_id:
+				lines.append("%s — %s" % [b["name"], b["desc"]])
+		for step in GameData.BOON_SETS[fam_id]:
+			var got := int(counts[fam_id]) >= int(step[0])
+			lines.append("%s %d-piece %s — %s" % ["✓" if got else "○", int(step[0]), step[1]["name"], step[1]["desc"]])
+		chip.tooltip_text = "\n".join(lines)
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(chip)
+	return row
 
 
 ## A cleared Tower floor: what it paid (first clear, relic, title) and the way back.

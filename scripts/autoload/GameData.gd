@@ -952,6 +952,62 @@ const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
 const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
 const HEAVY_BLOW_MULT := 3.0
 
+## ---------------- Run boons ----------------
+## Picked after an elite win (1 of 3), kept for the rest of that rift only.
+## Each is a stat ("kind"/"value", read through Combat.boon_total) or a relic-
+## style trigger (fired with the party's relic triggers). Owning 2 / 4 of a
+## family adds its set bonus.
+const BOON_FAMILIES := {
+	"ember": {"name": "Ember", "icon": "res://assets/relics/escalate_pct.png", "color": Color(1.0, 0.55, 0.25)},
+	"frost": {"name": "Frost", "icon": "res://assets/skills/shard_blue.png", "color": Color(0.55, 0.85, 1.0)},
+	"blood": {"name": "Blood", "icon": "res://assets/skills/potion_red.png", "color": Color(0.9, 0.25, 0.3)},
+	"steel": {"name": "Steel", "icon": "res://assets/skills/shield_basic.png", "color": Color(0.75, 0.78, 0.85)},
+	"storm": {"name": "Storm", "icon": "res://assets/skills/wing.png", "color": Color(0.7, 0.6, 1.0)},
+	"shadow": {"name": "Shadow", "icon": "res://assets/skills/dagger_red.png", "color": Color(0.6, 0.4, 0.75)},
+	"holy": {"name": "Holy", "icon": "res://assets/skills/star.png", "color": Color(1.0, 0.9, 0.5)},
+}
+const BOONS := [
+	{"id": "kindling", "family": "ember", "name": "Kindling", "desc": "+3% party damage every round (stacking).", "kind": "escalate_pct", "value": 0.03},
+	{"id": "blaze", "family": "ember", "name": "Blaze", "desc": "+12% party damage.", "kind": "dmg_pct", "value": 0.12},
+	{"id": "pyre", "family": "ember", "name": "Pyre Burst", "desc": "Every third round, fire strikes every foe for 35% of party damage.", "trigger": {"trigger": "round_third", "effect": "nova", "value": 0.35}},
+	{"id": "rime", "family": "frost", "name": "Rime Coat", "desc": "+8% dodge.", "kind": "dodge_pct", "value": 0.08},
+	{"id": "frostbite", "family": "frost", "name": "Frostbite", "desc": "Evading or taking a heavy hit weakens the attacker.", "trigger": {"trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.12}},
+	{"id": "ice_ward", "family": "frost", "name": "Ice Ward", "desc": "Every third round, shield the party for 8% of max HP.", "trigger": {"trigger": "round_third", "effect": "shield_party", "value": 0.08}},
+	{"id": "leech", "family": "blood", "name": "Leech", "desc": "Hits heal the attacker for 8% of the damage.", "trigger": {"trigger": "after_hit", "effect": "lifesteal", "value": 0.08}},
+	{"id": "frenzy", "family": "blood", "name": "Frenzy", "desc": "+10% party damage.", "kind": "dmg_pct", "value": 0.10},
+	{"id": "feast", "family": "blood", "name": "Feast", "desc": "Each kill mends the party for 6% of max HP.", "trigger": {"trigger": "on_kill", "effect": "mend_party", "value": 0.06}},
+	{"id": "riposte", "family": "steel", "name": "Riposte", "desc": "+20% chance to counter when evading or hit hard.", "kind": "counter_pct", "value": 0.20},
+	{"id": "bulwark", "family": "steel", "name": "Bulwark", "desc": "20% chance to take a hit meant for a wounded ally.", "trigger": {"trigger": "ally_targeted", "effect": "intercept", "value": 0.20}},
+	{"id": "tempered", "family": "steel", "name": "Tempered", "desc": "Once a fight, survive a wipe at 25% HP.", "kind": "wipe_guard", "value": 0.25},
+	{"id": "surge", "family": "storm", "name": "Surge", "desc": "+30% first-strike damage.", "kind": "first_round_pct", "value": 0.30},
+	{"id": "static", "family": "storm", "name": "Static", "desc": "+30% chance to cool abilities when evading or hit hard.", "kind": "cooldown_shave_pct", "value": 0.30},
+	{"id": "chain", "family": "storm", "name": "Chain Lightning", "desc": "Each kill arcs lightning into every foe for 30% of party damage.", "trigger": {"trigger": "on_kill", "effect": "nova", "value": 0.30}},
+	{"id": "reaper", "family": "shadow", "name": "Reaper", "desc": "Hits finish off foes left below 12% HP.", "trigger": {"trigger": "before_hit", "effect": "execute_below", "value": 0.12}},
+	{"id": "ambush", "family": "shadow", "name": "Ambush", "desc": "+40% opening volley against bosses.", "kind": "boss_alpha_strike", "value": 0.40},
+	{"id": "veil", "family": "shadow", "name": "Veil", "desc": "+6% dodge and +6% party damage.", "kind": "dodge_pct", "value": 0.06, "kind2": "dmg_pct", "value2": 0.06},
+	{"id": "grace", "family": "holy", "name": "Grace", "desc": "Mends 3% HP every round.", "kind": "mend_pct", "value": 0.03},
+	{"id": "aegis", "family": "holy", "name": "Aegis", "desc": "Each kill shields the weakest ally for 12% of max HP.", "kind": "kill_shield_pct", "value": 0.12},
+	{"id": "hymn", "family": "holy", "name": "Hymn", "desc": "Every third round, mend the party for 5% of max HP.", "trigger": {"trigger": "round_third", "effect": "mend_party", "value": 0.05}},
+]
+## Set bonuses: [pieces, bonus] per family, same shape as a boon.
+const BOON_SETS := {
+	"ember": [[2, {"name": "Ember ×2", "desc": "+8% party damage.", "kind": "dmg_pct", "value": 0.08}], [4, {"name": "Inferno", "desc": "Every third round, fire hits every foe for 60% of party damage.", "trigger": {"trigger": "round_third", "effect": "nova", "value": 0.6}}]],
+	"frost": [[2, {"name": "Frost ×2", "desc": "+6% dodge.", "kind": "dodge_pct", "value": 0.06}], [4, {"name": "Glacier", "desc": "Every third round, shield the party for 15%.", "trigger": {"trigger": "round_third", "effect": "shield_party", "value": 0.15}}]],
+	"blood": [[2, {"name": "Blood ×2", "desc": "Mends 2% HP every round.", "kind": "mend_pct", "value": 0.02}], [4, {"name": "Crimson Pact", "desc": "Hits heal for 15% of the damage.", "trigger": {"trigger": "after_hit", "effect": "lifesteal", "value": 0.15}}]],
+	"steel": [[2, {"name": "Steel ×2", "desc": "+10% counter chance.", "kind": "counter_pct", "value": 0.10}], [4, {"name": "Iron Wall", "desc": "Each kill shields the weakest ally for 20%.", "kind": "kill_shield_pct", "value": 0.20}]],
+	"storm": [[2, {"name": "Storm ×2", "desc": "+15% first-strike damage.", "kind": "first_round_pct", "value": 0.15}], [4, {"name": "Tempest", "desc": "Evading or taking a heavy hit can grant an extra turn.", "trigger": {"trigger": "evade_or_heavy", "effect": "extra_turn", "value": 0.25}}]],
+	"shadow": [[2, {"name": "Shadow ×2", "desc": "+6% party damage.", "kind": "dmg_pct", "value": 0.06}], [4, {"name": "Deathmark", "desc": "Hits finish off foes below 20% HP.", "trigger": {"trigger": "before_hit", "effect": "execute_below", "value": 0.20}}]],
+	"holy": [[2, {"name": "Holy ×2", "desc": "Mends 2% HP every round.", "kind": "mend_pct", "value": 0.02}], [4, {"name": "Sanctuary", "desc": "Once a fight, survive a wipe at 30% HP.", "kind": "wipe_guard", "value": 0.30}]],
+}
+const BOON_OFFER_SIZE := 3
+
+
+static func find_boon(id: String) -> Dictionary:
+	for b in BOONS:
+		if b["id"] == id:
+			return b
+	return {}
+
 ## ---------------- Tower of Trials ----------------
 ## 100 fixed floors, one fight each (GameState.tower_floor_info). Every floor
 ## is always the same fight, so a loss is something to plan around rather

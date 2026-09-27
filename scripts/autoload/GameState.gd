@@ -394,7 +394,7 @@ func _run_for_save() -> Dictionary:
 		"map_uid": run.get("map_uid", ""), "any_ko": run.get("any_ko", false),
 		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
-		"orders_used": run.get("orders_used", 0),
+		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []),
 	}
 	if run.has("tower"):
 		out["tower"] = run["tower"]
@@ -746,7 +746,7 @@ func load_save() -> bool:
 			"map_uid": str(run_data.get("map_uid", "")), "any_ko": bool(run_data.get("any_ko", false)),
 			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
-			"orders_used": int(run_data.get("orders_used", 0)),
+			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []),
 		}
 		if run_data.has("tower"):
 			run["tower"] = int(run_data["tower"])
@@ -1345,6 +1345,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 					_bump("boss:" + bname)
 				elif kind == "elite":
 					elites_won += 1
+					if not run.has("tower"):
+						result["boon_offer"] = roll_boon_offer()
 			# Quest tallies — every monster in a won fight is by definition dead,
 			# so state["monsters"] (still the pre-cleanup fight roster) is a
 			# reliable "what did we just kill" list regardless of Riftbreak.
@@ -2059,6 +2061,62 @@ func _act_intro_card(act_num: int) -> Dictionary:
 
 static func _roman(n: int) -> String:
 	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
+
+
+# ---------------- Run boons ----------------
+
+func boon_family_counts() -> Dictionary:
+	var counts := {}
+	for id in run.get("boons", []):
+		var fam := str(GameData.find_boon(str(id)).get("family", ""))
+		if fam != "":
+			counts[fam] = int(counts.get(fam, 0)) + 1
+	return counts
+
+
+## Three boons not yet owned; when you already lean into a family, one slot
+## favours it so a build can come together.
+func roll_boon_offer() -> Array:
+	var owned: Array = run.get("boons", [])
+	var pool: Array = GameData.BOONS.filter(func(b): return not owned.has(b["id"])).map(func(b): return str(b["id"]))
+	pool.shuffle()
+	var offer: Array = []
+	var counts := boon_family_counts()
+	if not counts.is_empty():
+		var fams := counts.keys()
+		var fav := str(fams[randi() % fams.size()])
+		for id in pool:
+			if GameData.find_boon(id)["family"] == fav:
+				offer.append(id)
+				break
+	for id in pool:
+		if offer.size() >= GameData.BOON_OFFER_SIZE:
+			break
+		if not offer.has(id):
+			offer.append(id)
+	return offer
+
+
+## Takes offered boon `idx` (or -1 to skip) from the current fight's result.
+func pick_boon(idx: int) -> void:
+	var ns: Dictionary = run.get("node_state", {})
+	var res: Dictionary = ns.get("result", {})
+	var offer: Array = res.get("boon_offer", [])
+	if ns.get("boon_chosen", false) or offer.is_empty():
+		return
+	if idx >= 0 and idx < offer.size():
+		var boons: Array = run.get("boons", [])
+		boons.append(str(offer[idx]))
+		run["boons"] = boons
+	ns["boon_chosen"] = true
+	run["node_state"] = ns
+	save()
+	state_changed.emit()
+
+
+func boon_pending() -> bool:
+	var ns: Dictionary = run.get("node_state", {})
+	return not (ns.get("result", {}).get("boon_offer", []) as Array).is_empty() and not ns.get("boon_chosen", false)
 
 
 # ---------------- Guild Orders ----------------

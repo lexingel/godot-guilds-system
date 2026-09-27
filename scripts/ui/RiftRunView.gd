@@ -353,6 +353,14 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
 	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
 		v.add_child(_orders_bar())
+	if not (GameState.run.get("boons", []) as Array).is_empty():
+		var bl := HBoxContainer.new()
+		bl.add_theme_constant_override("separation", 8)
+		var bt := _label("Boons", 13)
+		bt.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bl.add_child(bt)
+		bl.add_child(_boon_chips())
+		v.add_child(bl)
 	if GameState.run.has("tower"):
 		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
 			var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 12)

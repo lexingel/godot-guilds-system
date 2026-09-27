@@ -7,6 +7,7 @@ extends Node
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
 var CHAMP_V2 := true
+var BOONS := true   # a random boon after each elite win
 # Income tallies (reset per profile): what one run earns on average.
 var _coins := 0.0
 var _crystals := 0.0
@@ -234,6 +235,12 @@ func _fight(living: Array[Hero], kind: String, diff: Dictionary, pos: int) -> bo
 				_crystals += float(out["result"].get("crystal", 0)) + float(out["result"].get("bonus_crystal", 0))
 				for o in out["result"].get("reward_options", []).slice(0, 1):
 					_loot_value += 15.0 * float(GameData.find_rarity(str(o["obj"].rarity))["mult"]) * 0.85
+			if won and kind == "elite" and BOONS:
+				var offer: Array = GameState.roll_boon_offer()
+				if not offer.is_empty():
+					var bs: Array = GameState.run.get("boons", [])
+					bs.append(offer[randi() % offer.size()])
+					GameState.run["boons"] = bs
 			if won and GAINS:
 				for h in living:
 					Combat.auto_spend_attrs(h)

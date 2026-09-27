@@ -889,7 +889,7 @@ func relic_dmg_bonus() -> int:
 
 
 func relic_special_total(kind: String) -> float:
-	var s := 0.0
+	var s := boon_total(kind) if BOON_VIA_RELIC.has(kind) else 0.0
 	for r in equipped_relics():
 		for sp in r.specials:
 			if str(sp["kind"]) == kind:
@@ -1082,12 +1082,18 @@ func _party_effects(state: Dictionary) -> Array[Dictionary]:
 		{"trigger": "evade_or_heavy", "effect": "shave_cooldowns", "value": float(state["cooldown_shave"]), "source": "Chronometer"},
 		{"trigger": "on_kill", "effect": "shield_lowest", "value": float(state["kill_shield"]), "source": "Lantern"},
 	]
-	# Every equipped relic's trigger fires for the whole party.
+	# Every equipped relic's trigger fires for the whole party, and so does
+	# every run boon's.
 	for r in equipped_relics():
 		if not r.trigger.is_empty():
 			var t: Dictionary = r.trigger.duplicate()
 			t["source"] = r.name
 			out.append(t)
+	for b in boon_effects():
+		if b.has("trigger"):
+			var bt: Dictionary = (b["trigger"] as Dictionary).duplicate()
+			bt["source"] = str(b["name"])
+			out.append(bt)
 	return out
 
 
@@ -1279,7 +1285,40 @@ func synergy_value_for(kind: String) -> float:
 	for s in relic_sets():
 		if s["kind"] == kind:
 			total += float(s["value"])
-	return total
+	return total + (0.0 if BOON_VIA_RELIC.has(kind) else boon_total(kind))
+
+
+## Kinds read through relic_special_total rather than synergy_value_for;
+## boons join whichever channel a kind already flows through (never both).
+const BOON_VIA_RELIC := ["counter_pct", "cooldown_shave_pct", "kill_shield_pct", "wipe_guard", "boss_alpha_strike"]
+
+
+## Every stat entry and trigger the current run's boons (and their family
+## set bonuses) give: [{kind, value} | {trigger, effect, value}, source].
+func boon_effects() -> Array:
+	var out: Array = []
+	var counts := {}
+	for id in GameState.run.get("boons", []):
+		var b := GameData.find_boon(str(id))
+		if b.is_empty():
+			continue
+		counts[b["family"]] = int(counts.get(b["family"], 0)) + 1
+		out.append(b)
+	for fam in counts:
+		for step in GameData.BOON_SETS.get(fam, []):
+			if int(counts[fam]) >= int(step[0]):
+				out.append(step[1])
+	return out
+
+
+func boon_total(kind: String) -> float:
+	var s := 0.0
+	for e in boon_effects():
+		if str(e.get("kind", "")) == kind:
+			s += float(e["value"])
+		if str(e.get("kind2", "")) == kind:
+			s += float(e["value2"])
+	return s
 
 
 func drop_rate_bonus() -> float:
