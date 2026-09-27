@@ -57,6 +57,8 @@ var run_history: Array = []      # newest first, capped (GameData.RUN_HISTORY_MA
 var runs_finished: int = 0
 var fallen: Array = []           # memorial: heroes lost for good
 var heroes_lost_total: int = 0
+var best_endless_time: int = 0   # seconds survived in the Endless Rift (survivors mode)
+var endless_runs: int = 0
 var boon_set4_reached: bool = false
 var tower_best: int = 0          # highest Tower of Trials floor ever cleared
 var tower_week: int = 0          # tower_week_id() the weekly ladder progress belongs to
@@ -350,6 +352,8 @@ func reset() -> void:
 	runs_finished = 0
 	fallen = []
 	heroes_lost_total = 0
+	best_endless_time = 0
+	endless_runs = 0
 	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
@@ -553,7 +557,7 @@ func save() -> void:
 		"best_endless_cycle": best_endless_cycle,
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
-		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "boon_set4_reached": boon_set4_reached,
+		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "boon_set4_reached": boon_set4_reached,
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
@@ -731,6 +735,8 @@ func load_save() -> bool:
 	runs_finished = int(data.get("runs_finished", 0))
 	fallen = data.get("fallen", [])
 	heroes_lost_total = int(data.get("heroes_lost_total", 0))
+	best_endless_time = int(data.get("best_endless_time", 0))
+	endless_runs = int(data.get("endless_runs", 0))
 	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))
 	tower_week_cleared = int(data.get("tower_week_cleared", 0))
@@ -2042,6 +2048,38 @@ func continue_endless() -> void:
 
 ## Earned by playing (sealing 3 rifts, lesser/greater/endless all count),
 ## not by spending Guild Management currency like every other unlock today.
+## Pays out a finished Endless Rift (survivors) run: coins and crystals for
+## time and kills, XP for every hero, loot for elites and wardens. Returns
+## what was earned for the result screen.
+func finish_survivors(r: SurvivorsRun) -> Dictionary:
+	var pay := r.rewards()
+	coins += int(pay["coins"])
+	crystals += int(pay["crystals"])
+	var names: Array = []
+	for h in r.heroes:
+		Combat.gain_xp(h["hero"], int(pay["xp"]))
+		names.append(h["hero"].name.split(" the ")[0])
+	var loot_names: Array = []
+	for i in int(pay["loot"]):
+		var loot := Combat.gen_loot(Combat.weighted_rarity())
+		_grant_loot(loot)
+		loot_names.append(loot["obj"].name)
+	for name in r.kill_counts:
+		monster_kill_counts[name] = int(monster_kill_counts.get(name, 0)) + int(r.kill_counts[name])
+	var t := int(r.time)
+	var best := t > best_endless_time
+	best_endless_time = maxi(best_endless_time, t)
+	endless_runs += 1
+	runs_finished += 1
+	run_history.push_front({"day": day, "kind": "Endless Rift", "result": "Survived", "floor": "", "time": t, "kills": r.kills,
+		"heroes": names, "boons": [], "coins": int(pay["coins"]), "crystals": int(pay["crystals"])})
+	if run_history.size() > GameData.RUN_HISTORY_MAX:
+		run_history.resize(GameData.RUN_HISTORY_MAX)
+	save()
+	state_changed.emit()
+	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "xp": int(pay["xp"]), "loot": loot_names, "best": best}
+
+
 func greater_rift_unlocked() -> bool:
 	return campaign_act >= 2
 
@@ -4094,6 +4132,7 @@ func milestone_progress(m: Dictionary) -> int:
 		"flawless_rifts": return int(quest_tally.get("flawless_rifts", 0))
 		"tower_best": return tower_best
 		"endless_cycle": return best_endless_cycle
+		"endless_time": return best_endless_time
 		"daily_clears": return daily_clears
 		"daily_streak": return daily_streak
 		"boon_set4": return 1 if boon_set4_reached else 0

@@ -892,7 +892,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
 		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),
 			"" if unlocked else "Opens when you complete Act I"],
-		["Endless Rift", "Late-game challenge — scales every cycle · best cycle %d" % GameState.best_endless_cycle, Combat.recommended_power("endless", true), go.bind("endless", true),
+		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless", true), go.bind("endless", true),
 			"" if endless_open else "Opens when you complete Act II"],
 		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
@@ -1376,6 +1376,10 @@ func _party_launch_bar(champ: Hero) -> Control:
 		var hl := _wrap_label("Wounded: %s — they start the rift hurt." % ", ".join(hurt.map(func(h): return "%s (%d/%d)" % [h.name.split(" the ")[0], h.hp, Combat.max_hp(h)])), 12)
 		hl.add_theme_color_override("font_color", Palette.HAZARD)
 		info.add_child(hl)
+	if _pending_endless and not pending_party.is_empty():
+		var lead := GameState.find_hero(pending_party[0])
+		if lead:
+			info.add_child(_wrap_label("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Survive as long as you can." % lead.name.split(" the ")[0], 12, true))
 	row.add_child(info)
 	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Begin the trial" if _pending_tower else "Enter the Rift", func():
 		if pending_party.is_empty():
@@ -1383,6 +1387,9 @@ func _party_launch_bar(champ: Hero) -> Control:
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
 		var ids: Array[String] = []
 		ids.assign(pending_party)
+		if _pending_endless and _pending_rift_rank == "":
+			_start_survivors(ids)
+			return
 		if pending_incense_id != "":
 			GameState.use_incense(pending_incense_id)
 			pending_incense_id = ""
@@ -1413,6 +1420,33 @@ func _party_launch_bar(champ: Hero) -> Control:
 	row.add_child(enter)
 	bar.add_child(row)
 	return bar
+
+
+## The Endless Rift is a real-time survivors run in its own node; Main steps
+## aside (hidden and paused) until the player leaves it.
+func _start_survivors(ids: Array[String]) -> void:
+	var party: Array = []
+	for id in ids:
+		var h := GameState.find_hero(id)
+		if h:
+			party.append(h)
+	if party.is_empty():
+		return
+	if GameState.current_champion:
+		party.append(GameState.current_champion)   # comes along as a companion
+	var view := SurvivorsView.new()
+	view.setup(party, GameState.pick_biome())
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
+	get_tree().root.add_child(view)
+	view.finished.connect(func(_summary):
+		view.queue_free()
+		visible = true
+		process_mode = Node.PROCESS_MODE_INHERIT
+		_pending_endless = false
+		pending_party.clear()
+		screen = "rift_hall"
+		render())
 
 
 # ---------------- Settings ----------------

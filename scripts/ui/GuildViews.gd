@@ -353,7 +353,7 @@ func _render_stats(v: VBoxContainer) -> void:
 		["Flawless fights", str(GameState.flawless_wins)],
 		["Campaign", "complete" if GameState.campaign_done() else "Act %s" % GameState._roman(GameState.campaign_act)],
 		["Tower of Trials, best floor", str(GameState.tower_best)],
-		["Endless Rift, best cycle", str(GameState.best_endless_cycle)],
+		["Endless Rift, best time", "%d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60]],
 		["Daily Rifts cleared", "%d (streak %d)" % [GameState.daily_clears, GameState.daily_streak]],
 		["Items and relics crafted", str(GameState.crafts_performed)],
 		["Reputation", str(GameState.reputation)],
@@ -384,7 +384,9 @@ func _render_history(v: VBoxContainer) -> void:
 		rl.add_theme_color_override("font_color", Palette.good() if res == "Sealed" else (Palette.HAZARD if res == "Defeated" else Palette.MUTED))
 		row.add_child(rl)
 		var what := "Day %d · %s · floor %s" % [int(e["day"]), e["kind"], e["floor"]]
-		if int(e.get("cycle", 0)) > 0:
+		if e.has("time"):
+			what = "Day %d · %s · %d:%02d · %d kills" % [int(e["day"]), e["kind"], int(e["time"]) / 60, int(e["time"]) % 60, int(e.get("kills", 0))]
+		elif int(e.get("cycle", 0)) > 0:
 			what += " · cycle %d" % (int(e["cycle"]) + 1)
 		var wl := _label(what, 13)
 		wl.custom_minimum_size.x = 300
@@ -1097,6 +1099,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 	var entries := [
 		["Guild Management", "Spend Crystals on 9 upgrades across 4 branches. Every level adds its effect; Lv3 and Lv5 unlock a perk (a first-strike bonus, a boss Crystal cache, extra relic slots…). Guild Tier tracks total levels."],
 		["Daily Rift", "Once you have sealed a rift, the Rift Hall offers one Daily Rift attempt per day. Its rule, starting boon, region and layout come from the date, so every guild faces the same rift that day. Sealing it pays bonus Crystals and Seal Tokens and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
+		["Endless Rift", "A real-time survival run. You steer the first hero you pick (WASD, arrows, or drag); the rest follow and every hero attacks on their own, with Abilities firing on a timer. Foes pour in from every side and get tougher each minute; a ring closes in every 45 seconds, an elite comes each minute and a warden every 5 minutes (it calls the horde at half health). Collect shards to level up and pick 1 of 3 upgrades. Fallen companions get back up after 15 seconds; the run ends when your lead falls. Pays coins, crystals and XP for time and kills, plus loot for elites and wardens."],
 		["Hero voices", "A hero's trait sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."],
 		["Boss phases", "Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn."],
 		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Endless and B-rank+ mapped rifts give them two. Hover the badges on their plate to read them."],

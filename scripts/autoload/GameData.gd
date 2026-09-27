@@ -2298,7 +2298,7 @@ const MILESTONES := [
 	{"id": "untouched", "label": "Untouched — seal 5 rifts with no one knocked out", "type": "flawless_rifts", "target": 5, "reward": {"crystals": 30}},
 	{"id": "climber", "label": "Climber — reach floor 25 of the Tower", "type": "tower_best", "target": 25, "reward": {"crystals": 30}},
 	{"id": "summit", "label": "Summit — clear floor 100 of the Tower", "type": "tower_best", "target": 100, "reward": {"crystals": 100, "tokens": 20}},
-	{"id": "endless_five", "label": "Beyond the Edge — clear 5 Endless cycles", "type": "endless_cycle", "target": 5, "reward": {"crystals": 50}},
+	{"id": "endless_five", "label": "Beyond the Edge — survive 10 minutes in the Endless Rift", "type": "endless_time", "target": 600, "reward": {"crystals": 50}},
 	{"id": "daily_first", "label": "Daily Duty — clear a Daily Rift", "type": "daily_clears", "target": 1, "reward": {"crystals": 15}},
 	{"id": "daily_streak", "label": "Dedicated — clear Daily Rifts 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 60, "tokens": 5}},
 	{"id": "full_set", "label": "Build Complete — own a 4-piece boon set", "type": "boon_set4", "target": 1, "reward": {"crystals": 20}},

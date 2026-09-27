@@ -29,12 +29,41 @@ var TOWER_ONLY := false   # `-- tower` on the command line: skip the rift profil
 func _ready() -> void:
 	GameState.active_slot = 9
 	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
+	if OS.get_cmdline_user_args().has("survivors"):
+		for name in PROFILES:
+			if PROFILES[name][0] != "lesser":   # Endless opens in Act III
+				_survivors(name, PROFILES[name])
+		get_tree().quit()
+		return
 	if not TOWER_ONLY:
 		for name in PROFILES:
 			_profile(name, PROFILES[name])
 	for name in PROFILES:
 		_tower(name, PROFILES[name])
 	get_tree().quit()
+
+
+## Endless Rift (survivors): how long each profile lasts on autopilot (the
+## Champion stays home; first upgrade offered is taken).
+func _survivors(name: String, p: Array) -> void:
+	var times: Array = []
+	var kills := 0
+	var levels := 0
+	for i in 6:
+		var party: Array = _build_party(p).slice(1)
+		var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
+		while not r.over and r.time < 1200.0:
+			r.step(0.2, r.autopilot_dir())
+			r.events.clear()
+			while r.pending_levels > 0:
+				var o := r.offer()
+				r.pick(o[randi() % o.size()] if not o.is_empty() else "")
+		times.append(int(r.time))
+		kills += r.kills
+		levels += r.level
+	times.sort()
+	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d" % [name, times[3] / 60, times[3] % 60,
+		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / 6, levels / 6])
 
 
 ## Tower of Trials: how high each profile climbs (3 tries a floor, full HP

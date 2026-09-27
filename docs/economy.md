@@ -12,11 +12,17 @@ re-run it after changing rewards or costs and update the tables.
 | Lesser — invested (3 heroes, Lv4) | 100% | 170 | 53 | 10 | 68 |
 | Greater — underleveled | ~23% | 337 | 97 | 4 | 77 |
 | Greater — invested (4 heroes, Lv7) | 100% | 418 | 118 | 18 | 80 |
-| Endless — endgame, per attempt (~5 cycles) | — | 5,284 | 1,312 | — | 346 |
+| Endless — endgame, per attempt (~13 min survived) | — | ~1,400 | ~170 | — | ~5 items |
 
 A failed run still pays for every fight it won, so newcomers earn most of an
-invested party's coins. Endless rewards grow +20% per cycle (foes +50%), so an
-attempt is worth about 3× a Greater run of the same length.
+invested party's coins.
+
+The Endless Rift is a real-time survival run (scripts/survivors). It pays
+45 coins and 7 crystals a minute survived, 0.15 coins a kill, 3 crystals an
+elite and 20 a warden, 12 XP a minute to every hero, and an item or relic per
+4 elites and per warden. Autopilot survival (balance sim `-- survivors`):
+Greater underleveled ~2:30, Greater invested ~6 min, endgame ~13 min; players
+steering by hand do better.
 
 ## Tower of Trials (one-time, plus a weekly ladder)
 
