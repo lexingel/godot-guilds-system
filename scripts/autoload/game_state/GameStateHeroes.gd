@@ -19,8 +19,6 @@ func bond_rifts(a: String, b: String) -> int:
 ## history now qualifies for; returns "X earned Bosskiller!" lines.
 func check_earned_quirks(h: Hero) -> Array[String]:
 	var gained: Array[String] = []
-	if h.is_champion:
-		return gained
 	for q in GameData.quirks_from("earned"):
 		var t := GameData.quirk(q)
 		if not h.quirks.has(q) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
@@ -132,16 +130,10 @@ func recruit_hero(offer_id: String) -> String:
 	return ""
 
 
-func ensure_champion() -> Hero:
-	if not current_champion:
-		current_champion = Combat.generate_champion()
-		_maybe_flag_s_rank(current_champion, "champion")
+## Champions for hire: fills the offers if there are none.
+func ensure_champion_offers() -> void:
 	if champion_offers.is_empty():
 		refresh_champion_offers()
-	sync_champion_level()
-	current_champion.hp = Combat.max_hp(current_champion)
-	current_champion.down_runs = 0
-	return current_champion
 
 
 func reroll_recruit_offer(offer_id: String) -> String:
@@ -190,35 +182,6 @@ func refresh_champion_offers() -> void:
 		champion_offers.append(c)
 
 
-## Swaps in one of the offers. The outgoing Champion's gear returns to the
-## Inventory and their oath resets — the new one starts at 0.
-func choose_champion(idx: int) -> void:
-	if not run.is_empty() or idx < 0 or idx >= champion_offers.size():
-		return
-	_release_champion_gear()
-	current_champion = champion_offers[idx]
-	champion_offers.clear()
-	sync_champion_level()
-	current_champion.hp = Combat.max_hp(current_champion)
-	save()
-	state_changed.emit()
-
-
-func _release_champion_gear() -> void:
-	if not current_champion:
-		return
-	for it in items:
-		if it.equipped_to == current_champion.id:
-			it.equipped_to = ""
-			it.equipped_idx = -1
-
-
-## The Champion keeps pace with your strongest hero (never drops a level).
-func sync_champion_level() -> void:
-	if current_champion:
-		_sync_level(current_champion)
-
-
 func _sync_level(c: Hero) -> void:
 	var target := 1
 	for h in heroes:
@@ -237,12 +200,16 @@ func champion_role(c: Hero) -> String:
 
 ## The party-wide Boon while the Champion is standing in a run.
 func champion_boon(kind: String) -> float:
-	if run.is_empty() or current_champion == null or current_champion.hp <= 0:
+	if run.is_empty():
 		return 0.0
-	var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(current_champion), {})
-	if b.get("kind", "") != kind:
-		return 0.0
-	return float(b["value"]) * float(GameData.find_rank(current_champion.rank)["mult"])
+	var total := 0.0
+	for c in current_party():
+		if not c.is_champion or c.hp <= 0:
+			continue
+		var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(c), {})
+		if b.get("kind", "") == kind:
+			total += float(b["value"]) * float(GameData.find_rank(c.rank)["mult"])
+	return total
 
 
 func champion_boon_text(c: Hero) -> String:
@@ -264,36 +231,32 @@ func champion_call_ready(h: Hero) -> bool:
 	return int(run.get("champion_calls", 0)) < allowed
 
 
-func champion_can_swear() -> bool:
-	return current_champion != null and current_champion.oath >= GameData.CHAMPION_OATH_SEALS and heroes.size() < hero_slot_cap()
+func champion_hire_cost(c: Hero) -> int:
+	return int(GameData.find_rank(c.rank)["cost"]) * GameData.CHAMPION_HIRE_MULT
 
 
-## The Champion joins the roster for good: a named hero with their level,
-## gear and Skill Points for every level; one of the offers steps up.
-func swear_in_champion() -> String:
-	if not run.is_empty():
-		return "Finish the rift first"
-	if not champion_can_swear():
-		return "Not ready"
-	var c := current_champion
+## Hires Champion offer `idx` for Gold: a seasoned hero (as experienced as
+## your best) who keeps their party Boon and Champion's Call.
+func hire_champion(idx: int) -> String:
+	if idx < 0 or idx >= champion_offers.size():
+		return ""
+	if heroes.size() >= hero_slot_cap():
+		return "Roster is full."
+	var c := champion_offers[idx]
+	var cost := champion_hire_cost(c)
+	if coins < cost:
+		return "Not enough Gold."
+	coins -= cost
 	var cls := GameData.find_class(c.pool_id)
-	if not c.name.contains(" the "):   # a Champion from before they had names
-		var free: Array = GameData.FIRST_NAMES.filter(func(n): return not heroes.any(func(o): return o.name.begins_with(n + " ")))
-		c.name = "%s the %s" % [(free if not free.is_empty() else GameData.FIRST_NAMES).pick_random(), cls.get("name", c.name)]
-	c.is_champion = false
 	c.cls_id = str(cls.get("role", "warrior"))
 	c.innate_value = Combat.hero_innate_value(cls, GameData.rank_index(c.rank))
 	var born := Combat.roll_born_quirk(c.cls_id)
 	c.quirks.assign([born] if born != "" else [])
 	c.skill_points = c.level - 1
-	c.oath = 0
+	c.hp = Combat.max_hp(c)
 	heroes.append(c)
-	push_toast(c, "Sworn to the guild", "%s joins your roster for good" % c.name.split(" the ")[0])
-	if champion_offers.is_empty():
-		refresh_champion_offers()
-	current_champion = champion_offers.pop_front()
-	sync_champion_level()
-	current_champion.hp = Combat.max_hp(current_champion)
+	champion_offers.remove_at(idx)
+	push_toast(c, "Champion hired", "%s joins your roster" % c.name.split(" the ")[0])
 	save()
 	state_changed.emit()
 	return ""
@@ -301,8 +264,6 @@ func swear_in_champion() -> String:
 
 func current_party() -> Array[Hero]:
 	var out: Array[Hero] = []
-	if current_champion:
-		out.append(current_champion)
 	for id in run.get("hero_ids", []):
 		var h := find_hero(id)
 		if h:
@@ -380,8 +341,6 @@ func _clamp_hp_to_max() -> void:
 	for h in heroes:
 		h.battered = false   # back at camp, the field patch-up no longer holds them back
 		h.hp = min(h.hp, Combat.max_hp(h))
-	if current_champion:
-		current_champion.hp = min(current_champion.hp, Combat.max_hp(current_champion))
 
 
 ## `kind` identifies which of the hero's unlocked trees `skill_id` belongs
@@ -614,7 +573,7 @@ func attr_respec_cost(h: Hero) -> int:
 ## that the new build couldn't equip).
 func respec_attrs(hero_id: String) -> String:
 	var h := find_hero(hero_id)
-	if not h or h.is_champion:
+	if not h:
 		return "Can't reset this hero"
 	var refund := attr_points_spent(h)
 	if refund <= 0:
@@ -641,7 +600,7 @@ func attr_train_cost(h: Hero) -> int:
 ## Buys one attribute point with Coins (see ATTR_TRAIN_CAP).
 func train_attr(hero_id: String) -> String:
 	var h := find_hero(hero_id)
-	if not h or h.is_champion:
+	if not h:
 		return "Can't train this hero"
 	if h.attr_trained >= GameData.ATTR_TRAIN_CAP:
 		return "Fully trained"

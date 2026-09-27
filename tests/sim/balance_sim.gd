@@ -14,7 +14,7 @@ var _crystals := 0.0
 var _loot_value := 0.0   # champion levels with the party, Boon in runs, Call on the boss
 const PROFILES := {
 	# name: [difficulty, hero ranks, level, skill depth, gear rarity ("" = none), relics, relic rarity]
-	"Lesser  | newcomer": ["lesser", ["F", "F"], 1, 0, "", 0, "common"],
+	"Lesser  | newcomer": ["lesser", ["F", "F", "F"], 1, 0, "", 0, "common"],
 	"Lesser  | invested": ["lesser", ["E", "D", "D"], 4, 1, "common", 1, "common"],
 	"Greater | underleveled": ["greater", ["E", "D", "D"], 4, 1, "common", 1, "common"],
 	"Greater | invested": ["greater", ["D", "C", "C", "C"], 7, 2, "rare", 2, "rare"],
@@ -50,7 +50,7 @@ func _survivors(name: String, p: Array) -> void:
 	var kills := 0
 	var levels := 0
 	for i in 6:
-		var party: Array = _build_party(p).slice(1)
+		var party: Array = _build_party(p)
 		var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
 		while not r.over and r.time < 1200.0:
 			r.step(0.2, r.autopilot_dir())
@@ -135,19 +135,15 @@ func _build_party(p: Array) -> Array[Hero]:
 	GameState.relics.clear()
 	GameState.heroes.clear()
 	GameState.run = {}
-	var champ := Combat.generate_champion()
-	GameState.current_champion = champ
-	var party: Array[Hero] = [champ]
+	var party: Array[Hero] = []
 	for r in p[1]:
 		var h := Combat.gen_hero(r, p[2])
 		_learn(h, p[3])
 		GameState.heroes.append(h)
 		party.append(h)
-	if CHAMP_V2:
-		GameState.sync_champion_level()
 	for i in party.size():
 		party[i].formation = "front" if i < 2 else "back"
-		if p[4] != "" and not party[i].is_champion:
+		if p[4] != "":
 			_gear(party[i], p[4])
 		party[i].hp = Combat.max_hp(party[i])
 	for i in p[5]:

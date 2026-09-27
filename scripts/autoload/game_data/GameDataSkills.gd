@@ -500,12 +500,12 @@ const PARTY_ECLECTIC_BONUS := 0.03
 const RECRUIT_REROLL_COST := 20
 const CHAMPION_REROLL_COST := 60   # a fresh set of Champion offers
 
-## Champions: each cycle you pick one of CHAMPION_OFFER_COUNT offers. The
-## Champion levels with your strongest hero, gives the party its role's Boon
-## while it stands, and has one Champion's Call per rift. One that helps seal
-## CHAMPION_OATH_SEALS rifts can swear in and join the roster for good.
+## Champions for hire: CHAMPION_OFFER_COUNT offers (a fresh set every seal),
+## as experienced as your best hero. Hired for their rank's recruit cost x
+## CHAMPION_HIRE_MULT, a Champion is a roster hero who gives the party their
+## role's Boon while standing and has one Champion's Call per rift.
 const CHAMPION_OFFER_COUNT := 3
-const CHAMPION_OATH_SEALS := 3
+const CHAMPION_HIRE_MULT := 3
 
 ## Party-wide while the Champion is standing in a run; value x rank mult.
 const CHAMPION_BOONS := {

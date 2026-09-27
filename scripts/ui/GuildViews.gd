@@ -583,84 +583,52 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	v.add_child(row)
 
 
-## A Champion as a card: who they are, their Boon and Call, and — for the
-## current one — oath progress and Swear In; for an offer, a Choose button.
-func _champion_card(c: Hero, current: bool, offer_idx: int = -1) -> PanelContainer:
+## A Champion for hire: who they are, their Boon and Call, and Hire.
+func _champion_card(c: Hero, offer_idx: int) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.theme_type_variation = &"CardPanelEmber" if current else &"CardPanelViolet"
-	if not current:
-		card.custom_minimum_size.x = 270
+	card.theme_type_variation = &"CardPanelEmber"
+	card.custom_minimum_size.x = 270
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 64.0 if current else 52.0))
+	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 56.0))
 	var col := _vbox(3)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var nm := _label(c.name, 15 if current else 14)
-	nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if current else Palette.TEXT)
+	var nm := _label(c.name, 14)
+	nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(nm)
 	col.add_child(_label("Rank %s · Lv%d %s · Power %d" % [c.rank, c.level, GameState.champion_role(c).capitalize(), Combat.power_of(c)], 12, true))
 	var boon := _wrap_label("Boon: " + GameState.champion_boon_text(c), 12)
-	boon.add_theme_color_override("font_color", Palette.RANK_E)
+	boon.add_theme_color_override("font_color", Palette.good())
 	col.add_child(boon)
 	var call := GameState.champion_call(c)
 	col.add_child(_wrap_label("Call: %s — %s (once per rift)" % [call["name"], call["desc"]], 12))
-	if current:
-		var need := GameData.CHAMPION_OATH_SEALS
-		if c.oath >= need:
-			if GameState.champion_can_swear():
-				col.add_child(_wrap_label("%s has fought through %d rifts with you and offers to swear to the guild." % [c.name, need], 12))
-				var swear := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Swear in — joins your roster", func():
-					var err := GameState.swear_in_champion()
-					if err != "":
-						push_warning(err)
-					render()
-				)
-				swear.disabled = not GameState.run.is_empty()
-				swear.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-				col.add_child(swear)
-			else:
-				col.add_child(_wrap_label("Ready to swear in — free a roster slot first.", 12, true))
-		else:
-			col.add_child(_label("Oath %d/%d — seal %d more rift%s together and they'll join your roster for good" % [c.oath, need, need - c.oath, "" if need - c.oath == 1 else "s"], 12, true))
-	else:
-		var pick := _button("Choose", func(i=offer_idx):
-			GameState.choose_champion(i)
-			render()
-		)
-		pick.disabled = not GameState.run.is_empty()
-		pick.tooltip_text = "Can't swap mid-rift" if pick.disabled else "Replace the current Champion"
-		pick.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		col.add_child(pick)
+	var cost := GameState.champion_hire_cost(c)
+	var hire := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Hire — %d Gold" % cost, func(i=offer_idx):
+		var err := GameState.hire_champion(i)
+		if err != "":
+			push_warning(err)
+		render()
+	)
+	hire.disabled = GameState.coins < cost or GameState.heroes.size() >= GameState.hero_slot_cap()
+	hire.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	col.add_child(hire)
 	row.add_child(col)
 	card.add_child(row)
 	return card
 
 
 func _render_recruits(v: VBoxContainer) -> void:
-	_coach(v, "recruits", "Hiring heroes", "Your Champion joins every rift for free. Below it, hire heroes with Recruit — higher ranks are stronger. A party can take up to 4 heroes plus the Champion.")
-	var champ := GameState.ensure_champion()
-	v.add_child(_label("Champion — joins every rift for free", 16))
-	v.add_child(_champion_card(champ, true))
-	var champ_weapon_row := HBoxContainer.new()
-	champ_weapon_row.add_theme_constant_override("separation", 8)
-	for i in GameData.weapon_slots(champ.pool_id):
-		champ_weapon_row.add_child(_equip_slot_frame(champ, "weapon", i))
-	for i in GameData.gear_slots(champ.rank):
-		champ_weapon_row.add_child(_equip_slot_frame(champ, "gear", i))
-	v.add_child(champ_weapon_row)
-	if expanded_slot.begins_with("%s:weapon:" % champ.id):
-		_render_equip_picker(v, champ, "weapon", int(expanded_slot.split(":")[2]))
-	if expanded_slot.begins_with("%s:gear:" % champ.id):
-		_render_equip_picker(v, champ, "gear", int(expanded_slot.split(":")[2]))
-
-	if not GameState.champion_offers.is_empty():
-		v.add_child(_label("Or swap in another Champion (their gear comes back to you, the oath starts over):", 13, true))
-		var offers := HFlowContainer.new()
-		offers.add_theme_constant_override("h_separation", 10)
-		offers.add_theme_constant_override("v_separation", 10)
-		for i in GameState.champion_offers.size():
-			offers.add_child(_champion_card(GameState.champion_offers[i], false, i))
-		v.add_child(offers)
+	_coach(v, "recruits", "Hiring heroes", "Recruit heroes below; higher ranks are stronger. Champions cost more but arrive as experienced as your best hero, lift the whole party with their Boon, and have a Champion's Call for the big fights.")
+	GameState.ensure_champion_offers()
+	v.add_child(_label("Champions for hire — a party Boon and a Champion's Call", 16))
+	var offers := HFlowContainer.new()
+	offers.add_theme_constant_override("h_separation", 10)
+	offers.add_theme_constant_override("v_separation", 10)
+	for i in GameState.champion_offers.size():
+		offers.add_child(_champion_card(GameState.champion_offers[i], i))
+	if GameState.champion_offers.is_empty():
+		offers.add_child(_label("All hired — new Champions arrive when you seal a rift.", 12, true))
+	v.add_child(offers)
 	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "New offers (%d Gold)" % GameData.CHAMPION_REROLL_COST, func():
 		var err := GameState.reroll_champion()
 		if err != "":
@@ -1110,7 +1078,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Foes & regions", "Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun."],
 		["Campaign", "Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift."],
 		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). 2 relics of one element start a set, 3 complete it, and 3 different elements make a Prism. Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."],
-		["Champions", "A free guest fighter joins every rift. Pick one of three offers each cycle (a new set arrives with every seal). They level with your strongest hero, give the whole party their Boon while standing, and have one Champion Call per rift (key 7 on their turn). Seal 3 rifts with the same Champion and they can swear in to your roster for good."],
+		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. Rift Map rifts occasionally carry a bounty, paid out when that specific rift is cleared. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 	]

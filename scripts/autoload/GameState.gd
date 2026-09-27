@@ -9,7 +9,7 @@ func reset() -> void:
 	guild_name = ""
 	guild_crest = 1
 	next_id = 1
-	coins = 60
+	coins = 100
 	crystals = 15
 	heroes = []
 	relics = []
@@ -20,7 +20,6 @@ func reset() -> void:
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
-	current_champion = null
 	champion_offers = []
 	daily_attempt_day = -1
 	daily_clears = 0
@@ -165,10 +164,6 @@ func load_save() -> bool:
 	if int(data.get("_mgmt_refund", 0)) > 0:
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild Management rebuilt",
 			"text": "Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded." % int(data["_mgmt_refund"])})
-	var champ_data = data.get("current_champion")
-	current_champion = Hero.from_dict(champ_data) if champ_data != null else null
-	if current_champion:
-		migrate_hero_skill_keys(current_champion)
 	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
 	tower_best = int(data.get("tower_best", 0))
 	daily_attempt_day = int(data.get("daily_attempt_day", -1))
@@ -386,7 +381,6 @@ func start_tower(hero_ids: Array[String]) -> void:
 		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
 		"rift_rank": "", "seed": int(info["seed"]), "biome": str(info["biome"]), "tower": f,
 	}
-	ensure_champion()
 	var snap := {}
 	for h in current_party():
 		snap[h.id] = [h.hp, h.down_runs, h.bedded, h.ability_cooldown]

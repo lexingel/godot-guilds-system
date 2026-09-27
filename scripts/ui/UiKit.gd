@@ -850,16 +850,12 @@ func _party_cap() -> int:
 	return int(GameState.tower_floor_info(GameState.tower_next_floor())["party_cap"]) if _pending_tower else 4
 
 
-## Champion + the `cap` strongest heroes able to go right now (the Tower
-## ignores wounds, so it counts anyone not downed or away).
+## The `cap` strongest heroes able to go right now (the Tower ignores
+## wounds, so it counts anyone not downed or away).
 func _best_party_power(cap: int = 4) -> int:
 	var ready: Array = GameState.heroes.filter(func(h): return h.is_available() or (screen == "tower" and h.down_runs <= 0 and h.busy_runs <= 0))
 	ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
-	var party: Array = ready.slice(0, cap)
-	var champ := GameState.ensure_champion()
-	if champ:
-		party.append(champ)
-	return Combat.party_power(party)
+	return Combat.party_power(ready.slice(0, cap))
 
 
 ## A Roster stat line's tooltip: the total, then every source feeding it

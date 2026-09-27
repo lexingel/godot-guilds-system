@@ -71,8 +71,6 @@ func generate_champion() -> Hero:
 	var taken := {}
 	for other in GameState.heroes + GameState.champion_offers:
 		taken[other.name.split(" the ")[0]] = true
-	if GameState.current_champion:
-		taken[GameState.current_champion.name.split(" the ")[0]] = true
 	var free: Array = GameData.FIRST_NAMES.filter(func(n): return not taken.has(n))
 	var names: Array = free if not free.is_empty() else GameData.FIRST_NAMES
 	champ.name = "%s the %s" % [names[randi() % names.size()], cls["name"]]

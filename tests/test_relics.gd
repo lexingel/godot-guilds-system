@@ -126,7 +126,8 @@ func run() -> void:
 
 	var crown := _uniq("crown_of_oaths")
 	_equip_only([crown])
-	var champ := GameState.ensure_champion()
+	var champ := Combat.generate_champion()
+	champ.is_champion = true
 	GameState.start_run("lesser", ids, null, false)
 	GameState.run["champion_calls"] = 1
 	check(GameState.champion_call_ready(champ), "Crown: a second Call")

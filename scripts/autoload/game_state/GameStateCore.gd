@@ -41,8 +41,7 @@ var tonics: int = 0   # Field Tonics carried (see GameData.TONIC_*)
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
-var current_champion: Hero = null
-var champion_offers: Array[Hero] = []   # pick one to replace current_champion (refreshed each seal)
+var champion_offers: Array[Hero] = []   # Champions for hire (refreshed each seal)
 var daily_attempt_day: int = -1  # daily_id() of the last Daily Rift started (one a day)
 var daily_clears: int = 0
 var daily_streak: int = 0
@@ -153,7 +152,7 @@ func recovery_runs() -> int:
 ## down when it ends, so they then miss recovery_runs() whole runs.
 func knock_out(h: Hero) -> void:
 	h.hp = 0
-	if not run.is_empty() and not h.is_champion:
+	if not run.is_empty():
 		run["any_ko"] = true
 	h.down_runs = recovery_runs() + (0 if run.is_empty() else 1)
 
@@ -509,7 +508,6 @@ func save() -> void:
 		"items": items.map(func(it): return it.to_dict()),
 		"consumables": consumables, "active_incense": active_incense, "tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
-		"current_champion": current_champion.to_dict() if current_champion else null,
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,

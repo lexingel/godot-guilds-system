@@ -67,7 +67,7 @@ const TOWER_FLOORS := 100
 const TOWER_WEEKLY_FROM := 91   # floors 91-100: rules reshuffle weekly, re-clearable each week
 const TOWER_HP_GROWTH := 0.027  # foes' HP/damage grow this much per floor (compounding)
 const TOWER_DMG_GROWTH := 0.0255
-const TOWER_BASE := {"monster_hp": 135, "monster_dmg": 15}
+const TOWER_BASE := {"monster_hp": 118, "monster_dmg": 13}
 const TOWER_FIGHT_DEPTH := 2    # gen_monster's floor_idx for every tower fight
 
 ## Floor rules: each is a diff key read by Combat (gen_monster/gen_monsters/
@@ -105,11 +105,11 @@ const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spir
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers (the
 # Endless Rift is a survival mode, scripts/survivors).
 const DIFFICULTIES := [
-	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "seal_essence": 10, "cache_chance": 0.08, "power": "Low", "rec_power": 75},
+	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 20, "monster_dmg": 2.6, "coin": [18, 34], "crystal": [5, 11], "seal_essence": 10, "cache_chance": 0.08, "power": "Low", "rec_power": 48},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
 	# Guild Management currency — sits between Lesser and the Ascendant-
 	# First-draft numbers, tunable after playing.
-	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "seal_essence": 18, "cache_chance": 0.14, "power": "Medium", "rec_power": 150},
+	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 80, "monster_dmg": 8.6, "coin": [40, 70], "crystal": [11, 20], "seal_essence": 18, "cache_chance": 0.14, "power": "Medium", "rec_power": 118},
 ]
 
 ## The power the Rift Hall compares against for the Endless Rift (survivors).

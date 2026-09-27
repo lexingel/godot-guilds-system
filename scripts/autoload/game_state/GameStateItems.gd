@@ -123,7 +123,7 @@ func craft_relics(type: String, rarity: String) -> void:
 ## A won fight counts toward every equipped item on the heroes still standing.
 func _attune_gear(party: Array) -> void:
 	for h in party:
-		if h.hp <= 0 or h.is_champion:
+		if h.hp <= 0:
 			continue
 		for it in items:
 			if it.equipped_to != h.id or it.attune_level >= GameData.ATTUNE_MAX:
@@ -289,8 +289,6 @@ func equip_best(hero_id: String) -> void:
 
 func equip_item(hero_id: String, slot_type: String, idx: int, item_id: String) -> void:
 	var h := find_hero(hero_id)
-	if not h and current_champion and current_champion.id == hero_id:
-		h = current_champion   # the Champion's gear slots (Recruits tab)
 	if not h:
 		return
 	# Validate the new item first — a rejected equip must not empty the slot.

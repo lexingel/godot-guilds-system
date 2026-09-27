@@ -192,8 +192,6 @@ func gain_xp(h: Hero, amount: int) -> void:
 		h.base_dmg = round(h.base_dmg * (1.0 + GameData.LEVEL_GROWTH))
 		h.skill_points += 1
 		h.attr_points += GameData.ATTR_POINTS_PER_LEVEL
-		if h.is_champion:
-			auto_spend_attrs(h)
 
 
 ## Negative values (traits like Frail, scars, drawbacks) read as a penalty —

@@ -48,7 +48,6 @@ func run() -> void:
 	var chk := {"attr": "might", "target": 9, "win": {}, "lose": {}}
 	for hid in hids:
 		GameState.find_hero(hid).attrs["might"] = 5
-	GameState.current_champion.attrs["might"] = 5
 	var c0 := float(GameState.event_check(chk)["chance"])
 	GameState.find_hero(hids[0]).attrs["might"] = 30
 	check(float(GameState.event_check(chk)["chance"]) > c0 and float(GameState.event_check(chk)["chance"]) <= 0.95, "a strong hero raises the check chance (capped)")

@@ -39,7 +39,6 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		# No elites in the training rift — a campfire takes their place.
 		for layer in run["layers"]:
 			layer["options"] = (layer["options"] as Array).map(func(o): return "campfire" if o == "elite" else o)
-	ensure_champion()
 	auto_resolve_single_option()
 	save()
 	state_changed.emit()
@@ -196,8 +195,6 @@ func quick_fight() -> void:
 ## toggle too since their row has no other picker interaction).
 func set_hero_formation(hero_id: String, formation: String) -> void:
 	var h := find_hero(hero_id)
-	if not h and current_champion and current_champion.id == hero_id:
-		h = current_champion
 	if not h:
 		return
 	h.formation = formation
@@ -282,9 +279,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			var party: Array[Hero] = state["party"]
 			var lost := 0
 			for h in party:
-				if not h.is_champion:
-					lost += 1
-					_memorialize(h, "Fell in a Hardcore %s against %s" % [_run_label(), str(result.get("monster_name", "the rift")).split(",")[0]])
+				lost += 1
+				_memorialize(h, "Fell in a Hardcore %s against %s" % [_run_label(), str(result.get("monster_name", "the rift")).split(",")[0]])
 				heroes.erase(h)
 			run["heroes_lost"] = int(run.get("heroes_lost", 0)) + lost
 			if lost > 0:
@@ -826,7 +822,7 @@ func seal_rift() -> void:
 	# Rift history + bonds: every roster hero who saw this rift through counts
 	# it, and every pair of them grows their bond (see GameData.BOND_LEVEL_RIFTS).
 	var sealers: Array[Hero] = []
-	sealers.assign(current_party().filter(func(h): return not h.is_champion))
+	sealers.assign(current_party())
 	for i in sealers.size():
 		sealers[i].history["rifts_cleared"] = int(sealers[i].history.get("rifts_cleared", 0)) + 1
 		for j in range(i + 1, sealers.size()):
@@ -841,13 +837,7 @@ func seal_rift() -> void:
 			flavor += " " + line
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
-	# The Champion stays; standing at the seal counts toward their oath, and a
-	# fresh set of offers arrives if you'd rather swap.
-	if current_champion and current_champion.hp > 0:
-		current_champion.oath += 1
-		if current_champion.oath == GameData.CHAMPION_OATH_SEALS:
-			push_toast(current_champion, "An oath offered", "%s would swear to the guild — see Recruits" % current_champion.name)
-	refresh_champion_offers()
+	refresh_champion_offers()   # new Champions for hire
 	# A Rift Map bounty (see resolve_rift_map/start_map_rift) — {} for any
 	# rift not entered from the map, or a mapped rift that didn't roll one.
 	var bounty: Dictionary = run.get("bounty", {})
@@ -946,8 +936,6 @@ func field_healer() -> String:
 		var h := find_hero(str(hid))
 		if h and h.hp > 0 and GameData.hero_role(h) == "cleric" and GameData.rank_index(h.rank) >= min_rank:
 			return h.name.split(" the ")[0]
-	if current_champion and current_champion.hp > 0 and champion_role(current_champion) == "cleric":
-		return current_champion.name.split(" the ")[0]
 	if field_triage_available():
 		return "Field Triage"
 	return ""
@@ -1224,7 +1212,6 @@ func start_riftbreak_encounter() -> void:
 		"riftbreak_worst_index": worst_index, "riftbreak_flavor": GameData.narrative_line("riftbreak_begins"),
 		"seed": randi(),
 	}
-	ensure_champion()
 	auto_resolve_single_option()
 	pending_riftbreak_ranks.clear()
 	save()

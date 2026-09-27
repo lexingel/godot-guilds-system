@@ -1052,7 +1052,7 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 				h.history["knockouts"] = int(h.history.get("knockouts", 0)) + 1
 				# A freshly-knocked-out roster hero may pick up a scar quirk
 				# (up to GameData.SCARS_MAX).
-				if not h.is_champion and not GameState.run.has("tower") and randf() < 0.5:
+				if not GameState.run.has("tower") and randf() < 0.5:
 					var scar := roll_scar(h)
 					if scar != "":
 						h.quirks.append(scar)

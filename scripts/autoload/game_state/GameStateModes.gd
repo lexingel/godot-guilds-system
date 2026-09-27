@@ -247,8 +247,6 @@ func _run_outcome() -> String:
 
 ## Remembers a hero lost for good (Hardcore, or left behind in a rift).
 func _memorialize(h: Hero, cause: String) -> void:
-	if h.is_champion:
-		return
 	fallen.push_front({"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "rank": h.rank, "level": h.level,
 		"day": day, "cause": cause, "rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0))})
 	heroes_lost_total += 1
@@ -364,7 +362,7 @@ func tower_reward(f: int) -> Dictionary:
 
 ## Fit to the balance sim: a party of this power clears about half its tries.
 func tower_recommended_power(f: int) -> int:
-	return int(round(114.0 * pow(1.015, f - 1)))
+	return int(round(90.0 * pow(1.015, f - 1)))
 
 
 func _tower_diff(info: Dictionary) -> Dictionary:

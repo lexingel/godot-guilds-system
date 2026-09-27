@@ -1191,16 +1191,15 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_wrap_label("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s" % [_party_cap(), (" Rules: " + ", ".join(rules.map(func(r): return "%s (%s)" % [r["name"], r["desc"]]))) if not rules.is_empty() else ""], 12, true))
 	elif _pending_finale and not GameState.current_act().is_empty():
 		v.add_child(_label("Finale — %s" % GameState.current_act()["finale"], 20))
-		v.add_child(_wrap_label("A harder %s Rift that ends in %s. Up to 4 heroes and the Champion." % [str(GameState.current_act()["tier"]).capitalize(), GameState.current_act()["boss"]], 12, true))
+		v.add_child(_wrap_label("A harder %s Rift that ends in %s. Up to 4 heroes." % [str(GameState.current_act()["tier"]).capitalize(), GameState.current_act()["boss"]], 12, true))
 	else:
-		v.add_child(_label("Assemble Party (up to 4 + the Champion)", 20))
-	_coach(v, "party", "Pick your party", "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less. Your Champion always comes along for free.")
-	var champ := GameState.ensure_champion()
+		v.add_child(_label("Assemble Party (up to 4)", 20))
+	_coach(v, "party", "Pick your party", "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less.")
 	# Formation slots (Darkest Dungeon style): the party sits in a Front and a
 	# Back row. Drag a portrait into a row (from the roster below, or between
 	# rows), or use Add/Move/Remove. The front row draws ~3x the attacks; each
 	# role has a natural row with its own bonus (GameData.ROLE_POSITION).
-	var lineup: Array[Hero] = [champ]
+	var lineup: Array[Hero] = []
 	for hid in pending_party:
 		var ph := GameState.find_hero(hid)
 		if ph:
@@ -1218,10 +1217,10 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			if typeof(data) != TYPE_DICTIONARY or data.get("kind", "") != "party_hero":
 				return false
 			var hid2: String = str(data.get("hero_id", ""))
-			return hid2 == champ.id or pending_party.has(hid2) or pending_party.size() < _party_cap()
+			return pending_party.has(hid2) or pending_party.size() < _party_cap()
 		zone.on_drop = func(data, r=row_id) -> void:
 			var hid2: String = str(data.get("hero_id", ""))
-			if hid2 != champ.id and not pending_party.has(hid2):
+			if not pending_party.has(hid2):
 				pending_party.append(hid2)
 			GameState.set_hero_formation(hid2, r)
 			render()
@@ -1235,7 +1234,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		cards.add_theme_constant_override("v_separation", 8)
 		cards.mouse_filter = Control.MOUSE_FILTER_PASS
 		for ph in in_row:
-			cards.add_child(_party_card(ph, ph == champ, true))
+			cards.add_child(_party_card(ph, ph.is_champion, true))
 		if in_row.is_empty():
 			cards.add_child(_label("Drag a hero here", 11, true))
 		zv.add_child(cards)
@@ -1251,13 +1250,12 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		bench_flow.add_theme_constant_override("h_separation", 8)
 		bench_flow.add_theme_constant_override("v_separation", 8)
 		for bh in bench:
-			bench_flow.add_child(_party_card(bh, false, false))
+			bench_flow.add_child(_party_card(bh, bh.is_champion, false))
 		v.add_child(bench_flow)
 
-	# Surface any Hero Bond among the currently-picked heroes (+ the Champion,
-	# who always joins) so it's discoverable while assembling a party, not
-	# just a silent combat bonus.
-	var picked_pool_ids := {champ.pool_id: true}
+	# Surface any Hero Bond among the currently-picked heroes so it's
+	# discoverable while assembling a party, not just a silent combat bonus.
+	var picked_pool_ids := {}
 	for h in GameState.heroes:
 		if pending_party.has(h.id):
 			picked_pool_ids[h.pool_id] = true
@@ -1344,7 +1342,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	else:
 		v.add_child(_label("Rift Rank %s — Hardcore Mode is retired from mapped rifts." % _pending_rift_rank, 12, true))
 
-	var launch := _party_launch_bar(champ)
+	var launch := _party_launch_bar()
 	v.add_child(launch)
 	v.move_child(launch, 1)
 
@@ -1352,7 +1350,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 ## The top of Party Assembly: party power against the recommendation, any
 ## wounded members, and Enter the Rift — up where it's seen, not below the
 ## roster and options.
-func _party_launch_bar(champ: Hero) -> Control:
+func _party_launch_bar() -> Control:
 	var bar := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Palette.SURFACE2
@@ -1365,7 +1363,7 @@ func _party_launch_bar(champ: Hero) -> Control:
 	row.add_theme_constant_override("separation", 12)
 	var info := _vbox(4)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var going: Array = [champ]
+	var going: Array = []
 	for h in GameState.heroes:
 		if pending_party.has(h.id):
 			going.append(h)
@@ -1460,8 +1458,6 @@ func _start_survivors(ids: Array[String]) -> void:
 			party.append(h)
 	if party.is_empty():
 		return
-	if GameState.current_champion:
-		party.append(GameState.current_champion)   # comes along as a companion
 	var view := SurvivorsView.new()
 	view.setup(party, GameState.pick_biome())
 	visible = false
@@ -1813,11 +1809,10 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 			GameState.set_hero_formation(id, r)
 			render()
 		))
-		if not is_champ:
-			actions.add_child(_button("Remove", func(id=h.id):
-				pending_party.erase(id)
-				render()
-			))
+		actions.add_child(_button("Remove", func(id=h.id):
+			pending_party.erase(id)
+			render()
+		))
 	elif not downed:
 		var add_btn := _button("Add", func(id=h.id, hero=h):
 			if pending_party.size() >= _party_cap():
