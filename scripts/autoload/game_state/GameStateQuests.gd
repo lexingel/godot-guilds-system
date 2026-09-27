@@ -297,6 +297,13 @@ func run_payday() -> void:
 			unpaid.append(h.name.split(" the ")[0])
 		if day - h.last_rift_day >= GameData.PAYDAY_DAYS and not in_rift.has(h.id):
 			change_morale(h, GameData.MORALE_IDLE_WEEK)
+	# Then the facilities: unpaid upkeep costs Renown.
+	var up := upkeep()
+	var upkeep_paid := up <= coins
+	if upkeep_paid:
+		coins -= up
+	elif up > 0:
+		add_reputation(-GameData.UPKEEP_UNPAID_RENOWN)
 	var left: Array[String] = []
 	for h in heroes.duplicate():
 		if in_rift.has(h.id) or heroes.size() <= 1:
@@ -305,8 +312,8 @@ func run_payday() -> void:
 			left.append(h.name.split(" the ")[0])
 			_release(h)
 	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
-	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead}
-	var line := "Payday: %d Gold in wages." % paid
+	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid}
+	var line := "Payday: %d Gold in wages, %s." % [paid, ("%d in upkeep" % up) if upkeep_paid else "upkeep unpaid (-%d Renown)" % GameData.UPKEEP_UNPAID_RENOWN]
 	if not unpaid.is_empty():
 		line += " Unpaid: %s." % ", ".join(unpaid)
 	if not left.is_empty():
@@ -314,7 +321,7 @@ func run_payday() -> void:
 	_news(line)
 	_news("%s the %s (Renown %d vs %d)." % ["Your guild leads" if rival_ahead > 0 else ("The guild trails" if rival_ahead < 0 else "Your guild is level with"), rival_name, reputation, rival_renown] + (" Recruits favor you this week: +1 offer." if rival_ahead > 0 else (" Recruits favor them this week: -1 offer." if rival_ahead < 0 else "")))
 	refresh_recruit_pool()
-	var text := "%d Gold in wages" % paid
+	var text := "%d Gold in wages, %s" % [paid, ("%d upkeep" % up) if upkeep_paid else "upkeep unpaid (-%d Renown)" % GameData.UPKEEP_UNPAID_RENOWN]
 	if not unpaid.is_empty():
 		text += " · couldn't pay %s" % ", ".join(unpaid)
 	if not left.is_empty():
@@ -349,7 +356,7 @@ func dismiss_hero(hero_id: String) -> String:
 
 
 func feast_cost() -> int:
-	return GameData.FEAST_COST_PER_HERO * heroes.size()
+	return GameData.FEAST_COST_PER_HERO * mini(heroes.size(), feast_seats())
 
 
 func feast_ready() -> bool:
@@ -364,9 +371,12 @@ func hold_feast() -> String:
 		return "Not enough Gold"
 	coins -= feast_cost()
 	feast_week = day / GameData.PAYDAY_DAYS
-	for h in heroes:
+	var guests: Array = heroes.duplicate()
+	guests.sort_custom(func(a, b): return a.morale < b.morale)
+	guests = guests.slice(0, feast_seats())
+	for h in guests:
 		change_morale(h, GameData.FEAST_MORALE)
-	_news("A feast in the hall: +%d morale for everyone." % GameData.FEAST_MORALE)
+	_news("A feast in the hall: +%d morale for %d hero%s%s." % [GameData.FEAST_MORALE, guests.size(), "" if guests.size() == 1 else "es", "" if guests.size() == heroes.size() else " (no seats for %d)" % (heroes.size() - guests.size())])
 	save()
 	state_changed.emit()
 	return ""

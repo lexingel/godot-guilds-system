@@ -15,7 +15,12 @@ func run() -> void:
 	check(GameState.train_attr("h1") == "" and h.attr_points == 1 and GameState.coins == 70, "train costs 50, gives 1 point")
 	check(GameState.train_attr("h1") == "Not enough Gold" and h.attr_trained == 1, "second costs 100")
 	GameState.coins = 10000
+	# The Training Yard trains a few points a week; spread it over weeks.
+	GameState.day = 0
+	GameState.train_attr("h1")
+	check(GameState.training_left() == GameData.TRAINING_SLOTS - 2 and GameState.train_attr("h1") == "The Training Yard is full this week", "the Training Yard has %d slots a week" % GameData.TRAINING_SLOTS)
 	for i in GameData.ATTR_TRAIN_CAP + 2:
+		GameState.day += GameData.PAYDAY_DAYS
 		GameState.train_attr("h1")
 	check(h.attr_trained == GameData.ATTR_TRAIN_CAP and h.attr_points == GameData.ATTR_TRAIN_CAP, "capped at %d trained" % GameData.ATTR_TRAIN_CAP)
 	var back := Hero.from_dict(JSON.parse_string(JSON.stringify(h.to_dict())))

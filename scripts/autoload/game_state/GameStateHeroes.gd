@@ -567,10 +567,17 @@ func train_attr(hero_id: String) -> String:
 		return "Can't train this hero"
 	if h.attr_trained >= GameData.ATTR_TRAIN_CAP:
 		return "Fully trained"
+	if training_left() <= 0:
+		return "The Training Yard is full this week"
 	var cost := attr_train_cost(h)
 	if coins < cost:
 		return "Not enough Gold"
 	coins -= cost
+	var week := day / GameData.PAYDAY_DAYS
+	if training_week != week:
+		training_week = week
+		trained_this_week = 0
+	trained_this_week += 1
 	h.attr_trained += 1
 	h.attr_points += 1
 	save()

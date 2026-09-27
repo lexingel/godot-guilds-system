@@ -312,7 +312,7 @@ const BRANCHES := [
 			"perks": {3: "Mentors: new recruits join 1 level higher", 5: "Veteran instructors: heroes earn +20% XP"}},
 		{"id": "infirmary", "name": "Infirmary", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-15% recovery time; a bed at Lv1/3/5",
 			"perks": {2: "Order: Supply Drop — heal the party 35% between fights", 3: "Field Triage: once per rift, get a downed hero back up", 5: "Wounded heroes heal fully after every run"}},
-		{"id": "drill", "name": "Drill Yard", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+4% party damage and +4% max HP",
+		{"id": "drill", "name": "Drill Yard", "max": 5, "cost_base": 50, "cost_step": 50, "every": "a Training Yard slot every 2 levels; +4% party damage and +4% max HP",
 			"perks": {2: "Order: Rally — the party acts first this round and hits 30% harder", 3: "Vanguard: a fight's first strike deals +25% damage", 5: "Abilities are ready at the start of every fight"}},
 	]},
 	{"id": "infra", "name": "Infrastructure Branch", "sub": "Rift Yield & Safety", "nodes": [
@@ -322,7 +322,7 @@ const BRANCHES := [
 			"perks": {3: "Anchor: the first hazard of each rift is negated", 5: "Hazards can't knock a hero out"}},
 	]},
 	{"id": "log", "name": "Logistics Branch", "sub": "Trade & Recruiting", "nodes": [
-		{"id": "trade", "name": "Trade Network", "max": 5, "cost_base": 50, "cost_step": 50, "every": "-6% shop prices, -2% auction fees, +5% Rift Cache chance",
+		{"id": "trade", "name": "Trade Network", "max": 5, "cost_base": 50, "cost_step": 50, "every": "+1 feast seat; -6% shop prices, -2% auction fees, +5% Rift Cache chance",
 			"perks": {2: "Order: Requisition — reroll a fight's loot choices", 3: "Black Market: Rift Caches hold 30% more Gold", 5: "Every rift shop stocks an Epic relic"}},
 		{"id": "scouts", "name": "Scouts' Lodge", "max": 5, "cost_base": 50, "cost_step": 50, "every": "Recruit board: +1 offer at Lv1 and Lv4",
 			"perks": {2: "Order: Scout Ahead — reroll the next fork's paths", 3: "Headhunter: every recruit refresh has a Rank C+ hero", 5: "Recruit rerolls cost half"}},
@@ -489,10 +489,18 @@ const RUN_HISTORY_MAX := 30
 
 # ---------------- Running the guild ----------------
 ## Payday comes every PAYDAY_DAYS days (a day = one rift run or a rest).
-## A hero's weekly wage: by rank, +6% per level above 1.
+## A hero's weekly wage: by rank, +3% per level above 1. Tuned so wages and
+## upkeep take roughly 15-25% of a week's rift income at every stage.
 const PAYDAY_DAYS := 7
-const WAGE_BY_RANK := {"F": 15, "E": 22, "D": 30, "C": 42, "B": 60, "A": 85, "S": 120}
-const WAGE_PER_LEVEL := 0.06
+const WAGE_BY_RANK := {"F": 40, "E": 60, "D": 85, "C": 110, "B": 150, "A": 170, "S": 220}
+const WAGE_PER_LEVEL := 0.03
+## Every Guild Management level costs this much Gold a week to keep running.
+## Upkeep is paid after wages; unpaid upkeep costs Renown.
+const UPKEEP_PER_LEVEL := 12
+const UPKEEP_UNPAID_RENOWN := 3
+## The Training Yard trains this many attribute points a week (+1 per two
+## Drill Yard levels).
+const TRAINING_SLOTS := 2
 ## Unpaid twice running, or paid while at rock-bottom morale, a hero walks out.
 const UNPAID_WEEKS_TO_LEAVE := 2
 const MORALE_WALKOUT := 10
@@ -508,6 +516,7 @@ const MORALE_IDLE_WEEK := -5    # a week without a rift run
 const MORALE_QUEST_FAILED := -5 # everyone, when a contract fails
 const FEAST_MORALE := 15
 const FEAST_COST_PER_HERO := 8   # Gold, once a week
+const FEAST_SEATS := 6           # heroes a feast can feed (+1 per Trade Network level); lowest morale first
 
 ## Contracts come due this many days after they're taken, by difficulty;
 ## a missed one costs 2 Renown per difficulty level.

@@ -439,8 +439,10 @@ func _attr_panel(h: Hero) -> PanelContainer:
 				push_warning(err)
 			render()
 		)
-		train.disabled = maxed or GameState.coins < tcost
-		train.tooltip_text = "Buy an attribute point with Gold (%d/%d trained; each costs %d more)" % [h.attr_trained, GameData.ATTR_TRAIN_CAP, GameData.ATTR_TRAIN_COST]
+		train.disabled = maxed or GameState.coins < tcost or GameState.training_left() <= 0
+		train.tooltip_text = "Buy an attribute point with Gold (%d/%d trained; each costs %d more). Training Yard: %d of %d left this week." % [h.attr_trained, GameData.ATTR_TRAIN_CAP, GameData.ATTR_TRAIN_COST, GameState.training_left(), GameState.training_slots()]
+		if not maxed and GameState.training_left() <= 0:
+			train.text = "Yard full this week"
 		foot.add_child(train)
 	var fsp := Control.new()
 	fsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -18,7 +18,7 @@ func run() -> void:
 	check(GameState.rival_name != "" and GameState.rival_renown == 0, "a new guild has a rival")
 	var a := _hero("F", 1)
 	var b := _hero("C", 5)
-	check(GameState.wage_of(a) == 15 and GameState.wage_of(b) == int(round(42 * 1.24)), "wages by rank and level")
+	check(GameState.wage_of(a) == 40 and GameState.wage_of(b) == int(round(110 * 1.12)), "wages by rank and level")
 	check(GameState.weekly_wages() == GameState.wage_of(a) + GameState.wage_of(b), "weekly wages sum the roster")
 
 	# Payday: paid in full.
@@ -67,6 +67,20 @@ func run() -> void:
 	GameState.items.append(it)
 	check(GameState.dismiss_hero(c.id) == "" and not GameState.heroes.has(c) and it.equipped_to == "", "dismissed; their gear goes back")
 	check(GameState.dismiss_hero(a.id) != "", "the last hero can't be dismissed")
+
+	# Upkeep: every Guild Management level costs Gold at payday; unpaid, Renown.
+	GameState.upgrades = {"ops.drill": 2, "log.trade": 1}
+	check(GameState.upkeep() == 3 * GameData.UPKEEP_PER_LEVEL and GameState.training_slots() == GameData.TRAINING_SLOTS + 1 and GameState.feast_seats() == GameData.FEAST_SEATS + 1, "upkeep, training slots and feast seats follow the upgrades")
+	GameState.coins = GameState.weekly_wages() + GameState.upkeep()
+	GameState.day = 30 * GameData.PAYDAY_DAYS - 1
+	GameState.pass_time()
+	check(GameState.coins == 0 and bool(GameState.payday_report["upkeep_paid"]), "payday pays wages and upkeep")
+	GameState.reputation = 10
+	GameState.coins = GameState.weekly_wages()
+	GameState.day = 31 * GameData.PAYDAY_DAYS - 1
+	GameState.pass_time()
+	check(not bool(GameState.payday_report["upkeep_paid"]) and GameState.reputation == 10 - GameData.UPKEEP_UNPAID_RENOWN, "unpaid upkeep costs Renown")
+	GameState.upgrades = {}
 
 	# Contracts come due and fail.
 	GameState.reputation = 20

@@ -87,6 +87,8 @@ var rival_name: String = ""      # the rival guild (GameData.RIVAL_NAMES)
 var rival_renown: int = 0
 var rival_ahead: int = 0          # set at payday: 1 = we lead (better recruits), -1 = they lead, 0 = not compared yet
 var feast_week: int = -1          # the payday week a feast was last held
+var training_week: int = -1       # the week the Training Yard count below belongs to
+var trained_this_week: int = 0
 var payday_report: Dictionary = {}   # the last payday: {day, due, paid, unpaid, left, rival}
 var guild_news: Array = []        # recent rival/contract/payday lines for the Ledger (newest first)
 var runs_started: int = 0   # the first one is a training rift (GameData.TRAINING_RIFT)
@@ -510,7 +512,7 @@ func save() -> void:
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "boon_set4_reached": boon_set4_reached,
-		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "payday_report": payday_report, "guild_news": guild_news,
+		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "guild_news": guild_news,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,
@@ -602,4 +604,24 @@ func add_tonic(id: String, n: int = 1) -> int:
 	if add > 0:
 		tonics[id] = tonic_count(id) + add
 	return add
+
+
+## Weekly Gold for every Guild Management level (GameData.UPKEEP_PER_LEVEL).
+func upkeep() -> int:
+	var levels := 0
+	for k in upgrades:
+		levels += int(upgrades[k])
+	return levels * GameData.UPKEEP_PER_LEVEL
+
+
+func training_slots() -> int:
+	return GameData.TRAINING_SLOTS + lvl("ops.drill") / 2
+
+
+func training_left() -> int:
+	return training_slots() - (trained_this_week if training_week == day / GameData.PAYDAY_DAYS else 0)
+
+
+func feast_seats() -> int:
+	return GameData.FEAST_SEATS + lvl("log.trade")
 

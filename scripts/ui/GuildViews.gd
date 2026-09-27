@@ -238,10 +238,10 @@ func _guild_status_lines() -> Array:
 					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
 					break
 	if not GameState.heroes.is_empty():
-		var wages := GameState.weekly_wages()
+		var wages := GameState.weekly_wages() + GameState.upkeep()
 		var dtp := GameState.days_to_payday()
 		if wages > GameState.coins or dtp <= 2:
-			out.append(["Payday in %d day%s: %d Gold in wages%s" % [dtp, "" if dtp == 1 else "s", wages, " (short %d)" % (wages - GameState.coins) if wages > GameState.coins else ""], Palette.HAZARD if wages > GameState.coins else Palette.COINS, go_term.call("ledger")])
+			out.append(["Payday in %d day%s: %d Gold in wages and upkeep%s" % [dtp, "" if dtp == 1 else "s", wages, " (short %d)" % (wages - GameState.coins) if wages > GameState.coins else ""], Palette.HAZARD if wages > GameState.coins else Palette.COINS, go_term.call("ledger")])
 		var low := GameState.heroes.filter(func(h): return h.morale < 40)
 		if not low.is_empty():
 			out.append(["%d hero%s with low morale" % [low.size(), "" if low.size() == 1 else "es"], Palette.HAZARD, go_term.call("ledger")])
@@ -430,14 +430,14 @@ var _dismiss_confirm: String = ""   # hero id awaiting a second click on Dismiss
 ## morale (and Dismiss), the rival guild, and recent guild news.
 func _render_ledger(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Ledger", 20))
-	var wages := GameState.weekly_wages()
+	var wages := GameState.weekly_wages() + GameState.upkeep()
 	var dtp := GameState.days_to_payday()
 	var short := wages > GameState.coins
 
 	var pay := PanelContainer.new()
 	pay.theme_type_variation = &"CardPanelEmber"
 	var pv := _vbox(6)
-	var pl := _label("Payday in %d day%s · wages %d Gold · you have %d" % [dtp, "" if dtp == 1 else "s", wages, GameState.coins], 16)
+	var pl := _label("Payday in %d day%s · wages %d + upkeep %d Gold · you have %d" % [dtp, "" if dtp == 1 else "s", GameState.weekly_wages(), GameState.upkeep(), GameState.coins], 16)
 	pl.add_theme_color_override("font_color", Palette.HAZARD if short else Palette.EMBER_BRIGHT)
 	pv.add_child(pl)
 	pv.add_child(_wrap_label("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out." % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID], 12, true))
@@ -449,7 +449,8 @@ func _render_ledger(v: VBoxContainer) -> void:
 		if not (rep.get("left", []) as Array).is_empty():
 			bits.append("walked out: %s" % ", ".join(rep["left"]))
 		pv.add_child(_wrap_label("Last payday (day %d): %s." % [int(rep.get("day", 0)), "; ".join(bits)], 12, true))
-	var feast := _button("Hold a feast (%d Gold): +%d morale for everyone" % [GameState.feast_cost(), GameData.FEAST_MORALE], func():
+	pv.add_child(_wrap_label("Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown. Training Yard: %d of %d trainings left this week." % [GameData.UPKEEP_PER_LEVEL, GameData.UPKEEP_UNPAID_RENOWN, GameState.training_left(), GameState.training_slots()], 12, true))
+	var feast := _button("Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first" % [GameState.feast_cost(), GameData.FEAST_MORALE, GameState.feast_seats()], func():
 		var err := GameState.hold_feast()
 		if err != "":
 			_flavor_toast = err
@@ -1169,7 +1170,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
-		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level; see Guild > Ledger. The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily and poaches posted contracts; at payday, the leader on Renown gets the better recruits."],
+		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily and poaches posted contracts; at payday, the leader on Renown gets the better recruits."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -1526,7 +1527,7 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var now := _wrap_label(Combat.describe_node_effect(n["id"], cur), 13)
 	now.add_theme_color_override("font_color", Palette.TEXT if cur > 0 else Palette.MUTED)
 	cv.add_child(now)
-	cv.add_child(_wrap_label("Each level: %s" % n["every"], 11, true))
+	cv.add_child(_wrap_label("Each level: %s · upkeep +%d Gold a week" % [n["every"], GameData.UPKEEP_PER_LEVEL], 11, true))
 	var perks: Dictionary = n["perks"]
 	for pl in perks:
 		var got := cur >= int(pl)
