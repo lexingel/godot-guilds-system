@@ -138,5 +138,20 @@ func _orders() -> void:
 
 
 func _camp_props() -> void:
-	for key in GameData.CAMP_PROPS:
-		check(not GameData.find_branch_node(key).is_empty() and ResourceLoader.exists(str(GameData.CAMP_PROPS[key][0])), "camp prop for %s exists" % key)
+	GameState.reset()
+	for b in GameData.HAMLET_BUILDINGS:
+		if str(b.get("node", "")) != "":
+			check(not GameData.find_branch_node(str(b["node"])).is_empty(), "%s tied to a real upgrade" % b["id"])
+		for lv in [0, 3, 5]:
+			if str(b.get("node", "")) != "":
+				GameState.upgrades[str(b["node"])] = lv
+			check(ResourceLoader.exists(GameState.hamlet_texture(b)), "hamlet art %s" % GameState.hamlet_texture(b))
+	var barracks: Dictionary = GameData.HAMLET_BUILDINGS.filter(func(x): return x["id"] == "barracks")[0]
+	GameState.upgrades["ops.barracks"] = 2
+	check(GameState.hamlet_tier(barracks) == 1, "Barracks tier 1 below Lv3")
+	GameState.upgrades["ops.barracks"] = 4
+	check(GameState.hamlet_tier(barracks) == 2, "Barracks tier 2 at Lv3-4")
+	GameState.upgrades["ops.barracks"] = 5
+	check(GameState.hamlet_tier(barracks) == 3, "Barracks tier 3 at Lv5")
+	GameState.campaign_act = 3
+	check(GameState.hamlet_tier(GameData.HAMLET_BUILDINGS.filter(func(x): return x["id"] == "gate")[0]) == 3, "Rift Gate follows the act")

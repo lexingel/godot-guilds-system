@@ -1920,20 +1920,26 @@ const MANAGEMENT_NODE_ICON := {
 	"res.lab": "res://assets/skills/potion_blue.png",
 }
 
-## A prop each upgrade adds to the camp scene at Lv3 (it glows at Lv5):
-## [texture, bottom-centre on camp_bg.png's native 400x157 canvas, name].
-const CAMP_PROP_LEVEL := 3
-const CAMP_PROPS := {
-	"ops.barracks": ["res://assets/camp/props/barracks.png", Vector2(24, 157), "soldiers' tents"],
-	"ops.infirmary": ["res://assets/camp/props/infirmary.png", Vector2(122, 156), "a field cot and lantern"],
-	"ops.drill": ["res://assets/camp/props/drill.png", Vector2(157, 153), "a training dummy"],
-	"infra.amplifiers": ["res://assets/camp/props/amplifiers.png", Vector2(240, 140), "a crystal pylon"],
-	"infra.wardstones": ["res://assets/camp/props/wardstones.png", Vector2(342, 156), "a runed wardstone"],
-	"log.trade": ["res://assets/camp/props/trade.png", Vector2(298, 157), "merchant crates"],
-	"log.scouts": ["res://assets/camp/props/scouts.png", Vector2(172, 112), "a lookout tower"],
-	"res.vault": ["res://assets/camp/props/vault.png", Vector2(386, 157), "a relic shrine"],
-	"res.lab": ["res://assets/camp/props/lab.png", Vector2(74, 157), "a telescope"],
-}
+## The camp hamlet: one building per system on a 400x180 native backdrop,
+## back row first so the front row draws over it. "pos" is the bottom-centre.
+## "tier" picks the art (assets/hamlet/<art>_t1..3.png): "node" = a Guild
+## Management upgrade (T2 at Lv3, T3 at Lv5), "guild" = guild tier, "act" =
+## campaign act, "" = one fixed image (<art>.png).
+const HAMLET_BG := "res://assets/hamlet/backdrop.png"
+const HAMLET_SIZE := Vector2(400, 180)
+const HAMLET_BUILDINGS := [
+	{"id": "scouts", "name": "Scouts' Lodge", "tier": "node", "node": "log.scouts", "pos": Vector2(62, 150), "row": "back"},
+	{"id": "hall", "name": "Guild Hall", "tier": "guild", "pos": Vector2(200, 152), "row": "back"},
+	{"id": "lab", "name": "Arcane Lab", "tier": "node", "node": "res.lab", "pos": Vector2(338, 150), "row": "back"},
+	{"id": "barracks", "name": "Barracks", "tier": "node", "node": "ops.barracks", "pos": Vector2(32, 177), "row": "front"},
+	{"id": "infirmary", "name": "Infirmary", "tier": "node", "node": "ops.infirmary", "pos": Vector2(96, 177), "row": "front"},
+	{"id": "drill", "name": "Drill Yard", "tier": "node", "node": "ops.drill", "pos": Vector2(152, 177), "row": "front"},
+	{"id": "campfire", "name": "", "tier": "", "pos": Vector2(200, 178), "row": "front"},
+	{"id": "board", "name": "Quest Board", "tier": "", "pos": Vector2(234, 176), "row": "front"},
+	{"id": "gate", "name": "Rift Gate", "tier": "act", "pos": Vector2(270, 177), "row": "front"},
+	{"id": "market", "name": "Market", "tier": "node", "node": "log.trade", "pos": Vector2(322, 177), "row": "front"},
+	{"id": "vault", "name": "Relic Vault", "tier": "node", "node": "res.vault", "pos": Vector2(374, 177), "row": "front"},
+]
 
 const DETECTOR_BASE_SALE := {"lesser": 80, "greater": 200, "ascendant": 450}
 

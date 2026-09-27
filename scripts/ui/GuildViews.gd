@@ -13,29 +13,13 @@ func _render_terminal(v: VBoxContainer) -> void:
 	if _last_guild_tier_name != "" and _last_guild_tier_name != tier_name:
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild tier reached", "text": GameData.narrative_line("guild_tier_reached")})
 	_last_guild_tier_name = tier_name
-	var tier_line := "%s — %d levels purchased" % [tier["name"], tier["total"]]
-	if not tier["next"].is_empty():
-		tier_line += " (%d to %s)" % [int(tier["next"]["min"]) - int(tier["total"]), tier["next"]["name"]]
-	var tier_row := HBoxContainer.new()
-	tier_row.add_theme_constant_override("separation", 6)
-	var tier_icon_path: String = GameData.GUILD_TIER_ICON.get(str(tier["name"]), "")
-	if tier_icon_path != "":
-		tier_row.add_child(_icon(tier_icon_path, 18))
-	tier_row.add_child(_label(tier_line, 12, true))
 
 	if term_tab == "camp":
 		if GameState.heroes.is_empty():
-			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero at Hero Recruits (key 2), then head to the Rift Gate to seal a rift.")
+			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero at the Scouts' Lodge (key 2), then head to the Rift Gate to seal a rift.")
 		elif GameState.runs_started >= 1 and GameState.run.is_empty():
 			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
-		v.add_child(tier_row)
-		if GameState.feature_unlocked("quests") or GameState.rifts_sealed > 0 or not GameState.current_act().is_empty():
-			var act := GameState.current_act()
-			var act_text := "Campaign complete — the Ashen Crown is shattered" if act.is_empty() else "Act %s — %s · %d/%d objectives%s" % [GameState._roman(int(act["act"])), act["name"], (act["objectives"] as Array).filter(func(o): return GameState.campaign_objective_met(o)).size(), (act["objectives"] as Array).size(), " · the finale is open at the Rift Gate!" if GameState.finale_ready() else ""]
-			var al := _label(act_text, 13)
-			al.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if GameState.finale_ready() else Palette.MUTED)
-			v.add_child(al)
 		_render_getting_started(v)
 		return
 	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management"}.get(term_tab, "")
@@ -71,12 +55,14 @@ func _render_camp(v: VBoxContainer) -> void:
 		return
 
 	var scene_w: float = v.custom_minimum_size.x
-	var SCENE_SIZE := Vector2(scene_w, roundf(scene_w * 157.0 / 400.0))
+	var native: Vector2 = GameData.HAMLET_SIZE
+	var SCENE_SIZE := Vector2(scene_w, roundf(scene_w * native.y / native.x))
+	var sc := SCENE_SIZE / native
 	var scene := Control.new()
 	scene.custom_minimum_size = SCENE_SIZE
 
 	var bg := TextureRect.new()
-	bg.texture = load(GameData.CAMP_BG)
+	bg.texture = load(GameData.HAMLET_BG)
 	bg.custom_minimum_size = SCENE_SIZE
 	bg.size = SCENE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
@@ -84,45 +70,44 @@ func _render_camp(v: VBoxContainer) -> void:
 	scene.add_child(bg)
 	_start_daynight_cycle(bg)
 
-	# Rect positions hand-picked against camp_bg.png's native 400x157 canvas
-	# (cropped from the original 400x184 generation, which had a literal
-	# cinematic letterbox band baked into the top/bottom ~15px — an artifact
-	# of asking PixelLab for a "cinematic" shot; cropping it out is what fixed
-	# the flame and buildings reading as cut off along the top edge), scaled
-	# up to SCENE_SIZE below. Command Tent/Rift Gate/Trading Post/Scholar's
-	# Lodge each cover several destinations and set hub_cluster instead of
-	# navigating directly.
-	var area_entries := [
-		["Scholar's Lodge", Rect2(0, 80, 90, 60), func(): hub_cluster = "scholars_lodge"; render()],
-		["Medical Tent", Rect2(90, 75, 105, 65), func(): term_tab = "medical"; render()],
-		["Hero Recruits", Rect2(185, 80, 55, 73), func(): term_tab = "recruits"; render()],
-		["Rift Gate", Rect2(235, 60, 63, 87), func(): hub_cluster = "rift_gate"; render()],
-		["Trading Post", Rect2(298, 80, 60, 60), func(): hub_cluster = "trading_post"; render()],
-		["Command Tent", Rect2(358, 60, 42, 80), func(): hub_cluster = "command"; render()],
-	]
-	var scene_scale := SCENE_SIZE / Vector2(400, 157)
-	_add_camp_props(bg, scene_scale)
+	# Buildings are children of the backdrop (so the day/night tint reaches
+	# them); their click areas and plaques go on the scene above.
 	var badges := _camp_badges()
+	var targets := _hamlet_targets()
 	var plaques: Array = []
-	for entry in area_entries:
-		var label_text: String = entry[0]
-		var native_rect: Rect2 = entry[1]
-		var cb: Callable = entry[2]
-		var rect := Rect2(
-			native_rect.position.x * scene_scale.x, native_rect.position.y * scene_scale.y,
-			native_rect.size.x * scene_scale.x, native_rect.size.y * scene_scale.y
-		)
-		var hotspot := _camp_area_hotspot(rect, rect, label_text, cb, false)
+	for b in GameData.HAMLET_BUILDINGS:
+		var tex: Texture2D = load(GameState.hamlet_texture(b))
+		var size := tex.get_size() * sc
+		var anchor: Vector2 = b["pos"]
+		var rect := Rect2(Vector2(anchor.x * sc.x - size.x * 0.5, anchor.y * sc.y - size.y), size)
+		var art := TextureRect.new()
+		art.texture = tex
+		art.stretch_mode = TextureRect.STRETCH_SCALE
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art.position = rect.position
+		art.size = rect.size
+		bg.add_child(art)
+		if b["id"] == "campfire":
+			_start_ember_loop(scene, Vector2(anchor.x * sc.x, (anchor.y - 16.0) * sc.y))
+			continue
+		var tip := str(b["name"])
+		if str(b.get("tier", "")) == "node":
+			tip += " — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5)" % [GameState.hamlet_tier(b), str(GameData.find_branch_node(str(b["node"]))["name"]), GameState.lvl(str(b["node"]))]
+		elif b["tier"] == "guild":
+			tip += " — grows with your guild tier"
+		elif b["tier"] == "act":
+			tip += " — grows with the campaign"
+		var hotspot := _camp_area_hotspot(rect, rect, tip, targets.get(b["id"], func(): pass), false)
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
-		plaques.append([label_text, rect])
+		plaques.append([str(b["name"]), rect, b["row"] == "back"])
 
-	# Name plaques along the bottom edge of each building, added after every
-	# hotspot so no building's hover area paints over a neighbour's plaque.
 	for pq in plaques:
 		var prect: Rect2 = pq[1]
 		var plaque := _camp_plaque(str(pq[0]))
-		plaque.position = Vector2(prect.get_center().x - plaque.size.x * 0.5, minf(prect.end.y - 6.0, SCENE_SIZE.y - plaque.size.y - 4.0))
+		var py: float = prect.position.y - plaque.size.y - 2.0 if pq[2] else minf(prect.end.y - plaque.size.y - 2.0, SCENE_SIZE.y - plaque.size.y - 2.0)
+		plaque.position = Vector2(clampf(prect.get_center().x - plaque.size.x * 0.5, 2.0, SCENE_SIZE.x - plaque.size.x - 2.0), py)
 		scene.add_child(plaque)
 		var badge: Array = badges.get(str(pq[0]), [])
 		if not badge.is_empty():
@@ -130,40 +115,168 @@ func _render_camp(v: VBoxContainer) -> void:
 			chip.position = plaque.position + Vector2(plaque.size.x - 10.0, -12.0)
 			scene.add_child(chip)
 
-	# Pixel-scanned against camp_bg.png directly (flame-colored pixels cluster
-	# at x:189-223, y:106-130 on the native 400x157 canvas) — previously
-	# reused the Hero Recruits hotspot rect, which happens to overlap the
-	# fire horizontally but put the emitter ~15px below the flame's own
-	# bottom edge, in the log pile instead of the fire.
-	var fire_native_pos := Vector2(206, 112)
-	_start_ember_loop(scene, fire_native_pos * scene_scale)
-	v.add_child(scene)
+	# Guild tier banner in the sky's top-right; the status board top-left
+	# (below the scene on a narrow screen).
+	var tier_panel := _guild_tier_banner()
+	scene.add_child(tier_panel)
+	tier_panel.position = Vector2(SCENE_SIZE.x - tier_panel.get_combined_minimum_size().x - 10.0, 10.0)
+	var board := _guild_status_board()
+	if _narrow():
+		v.add_child(scene)
+		v.add_child(board)
+	else:
+		board.position = Vector2(10, 10)
+		board.custom_minimum_size.x = minf(360.0, SCENE_SIZE.x * 0.42)
+		scene.add_child(board)
+		v.add_child(scene)
 
 
-## Guild Management's mark on the camp: each upgrade at Lv3 adds its prop
-## (children of the background, so they follow the day/night tint), and at
-## max level the prop glows softly.
-func _add_camp_props(bg: Control, scene_scale: Vector2) -> void:
-	for key in GameData.CAMP_PROPS:
-		var lv := GameState.lvl(key)
-		if lv < GameData.CAMP_PROP_LEVEL:
-			continue
-		var def: Array = GameData.CAMP_PROPS[key]
-		var tex: Texture2D = load(str(def[0]))
-		var prop := TextureRect.new()
-		prop.texture = tex
-		prop.stretch_mode = TextureRect.STRETCH_SCALE
-		prop.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		prop.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var size := tex.get_size() * scene_scale
-		var anchor: Vector2 = def[1]
-		prop.size = size
-		prop.position = Vector2(anchor.x * scene_scale.x - size.x * 0.5, anchor.y * scene_scale.y - size.y)
-		bg.add_child(prop)
-		if lv >= int(GameData.find_branch_node(key)["max"]):
-			var tw := prop.create_tween().set_loops()
-			tw.tween_property(prop, "self_modulate", Color(1.35, 1.3, 1.1), 1.6).set_trans(Tween.TRANS_SINE)
-			tw.tween_property(prop, "self_modulate", Color.WHITE, 1.6).set_trans(Tween.TRANS_SINE)
+## Where each hamlet building leads.
+func _hamlet_targets() -> Dictionary:
+	return {
+		"scouts": func(): term_tab = "recruits"; render(),
+		"hall": func(): hub_cluster = "guild_hall"; render(),
+		"lab": func(): hub_cluster = "arcane_lab"; render(),
+		"barracks": func(): term_tab = "roster"; render(),
+		"infirmary": func(): term_tab = "medical"; render(),
+		"drill": func(): term_tab = "roster"; roster_tab = "skills"; render(),
+		"board": func(): term_tab = "quests"; render(),
+		"gate": func(): hub_cluster = "rift_gate"; render(),
+		"market": func(): term_tab = "inventory"; inv_category = "items"; render(),
+		"vault": func(): term_tab = "inventory"; inv_category = "relics"; render(),
+	}
+
+
+func _guild_tier_banner() -> PanelContainer:
+	var tier := Combat.guild_tier_info()
+	var p := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(Palette.INK, 0.78)
+	st.border_color = Palette.VIOLET_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(6)
+	st.set_content_margin_all(8)
+	p.add_theme_stylebox_override("panel", st)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var icon_path: String = GameData.GUILD_TIER_ICON.get(str(tier["name"]), "")
+	if icon_path != "":
+		row.add_child(_icon(icon_path, 22))
+	var col := _vbox(0)
+	var t := _label(str(tier["name"]), 14)
+	t.add_theme_color_override("font_color", Palette.RANK_S)
+	col.add_child(t)
+	var sub := "%d levels" % int(tier["total"])
+	if not (tier["next"] as Dictionary).is_empty():
+		sub += " · %d to %s" % [int(tier["next"]["min"]) - int(tier["total"]), str(tier["next"]["name"]).replace(" Guild", "")]
+	if GameState.tower_title() != "":
+		sub += " · " + GameState.tower_title()
+	col.add_child(_label(sub, 11, true))
+	row.add_child(col)
+	p.add_child(row)
+	p.tooltip_text = "Guild tier grows with Guild Management levels; the Guild Hall grows with it."
+	return p
+
+
+## What needs you right now: each line opens where to act on it.
+func _guild_status_board() -> PanelContainer:
+	var p := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(Palette.INK, 0.8)
+	st.border_color = Palette.EMBER_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(6)
+	st.set_content_margin_all(10)
+	p.add_theme_stylebox_override("panel", st)
+	var col := _vbox(0)
+	var head := _label("Guild status", 15)
+	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(head)
+	var lines := _guild_status_lines()
+	if lines.is_empty():
+		col.add_child(_label("All quiet. The rifts are waiting.", 12, true))
+	for ln in lines.slice(0, 6):
+		var b := Button.new()
+		b.flat = true
+		b.text = "›  " + str(ln[0])
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_font_size_override("font_size", 13)
+		b.add_theme_color_override("font_color", ln[1])
+		b.add_theme_color_override("font_hover_color", Palette.EMBER_BRIGHT)
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		var tight := StyleBoxEmpty.new()
+		tight.content_margin_top = 1
+		tight.content_margin_bottom = 1
+		for sn in ["normal", "hover", "pressed", "focus"]:
+			b.add_theme_stylebox_override(sn, tight)
+		b.tooltip_text = str(ln[0])
+		b.pressed.connect(ln[2])
+		col.add_child(b)
+	p.add_child(col)
+	return p
+
+
+## [text, colour, action] for the status board, most urgent first.
+func _guild_status_lines() -> Array:
+	var out: Array = []
+	var go_term := func(tab: String): return func(): term_tab = tab; render()
+	var go_screen := func(s: String): return func(): screen = s; render()
+	if GameState.heroes.is_empty():
+		out.append(["Hire your first hero at the Scouts' Lodge", Palette.EMBER_BRIGHT, go_term.call("recruits")])
+	var act := GameState.current_act()
+	if not act.is_empty():
+		if GameState.finale_ready():
+			out.append(["Finale open: %s" % act["finale"], Palette.EMBER_BRIGHT, go_screen.call("rift_hall")])
+		else:
+			for o in act["objectives"]:
+				if not GameState.campaign_objective_met(o):
+					var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [mini(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
+					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
+					break
+	if GameState.feature_unlocked("rift_map"):
+		var soon: Dictionary = {}
+		for slot in GameState.rift_map:
+			if slot.has("rank") and (soon.is_empty() or int(slot.get("runs_left", 9)) < int(soon.get("runs_left", 9))):
+				soon = slot
+		if not soon.is_empty():
+			var rl := int(soon.get("runs_left", 1))
+			out.append(["Rank %s rift closes after %d run%s" % [soon["rank"], rl, "" if rl == 1 else "s"], Palette.HAZARD if rl <= 1 else Palette.MUTED, go_screen.call("rift_map")])
+	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
+	if not claimable.is_empty() and GameState.feature_unlocked("quests"):
+		out.append(["%d quest%s ready to claim" % [claimable.size(), "" if claimable.size() == 1 else "s"], Palette.RANK_E, go_term.call("quests")])
+	var down := GameState.heroes.filter(func(h): return h.is_downed())
+	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.is_downed())
+	if not down.is_empty() or not hurt.is_empty():
+		var bits: Array[String] = []
+		if not down.is_empty():
+			bits.append("%d recovering" % down.size())
+		if not hurt.is_empty():
+			bits.append("%d wounded" % hurt.size())
+		var free := GameState.medical_bed_cap() - GameState.occupied_beds()
+		out.append(["%s · %d bed%s free" % [", ".join(bits), free, "" if free == 1 else "s"], Palette.HAZARD if not down.is_empty() else Palette.MUTED, go_term.call("medical")])
+	var sp := GameState.heroes.filter(func(h): return h.skill_points > 0 or h.attr_points > 0)
+	if not sp.is_empty():
+		out.append(["%d hero%s with points to spend" % [sp.size(), "" if sp.size() == 1 else "es"], Palette.TEXT, go_term.call("roster")])
+	if GameState.feature_unlocked("management"):
+		var best := ""
+		var best_cost := 1 << 30
+		for br in GameData.BRANCHES:
+			for n in br["nodes"]:
+				var key := "%s.%s" % [br["id"], n["id"]]
+				var lv := GameState.lvl(key)
+				if lv < int(n["max"]):
+					var c: int = int(n["cost_base"]) + int(n["cost_step"]) * lv
+					if c < best_cost:
+						best_cost = c
+						best = "%s Lv%d" % [n["name"], lv + 1]
+		if best != "" and GameState.crystals >= best_cost:
+			out.append(["Upgrade ready: %s (%d Crystals)" % [best, best_cost], Palette.CRYSTALS, go_term.call("management")])
+	if GameState.feature_unlocked("tower"):
+		var f := GameState.tower_next_floor()
+		if f > 0:
+			out.append(["Tower of Trials: floor %d next" % f, Palette.MUTED, go_screen.call("tower")])
+	return out
 
 
 ## A short first-guild checklist under the camp scene, each step ticking off
@@ -173,7 +286,7 @@ func _render_getting_started(v: VBoxContainer) -> void:
 	if GameState.guide_hidden or GameState.rifts_sealed >= 3:
 		return
 	var steps := [
-		["Recruit a hero at Hero Recruits", not GameState.heroes.is_empty()],
+		["Recruit a hero at the Scouts' Lodge", not GameState.heroes.is_empty()],
 		["Assemble a party at the Rift Gate and enter a rift", not GameState.monsters_seen.is_empty()],
 		["Equip an item on a hero (Roster > Hero)", GameState.items.any(func(it): return it.equipped_to != "")],
 		["Spend a skill point (Roster > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
@@ -235,14 +348,14 @@ func _camp_badges() -> Dictionary:
 		if not reasons.is_empty():
 			needy.append("%s: %s" % [h.name.split(" the ")[0], ", ".join(reasons)])
 	if not needy.is_empty():
-		out["Command Tent"] = [str(needy.size()), "\n".join(needy)]
+		out["Barracks"] = [str(needy.size()), "\n".join(needy)]
 	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded)
 	if not hurt.is_empty():
-		out["Medical Tent"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
+		out["Infirmary"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
 	if GameState.heroes.size() < GameState.hero_slot_cap():
 		var affordable := GameState.recruit_pool.filter(func(h): return GameState.coins >= int(GameData.find_rank(h.rank)["cost"]))
 		if not affordable.is_empty():
-			out["Hero Recruits"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
+			out["Scouts' Lodge"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
 	var craftable := 0
 	var groups := {}
 	for it in GameState.items:
@@ -256,14 +369,14 @@ func _camp_badges() -> Dictionary:
 	for k in groups:
 		craftable += int(groups[k]) / 3
 	if craftable > 0:
-		out["Trading Post"] = [str(craftable), "%d craft(s) ready at the Crafting Hall" % craftable]
+		out["Arcane Lab"] = [str(craftable), "%d craft(s) ready at the Crafting Hall" % craftable]
 	var free_relic_slots := GameState.relic_slot_cap() - Combat.equipped_relics().size()
 	var spare_relics := GameState.relics.filter(func(r): return not r.equipped).size()
 	if free_relic_slots > 0 and spare_relics > 0:
-		out["Inventory"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic from Inventory" % free_relic_slots]
+		out["Relic Vault"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic from Inventory" % free_relic_slots]
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty():
-		out["Scholar's Lodge"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
+		out["Quest Board"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
 	if not GameState.pending_riftbreak_ranks.is_empty():
 		out["Rift Gate"] = ["!", "A rift has broken open — a Riftbreak fight is waiting"]
 	return out
@@ -281,6 +394,18 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 			entries = [
 				[GameData.CAMP_HUB_ICON_PATH["roster"], "Roster", func(): hub_cluster = ""; term_tab = "roster"; render()],
 				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
+			]
+		"guild_hall":
+			title = "Guild Hall"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Compendium", func(): hub_cluster = ""; term_tab = "compendium"; render()],
+			]
+		"arcane_lab":
+			title = "Arcane Lab"
+			entries = [
+				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting Hall", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["bestiary"], "Bestiary", func(): hub_cluster = ""; term_tab = "bestiary"; render()],
 			]
 		"rift_gate":
 			title = "Rift Gate"
@@ -1200,10 +1325,11 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 		pr.add_theme_color_override("font_color", Palette.RANK_E if got else (Palette.EMBER_BRIGHT if is_order else Palette.RANK_S))
 		cv.add_child(pr)
 
-	var prop: Array = GameData.CAMP_PROPS.get(key, [])
-	if not prop.is_empty():
-		var built := cur >= GameData.CAMP_PROP_LEVEL
-		cv.add_child(_wrap_label("%s Camp: %s%s" % ["✓" if built else "⌂", str(prop[2]).capitalize(), " (glows at Lv5)" if built else " appears at Lv%d" % GameData.CAMP_PROP_LEVEL], 11, true))
+	var building: Array = GameData.HAMLET_BUILDINGS.filter(func(hb): return str(hb.get("node", "")) == key)
+	if not building.is_empty():
+		cv.add_child(_wrap_label("⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3)" % [building[0]["name"], GameState.hamlet_tier(building[0])], 11, true))
+	else:
+		cv.add_child(_wrap_label("⌂ Camp: every level grows the Guild Hall (guild tier)", 11, true))
 
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur

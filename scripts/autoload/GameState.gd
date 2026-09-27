@@ -277,6 +277,26 @@ func relic_upgrade_cost(r: Relic) -> int:
 	return int(round(cost * (0.75 if lvl("res.lab") >= 5 else 1.0)))
 
 
+## Which art a hamlet building shows (1-3), see GameData.HAMLET_BUILDINGS.
+func hamlet_tier(b: Dictionary) -> int:
+	match str(b.get("tier", "")):
+		"node":
+			var l := lvl(str(b["node"]))
+			return 1 + (1 if l >= 3 else 0) + (1 if l >= 5 else 0)
+		"guild":
+			var name := str(Combat.guild_tier_info()["name"])
+			return 3 if name == "Legendary Guild" else (2 if name in ["Established Guild", "Renowned Guild"] else 1)
+		"act":
+			return clampi(campaign_act, 1, 3)
+	return 1
+
+
+func hamlet_texture(b: Dictionary) -> String:
+	if str(b.get("tier", "")) == "":
+		return "res://assets/hamlet/%s.png" % b["id"]
+	return "res://assets/hamlet/%s_t%d.png" % [b["id"], hamlet_tier(b)]
+
+
 ## Crystals a pre-rework save spent on the old Guild Management tree.
 static func old_mgmt_refund(old_upgrades: Dictionary, old_caps: Dictionary) -> int:
 	var total := 0

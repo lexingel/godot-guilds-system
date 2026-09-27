@@ -2,11 +2,7 @@ extends "res://tests/base_test.gd"
 ## Relic generation, triggers, sets, legendaries, awakening and rerolls.
 
 func _uniq(id: String) -> Relic:
-	for i in 60:
-		var r := Combat.gen_unique_relic()
-		if r.unique_id == id:
-			return r
-	return null
+	return Combat.relic_from_unique(GameData.find_unique_relic(id))
 
 
 func _equip_only(rs: Array) -> void:
