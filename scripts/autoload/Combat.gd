@@ -887,6 +887,24 @@ func _roll_affixes(m: Dictionary, count: int) -> void:
 	m["affixes"] = picked
 
 
+## A line in this hero's voice for a moment (GameData.BARKS).
+func bark_line(h: Hero, moment: String) -> String:
+	var lines: Array = GameData.BARKS[GameData.TRAIT_VOICE.get(h.trait_name, "stoic")][moment]
+	return str(lines[randi() % lines.size()])
+
+
+## A hero speaks up mid-fight (a speech bubble on the combat screen and a log
+## line): at most once a turn and twice a fight per hero, `chance` of the time.
+func _bark(state: Dictionary, h: Hero, moment: String, chance: float) -> void:
+	var said: Dictionary = state.get_or_add("_bark_n", {})
+	if not (state.get("_barks", []) as Array).is_empty() or int(said.get(h.id, 0)) >= 2 or randf() >= chance:
+		return
+	said[h.id] = int(said.get(h.id, 0)) + 1
+	var text := bark_line(h, moment)
+	state.get_or_add("_barks", []).append({"hero": h.id, "text": text})
+	(state["log"] as Array).append("%s: \"%s\"" % [h.name.split(" the ")[0], text])
+
+
 ## A boss turns once at half health (GameData.BOSS_PHASES).
 func _check_phases(state: Dictionary) -> void:
 	var monsters: Array = state["monsters"]
@@ -2388,6 +2406,7 @@ func peek_next_turn(state: Dictionary) -> Dictionary:
 ## monster turns and on the player's action-bar click for a hero's turn).
 func resolve_turn(state: Dictionary) -> Dictionary:
 	state["_procs"] = []   # effects that fired this turn — the combat screen floats their names
+	state["_barks"] = []   # what a hero said this turn (speech bubbles)
 	var turn: Dictionary = peek_next_turn(state)
 	var turn_idx: int = int(state["turn_idx"])
 	state["turn_idx"] = turn_idx + 1
@@ -2399,12 +2418,27 @@ func resolve_turn(state: Dictionary) -> Dictionary:
 			stunned.erase(h.id)
 			(state["log"] as Array).append("%s is stunned and loses the turn." % h.name)
 		elif h and h.hp > 0:
+			var alive_before: Array = (state["monsters"] as Array).filter(func(m): return float(m["hp"]) > 0)
 			_resolve_hero_action(state, h)
+			var felled: Array = alive_before.filter(func(m): return float(m["hp"]) <= 0)
+			if not felled.is_empty() and h.hp > 0:
+				_bark(state, h, "kill", 1.0 if felled.any(func(m): return m["is_main"] and m["tier"] != "combat") else 0.3)
 	else:
 		var i: int = int(turn["id"])
 		var monsters: Array = state["monsters"]
 		if i < monsters.size() and float(monsters[i]["hp"]) > 0:
+			var hp_before := {}
+			for ph in state["party"]:
+				hp_before[ph.id] = ph.hp
 			_resolve_monster_action(state, i)
+			var living: Array = (state["party"] as Array).filter(func(x): return x.hp > 0)
+			for ph in state["party"]:
+				if ph.hp >= int(hp_before[ph.id]):
+					continue
+				if ph.hp <= 0 and not living.is_empty():
+					_bark(state, living[randi() % living.size()], "ally_down", 0.6)
+				elif ph.hp > 0 and ph.hp < max_hp(ph) * 0.25:
+					_bark(state, ph, "low_hp", 0.7)
 	_check_phases(state)
 
 	var outcome := _check_monsters_defeated(state)
@@ -2500,6 +2534,20 @@ func _finish_combat(state: Dictionary, won: bool, retreated: bool) -> Dictionary
 				"dealt": int(round(float(state.get("_dealt", {}).get(h.id, 0.0)))), "kills": int(state.get("_kills", {}).get(h.id, 0))})
 		result["heroes"] = summary
 		result["xp_gain"] = xp_gain
+		# One hero sums it up: whoever levelled, else the top damage dealer.
+		var speaker: Hero = null
+		var moment := "victory"
+		for k in summary.size():
+			if summary[k]["alive"] and int(summary[k]["lv1"]) > int(summary[k]["lv0"]):
+				speaker = party[k]
+				moment = "level_up"
+				break
+		if speaker == null:
+			for k in summary.size():
+				if summary[k]["alive"] and (speaker == null or int(summary[k]["dealt"]) > int(state.get("_dealt", {}).get(speaker.id, 0.0))):
+					speaker = party[k]
+		if speaker:
+			result["bark"] = {"id": speaker.id, "name": speaker.name.split(" the ")[0], "text": bark_line(speaker, moment)}
 		if not is_boss:
 			var options := [gen_loot(weighted_rarity()), gen_loot(weighted_rarity())]
 			if randf() < min(0.5, drop_rate_bonus() * 2.0):

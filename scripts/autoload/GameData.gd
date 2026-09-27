@@ -952,6 +952,62 @@ const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
 const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver"]
 const HEAVY_BLOW_MULT := 3.0
 
+## ---------------- Hero voices ----------------
+## A hero's trait sets how they talk; they speak up at a few fight moments
+## (Combat._bark) and on the victory screen.
+const TRAIT_VOICE := {
+	"Battle-Hardened": "bold", "Juggernaut": "bold", "Reckless": "bold",
+	"Swift": "swift", "Glass Dagger": "swift", "Deadeye": "swift",
+	"Iron Skin": "stoic", "": "stoic",
+	"Frail": "wary", "Slothful": "wary",
+	"Zealous Mercy": "devout", "Overtuned": "arcane",
+}
+const VOICE_NAME := {"bold": "Bold", "swift": "Quick", "stoic": "Stoic", "wary": "Nervous", "devout": "Devout", "arcane": "Scholarly"}
+const BARKS := {
+	"bold": {
+		"kill": ["Next!", "Too easy.", "Who's next in line?"],
+		"low_hp": ["Just a scratch!", "That all you've got?", "I've had worse at breakfast."],
+		"ally_down": ["You'll pay for that!", "Hold on, I'll finish this!", "Stay down, I've got it!"],
+		"victory": ["Ha! Another one for the wall.", "Is that the best the Rift can do?", "Point me at the next one."],
+		"level_up": ["Stronger. Good.", "Now we're talking.", "Bring on something bigger."],
+	},
+	"swift": {
+		"kill": ["Blink and you missed it.", "Clean.", "Right where I aimed."],
+		"low_hp": ["Too slow on that one...", "Need to keep moving!", "Close. Too close."],
+		"ally_down": ["Man down! Covering!", "I'll draw them off!", "Get up, get up!"],
+		"victory": ["Fast work.", "Home before supper.", "They never saw us coming."],
+		"level_up": ["Quicker every day.", "Feeling light on my feet.", "Watch this."],
+	},
+	"stoic": {
+		"kill": ["It's done.", "One less.", "Stay down."],
+		"low_hp": ["I can still stand.", "Not yet.", "I hold."],
+		"ally_down": ["I'll hold the line.", "Rest. I'll carry this.", "Steady. We finish it."],
+		"victory": ["The line held.", "We endure.", "Another day."],
+		"level_up": ["Steady progress.", "I feel it. Good.", "The work pays off."],
+	},
+	"wary": {
+		"kill": ["Did... did I do that?", "Oh, thank the stars.", "Is it dead? It's dead."],
+		"low_hp": ["I don't want to die here!", "Help! Anyone?", "This was a terrible idea."],
+		"ally_down": ["No, no, no, get up!", "Should we run? We should run.", "They got them!"],
+		"victory": ["We lived! We actually lived!", "Can we go home now?", "Never again. Probably."],
+		"level_up": ["Huh. I'm getting better at this.", "Maybe I'm not so bad after all.", "Did I just get stronger?"],
+	},
+	"devout": {
+		"kill": ["Rest now.", "The light judges you.", "Forgiven, and gone."],
+		"low_hp": ["Grant me strength...", "My faith holds, if my body won't.", "Not while they need me."],
+		"ally_down": ["I'm coming, hold on!", "Light, keep them!", "Don't you dare give up!"],
+		"victory": ["Light guide us home.", "We were spared. Give thanks.", "Let's tend the wounded."],
+		"level_up": ["A blessing.", "I am given more to give.", "My purpose grows clearer."],
+	},
+	"arcane": {
+		"kill": ["Unmade.", "Just as I calculated.", "Fascinating. Was."],
+		"low_hp": ["Variables... unfavorable.", "The weave is fraying. So am I.", "I need a moment to recompute!"],
+		"ally_down": ["That was not in the plan!", "Recalculating!", "Someone get them up!"],
+		"victory": ["A tidy result.", "Worth a page in my notes.", "The Rift has patterns. I see them now."],
+		"level_up": ["The equations open up.", "More power. Excellent.", "I understand more now."],
+	},
+}
+
 ## ---------------- Boss phases & elite affixes ----------------
 ## Every boss turns once, at half health: one of these, rolled at fight start
 ## and shown on its plate so the player can plan for it.

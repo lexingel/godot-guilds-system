@@ -65,7 +65,11 @@ func _render_roster(v: VBoxContainer) -> void:
 	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
-	cv.add_child(_label("Lv%d %s (%s) · %d/%d HP · Power %d" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h)]))
+	var voice := str(GameData.TRAIT_VOICE.get(h.trait_name, "stoic"))
+	var head := _label("Lv%d %s (%s) · %d/%d HP · Power %d · %s" % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h), GameData.VOICE_NAME[voice]])
+	head.tooltip_text = "Personality (from their trait) — e.g. “%s”" % str(GameData.BARKS[voice]["victory"][0])
+	head.mouse_filter = Control.MOUSE_FILTER_STOP
+	cv.add_child(head)
 
 	# Tabs (Overview · Gear · Skills · History) instead of one long card that
 	# stacked every section. A dot marks a tab with something to act on:

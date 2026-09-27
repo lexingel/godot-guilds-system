@@ -280,6 +280,38 @@ func _spawn_procs(state: Dictionary, hero_wrappers: Dictionary) -> void:
 		tween.tween_callback(l.queue_free)
 
 
+## What heroes said this turn, as speech bubbles over their heads (they read
+## at any battle speed).
+func _spawn_barks(state: Dictionary, hero_wrappers: Dictionary) -> void:
+	for b in state.get("_barks", []):
+		var wrapper: Control = hero_wrappers.get(str(b["hero"]))
+		if wrapper == null or not is_instance_valid(wrapper):
+			continue
+		var bubble := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(Palette.TEXT, 0.95)
+		st.set_corner_radius_all(8)
+		st.content_margin_left = 8
+		st.content_margin_right = 8
+		st.content_margin_top = 3
+		st.content_margin_bottom = 4
+		bubble.add_theme_stylebox_override("panel", st)
+		var l := _label(str(b["text"]), 12)
+		l.add_theme_color_override("font_color", Palette.INK)
+		bubble.add_child(l)
+		bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bubble.position = Vector2(-20, -UNIT_PLATE_H - 34)
+		bubble.z_index = 5
+		wrapper.add_child(bubble)
+		var tw := bubble.create_tween()
+		tw.set_ignore_time_scale(true)
+		bubble.modulate.a = 0.0
+		tw.tween_property(bubble, "modulate:a", 1.0, 0.15)
+		tw.tween_interval(1.8)
+		tw.tween_property(bubble, "modulate:a", 0.0, 0.3)
+		tw.tween_callback(bubble.queue_free)
+
+
 func _spawn_ability_bucket_burst(pool_id: String, wrapper: Control) -> void:
 	var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(pool_id, {})
 	var bucket: String = GameData.ABILITY_AWAKENING_BUCKET.get(str(ab.get("effect", "")), "buff")
@@ -410,6 +442,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var log_before: int = (state["log"] as Array).size()
 		GameState.resolve_turn_now()
 		_spawn_procs(state, hero_wrappers)
+		_spawn_barks(state, hero_wrappers)
 		_turn_sfx((state["log"] as Array).slice(log_before))
 
 		if h == null or h.hp <= 0:
@@ -473,6 +506,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 		var log_before2: int = (state["log"] as Array).size()
 		GameState.resolve_turn_now()
 		_spawn_procs(state, hero_wrappers)
+		_spawn_barks(state, hero_wrappers)
 		var new_lines: Array = (state["log"] as Array).slice(log_before2)
 		_turn_sfx(new_lines)
 
@@ -2127,4 +2161,9 @@ func _victory_party(result: Dictionary) -> Control:
 		row.add_child(mid)
 		row.add_child(_label("%d dmg · %d kill%s" % [int(e["dealt"]), int(e["kills"]), "" if int(e["kills"]) == 1 else "s"], 12, true))
 		box.add_child(row)
+	var bark: Dictionary = result.get("bark", {})
+	if not bark.is_empty():
+		var q := _label("%s: \u201c%s\u201d" % [bark["name"], bark["text"]], 13)
+		q.add_theme_color_override("font_color", Palette.VIOLET_BRIGHT)
+		box.add_child(q)
 	return box
