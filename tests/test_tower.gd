@@ -66,7 +66,7 @@ func run() -> void:
 	check(capped > 0, "some floor carries the Duo rule")
 
 	# Attempt floor 1 with a strong party: full HP in, restored out.
-	var ids := _heroes(4)
+	var ids := _heroes(4, "A", 10)
 	var h0 := GameState.find_hero(ids[0])
 	h0.hp = 5
 	h0.ability_cooldown = 2
