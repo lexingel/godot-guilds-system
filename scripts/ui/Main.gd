@@ -899,10 +899,10 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	cards.add_theme_constant_override("h_separation", 10)
 	cards.add_theme_constant_override("v_separation", 10)
 	var card_defs := [
-		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser", false), go.bind(str(lesser["id"]), false), ""],
-		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater", false), go.bind(str(greater["id"]), false),
+		["Lesser Rift", "%d floors" % int(lesser["floors"]), Combat.recommended_power("lesser"), go.bind(str(lesser["id"]), false), ""],
+		["Greater Rift", "%d floors" % int(greater["floors"]), Combat.recommended_power("greater"), go.bind(str(greater["id"]), false),
 			"" if unlocked else "Opens when you complete Act I"],
-		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless", true), go.bind("endless", true),
+		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("endless", true),
 			"" if endless_open else "Opens when you complete Act II"],
 		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
@@ -1087,7 +1087,7 @@ func _daily_card_def() -> Array:
 		lock = "Opens after you seal your first rift"
 	elif not GameState.daily_available():
 		lock = "Done for today. A new Daily Rift opens tomorrow (%s)." % sub.split(" · ")[0]
-	return ["Daily Rift", sub, Combat.recommended_power(str(info["diff_id"]), false), func():
+	return ["Daily Rift", sub, Combat.recommended_power(str(info["diff_id"])), func():
 		pending_party.clear()
 		_pending_daily = true
 		_pending_tower = false
@@ -1167,7 +1167,7 @@ func _render_rift_map_hub(v: VBoxContainer) -> void:
 		bl.add_theme_color_override("font_color", Palette.COINS)
 		bl.custom_minimum_size.x = 160
 		row.add_child(bl)
-		var pr := _power_readout(best, Combat.recommended_power("lesser", false, rank), "Your best")
+		var pr := _power_readout(best, Combat.recommended_power("lesser", rank), "Your best")
 		pr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(pr)
 		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Enter", enter))
@@ -1375,7 +1375,7 @@ func _party_launch_bar(champ: Hero) -> Control:
 		if pending_party.has(h.id):
 			going.append(h)
 	var map_run := _pending_map_slot_idx >= 0
-	var rec_power: int = GameState.tower_recommended_power(GameState.tower_next_floor()) if _pending_tower else GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_endless and not map_run, _pending_rift_rank)
+	var rec_power: int = GameState.tower_recommended_power(GameState.tower_next_floor()) if _pending_tower else GameState.finale_recommended_power() if _pending_finale else Combat.recommended_power("lesser" if map_run else _pending_diff_id, _pending_rift_rank)
 	var pr := _power_readout(Combat.party_power(going), rec_power)
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(pr)
@@ -1412,7 +1412,7 @@ func _party_launch_bar(champ: Hero) -> Control:
 		elif _pending_rift_rank != "":
 			GameState.start_map_rift(_pending_map_slot_idx, ids, chosen)
 		else:
-			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore, _pending_endless)
+			GameState.start_run(_pending_diff_id, ids, chosen, _pending_hardcore)
 		_pending_finale = false
 		_pending_tower = false
 		_pending_daily = false

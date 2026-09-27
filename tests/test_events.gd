@@ -37,7 +37,7 @@ func run() -> void:
 		hids.append(h.id)
 	GameState.runs_started = 3
 	GameState.coins = 1000
-	GameState.start_run("lesser", hids, null, false, false)
+	GameState.start_run("lesser", hids, null, false)
 	# Every choice of every event resolves without error.
 	for ev in GameData.RIFT_EVENTS:
 		for ci in (ev["choices"] as Array).size():

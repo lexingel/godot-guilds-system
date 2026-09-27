@@ -13,7 +13,7 @@ func _equip_only(rs: Array) -> void:
 
 
 func _fight_party(ids: Array[String]) -> Dictionary:
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	GameState.run["node_state"] = {}
 	GameState.choose_node_type("combat")
 	GameState.engage_node()
@@ -127,7 +127,7 @@ func run() -> void:
 	var crown := _uniq("crown_of_oaths")
 	_equip_only([crown])
 	var champ := GameState.ensure_champion()
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	GameState.run["champion_calls"] = 1
 	check(GameState.champion_call_ready(champ), "Crown: a second Call")
 	GameState.run["champion_calls"] = 2

@@ -102,21 +102,18 @@ const TOWER_BOSSES := {
 ## Guild titles for reaching a floor (the highest shows beside the guild name).
 const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spire Walker"], [75, "Stormbreaker"], [100, "Summit Keeper"]]
 
-# Lesser and Greater Rift are the two selectable DIFFICULTIES tiers; Endless
-# (below, via ENDLESS_BASE) is a separate infinite-scaling mode. Ascendant
-# isn't its own selectable tier — ENDLESS_BASE just reuses its numbers.
+# Lesser and Greater Rift are the two selectable DIFFICULTIES tiers (the
+# Endless Rift is a survival mode, scripts/survivors).
 const DIFFICULTIES := [
 	{"id": "lesser", "name": "Lesser Rift", "floors": 7, "monster_hp": 32, "monster_dmg": 4, "coin": [18, 34], "crystal": [5, 11], "token_base": 10, "detector_chance": 0.08, "power": "Low", "rec_power": 75},
 	# Unlocked by GameState.greater_rift_unlocked() (seal 3 rifts) rather than
 	# Guild Management currency — sits between Lesser and the Ascendant-
-	# equivalent ENDLESS_BASE below. First-draft numbers, tunable after playing.
+	# First-draft numbers, tunable after playing.
 	{"id": "greater", "name": "Greater Rift", "floors": 8, "monster_hp": 105, "monster_dmg": 11, "coin": [40, 70], "crystal": [11, 20], "token_base": 18, "detector_chance": 0.14, "power": "Medium", "rec_power": 150},
 ]
 
-# Endless Rift scales forever off these base stats (matches the HTML
-# version's ENDLESS_BASE, which is Ascendant Rift's numbers regardless of
-# whether Ascendant itself is a selectable tier in this port).
-const ENDLESS_BASE := {"monster_hp": 125, "monster_dmg": 14, "coin": [85, 140], "crystal": [20, 36], "token_base": 36, "detector_chance": 0.22, "rec_power": 280}
+## The power the Rift Hall compares against for the Endless Rift (survivors).
+const ENDLESS_REC_POWER := 280
 
 ## Rift Map ranks — reuses the hero-rank vocabulary (F-S) extended with two
 ## rarer tiers (SS/SSS) for the map's random rift rolls. Weights preserve the

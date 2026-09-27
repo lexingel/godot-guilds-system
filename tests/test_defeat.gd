@@ -13,7 +13,7 @@ func run() -> void:
 	GameState.heroes.append(h)
 	var ids: Array[String] = [h.id]
 	GameState.runs_started = 3
-	GameState.start_run("greater", ids, null, false, false)
+	GameState.start_run("greater", ids, null, false)
 	GameState.engage_node()
 	var st: Dictionary = GameState.run["node_state"]["combat_state"]
 	for m in st["monsters"]:

@@ -237,7 +237,6 @@ func milestone_progress(m: Dictionary) -> int:
 		"campaign_act": return campaign_act
 		"flawless_rifts": return int(quest_tally.get("flawless_rifts", 0))
 		"tower_best": return tower_best
-		"endless_cycle": return best_endless_cycle
 		"endless_time": return best_endless_time
 		"daily_clears": return daily_clears
 		"daily_streak": return daily_streak

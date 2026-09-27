@@ -386,8 +386,6 @@ func _render_history(v: VBoxContainer) -> void:
 		var what := "Day %d · %s · floor %s" % [int(e["day"]), e["kind"], e["floor"]]
 		if e.has("time"):
 			what = "Day %d · %s · %d:%02d · %d kills" % [int(e["day"]), e["kind"], int(e["time"]) / 60, int(e["time"]) % 60, int(e.get("kills", 0))]
-		elif int(e.get("cycle", 0)) > 0:
-			what += " · cycle %d" % (int(e["cycle"]) + 1)
 		var wl := _label(what, 13)
 		wl.custom_minimum_size.x = 300
 		row.add_child(wl)
@@ -1102,7 +1100,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Endless Rift", "A real-time survival run. You steer the first hero you pick (WASD, arrows, or drag); the rest follow and every hero attacks on their own, with Abilities firing on a timer. Foes pour in from every side and get tougher each minute; a ring closes in every 45 seconds, an elite comes each minute and a warden every 5 minutes (it calls the horde at half health). Collect shards to level up and pick 1 of 3 upgrades. Fallen companions get back up after 15 seconds; the run ends when your lead falls. Pays coins, crystals and XP for time and kills, plus loot for elites and wardens."],
 		["Hero voices", "A hero's trait sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."],
 		["Boss phases", "Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn."],
-		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Endless and B-rank+ mapped rifts give them two. Hover the badges on their plate to read them."],
+		["Elite affixes", "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). B-rank+ mapped rifts give them two. Hover the badges on their plate to read them."],
 		["Boons", "Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower."],
 		["Guild Orders", "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."],
 		["Rift Map & Riftbreak", "6 rifts rotate on the map, each with a rank (F through SSS) and a countdown — higher rank means a shorter fuse. An unaddressed rift Riftbreaks, forcing an encounter (or a resource penalty) the next time you return to the Terminal."],

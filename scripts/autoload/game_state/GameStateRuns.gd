@@ -8,7 +8,7 @@ extends "res://scripts/autoload/game_state/GameStateModes.gd"
 ## relic_rarity_floor_down is read directly against Main.gd's
 ## _pending_rift_rank at Party Assembly's starting-relic roll (that roll
 ## happens before a `diff`/run even exists, so it can't flow through here).
-func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, hardcore: bool, endless: bool, rift_rank: String = "") -> void:
+func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, hardcore: bool, rift_rank: String = "") -> void:
 	var shield := 0
 	for r in Combat.equipped_relics():
 		shield += r.hp
@@ -18,19 +18,17 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		next_id += 1
 		starting_relic.equipped = false
 		relics.append(starting_relic)
-	var diff := Combat.endless_diff_for_cycle(0)
-	if not endless:
-		diff = GameData.DIFFICULTIES[0]
-		for d in GameData.DIFFICULTIES:
-			if d["id"] == diff_id:
-				diff = d
+	var diff: Dictionary = GameData.DIFFICULTIES[0]
+	for d in GameData.DIFFICULTIES:
+		if d["id"] == diff_id:
+			diff = d
 	diff = _apply_rift_rank_modifiers(diff, rift_rank)
-	var training := runs_started == 0 and not endless and rift_rank == ""
+	var training := runs_started == 0 and rift_rank == ""
 	if training:
 		diff = _apply_training(diff)
 	runs_started += 1
 	run = {
-		"diff_id": diff_id, "endless": endless, "cycle": 0, "hardcore": hardcore,
+		"diff_id": diff_id, "hardcore": hardcore,
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
@@ -48,16 +46,14 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 
 
 ## The rift rank newly generated items drop at (GameData.ITEM_RANK_MULT): a
-## Rift Map rift's own rank; Greater Rift reads as D; Endless climbs one rank
-## per cycle from D; Lesser and anything outside a run (shop restock etc.) is F.
+## Rift Map rift's own rank; Greater Rift reads as D; Lesser and anything
+## outside a run (shop restock etc.) is F.
 func loot_rank() -> String:
 	if run.is_empty():
 		return "F"
 	var mapped: String = str(run.get("rift_rank", ""))
 	if mapped != "":
 		return mapped
-	if run.get("endless", false):
-		return str(GameData.RIFT_RANKS[min(GameData.RIFT_RANKS.size() - 1, 2 + int(run.get("cycle", 0)))]["id"])
 	if run.get("diff_id", "") == "greater":
 		return "D"
 	return "F"
@@ -155,7 +151,7 @@ func engage_node() -> void:
 	if run.has("tower"):
 		for h in party:
 			h.hp = Combat.max_hp(h)
-	seed(hash([int(run.get("seed", 0)), int(run.get("cycle", 0)), int(run["pos"])]))
+	seed(hash([int(run.get("seed", 0)), int(run["pos"])]))
 	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
 	randomize()
 	var prior_bg_idx := int(run["node_state"].get("bg_idx", -1))
@@ -806,7 +802,7 @@ func seal_rift() -> void:
 	var earned_tokens := int(round(float(diff["token_base"]) * token_mult))
 	var got_detector := false
 	if randf() < float(diff["detector_chance"]) + detector_drop_bonus():
-		var tier: String = "ascendant" if run.get("endless", false) else str(diff["id"])
+		var tier: String = str(diff["id"])
 		detectors.append({"id": "d" + str(next_id), "tier": tier})
 		next_id += 1
 		got_detector = true
@@ -871,33 +867,9 @@ func seal_rift() -> void:
 	if not bounty.is_empty():
 		coins += int(bounty.get("coins", 0))
 		add_reputation(int(bounty.get("reputation", 0)))
-	if run.get("endless", false):
-		var new_cycle: int = int(run.get("cycle", 0)) + 1
-		if new_cycle > best_endless_cycle:
-			best_endless_cycle = new_cycle
-		run["cycle"] = new_cycle
-		var extra := Combat.build_layers(Combat.endless_diff_for_cycle(new_cycle))
-		var layers: Array = run["layers"]
-		var old_len := layers.size()
-		layers.append_array(extra)
-		run["layers"] = layers
-		run["pos"] = old_len
-		run["node_state"] = {}
-		run["boss_rounds"] = 0
-		auto_resolve_single_option()
-		run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "continuing": true, "cycle": new_cycle, "flavor": flavor, "bounty": bounty}
-		save()
-		state_changed.emit()
-		return
 	run["sealed"] = {"tokens": earned_tokens, "fast_clear": fast_clear, "got_detector": got_detector, "got_stone": got_stone, "flavor": flavor, "bounty": bounty}
 	if run.has("daily"):
 		run["sealed"]["daily"] = _complete_daily()
-	save()
-	state_changed.emit()
-
-
-func continue_endless() -> void:
-	run["sealed"] = null
 	save()
 	state_changed.emit()
 
@@ -1217,7 +1189,7 @@ func start_map_rift(slot_idx: int, hero_ids: Array[String], starting_relic: Reli
 	var bounty: Dictionary = rift_map[slot_idx].get("bounty", {})
 	var uid := str(rift_map[slot_idx].get("uid", ""))
 	rift_map[slot_idx] = {}
-	start_run("lesser", hero_ids, starting_relic, false, false, rank)
+	start_run("lesser", hero_ids, starting_relic, false, rank)
 	run["map_uid"] = uid
 	if not bounty.is_empty():
 		run["bounty"] = bounty
@@ -1256,7 +1228,7 @@ func start_riftbreak_encounter() -> void:
 	for h in available:
 		hero_ids.append(h.id)
 	run = {
-		"diff_id": "lesser", "endless": false, "cycle": 0, "hardcore": false,
+		"diff_id": "lesser", "hardcore": false,
 		"layers": [{"options": ["combat"]}], "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": 0, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,

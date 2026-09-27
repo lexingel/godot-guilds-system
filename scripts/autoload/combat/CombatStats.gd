@@ -174,12 +174,13 @@ func power_of(h: Hero) -> int:
 ## The power a party should bring to a rift: its difficulty's rec_power
 ## (Endless = cycle 0), nudged up by a mapped rift's rank modifiers. The
 ## difficulty curve was tuned against this ratio — see MONSTER_FLOOR_SCALE.
-func recommended_power(diff_id: String, endless: bool, rift_rank: String = "") -> int:
-	var diff: Dictionary = endless_diff_for_cycle(0) if endless else GameData.DIFFICULTIES[0]
-	if not endless:
-		for d in GameData.DIFFICULTIES:
-			if d["id"] == diff_id:
-				diff = d
+func recommended_power(diff_id: String, rift_rank: String = "") -> int:
+	if diff_id == "endless":
+		return GameData.ENDLESS_REC_POWER
+	var diff: Dictionary = GameData.DIFFICULTIES[0]
+	for d in GameData.DIFFICULTIES:
+		if d["id"] == diff_id:
+			diff = d
 	var mods: Dictionary = GameData.RIFT_RANK_MODIFIERS.get(rift_rank, {})
 	return int(round(float(diff["rec_power"]) * sqrt(float(mods.get("monster_hp_mult", 1.0)) * float(mods.get("monster_dmg_mult", 1.0)))))
 
@@ -297,22 +298,6 @@ func pick_scar_name(existing: Array[String]) -> String:
 const HERO_INNATE_MULT := 0.6
 
 
-func endless_diff_for_cycle(cycle: int) -> Dictionary:
-	var mult := 1.0 + cycle * ENDLESS_CYCLE_GROWTH
-	# Rewards grow slower than the foes (docs/economy.md): at the foes' rate
-	# one Endless attempt paid as much as ~20 Greater runs.
-	var reward_mult := 1.0 + cycle * ENDLESS_REWARD_GROWTH
-	var base := GameData.ENDLESS_BASE
-	return {
-		"id": "endless", "name": "Endless Rift", "floors": 6, "power": "Extreme",
-		"monster_hp": int(round(base["monster_hp"] * mult)), "monster_dmg": int(round(base["monster_dmg"] * mult)),
-		"coin": [int(round(base["coin"][0] * reward_mult)), int(round(base["coin"][1] * reward_mult))],
-		"crystal": [int(round(base["crystal"][0] * reward_mult)), int(round(base["crystal"][1] * reward_mult))],
-		"token_base": int(round(base["token_base"] * reward_mult)), "detector_chance": base["detector_chance"],
-		"rec_power": int(round(base["rec_power"] * mult)),
-	}
-const ENDLESS_CYCLE_GROWTH := 0.5
-const ENDLESS_REWARD_GROWTH := 0.2
 
 
 func equipped_relics() -> Array[Relic]:

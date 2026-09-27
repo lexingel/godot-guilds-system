@@ -454,7 +454,7 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 			phases.erase("summon")
 		main["phase"] = str(phases[randi() % phases.size()])
 	elif kind == "elite":
-		_roll_affixes(main, 2 if diff.get("id") == "endless" or diff.get("elite_chance_up", false) else 1)
+		_roll_affixes(main, 2 if diff.get("elite_chance_up", false) else 1)
 	main["max_hp"] = main["hp"]
 	main["type"] = GameData.RELIC_TYPES[randi() % GameData.RELIC_TYPES.size()]
 	monsters.append(main)

@@ -941,7 +941,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		victory_frame.add_child(victory_col)
 
 		# A level-up chime, once per won fight (keyed by the node position).
-		var win_key := "win%d:%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0)), int(GameState.run.get("cycle", 0))]
+		var win_key := "win%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0))]
 		if result.has("heroes") and not _sfx_seen.has(win_key):
 			_sfx_seen[win_key] = true
 			if (result["heroes"] as Array).any(func(hs): return int(hs["lv1"]) > int(hs["lv0"])):

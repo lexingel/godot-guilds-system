@@ -26,7 +26,7 @@ func run() -> void:
 	check(GameState.tonics == GameData.TONIC_CAP, "tonics saved")
 
 	# ---- Swap + tonic in a fight
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	GameState.run["node_state"] = {}
 	GameState.choose_node_type("combat")
 	GameState.engage_node()

@@ -28,14 +28,10 @@ func _apply_rift_rank_modifiers(diff: Dictionary, rift_rank: String) -> Dictiona
 func _diff() -> Dictionary:
 	if run.has("tower"):
 		return _tower_diff(tower_floor_info(int(run["tower"])))
-	var diff: Dictionary
-	if run.get("endless", false):
-		diff = Combat.endless_diff_for_cycle(int(run.get("cycle", 0)))
-	else:
-		diff = GameData.DIFFICULTIES[0]
-		for d in GameData.DIFFICULTIES:
-			if d["id"] == run["diff_id"]:
-				diff = d
+	var diff: Dictionary = GameData.DIFFICULTIES[0]
+	for d in GameData.DIFFICULTIES:
+		if d["id"] == run["diff_id"]:
+			diff = d
 	if run.get("is_riftbreak", false):
 		return _apply_riftbreak_severity(diff, int(run.get("riftbreak_severity", 0)))
 	diff = _apply_rift_rank_modifiers(diff, str(run.get("rift_rank", "")))
@@ -112,7 +108,7 @@ func finale_recommended_power() -> int:
 	var act := current_act()
 	if act.is_empty():
 		return 0
-	return int(round(Combat.recommended_power(str(act["tier"]), false) * float(act["mult"])))
+	return int(round(Combat.recommended_power(str(act["tier"])) * float(act["mult"])))
 
 
 ## A biome for a new rift: the Vale in Act I, the Vale or the Marshes in Act
@@ -122,10 +118,8 @@ func pick_biome() -> String:
 	return str(open[randi() % open.size()])
 
 
-## The run's biome (Endless rotates through all three, one per cycle).
+## The run's biome.
 func run_biome() -> String:
-	if run.get("endless", false):
-		return ["vale", "marsh", "ashen"][int(run.get("cycle", 0)) % 3]
 	return str(run.get("biome", "vale"))
 
 
@@ -218,8 +212,6 @@ func _complete_daily() -> Dictionary:
 func _run_label() -> String:
 	if run.has("daily"):
 		return "Daily Rift"
-	if run.get("endless", false):
-		return "Endless Rift"
 	if str(run.get("rift_rank", "")) != "":
 		return "Rank %s rift" % run["rift_rank"]
 	if int(run.get("finale", 0)) > 0:
@@ -236,7 +228,7 @@ func _record_run(outcome: String) -> void:
 		names.append(h.name.split(" the ")[0])
 	var entry := {"day": day, "kind": _run_label(), "result": outcome,
 		"floor": "%d/%d" % [mini(int(run.get("pos", 0)) + 1, (run.get("layers", []) as Array).size()), (run.get("layers", []) as Array).size()],
-		"cycle": int(run.get("cycle", 0)), "heroes": names, "boons": run.get("boons", []),
+		"heroes": names, "boons": run.get("boons", []),
 		"coins": coins - int(run.get("start_coins", coins)), "crystals": crystals - int(run.get("start_crystals", crystals))}
 	run_history.push_front(entry)
 	if run_history.size() > GameData.RUN_HISTORY_MAX:

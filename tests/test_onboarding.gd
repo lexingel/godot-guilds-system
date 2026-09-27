@@ -21,12 +21,12 @@ func run() -> void:
 		GameState.next_id += 1
 		GameState.heroes.append(h)
 		ids.append(h.id)
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	check(GameState.run.get("training", false) and GameState.run["layers"].size() == GameData.TRAINING_RIFT["floors"], "first run is a %d-floor training rift" % GameData.TRAINING_RIFT["floors"])
 	check(GameState.run["layers"].all(func(l): return not (l["options"] as Array).has("elite")), "no elites in the training rift")
 	check(int(GameState._diff()["monster_hp"]) < int(GameData.DIFFICULTIES[0]["monster_hp"]), "training foes are weaker")
 	GameState.finish_run()
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	check(not GameState.run.get("training", false), "second run is a normal rift")
 	GameState.finish_run()
 	# Unlock announcements.

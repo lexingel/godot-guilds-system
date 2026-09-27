@@ -49,3 +49,11 @@ func run() -> void:
 	GameState.export_save_text()
 	check(GameState.last_export_day == GameState.day, "export remembers the day")
 	GameState.delete_slot(9)
+
+	# A save caught in the old floor-by-floor Endless Rift loads with that run closed.
+	var old_endless := d.duplicate(true)
+	old_endless["run"] = {"diff_id": "endless", "endless": true, "cycle": 2, "layers": [], "pos": 0, "hero_ids": []}
+	GameState.pending_toasts.clear()
+	check(GameState.import_save_text(JSON.stringify(old_endless), 9) == "" and GameState.load_save(), "an old Endless save loads")
+	check(GameState.run.is_empty() and GameState.pending_toasts.any(func(t): return str(t["title"]).contains("Endless")), "its run is closed, with a notice")
+	GameState.delete_slot(9)

@@ -13,7 +13,7 @@ func _party(n_idle: int) -> Array[String]:
 		GameState.heroes.append(h)
 		if i < 3:
 			ids.append(h.id)
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	return ids
 
 

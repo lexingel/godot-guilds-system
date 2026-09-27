@@ -223,7 +223,7 @@ func _run_bar(in_combat: bool) -> Control:
 	var total_layers: int = (GameState.run["layers"] as Array).size()
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
-	var cycle_label := (" (cycle %d)" % (int(GameState.run["cycle"]) + 1)) if GameState.run.get("endless", false) else ""
+	var cycle_label := ""
 	if GameState.run.has("tower"):
 		cycle_label = " — Floor %d" % int(GameState.run["tower"])
 	top.add_child(_label("%s%s" % [diff["name"], cycle_label], 16))
@@ -423,20 +423,13 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(_label("Bounty claimed: +%d Coins, +%d Reputation" % [int(bounty.get("coins", 0)), int(bounty.get("reputation", 0))], 12, true))
 		if str(sealed_dict.get("flavor", "")) != "":
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
-		if sealed_dict.get("continuing", false):
-			v.add_child(_label("Endless cycle %d begins..." % int(sealed_dict["cycle"])))
-			v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue Endless Run", func():
-				GameState.continue_endless()
-				render()
-			))
-		else:
-			for line in _run_summary_lines():
-				v.add_child(_label(line, 12, true))
-			v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
-				GameState.finish_run()
-				screen = "terminal"
-				render()
-			))
+		for line in _run_summary_lines():
+			v.add_child(_label(line, 12, true))
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to Terminal", func():
+			GameState.finish_run()
+			screen = "terminal"
+			render()
+		))
 		return
 
 	if not is_combat_kind:

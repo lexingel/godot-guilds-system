@@ -102,7 +102,7 @@ func _orders() -> void:
 		GameState.heroes.append(h)
 		ids.append(h.id)
 	GameState.runs_started = 3
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	check(GameState.order_blocker("rally") != "" and GameState.order_blocker("requisition") != "", "rally/requisition need their moment")
 	# Supply Drop heals.
 	var h0 := GameState.find_hero(ids[0])
@@ -125,7 +125,7 @@ func _orders() -> void:
 	check(int(GameState.run.get("orders_used", 0)) == 2, "orders used survive a reload")
 	GameState.finish_run()
 	# Scout Ahead rerolls a fork; Requisition rerolls loot.
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	GameState.run["pos"] = 1
 	GameState.run["chosen"] = {}
 	var before: Array = (GameState.current_layer_options() as Array).duplicate()

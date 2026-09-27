@@ -25,7 +25,6 @@ func reset() -> void:
 	caps = {}
 	current_champion = null
 	champion_offers = []
-	best_endless_cycle = 0
 	daily_attempt_day = -1
 	daily_clears = 0
 	daily_streak = 0
@@ -178,7 +177,6 @@ func load_save() -> bool:
 	if current_champion:
 		migrate_hero_skill_keys(current_champion)
 	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
-	best_endless_cycle = data.get("best_endless_cycle", 0)
 	tower_best = int(data.get("tower_best", 0))
 	daily_attempt_day = int(data.get("daily_attempt_day", -1))
 	daily_clears = int(data.get("daily_clears", 0))
@@ -201,7 +199,7 @@ func load_save() -> bool:
 		campaign_act = int(data["campaign_act"])
 	else:
 		# A guild from before the campaign keeps what it had unlocked.
-		campaign_act = 3 if best_endless_cycle > 0 else (2 if rifts_sealed >= 3 else 1)
+		campaign_act = 3 if int(data.get("best_endless_cycle", 0)) > 0 else (2 if rifts_sealed >= 3 else 1)
 	hints_seen = data.get("hints_seen", [])
 	last_export_day = int(data.get("last_export_day", -1))
 	tips_off = bool(data.get("tips_off", false))
@@ -215,6 +213,12 @@ func load_save() -> bool:
 	guide_hidden = data.get("guide_hidden", false)
 
 	var run_data: Dictionary = data.get("run", {})
+	if run_data.get("endless", false):
+		# A run of the old, floor-by-floor Endless Rift: it's a survival mode
+		# now, so the run ends here (heroes keep their HP and loot).
+		run_data = {}
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "The Endless Rift has changed",
+			"text": "Your Endless run was closed: it's a real-time survival run now (Rift Hall)."})
 	if run_data.is_empty():
 		run = {}
 	else:
@@ -225,8 +229,7 @@ func load_save() -> bool:
 		for k in chosen_raw:
 			chosen_fixed[int(k)] = chosen_raw[k]
 		run = {
-			"diff_id": run_data.get("diff_id", ""), "endless": run_data.get("endless", false),
-			"cycle": run_data.get("cycle", 0), "hardcore": run_data.get("hardcore", false),
+			"diff_id": run_data.get("diff_id", ""), "hardcore": run_data.get("hardcore", false),
 			"layers": run_data.get("layers", []), "pos": run_data.get("pos", 0),
 			"chosen": chosen_fixed, "hero_ids": run_data.get("hero_ids", []),
 			"shield": run_data.get("shield", 0), "boss_rounds": run_data.get("boss_rounds", 0),
@@ -259,7 +262,7 @@ func start_finale(hero_ids: Array[String], starting_relic: Relic) -> void:
 	if not finale_ready():
 		return
 	var act := current_act()
-	start_run(str(act["tier"]), hero_ids, starting_relic, false, false)
+	start_run(str(act["tier"]), hero_ids, starting_relic, false)
 	run["finale"] = int(act["act"])
 	run["training"] = false
 	run["biome"] = str(GameData.ACT_BIOME[int(act["act"])])
@@ -271,7 +274,7 @@ func start_daily(hero_ids: Array[String]) -> void:
 	if not daily_available():
 		return
 	var info := daily_info()
-	start_run(str(info["diff_id"]), hero_ids, null, false, false)
+	start_run(str(info["diff_id"]), hero_ids, null, false)
 	run["daily"] = int(info["day"])
 	run["training"] = false
 	run["seed"] = int(info["seed"])
@@ -383,7 +386,7 @@ func start_tower(hero_ids: Array[String]) -> void:
 	for r in Combat.equipped_relics():
 		shield += r.hp
 	run = {
-		"diff_id": "tower", "endless": false, "cycle": 0, "hardcore": false,
+		"diff_id": "tower", "hardcore": false,
 		"layers": [{"options": [info["kind"]]}], "pos": 0, "chosen": {},
 		"hero_ids": ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,

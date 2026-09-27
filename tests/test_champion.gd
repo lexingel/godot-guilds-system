@@ -36,7 +36,7 @@ func run() -> void:
 	var b: Dictionary = GameData.CHAMPION_BOONS[GameState.champion_role(c)]
 	var h0: Hero = GameState.find_hero(ids[0])
 	check(GameState.champion_boon(str(b["kind"])) == 0.0, "no boon outside a run")
-	GameState.start_run("lesser", ids, null, false, false)
+	GameState.start_run("lesser", ids, null, false)
 	check(GameState.champion_boon(str(b["kind"])) > 0.0, "boon %s active in a run" % b["kind"])
 	var src := Combat.hero_skill_sources(h0, str(b["kind"])).any(func(p): return p[0] == "Champion Boon")
 	check(src, "boon shows in the stat breakdown")
@@ -74,7 +74,7 @@ func run() -> void:
 	# Oath: 3 seals standing, then swear in.
 	GameState.run = {}
 	for i in 3:
-		GameState.start_run("lesser", ids, null, false, false)
+		GameState.start_run("lesser", ids, null, false)
 		c.hp = Combat.max_hp(c)
 		GameState.seal_rift()
 		GameState.finish_run() if GameState.has_method("finish_run") else null

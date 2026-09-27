@@ -47,7 +47,6 @@ var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
 var current_champion: Hero = null
 var champion_offers: Array[Hero] = []   # pick one to replace current_champion (refreshed each seal)
-var best_endless_cycle: int = 0
 var daily_attempt_day: int = -1  # daily_id() of the last Daily Rift started (one a day)
 var daily_clears: int = 0
 var daily_streak: int = 0
@@ -333,8 +332,8 @@ func _run_for_save() -> Dictionary:
 	if run.is_empty():
 		return {}
 	var out := {
-		"diff_id": run.get("diff_id", ""), "endless": run.get("endless", false),
-		"cycle": run.get("cycle", 0), "hardcore": run.get("hardcore", false),
+		"diff_id": run.get("diff_id", ""),
+		"hardcore": run.get("hardcore", false),
 		"layers": run.get("layers", []), "pos": run.get("pos", 0),
 		"chosen": run.get("chosen", {}), "hero_ids": run.get("hero_ids", []),
 		"shield": run.get("shield", 0), "boss_rounds": run.get("boss_rounds", 0),
@@ -521,7 +520,6 @@ func save() -> void:
 		"upgrades": upgrades, "caps": caps,
 		"current_champion": current_champion.to_dict() if current_champion else null,
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
-		"best_endless_cycle": best_endless_cycle,
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "boon_set4_reached": boon_set4_reached,

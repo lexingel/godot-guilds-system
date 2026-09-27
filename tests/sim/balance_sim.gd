@@ -37,7 +37,8 @@ func _ready() -> void:
 		return
 	if not TOWER_ONLY:
 		for name in PROFILES:
-			_profile(name, PROFILES[name])
+			if PROFILES[name][0] != "endless":   # Endless is a survival run: `-- survivors`
+				_profile(name, PROFILES[name])
 	for name in PROFILES:
 		_tower(name, PROFILES[name])
 	get_tree().quit()
@@ -102,7 +103,6 @@ func _profile(name: String, p: Array) -> void:
 	var ko_total := 0
 	var boss_hp := 0.0
 	var boss_reached := 0
-	var cycles: Array[int] = []
 	var power_sum := 0.0
 	var fail_at := {}
 	for s in N:
@@ -110,40 +110,24 @@ func _profile(name: String, p: Array) -> void:
 		var party := _build_party(p)
 		for h in party:
 			power_sum += Combat.power_of(h)
-		if p[0] == "endless":
-			var c := 0
-			while c < 10:
-				var res := _run_rift(party, Combat.endless_diff_for_cycle(c))
-				if not res["cleared"]:
-					break
-				c += 1
-			cycles.append(c)
+		var diff: Dictionary = GameData.DIFFICULTIES[0 if p[0] == "lesser" else 1]
+		var res := _run_rift(party, diff)
+		if res["cleared"]:
+			clears += 1
+			_tokens += float(diff["token_base"])
 		else:
-			var diff: Dictionary = GameData.DIFFICULTIES[0 if p[0] == "lesser" else 1]
-			var res := _run_rift(party, diff)
-			if res["cleared"]:
-				clears += 1
-				_tokens += float(diff["token_base"])
-			else:
-				fail_at[res["fail_kind"]] = int(fail_at.get(res["fail_kind"], 0)) + 1
-			if res["boss_hp"] >= 0.0:
-				boss_reached += 1
-				boss_hp += res["boss_hp"]
+			fail_at[res["fail_kind"]] = int(fail_at.get(res["fail_kind"], 0)) + 1
+		if res["boss_hp"] >= 0.0:
+			boss_reached += 1
+			boss_hp += res["boss_hp"]
 		for h in party:
 			if h.hp <= 0:
 				ko_total += 1
 	print("   %s avg party power %.0f" % [name, power_sum / N])
-	var runs := float(N) if p[0] != "endless" else float(N)   # Endless: per attempt (several cycles)
+	var runs := float(N)
 	print("   %s income per run: %.0f coins, %.0f crystals, %.1f tokens, loot worth %.0f coins" % [name, _coins / runs, _crystals / runs, _tokens / runs, _loot_value / runs])
-	if p[0] == "endless":
-		cycles.sort()
-		var total := 0
-		for c in cycles:
-			total += c
-		print("%-24s cycles cleared: median %d, mean %.1f, min %d, max %d" % [name, cycles[N / 2], float(total) / N, cycles[0], cycles[-1]])
-	else:
-		print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
-			name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
+	print("%-24s clear %5.1f%%  party HP entering boss %3.0f%%  heroes down at end %.2f  failed at: %s" % [
+		name, 100.0 * clears / N, 100.0 * boss_hp / max(1, boss_reached), float(ko_total) / N, fail_at])
 
 
 ## A fresh party for a profile (Champion first), gear and relics equipped.
