@@ -571,7 +571,7 @@ func export_save_text() -> String:
 func import_save_text(text: String, slot: int) -> String:
 	var parsed = JSON.parse_string(text.strip_edges())
 	if typeof(parsed) != TYPE_DICTIONARY or String(parsed.get("guild_name", "")) == "":
-		return "That doesn't look like a Guild System save"
+		return "That doesn't look like a Guildhold save"
 	if int(parsed.get("save_version", 1)) > SAVE_VERSION:
 		return "That save is from a newer version of the game"
 	# The slot's current save is kept as .bak by _write_slot.

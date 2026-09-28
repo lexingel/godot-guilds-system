@@ -716,7 +716,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 func _render_title(v: VBoxContainer) -> void:
 	v.add_child(_banner(GameData.TITLE_BG, 760, 320))
 
-	var title_lbl := _label("Guild System", 30)
+	var title_lbl := _label("Guildhold", 30)
 	title_lbl.add_theme_font_override("font", DISPLAY_FONT)
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -853,7 +853,7 @@ func _render_load_game(v: VBoxContainer) -> void:
 
 func _render_credits(v: VBoxContainer) -> void:
 	v.add_child(_label("Credits", 20))
-	v.add_child(_label("Guild System", 18))
+	v.add_child(_label("Guildhold", 18))
 	v.add_child(_wrap_label("A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.", 13, true))
 	v.add_child(_hsep())
 	v.add_child(_label("Version %s" % _version(), 13))

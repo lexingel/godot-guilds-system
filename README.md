@@ -1,4 +1,8 @@
-# Guilds System — Godot port
+# Guildhold
+
+A guild-management roguelite in Godot 4 (formerly "Guilds System"). Web test build: https://lexingel.github.io/godot-guilds-system/
+
+## Origins: a Godot port
 
 A from-scratch GDScript port of `guild-system.html`'s core loop, per the plan
 recorded in `dreamy-munching-whistle.md`. Open `project.godot` in Godot 4.x
