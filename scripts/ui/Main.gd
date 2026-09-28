@@ -841,6 +841,8 @@ func _render_title(v: VBoxContainer) -> void:
 
 	var title_lbl := _on_art(_label("Guildhold", 60), 12)
 	title_lbl.add_theme_font_override("font", DISPLAY_FONT)
+	title_lbl.language = "en"   # the name keeps its dotless I whatever the game's language
+	title_lbl.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.87, 0.62))
 	title_lbl.add_theme_color_override("font_shadow_color", Color(1.0, 0.5, 0.15, 0.35))
 	title_lbl.add_theme_constant_override("shadow_outline_size", 22)
