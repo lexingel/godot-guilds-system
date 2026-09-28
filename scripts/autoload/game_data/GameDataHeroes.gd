@@ -295,13 +295,23 @@ const KEYWORDS := [
 
 
 static var _keyword_res: Array = []
+static var _keyword_locale := ""
 
-## [title, definition, RegEx] for every KEYWORDS entry (compiled once).
+## [title, definition, RegEx] for every KEYWORDS entry (compiled once per
+## language). A translated pattern (tr.po) matches alongside the English one;
+## (*UCP) makes word boundaries treat Turkish letters (ş, ı, ç) as letters.
 static func keyword_regexes() -> Array:
-	if _keyword_res.is_empty():
+	var loc := TranslationServer.get_locale()
+	if _keyword_res.is_empty() or loc != _keyword_locale:
+		_keyword_locale = loc
+		_keyword_res = []
 		for k in KEYWORDS:
+			var pat := str(k[0])
+			var local := String(TranslationServer.translate(pat))
+			if local != pat:
+				pat += "|" + local
 			var re := RegEx.new()
-			re.compile("(?i)\\b(" + str(k[0]) + ")\\b")
+			re.compile("(*UCP)(?i)\\b(" + pat + ")\\b")
 			_keyword_res.append([str(k[1]), str(k[2]), re])
 	return _keyword_res
 

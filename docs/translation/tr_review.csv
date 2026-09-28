@@ -258,8 +258,8 @@ Fights: the main actions fit one row (More holds the rest); hover to preview Mom
 Warrior,Savaşçı,scripts/autoload/game_data/GameDataHeroes.gd:4
 Ranger,Korucu,scripts/autoload/game_data/GameDataHeroes.gd:5
 Mage,Büyücü,scripts/autoload/game_data/GameDataHeroes.gd:6
-Cleric,Rahip,scripts/autoload/game_data/GameDataHeroes.gd:685
-Rogue,Haydut,scripts/autoload/game_data/GameDataHeroes.gd:707
+Cleric,Rahip,scripts/autoload/game_data/GameDataHeroes.gd:695
+Rogue,Haydut,scripts/autoload/game_data/GameDataHeroes.gd:717
 Common,Sıradan,scripts/autoload/game_data/GameDataHeroes.gd:13
 Rare,Nadir,scripts/autoload/game_data/GameDataHeroes.gd:14
 Epic,Destansı,scripts/autoload/game_data/GameDataHeroes.gd:15
@@ -425,43 +425,43 @@ of Evasion,Kaçınma,scripts/autoload/game_data/GameDataHeroes.gd:265
 of Shadows,Gölgeler,scripts/autoload/game_data/GameDataHeroes.gd:265
 First-strike,İlk vuruş,scripts/autoload/game_data/GameDataHeroes.gd:274
 bonus damage on the party's opening round of every fight,her dövüşün ilk turunda ekibe ek hasar,scripts/autoload/game_data/GameDataHeroes.gd:274
-per round \\(stacking\\)|escalat\\w*,,scripts/autoload/game_data/GameDataHeroes.gd:275
+per round \\(stacking\\)|escalat\\w*,birikir|tırmanış\\w*|artan hasar\\w*,scripts/autoload/game_data/GameDataHeroes.gd:275
 Escalation,Tırmanış,scripts/autoload/game_data/GameDataHeroes.gd:275
 damage that keeps growing every round the fight goes on,dövüş sürdükçe her tur artan hasar,scripts/autoload/game_data/GameDataHeroes.gd:275
-hazard severity|hazard guard,,scripts/autoload/game_data/GameDataHeroes.gd:276
+hazard severity|hazard guard,tehlike şiddeti\\w*|tehlike koruması\\w*,scripts/autoload/game_data/GameDataHeroes.gd:276
 Hazard guard,Tehlike koruması,scripts/autoload/game_data/GameDataHeroes.gd:276
 "cuts the damage rift hazards (traps, fog, lava) deal to the party","yarık tehlikelerinin (tuzak, sis, lav) ekibe verdiği hasarı azaltır",scripts/autoload/game_data/GameDataHeroes.gd:276
-block a retaliation|dodge,,scripts/autoload/game_data/GameDataHeroes.gd:277
+block a retaliation|dodge,kaçınma\\w*|kaçın\\w*|karşılık vuruşu engel\\w*,scripts/autoload/game_data/GameDataHeroes.gd:277
 Dodge,Kaçınma,scripts/autoload/game_data/GameDataHeroes.gd:277
 chance to avoid a monster's attack completely,bir canavarın saldırısından tamamen kaçınma şansı,scripts/autoload/game_data/GameDataHeroes.gd:277
-mends?|mending,,scripts/autoload/game_data/GameDataHeroes.gd:278
+mends?|mending,[iİ]yileş\\w*,scripts/autoload/game_data/GameDataHeroes.gd:278
 Mend,İyileştirme,scripts/autoload/game_data/GameDataHeroes.gd:278
 the party heals a share of its HP at the end of every round,ekip her turun sonunda canının bir kısmını iyileştirir,scripts/autoload/game_data/GameDataHeroes.gd:278
-survive a wipe|wipe guard,,scripts/autoload/game_data/GameDataHeroes.gd:279
+survive a wipe|wipe guard,yok olma koruması\\w*|tüm ekip düşerken|ekip düşünce,scripts/autoload/game_data/GameDataHeroes.gd:279
 Wipe guard,Yok olma koruması,scripts/autoload/game_data/GameDataHeroes.gd:279
 "once per rift, the last hero standing survives a killing blow","yarık başına bir kez, ayakta kalan son kahraman öldürücü bir darbeden sağ çıkar",scripts/autoload/game_data/GameDataHeroes.gd:279
-take the hit|intercept,,scripts/autoload/game_data/GameDataHeroes.gd:280
+take the hit|intercept,araya girme\\w*|darbeyi alma\\w*,scripts/autoload/game_data/GameDataHeroes.gd:280
 Intercept,Araya girme,scripts/autoload/game_data/GameDataHeroes.gd:280
 step in front of an attack aimed at a wounded ally,yaralı bir müttefike yönelen saldırının önüne geç,scripts/autoload/game_data/GameDataHeroes.gd:280
-counter-attack|counters?,,scripts/autoload/game_data/GameDataHeroes.gd:281
+counter-attack|counters?,karşı saldırı\\w*,scripts/autoload/game_data/GameDataHeroes.gd:281
 Counter,Karşı saldırı,scripts/autoload/game_data/GameDataHeroes.gd:281
 strike back at the attacker after dodging or taking a heavy hit,kaçındıktan ya da ağır darbe aldıktan sonra saldırgana karşılık ver,scripts/autoload/game_data/GameDataHeroes.gd:281
-finish foes|execute,,scripts/autoload/game_data/GameDataHeroes.gd:282
+finish foes|execute,[iİ]nfaz\\w*|düşmanları bitir,scripts/autoload/game_data/GameDataHeroes.gd:282
 Execute,İnfaz,scripts/autoload/game_data/GameDataHeroes.gd:282
 instantly defeats a foe your hit leaves below the threshold,vuruşunun eşiğin altında bıraktığı düşmanı anında yener,scripts/autoload/game_data/GameDataHeroes.gd:282
-act again,,scripts/autoload/game_data/GameDataHeroes.gd:283
+act again,yeniden hamle\\w*|yeniden davran\\w*,scripts/autoload/game_data/GameDataHeroes.gd:283
 Extra turn,Ek sıra,scripts/autoload/game_data/GameDataHeroes.gd:283
 "the hero immediately takes another turn, once per round","kahraman hemen bir sıra daha oynar, tur başına bir kez",scripts/autoload/game_data/GameDataHeroes.gd:283
-shields?,,scripts/autoload/game_data/GameDataHeroes.gd:284
+shields?,kalkan\\w*,scripts/autoload/game_data/GameDataHeroes.gd:284
 Shield,Kalkan,scripts/autoload/game_data/GameDataHeroes.gd:284
 absorbs incoming damage before HP is lost,can kaybedilmeden önce gelen hasarı emer,scripts/autoload/game_data/GameDataHeroes.gd:284
 acting first|acting last,,scripts/autoload/game_data/GameDataHeroes.gd:285
 Turn order,Sıra,scripts/autoload/game_data/GameDataHeroes.gd:285
 everyone acts in Speed order each round; first/last means this round's order,her tur herkes Hız sırasıyla davranır; ilk/son bu turun sırası demektir,scripts/autoload/game_data/GameDataHeroes.gd:285
-turn speed|speed,,scripts/autoload/game_data/GameDataHeroes.gd:286
+turn speed|speed,sıra hızı\\w*|hız|hızı|hızın\\w*,scripts/autoload/game_data/GameDataHeroes.gd:286
 Speed,Hız,scripts/autoload/game_data/GameDataHeroes.gd:286
 "sets turn order each round, faster acts earlier","her tur sırayı belirler, hızlı olan önce davranır",scripts/autoload/game_data/GameDataHeroes.gd:286
-front row|back row,,scripts/autoload/game_data/GameDataHeroes.gd:287
+front row|back row,ön sıra\\w*|arka sıra\\w*,scripts/autoload/game_data/GameDataHeroes.gd:287
 Formation,Diziliş,scripts/autoload/game_data/GameDataHeroes.gd:287
 the front row draws about 3x as many monster attacks as the back row,"ön sıra, arka sıradan yaklaşık 3 kat fazla canavar saldırısı çeker",scripts/autoload/game_data/GameDataHeroes.gd:287
 Opener,Açılışçı,scripts/autoload/game_data/GameDataHeroes.gd:288
@@ -476,166 +476,167 @@ Sustain,Dayanıklılık,scripts/autoload/game_data/GameDataHeroes.gd:292
 "outlast: mending, lifesteal and shields","dayan: iyileşme, can çalma ve kalkanlar",scripts/autoload/game_data/GameDataHeroes.gd:292
 Executioner,Cellat,scripts/autoload/game_data/GameDataHeroes.gd:293
 "finish things: raw damage, executes, boss killing","işi bitir: saf hasar, infazlar, boss öldürme",scripts/autoload/game_data/GameDataHeroes.gd:293
-Killer's Eye,Katil Gözü,scripts/autoload/game_data/GameDataHeroes.gd:332
-Bloodrush,Kan Coşkusu,scripts/autoload/game_data/GameDataHeroes.gd:333
-Headhunter,Kelle Avcısı,scripts/autoload/game_data/GameDataHeroes.gd:334
-Stand Firm,Sağlam Dur,scripts/autoload/game_data/GameDataHeroes.gd:337
-Protector,Koruyucu,scripts/autoload/game_data/GameDataHeroes.gd:338
-Unbowed,Boyun Eğmez,scripts/autoload/game_data/GameDataHeroes.gd:339
-Quick Draw,Hızlı Çekiş,scripts/autoload/game_data/GameDataHeroes.gd:342
-Ambusher,Pusucu,scripts/autoload/game_data/GameDataHeroes.gd:343
-Opening Salvo,Açılış Yaylımı,scripts/autoload/game_data/GameDataHeroes.gd:344
-Second Wind,İkinci Nefes,scripts/autoload/game_data/GameDataHeroes.gd:347
-Long Fight,Uzun Dövüş,scripts/autoload/game_data/GameDataHeroes.gd:348
-Wear Them Down,Yıpratma,scripts/autoload/game_data/GameDataHeroes.gd:349
-Field Medic,Saha Hekimi,scripts/autoload/game_data/GameDataHeroes.gd:352
-Siphon,Emici,scripts/autoload/game_data/GameDataHeroes.gd:353
-Rallying Word,Toparlayan Söz,scripts/autoload/game_data/GameDataHeroes.gd:354
-Wary,Tetikte,scripts/autoload/game_data/GameDataHeroes.gd:357
-Brace,Siper,scripts/autoload/game_data/GameDataHeroes.gd:358
-Covering Stance,Kollayan Duruş,scripts/autoload/game_data/GameDataHeroes.gd:359
-Slippery,Kaygan,scripts/autoload/game_data/GameDataHeroes.gd:362
-Riposte,Karşılık,scripts/autoload/game_data/GameDataHeroes.gd:363
-Back-Row Shadow,Arka Sıra Gölgesi,scripts/autoload/game_data/GameDataHeroes.gd:364
-Last Bastion,Son Burç,scripts/autoload/game_data/GameDataHeroes.gd:367
-Oathkeeper,Yemin Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:368
-Rally,Toparlan,scripts/autoload/game_data/GameDataHeroes.gd:369
-Giant's Bane,Dev Belası,scripts/autoload/game_data/GameDataHeroes.gd:372
-Crushing Blow,Ezici Darbe,scripts/autoload/game_data/GameDataHeroes.gd:373
-Apex,Zirve,scripts/autoload/game_data/GameDataHeroes.gd:374
-Vanguard,Öncü,scripts/autoload/game_data/GameDataHeroes.gd:383
-Flanker,Kanat Vurucusu,scripts/autoload/game_data/GameDataHeroes.gd:385
-Overwatch,Gözcü,scripts/autoload/game_data/GameDataHeroes.gd:387
-Safe Distance,Güvenli Mesafe,scripts/autoload/game_data/GameDataHeroes.gd:389
-Sanctuary Line,Sığınak Hattı,scripts/autoload/game_data/GameDataHeroes.gd:391
-Might,Kudret,scripts/autoload/game_data/GameDataHeroes.gd:475
-Agility,Çeviklik,scripts/autoload/game_data/GameDataHeroes.gd:475
-+2% damage and +1.5% HP per point above 5,"5'in üstündeki her puan için +%2 hasar ve +%1,5 can",scripts/autoload/game_data/GameDataHeroes.gd:485
-"+2% speed, +0.8% dodge and +2% first-strike per point above 5","5'in üstündeki her puan için +%2 hız, +%0,8 kaçınma ve +%2 ilk vuruş",scripts/autoload/game_data/GameDataHeroes.gd:486
-+4% ability power and +0.2% mend per point above 5,"5'in üstündeki her puan için +%4 yetenek gücü ve +%0,2 iyileşme",scripts/autoload/game_data/GameDataHeroes.gd:487
-Healing Tonic,Şifa Toniği,scripts/autoload/game_data/GameDataHeroes.gd:522
-"Heals an ally 35% of max HP and cleanses burn, poison, chill, stun and curses.","Bir müttefiki en yüksek canının %35'i kadar iyileştirir; yanma, zehir, üşüme, sersemlik ve lanetleri temizler.",scripts/autoload/game_data/GameDataHeroes.gd:523
-Iron Tonic,Demir Toniği,scripts/autoload/game_data/GameDataHeroes.gd:524
-Wards an ally for 30% of their max HP.,Bir müttefike en yüksek canının %30'u kadar koruma verir.,scripts/autoload/game_data/GameDataHeroes.gd:525
-Focus Tonic,Odak Toniği,scripts/autoload/game_data/GameDataHeroes.gd:526
-+3 Momentum for the party.,Ekibe +3 İvme.,scripts/autoload/game_data/GameDataHeroes.gd:527
-A guild recruit swinging a borrowed blade.,Ödünç bir kılıç sallayan lonca acemisi.,scripts/autoload/game_data/GameDataHeroes.gd:621
-"Slow, sturdy, and hard to put down.","Yavaş, dayanıklı ve devirmesi zor.",scripts/autoload/game_data/GameDataHeroes.gd:622
-Wins the exchange before it starts.,Çatışmayı başlamadan kazanır.,scripts/autoload/game_data/GameDataHeroes.gd:623
-A wall with opinions.,Fikirleri olan bir duvar.,scripts/autoload/game_data/GameDataHeroes.gd:624
-Considers armor a personal insult.,Zırhı kişisel bir hakaret sayar.,scripts/autoload/game_data/GameDataHeroes.gd:625
-"Rift-forged plate, dented and unbothered.",Yarıkta dövülmüş zırh; ezik ama umursamaz.,scripts/autoload/game_data/GameDataHeroes.gd:626
-Trades wounds and wins the trade.,Yara takas eder ve takası kazanır.,scripts/autoload/game_data/GameDataHeroes.gd:627
-Runeblade,Rün Kılıcı,scripts/autoload/game_data/GameDataHeroes.gd:628
-Every strike is already inscribed.,Her vuruş önceden yazılmıştır.,scripts/autoload/game_data/GameDataHeroes.gd:628
-Ashen Templar,Küllü Tapınakçı,scripts/autoload/game_data/GameDataHeroes.gd:629
-Has died before. Didn't care for it.,Daha önce öldü. Pek hoşlanmadı.,scripts/autoload/game_data/GameDataHeroes.gd:629
-Rift Sovereign,Yarık Hükümdarı,scripts/autoload/game_data/GameDataHeroes.gd:630
-The Rift answers to almost nothing. Almost.,Yarık neredeyse hiçbir şeye boyun eğmez. Neredeyse.,scripts/autoload/game_data/GameDataHeroes.gd:630
-Patches the party between swings.,Kılıç savuruşları arasında ekibi yamalar.,scripts/autoload/game_data/GameDataHeroes.gd:633
-"Heavy armor, light feet.","Ağır zırh, hafif ayaklar.",scripts/autoload/game_data/GameDataHeroes.gd:634
-"First through the door, first to swing.","Kapıdan ilk giren, ilk vuran.",scripts/autoload/game_data/GameDataHeroes.gd:635
-The cold never bothered the plate much.,Soğuk zırhı pek rahatsız etmedi.,scripts/autoload/game_data/GameDataHeroes.gd:636
-"Gets angrier, not slower.","Yavaşlamaz, öfkelenir.",scripts/autoload/game_data/GameDataHeroes.gd:637
-"The last thing standing, on principle.",Prensip gereği ayakta kalan son şey.,scripts/autoload/game_data/GameDataHeroes.gd:638
-Stormguard,Fırtına Muhafızı,scripts/autoload/game_data/GameDataHeroes.gd:639
-Meets the charge before it lands.,Hücumu inmeden karşılar.,scripts/autoload/game_data/GameDataHeroes.gd:639
-Rift-Breaker,Yarık Kıran,scripts/autoload/game_data/GameDataHeroes.gd:640
-Puts the first crack in anything.,Her şeye ilk çatlağı açar.,scripts/autoload/game_data/GameDataHeroes.gd:640
-Sets more snares than the Rift can spring.,Yarığın tetikleyebileceğinden fazla tuzak kurar.,scripts/autoload/game_data/GameDataHeroes.gd:642
-Improvises a weapon out of whatever's at hand.,Eline ne geçerse ondan silah uydurur.,scripts/autoload/game_data/GameDataHeroes.gd:643
-Already knows where the floor gives way.,Zeminin nerede çökeceğini zaten bilir.,scripts/autoload/game_data/GameDataHeroes.gd:644
-One arrow. Rarely needs a second.,Tek ok. Nadiren ikincisi gerekir.,scripts/autoload/game_data/GameDataHeroes.gd:645
-The opening strike is the whole performance.,Açılış vuruşu gösterinin ta kendisi.,scripts/autoload/game_data/GameDataHeroes.gd:646
-Has walked through worse hallways than this.,Bundan beter koridorlardan geçti.,scripts/autoload/game_data/GameDataHeroes.gd:647
-Follows the lightning instead of waiting for thunder.,"Gök gürültüsünü beklemez, şimşeği izler.",scripts/autoload/game_data/GameDataHeroes.gd:648
-Reads a hallway before it reads back.,Koridor onu okumadan o koridoru okur.,scripts/autoload/game_data/GameDataHeroes.gd:649
-Sets the trap the Rift walks into instead.,Yarığın içine düşeceği tuzağı o kurar.,scripts/autoload/game_data/GameDataHeroes.gd:650
-Voidwalker,Boşluk Yürüyücüsü,scripts/autoload/game_data/GameDataHeroes.gd:651
-Half-stepped out of the fight before it began.,Dövüş başlamadan yarı yarıya dışına adım atmıştı.,scripts/autoload/game_data/GameDataHeroes.gd:651
-Tracks by scent when the light gives out.,Işık bitince kokuyla iz sürer.,scripts/autoload/game_data/GameDataHeroes.gd:654
-Knows exactly where to put an arrow.,Oku tam nereye atacağını bilir.,scripts/autoload/game_data/GameDataHeroes.gd:655
-Watches the dark so the party doesn't have to.,Ekip bakmasın diye karanlığı o izler.,scripts/autoload/game_data/GameDataHeroes.gd:656
-Field dressings from whatever's growing nearby.,Yakında ne yetişiyorsa ondan sargı.,scripts/autoload/game_data/GameDataHeroes.gd:657
-Gone before the echo catches up.,Yankı yetişmeden gitmiştir.,scripts/autoload/game_data/GameDataHeroes.gd:658
-The wind carries the first shot true.,Rüzgâr ilk atışı isabetle taşır.,scripts/autoload/game_data/GameDataHeroes.gd:659
-Rift-Piercer,Yarık Delen,scripts/autoload/game_data/GameDataHeroes.gd:660
-Finds the one seam every ward has.,Her korumanın tek zayıf dikişini bulur.,scripts/autoload/game_data/GameDataHeroes.gd:660
-Wintertide Archer,Kış Dalgası Okçusu,scripts/autoload/game_data/GameDataHeroes.gd:661
-Colder with every arrow loosed.,Attığı her okla daha soğuk.,scripts/autoload/game_data/GameDataHeroes.gd:661
-Rift-Eclipsed Warden,Yarık Tutulması Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:662
-Every shadow in the Rift owes her an arrow.,Yarıktaki her gölge ona bir ok borçlu.,scripts/autoload/game_data/GameDataHeroes.gd:662
-Still learning to hold a spark steady.,Bir kıvılcımı sabit tutmayı hâlâ öğreniyor.,scripts/autoload/game_data/GameDataHeroes.gd:664
-"Sparks first, thinks second.","Önce kıvılcım, sonra düşünce.",scripts/autoload/game_data/GameDataHeroes.gd:665
-Sees the trap a half-second before it triggers.,Tuzağı tetiklenmeden yarım saniye önce görür.,scripts/autoload/game_data/GameDataHeroes.gd:666
-Every spell warms up the next.,Her büyü bir sonrakini ısıtır.,scripts/autoload/game_data/GameDataHeroes.gd:667
-Studies the Rift's cold so it can't study back.,Yarığın soğuğunu inceler ki o da onu inceleyemesin.,scripts/autoload/game_data/GameDataHeroes.gd:668
-Weaves a ward faster than the Rift can break it.,Yarığın kırabileceğinden hızlı koruma örer.,scripts/autoload/game_data/GameDataHeroes.gd:669
-Calls down more with every passing second.,Geçen her saniyeyle daha fazlasını çağırır.,scripts/autoload/game_data/GameDataHeroes.gd:670
-Pyromancer,Ateş Büyücüsü,scripts/autoload/game_data/GameDataHeroes.gd:671
-The Rift itself seems to lean away.,Yarığın kendisi bile geri çekiliyor gibi.,scripts/autoload/game_data/GameDataHeroes.gd:671
-Archon of Storms,Fırtınaların Arkonu,scripts/autoload/game_data/GameDataHeroes.gd:672
-Opens every Warden's door with thunder.,Her Bekçinin kapısını gök gürültüsüyle açar.,scripts/autoload/game_data/GameDataHeroes.gd:672
-The Unbound,Zincirsiz,scripts/autoload/game_data/GameDataHeroes.gd:673
-No name holds it. No floor stops it.,Hiçbir ad onu tutamaz. Hiçbir kat onu durduramaz.,scripts/autoload/game_data/GameDataHeroes.gd:673
-Grows a ward out of nothing but will.,Yalnızca iradeden bir koruma büyütür.,scripts/autoload/game_data/GameDataHeroes.gd:676
-The first spell is always the quiet one.,İlk büyü hep sessiz olandır.,scripts/autoload/game_data/GameDataHeroes.gd:677
-Turns skin to something closer to bark.,Deriyi kabuğa yakın bir şeye çevirir.,scripts/autoload/game_data/GameDataHeroes.gd:678
-Bargains with the dark for one more round.,Bir tur daha için karanlıkla pazarlık eder.,scripts/autoload/game_data/GameDataHeroes.gd:679
-Reads the future in root and leaf.,Geleceği kökte ve yaprakta okur.,scripts/autoload/game_data/GameDataHeroes.gd:680
-Sees the strike land before it's thrown.,Darbeyi savrulmadan inerken görür.,scripts/autoload/game_data/GameDataHeroes.gd:681
-Ashbound Theorist,Küle Bağlı Kuramcı,scripts/autoload/game_data/GameDataHeroes.gd:682
-Every equation ends in fire.,Her denklem ateşle biter.,scripts/autoload/game_data/GameDataHeroes.gd:682
-Rift-Warden Magus,Yarık Bekçisi Magus,scripts/autoload/game_data/GameDataHeroes.gd:683
-Wards the floor before the Rift finishes forming it.,Yarık zemini oluşturmayı bitirmeden zemini korur.,scripts/autoload/game_data/GameDataHeroes.gd:683
-Sells bandages. Uses them too.,Sargı satar. Kullanır da.,scripts/autoload/game_data/GameDataHeroes.gd:685
-"Prays quietly, heals quietly.","Sessizce dua eder, sessizce iyileştirir.",scripts/autoload/game_data/GameDataHeroes.gd:686
-Carries a field kit for every wound.,Her yara için bir saha çantası taşır.,scripts/autoload/game_data/GameDataHeroes.gd:687
-Swings a censer like it owes him money.,Buhurdanı borcu varmış gibi sallar.,scripts/autoload/game_data/GameDataHeroes.gd:688
-Prays loudly enough to keep the party moving.,Ekibi yürütecek kadar yüksek sesle dua eder.,scripts/autoload/game_data/GameDataHeroes.gd:689
-"Faith, mostly. A blade, occasionally.",Çoğunlukla inanç. Ara sıra da kılıç.,scripts/autoload/game_data/GameDataHeroes.gd:690
-Faster hands than the Rift has wounds to give.,"Elleri, Yarığın açabileceği yaralardan hızlı.",scripts/autoload/game_data/GameDataHeroes.gd:691
-Dawnkeeper,Şafak Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:692
-Carries first light into the deepest floor.,İlk ışığı en derin kata taşır.,scripts/autoload/game_data/GameDataHeroes.gd:692
-Sanctified Shield,Kutsanmış Kalkan,scripts/autoload/game_data/GameDataHeroes.gd:693
-Swears the party will not fall today.,Ekibin bugün düşmeyeceğine yemin eder.,scripts/autoload/game_data/GameDataHeroes.gd:693
-Alchemist,Simyacı,scripts/autoload/game_data/GameDataHeroes.gd:694
-Brews faster than the Rift can wound.,Yarığın yaralayabileceğinden hızlı iksir yapar.,scripts/autoload/game_data/GameDataHeroes.gd:694
-"Prays with a lit candle, not a cold one.","Sönmüş değil, yanan bir mumla dua eder.",scripts/autoload/game_data/GameDataHeroes.gd:697
-Keeps the chill out of everyone but herself.,Soğuğu kendisi dışında herkesten uzak tutar.,scripts/autoload/game_data/GameDataHeroes.gd:698
-Blesses the blade before it's needed.,Kılıcı gerekmeden önce kutsar.,scripts/autoload/game_data/GameDataHeroes.gd:699
-A fire that doesn't go out in the cold.,Soğukta sönmeyen bir ateş.,scripts/autoload/game_data/GameDataHeroes.gd:700
-"Absolves the Rift of its sins, briefly.",Yarığın günahlarını kısa bir süreliğine bağışlar.,scripts/autoload/game_data/GameDataHeroes.gd:701
-"Fasts, prays, and somehow still heals faster.","Oruç tutar, dua eder ve yine de daha hızlı iyileştirir.",scripts/autoload/game_data/GameDataHeroes.gd:702
-Radiant Vanguard,Işıltılı Öncü,scripts/autoload/game_data/GameDataHeroes.gd:703
-"Leads with light, not caution.","Temkinle değil, ışıkla önderlik eder.",scripts/autoload/game_data/GameDataHeroes.gd:703
-Sainted Ember,Aziz Kor,scripts/autoload/game_data/GameDataHeroes.gd:704
-The Rift's worst still flinches from her first word.,Yarığın en kötüsü bile onun ilk sözünden irkilir.,scripts/autoload/game_data/GameDataHeroes.gd:704
-Last-Light Martyr,Son Işık Şehidi,scripts/autoload/game_data/GameDataHeroes.gd:705
-The party has never seen the floor she stood between them and.,"Ekip, onun önünde durduğu zemini hiç görmedi.",scripts/autoload/game_data/GameDataHeroes.gd:705
-Knows which puddles not to step in.,Hangi su birikintisine basılmayacağını bilir.,scripts/autoload/game_data/GameDataHeroes.gd:707
-Has never once stood and fought fair.,Hiçbir zaman durup adil dövüşmedi.,scripts/autoload/game_data/GameDataHeroes.gd:708
-Leaves with more than they came with.,Geldiğinden fazlasıyla gider.,scripts/autoload/game_data/GameDataHeroes.gd:709
-Never where the last swing landed.,Son darbenin indiği yerde asla bulunmaz.,scripts/autoload/game_data/GameDataHeroes.gd:710
-Nobody's ever heard them arrive.,Geldiğini kimse duymadı.,scripts/autoload/game_data/GameDataHeroes.gd:711
-The Rift barely notices it was there.,Yarık orada olduğunu zar zor fark eder.,scripts/autoload/game_data/GameDataHeroes.gd:712
-Gets faster the longer no one catches them.,Kimse yakalamadıkça hızlanır.,scripts/autoload/game_data/GameDataHeroes.gd:713
-Strikes from the dark and returns to it.,Karanlıktan vurur ve ona döner.,scripts/autoload/game_data/GameDataHeroes.gd:714
-Leaves two footprints and no explanation.,"İki ayak izi bırakır, hiçbir açıklama bırakmaz.",scripts/autoload/game_data/GameDataHeroes.gd:715
-Duskrunner,Alacakaranlık Koşucusu,scripts/autoload/game_data/GameDataHeroes.gd:716
-Moves like the space between two heartbeats.,İki kalp atışı arasındaki boşluk gibi hareket eder.,scripts/autoload/game_data/GameDataHeroes.gd:716
-Knows every plant the Rift hasn't poisoned yet.,Yarığın henüz zehirlemediği her bitkiyi bilir.,scripts/autoload/game_data/GameDataHeroes.gd:719
-Steals more than coin from a warded vault.,Korunan bir kasadan paradan fazlasını çalar.,scripts/autoload/game_data/GameDataHeroes.gd:720
-Tougher than a rogue has any right to be.,Bir haydudun olması gerekenden daha dayanıklı.,scripts/autoload/game_data/GameDataHeroes.gd:721
-Reads a ward's seams like a lockpick reads a door.,Bir korumanın dikişlerini maymuncuğun kapıyı okuduğu gibi okur.,scripts/autoload/game_data/GameDataHeroes.gd:722
-The undergrowth hides more than it seems to.,Çalılık göründüğünden fazlasını saklar.,scripts/autoload/game_data/GameDataHeroes.gd:723
-Steps half out of reality when it matters.,Önemli anda gerçeklikten yarı yarıya çıkar.,scripts/autoload/game_data/GameDataHeroes.gd:724
-Wraithblade Adept,Hayalet Kılıç Ustası,scripts/autoload/game_data/GameDataHeroes.gd:725
-"Every strike thinner than the last, and faster.",Her vuruş bir öncekinden ince ve hızlı.,scripts/autoload/game_data/GameDataHeroes.gd:725
-The Unseen Hand,Görünmeyen El,scripts/autoload/game_data/GameDataHeroes.gd:726
-Already struck before the boss noticed it arrive.,Boss geldiğini fark etmeden çoktan vurmuştu.,scripts/autoload/game_data/GameDataHeroes.gd:726
-The Final Cut,Son Kesik,scripts/autoload/game_data/GameDataHeroes.gd:727
-Nothing has landed a hit since the Rift learned her name.,Yarık onun adını öğrendiğinden beri hiçbir şey ona isabet ettiremedi.,scripts/autoload/game_data/GameDataHeroes.gd:727
+(*UCP)(?i)\\b(,,scripts/autoload/game_data/GameDataHeroes.gd:314
+Killer's Eye,Katil Gözü,scripts/autoload/game_data/GameDataHeroes.gd:342
+Bloodrush,Kan Coşkusu,scripts/autoload/game_data/GameDataHeroes.gd:343
+Headhunter,Kelle Avcısı,scripts/autoload/game_data/GameDataHeroes.gd:344
+Stand Firm,Sağlam Dur,scripts/autoload/game_data/GameDataHeroes.gd:347
+Protector,Koruyucu,scripts/autoload/game_data/GameDataHeroes.gd:348
+Unbowed,Boyun Eğmez,scripts/autoload/game_data/GameDataHeroes.gd:349
+Quick Draw,Hızlı Çekiş,scripts/autoload/game_data/GameDataHeroes.gd:352
+Ambusher,Pusucu,scripts/autoload/game_data/GameDataHeroes.gd:353
+Opening Salvo,Açılış Yaylımı,scripts/autoload/game_data/GameDataHeroes.gd:354
+Second Wind,İkinci Nefes,scripts/autoload/game_data/GameDataHeroes.gd:357
+Long Fight,Uzun Dövüş,scripts/autoload/game_data/GameDataHeroes.gd:358
+Wear Them Down,Yıpratma,scripts/autoload/game_data/GameDataHeroes.gd:359
+Field Medic,Saha Hekimi,scripts/autoload/game_data/GameDataHeroes.gd:362
+Siphon,Emici,scripts/autoload/game_data/GameDataHeroes.gd:363
+Rallying Word,Toparlayan Söz,scripts/autoload/game_data/GameDataHeroes.gd:364
+Wary,Tetikte,scripts/autoload/game_data/GameDataHeroes.gd:367
+Brace,Siper,scripts/autoload/game_data/GameDataHeroes.gd:368
+Covering Stance,Kollayan Duruş,scripts/autoload/game_data/GameDataHeroes.gd:369
+Slippery,Kaygan,scripts/autoload/game_data/GameDataHeroes.gd:372
+Riposte,Karşılık,scripts/autoload/game_data/GameDataHeroes.gd:373
+Back-Row Shadow,Arka Sıra Gölgesi,scripts/autoload/game_data/GameDataHeroes.gd:374
+Last Bastion,Son Burç,scripts/autoload/game_data/GameDataHeroes.gd:377
+Oathkeeper,Yemin Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:378
+Rally,Toparlan,scripts/autoload/game_data/GameDataHeroes.gd:379
+Giant's Bane,Dev Belası,scripts/autoload/game_data/GameDataHeroes.gd:382
+Crushing Blow,Ezici Darbe,scripts/autoload/game_data/GameDataHeroes.gd:383
+Apex,Zirve,scripts/autoload/game_data/GameDataHeroes.gd:384
+Vanguard,Öncü,scripts/autoload/game_data/GameDataHeroes.gd:393
+Flanker,Kanat Vurucusu,scripts/autoload/game_data/GameDataHeroes.gd:395
+Overwatch,Gözcü,scripts/autoload/game_data/GameDataHeroes.gd:397
+Safe Distance,Güvenli Mesafe,scripts/autoload/game_data/GameDataHeroes.gd:399
+Sanctuary Line,Sığınak Hattı,scripts/autoload/game_data/GameDataHeroes.gd:401
+Might,Kudret,scripts/autoload/game_data/GameDataHeroes.gd:485
+Agility,Çeviklik,scripts/autoload/game_data/GameDataHeroes.gd:485
++2% damage and +1.5% HP per point above 5,"5'in üstündeki her puan için +%2 hasar ve +%1,5 can",scripts/autoload/game_data/GameDataHeroes.gd:495
+"+2% speed, +0.8% dodge and +2% first-strike per point above 5","5'in üstündeki her puan için +%2 hız, +%0,8 kaçınma ve +%2 ilk vuruş",scripts/autoload/game_data/GameDataHeroes.gd:496
++4% ability power and +0.2% mend per point above 5,"5'in üstündeki her puan için +%4 yetenek gücü ve +%0,2 iyileşme",scripts/autoload/game_data/GameDataHeroes.gd:497
+Healing Tonic,Şifa Toniği,scripts/autoload/game_data/GameDataHeroes.gd:532
+"Heals an ally 35% of max HP and cleanses burn, poison, chill, stun and curses.","Bir müttefiki en yüksek canının %35'i kadar iyileştirir; yanma, zehir, üşüme, sersemlik ve lanetleri temizler.",scripts/autoload/game_data/GameDataHeroes.gd:533
+Iron Tonic,Demir Toniği,scripts/autoload/game_data/GameDataHeroes.gd:534
+Wards an ally for 30% of their max HP.,Bir müttefike en yüksek canının %30'u kadar koruma verir.,scripts/autoload/game_data/GameDataHeroes.gd:535
+Focus Tonic,Odak Toniği,scripts/autoload/game_data/GameDataHeroes.gd:536
++3 Momentum for the party.,Ekibe +3 İvme.,scripts/autoload/game_data/GameDataHeroes.gd:537
+A guild recruit swinging a borrowed blade.,Ödünç bir kılıç sallayan lonca acemisi.,scripts/autoload/game_data/GameDataHeroes.gd:631
+"Slow, sturdy, and hard to put down.","Yavaş, dayanıklı ve devirmesi zor.",scripts/autoload/game_data/GameDataHeroes.gd:632
+Wins the exchange before it starts.,Çatışmayı başlamadan kazanır.,scripts/autoload/game_data/GameDataHeroes.gd:633
+A wall with opinions.,Fikirleri olan bir duvar.,scripts/autoload/game_data/GameDataHeroes.gd:634
+Considers armor a personal insult.,Zırhı kişisel bir hakaret sayar.,scripts/autoload/game_data/GameDataHeroes.gd:635
+"Rift-forged plate, dented and unbothered.",Yarıkta dövülmüş zırh; ezik ama umursamaz.,scripts/autoload/game_data/GameDataHeroes.gd:636
+Trades wounds and wins the trade.,Yara takas eder ve takası kazanır.,scripts/autoload/game_data/GameDataHeroes.gd:637
+Runeblade,Rün Kılıcı,scripts/autoload/game_data/GameDataHeroes.gd:638
+Every strike is already inscribed.,Her vuruş önceden yazılmıştır.,scripts/autoload/game_data/GameDataHeroes.gd:638
+Ashen Templar,Küllü Tapınakçı,scripts/autoload/game_data/GameDataHeroes.gd:639
+Has died before. Didn't care for it.,Daha önce öldü. Pek hoşlanmadı.,scripts/autoload/game_data/GameDataHeroes.gd:639
+Rift Sovereign,Yarık Hükümdarı,scripts/autoload/game_data/GameDataHeroes.gd:640
+The Rift answers to almost nothing. Almost.,Yarık neredeyse hiçbir şeye boyun eğmez. Neredeyse.,scripts/autoload/game_data/GameDataHeroes.gd:640
+Patches the party between swings.,Kılıç savuruşları arasında ekibi yamalar.,scripts/autoload/game_data/GameDataHeroes.gd:643
+"Heavy armor, light feet.","Ağır zırh, hafif ayaklar.",scripts/autoload/game_data/GameDataHeroes.gd:644
+"First through the door, first to swing.","Kapıdan ilk giren, ilk vuran.",scripts/autoload/game_data/GameDataHeroes.gd:645
+The cold never bothered the plate much.,Soğuk zırhı pek rahatsız etmedi.,scripts/autoload/game_data/GameDataHeroes.gd:646
+"Gets angrier, not slower.","Yavaşlamaz, öfkelenir.",scripts/autoload/game_data/GameDataHeroes.gd:647
+"The last thing standing, on principle.",Prensip gereği ayakta kalan son şey.,scripts/autoload/game_data/GameDataHeroes.gd:648
+Stormguard,Fırtına Muhafızı,scripts/autoload/game_data/GameDataHeroes.gd:649
+Meets the charge before it lands.,Hücumu inmeden karşılar.,scripts/autoload/game_data/GameDataHeroes.gd:649
+Rift-Breaker,Yarık Kıran,scripts/autoload/game_data/GameDataHeroes.gd:650
+Puts the first crack in anything.,Her şeye ilk çatlağı açar.,scripts/autoload/game_data/GameDataHeroes.gd:650
+Sets more snares than the Rift can spring.,Yarığın tetikleyebileceğinden fazla tuzak kurar.,scripts/autoload/game_data/GameDataHeroes.gd:652
+Improvises a weapon out of whatever's at hand.,Eline ne geçerse ondan silah uydurur.,scripts/autoload/game_data/GameDataHeroes.gd:653
+Already knows where the floor gives way.,Zeminin nerede çökeceğini zaten bilir.,scripts/autoload/game_data/GameDataHeroes.gd:654
+One arrow. Rarely needs a second.,Tek ok. Nadiren ikincisi gerekir.,scripts/autoload/game_data/GameDataHeroes.gd:655
+The opening strike is the whole performance.,Açılış vuruşu gösterinin ta kendisi.,scripts/autoload/game_data/GameDataHeroes.gd:656
+Has walked through worse hallways than this.,Bundan beter koridorlardan geçti.,scripts/autoload/game_data/GameDataHeroes.gd:657
+Follows the lightning instead of waiting for thunder.,"Gök gürültüsünü beklemez, şimşeği izler.",scripts/autoload/game_data/GameDataHeroes.gd:658
+Reads a hallway before it reads back.,Koridor onu okumadan o koridoru okur.,scripts/autoload/game_data/GameDataHeroes.gd:659
+Sets the trap the Rift walks into instead.,Yarığın içine düşeceği tuzağı o kurar.,scripts/autoload/game_data/GameDataHeroes.gd:660
+Voidwalker,Boşluk Yürüyücüsü,scripts/autoload/game_data/GameDataHeroes.gd:661
+Half-stepped out of the fight before it began.,Dövüş başlamadan yarı yarıya dışına adım atmıştı.,scripts/autoload/game_data/GameDataHeroes.gd:661
+Tracks by scent when the light gives out.,Işık bitince kokuyla iz sürer.,scripts/autoload/game_data/GameDataHeroes.gd:664
+Knows exactly where to put an arrow.,Oku tam nereye atacağını bilir.,scripts/autoload/game_data/GameDataHeroes.gd:665
+Watches the dark so the party doesn't have to.,Ekip bakmasın diye karanlığı o izler.,scripts/autoload/game_data/GameDataHeroes.gd:666
+Field dressings from whatever's growing nearby.,Yakında ne yetişiyorsa ondan sargı.,scripts/autoload/game_data/GameDataHeroes.gd:667
+Gone before the echo catches up.,Yankı yetişmeden gitmiştir.,scripts/autoload/game_data/GameDataHeroes.gd:668
+The wind carries the first shot true.,Rüzgâr ilk atışı isabetle taşır.,scripts/autoload/game_data/GameDataHeroes.gd:669
+Rift-Piercer,Yarık Delen,scripts/autoload/game_data/GameDataHeroes.gd:670
+Finds the one seam every ward has.,Her korumanın tek zayıf dikişini bulur.,scripts/autoload/game_data/GameDataHeroes.gd:670
+Wintertide Archer,Kış Dalgası Okçusu,scripts/autoload/game_data/GameDataHeroes.gd:671
+Colder with every arrow loosed.,Attığı her okla daha soğuk.,scripts/autoload/game_data/GameDataHeroes.gd:671
+Rift-Eclipsed Warden,Yarık Tutulması Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:672
+Every shadow in the Rift owes her an arrow.,Yarıktaki her gölge ona bir ok borçlu.,scripts/autoload/game_data/GameDataHeroes.gd:672
+Still learning to hold a spark steady.,Bir kıvılcımı sabit tutmayı hâlâ öğreniyor.,scripts/autoload/game_data/GameDataHeroes.gd:674
+"Sparks first, thinks second.","Önce kıvılcım, sonra düşünce.",scripts/autoload/game_data/GameDataHeroes.gd:675
+Sees the trap a half-second before it triggers.,Tuzağı tetiklenmeden yarım saniye önce görür.,scripts/autoload/game_data/GameDataHeroes.gd:676
+Every spell warms up the next.,Her büyü bir sonrakini ısıtır.,scripts/autoload/game_data/GameDataHeroes.gd:677
+Studies the Rift's cold so it can't study back.,Yarığın soğuğunu inceler ki o da onu inceleyemesin.,scripts/autoload/game_data/GameDataHeroes.gd:678
+Weaves a ward faster than the Rift can break it.,Yarığın kırabileceğinden hızlı koruma örer.,scripts/autoload/game_data/GameDataHeroes.gd:679
+Calls down more with every passing second.,Geçen her saniyeyle daha fazlasını çağırır.,scripts/autoload/game_data/GameDataHeroes.gd:680
+Pyromancer,Ateş Büyücüsü,scripts/autoload/game_data/GameDataHeroes.gd:681
+The Rift itself seems to lean away.,Yarığın kendisi bile geri çekiliyor gibi.,scripts/autoload/game_data/GameDataHeroes.gd:681
+Archon of Storms,Fırtınaların Arkonu,scripts/autoload/game_data/GameDataHeroes.gd:682
+Opens every Warden's door with thunder.,Her Bekçinin kapısını gök gürültüsüyle açar.,scripts/autoload/game_data/GameDataHeroes.gd:682
+The Unbound,Zincirsiz,scripts/autoload/game_data/GameDataHeroes.gd:683
+No name holds it. No floor stops it.,Hiçbir ad onu tutamaz. Hiçbir kat onu durduramaz.,scripts/autoload/game_data/GameDataHeroes.gd:683
+Grows a ward out of nothing but will.,Yalnızca iradeden bir koruma büyütür.,scripts/autoload/game_data/GameDataHeroes.gd:686
+The first spell is always the quiet one.,İlk büyü hep sessiz olandır.,scripts/autoload/game_data/GameDataHeroes.gd:687
+Turns skin to something closer to bark.,Deriyi kabuğa yakın bir şeye çevirir.,scripts/autoload/game_data/GameDataHeroes.gd:688
+Bargains with the dark for one more round.,Bir tur daha için karanlıkla pazarlık eder.,scripts/autoload/game_data/GameDataHeroes.gd:689
+Reads the future in root and leaf.,Geleceği kökte ve yaprakta okur.,scripts/autoload/game_data/GameDataHeroes.gd:690
+Sees the strike land before it's thrown.,Darbeyi savrulmadan inerken görür.,scripts/autoload/game_data/GameDataHeroes.gd:691
+Ashbound Theorist,Küle Bağlı Kuramcı,scripts/autoload/game_data/GameDataHeroes.gd:692
+Every equation ends in fire.,Her denklem ateşle biter.,scripts/autoload/game_data/GameDataHeroes.gd:692
+Rift-Warden Magus,Yarık Bekçisi Magus,scripts/autoload/game_data/GameDataHeroes.gd:693
+Wards the floor before the Rift finishes forming it.,Yarık zemini oluşturmayı bitirmeden zemini korur.,scripts/autoload/game_data/GameDataHeroes.gd:693
+Sells bandages. Uses them too.,Sargı satar. Kullanır da.,scripts/autoload/game_data/GameDataHeroes.gd:695
+"Prays quietly, heals quietly.","Sessizce dua eder, sessizce iyileştirir.",scripts/autoload/game_data/GameDataHeroes.gd:696
+Carries a field kit for every wound.,Her yara için bir saha çantası taşır.,scripts/autoload/game_data/GameDataHeroes.gd:697
+Swings a censer like it owes him money.,Buhurdanı borcu varmış gibi sallar.,scripts/autoload/game_data/GameDataHeroes.gd:698
+Prays loudly enough to keep the party moving.,Ekibi yürütecek kadar yüksek sesle dua eder.,scripts/autoload/game_data/GameDataHeroes.gd:699
+"Faith, mostly. A blade, occasionally.",Çoğunlukla inanç. Ara sıra da kılıç.,scripts/autoload/game_data/GameDataHeroes.gd:700
+Faster hands than the Rift has wounds to give.,"Elleri, Yarığın açabileceği yaralardan hızlı.",scripts/autoload/game_data/GameDataHeroes.gd:701
+Dawnkeeper,Şafak Bekçisi,scripts/autoload/game_data/GameDataHeroes.gd:702
+Carries first light into the deepest floor.,İlk ışığı en derin kata taşır.,scripts/autoload/game_data/GameDataHeroes.gd:702
+Sanctified Shield,Kutsanmış Kalkan,scripts/autoload/game_data/GameDataHeroes.gd:703
+Swears the party will not fall today.,Ekibin bugün düşmeyeceğine yemin eder.,scripts/autoload/game_data/GameDataHeroes.gd:703
+Alchemist,Simyacı,scripts/autoload/game_data/GameDataHeroes.gd:704
+Brews faster than the Rift can wound.,Yarığın yaralayabileceğinden hızlı iksir yapar.,scripts/autoload/game_data/GameDataHeroes.gd:704
+"Prays with a lit candle, not a cold one.","Sönmüş değil, yanan bir mumla dua eder.",scripts/autoload/game_data/GameDataHeroes.gd:707
+Keeps the chill out of everyone but herself.,Soğuğu kendisi dışında herkesten uzak tutar.,scripts/autoload/game_data/GameDataHeroes.gd:708
+Blesses the blade before it's needed.,Kılıcı gerekmeden önce kutsar.,scripts/autoload/game_data/GameDataHeroes.gd:709
+A fire that doesn't go out in the cold.,Soğukta sönmeyen bir ateş.,scripts/autoload/game_data/GameDataHeroes.gd:710
+"Absolves the Rift of its sins, briefly.",Yarığın günahlarını kısa bir süreliğine bağışlar.,scripts/autoload/game_data/GameDataHeroes.gd:711
+"Fasts, prays, and somehow still heals faster.","Oruç tutar, dua eder ve yine de daha hızlı iyileştirir.",scripts/autoload/game_data/GameDataHeroes.gd:712
+Radiant Vanguard,Işıltılı Öncü,scripts/autoload/game_data/GameDataHeroes.gd:713
+"Leads with light, not caution.","Temkinle değil, ışıkla önderlik eder.",scripts/autoload/game_data/GameDataHeroes.gd:713
+Sainted Ember,Aziz Kor,scripts/autoload/game_data/GameDataHeroes.gd:714
+The Rift's worst still flinches from her first word.,Yarığın en kötüsü bile onun ilk sözünden irkilir.,scripts/autoload/game_data/GameDataHeroes.gd:714
+Last-Light Martyr,Son Işık Şehidi,scripts/autoload/game_data/GameDataHeroes.gd:715
+The party has never seen the floor she stood between them and.,"Ekip, onun önünde durduğu zemini hiç görmedi.",scripts/autoload/game_data/GameDataHeroes.gd:715
+Knows which puddles not to step in.,Hangi su birikintisine basılmayacağını bilir.,scripts/autoload/game_data/GameDataHeroes.gd:717
+Has never once stood and fought fair.,Hiçbir zaman durup adil dövüşmedi.,scripts/autoload/game_data/GameDataHeroes.gd:718
+Leaves with more than they came with.,Geldiğinden fazlasıyla gider.,scripts/autoload/game_data/GameDataHeroes.gd:719
+Never where the last swing landed.,Son darbenin indiği yerde asla bulunmaz.,scripts/autoload/game_data/GameDataHeroes.gd:720
+Nobody's ever heard them arrive.,Geldiğini kimse duymadı.,scripts/autoload/game_data/GameDataHeroes.gd:721
+The Rift barely notices it was there.,Yarık orada olduğunu zar zor fark eder.,scripts/autoload/game_data/GameDataHeroes.gd:722
+Gets faster the longer no one catches them.,Kimse yakalamadıkça hızlanır.,scripts/autoload/game_data/GameDataHeroes.gd:723
+Strikes from the dark and returns to it.,Karanlıktan vurur ve ona döner.,scripts/autoload/game_data/GameDataHeroes.gd:724
+Leaves two footprints and no explanation.,"İki ayak izi bırakır, hiçbir açıklama bırakmaz.",scripts/autoload/game_data/GameDataHeroes.gd:725
+Duskrunner,Alacakaranlık Koşucusu,scripts/autoload/game_data/GameDataHeroes.gd:726
+Moves like the space between two heartbeats.,İki kalp atışı arasındaki boşluk gibi hareket eder.,scripts/autoload/game_data/GameDataHeroes.gd:726
+Knows every plant the Rift hasn't poisoned yet.,Yarığın henüz zehirlemediği her bitkiyi bilir.,scripts/autoload/game_data/GameDataHeroes.gd:729
+Steals more than coin from a warded vault.,Korunan bir kasadan paradan fazlasını çalar.,scripts/autoload/game_data/GameDataHeroes.gd:730
+Tougher than a rogue has any right to be.,Bir haydudun olması gerekenden daha dayanıklı.,scripts/autoload/game_data/GameDataHeroes.gd:731
+Reads a ward's seams like a lockpick reads a door.,Bir korumanın dikişlerini maymuncuğun kapıyı okuduğu gibi okur.,scripts/autoload/game_data/GameDataHeroes.gd:732
+The undergrowth hides more than it seems to.,Çalılık göründüğünden fazlasını saklar.,scripts/autoload/game_data/GameDataHeroes.gd:733
+Steps half out of reality when it matters.,Önemli anda gerçeklikten yarı yarıya çıkar.,scripts/autoload/game_data/GameDataHeroes.gd:734
+Wraithblade Adept,Hayalet Kılıç Ustası,scripts/autoload/game_data/GameDataHeroes.gd:735
+"Every strike thinner than the last, and faster.",Her vuruş bir öncekinden ince ve hızlı.,scripts/autoload/game_data/GameDataHeroes.gd:735
+The Unseen Hand,Görünmeyen El,scripts/autoload/game_data/GameDataHeroes.gd:736
+Already struck before the boss noticed it arrive.,Boss geldiğini fark etmeden çoktan vurmuştu.,scripts/autoload/game_data/GameDataHeroes.gd:736
+The Final Cut,Son Kesik,scripts/autoload/game_data/GameDataHeroes.gd:737
+Nothing has landed a hit since the Rift learned her name.,Yarık onun adını öğrendiğinden beri hiçbir şey ona isabet ettiremedi.,scripts/autoload/game_data/GameDataHeroes.gd:737
 Bloodthirst Fang,Kana Susamış Diş,scripts/autoload/game_data/GameDataItems.gd:18
 Heals the wielder for 25% of the damage they deal each round they attack. -15% hazard severity guard.,"Saldırdığı her tur, taşıyanı verdiği hasarın %25'i kadar iyileştirir. Tehlike şiddeti koruması -%15.",scripts/autoload/game_data/GameDataItems.gd:22
 Widow's Edge,Dul Kılıcı,scripts/autoload/game_data/GameDataItems.gd:23
@@ -1700,9 +1701,9 @@ and the target burns for two rounds,ve hedef iki tur yanar,scripts/autoload/game
 the first skill each fight hits 50% harder,her dövüşteki ilk beceri %50 daha sert vurur,scripts/autoload/game_data/GameDataSkills.gd:633
 +50% damage against foes below 40% HP,Canı %40'ın altındaki düşmanlara +%50 hasar,scripts/autoload/game_data/GameDataSkills.gd:634
 Not enough Essence,Yeterli Öz yok,scripts/autoload/game_state/GameStateCore.gd:132
-That doesn't look like a Guildhold save,Bu bir Guildhold kaydına benzemiyor,scripts/autoload/game_state/GameStateCore.gd:590
-That save is from a newer version of the game,Bu kayıt oyunun daha yeni bir sürümünden,scripts/autoload/game_state/GameStateCore.gd:592
-Couldn't write the save slot,Kayıt yuvasına yazılamadı,scripts/autoload/game_state/GameStateCore.gd:595
+That doesn't look like a Guildhold save,Bu bir Guildhold kaydına benzemiyor,scripts/autoload/game_state/GameStateCore.gd:598
+That save is from a newer version of the game,Bu kayıt oyunun daha yeni bir sürümünden,scripts/autoload/game_state/GameStateCore.gd:600
+Couldn't write the save slot,Kayıt yuvasına yazılamadı,scripts/autoload/game_state/GameStateCore.gd:603
 %s earned %s!,%s kazandı: %s!,scripts/autoload/game_state/GameStateHeroes.gd:26
 Quirk earned: %s,Huy kazanıldı: %s,scripts/autoload/game_state/GameStateHeroes.gd:27
 Build the Arcane Lab first,Önce Gizem Laboratuvarı'nı kur,scripts/autoload/game_state/GameStateHeroes.gd:46
@@ -2991,3 +2992,10 @@ When an ally falls,Bir müttefik düşünce,locale/extra_msgids.txt
 When dodging or hit hard,Kaçınınca ya da sert darbe alınca,locale/extra_msgids.txt
 Whenever the party mends,Ekip her iyileştiğinde,locale/extra_msgids.txt
 When an ally is attacked,Bir müttefike saldırılınca,locale/extra_msgids.txt
+first-strike,[iİ]lk vuruş\\w*,locale/extra_msgids.txt
+opener,açılış\\w*,locale/extra_msgids.txt
+attrition,yıpratıcı\\w*,locale/extra_msgids.txt
+guardian,muhafız\\w*,locale/extra_msgids.txt
+evasion,,locale/extra_msgids.txt
+sustain,dayanıklılık\\w*,locale/extra_msgids.txt
+executioner,cellat\\w*,locale/extra_msgids.txt

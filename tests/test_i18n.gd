@@ -19,7 +19,19 @@ func run() -> void:
 	check(tr("New Game") == "Yeni Oyun", "Turkish loads: New Game → %s" % tr("New Game"))
 	check(tr("Victory!") == "Zafer!", "and switches with the locale")
 	check((tr("%d kills") % 5) == "5 öldürme", "formatted lines translate before the numbers go in")
+	var kw := func(text: String) -> Array:
+		var hits := []
+		for k in GameData.keyword_regexes():
+			if (k[2] as RegEx).search(text) != null:
+				hits.append(k[0])
+		return hits
+	check(kw.call("+%5 kaçınma şansı").has("Dodge"), "Turkish glossary hovers: kaçınma → Dodge")
+	check(kw.call("İlk vuruş hasarı").has("First-strike"), "İlk vuruş → First-strike (dotted capital İ)")
+	check(kw.call("Ekip iyileşiyor.").has("Mend") and kw.call("İyileştirme").has("Mend"), "iyileş… → Mend")
+	check(kw.call("ön sırada").has("Formation"), "ön sıra → Formation")
+	check(not kw.call("hızlı").has("Speed"), "hız doesn't catch hızlı (fast)")
 	TranslationServer.set_locale("en")
+	check(kw.call("+5% dodge chance").has("Dodge") and not kw.call("kaçınma şansı").has("Dodge"), "English glossary back to English only")
 	check(tr("New Game") == "New Game", "English stays English")
 	TranslationServer.set_locale(was)
 

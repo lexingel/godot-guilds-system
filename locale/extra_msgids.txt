@@ -49,3 +49,11 @@ When an ally falls
 When dodging or hit hard
 Whenever the party mends
 When an ally is attacked
+# glossary patterns (GameData.KEYWORDS)
+first-strike
+opener
+attrition
+guardian
+evasion
+sustain
+executioner
