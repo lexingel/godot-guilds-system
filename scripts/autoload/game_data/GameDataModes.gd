@@ -437,6 +437,8 @@ const MANAGEMENT_NODE_ICON := {
 ## campaign act, "" = one fixed image (<art>.png).
 const HAMLET_BG := "res://assets/hamlet/backdrop.png"
 const HAMLET_SIZE := Vector2(400, 180)
+## The backdrop's night sky, continued above it when the village fills the window.
+const HAMLET_SKY := Color(0.0902, 0.0824, 0.2275)
 const HAMLET_BUILDINGS := [
 	{"id": "scouts", "name": "Recruits", "building": "Scouts' Lodge", "tier": "node", "node": "log.scouts", "pos": Vector2(62, 150), "row": "back"},
 	{"id": "hall", "name": "Guild Hall", "tier": "guild", "pos": Vector2(200, 152), "row": "back"},

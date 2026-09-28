@@ -52,7 +52,79 @@ func _ready() -> void:
 	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
+	# Full-window art under the UI (see UiKit's scene layers): the ambient
+	# backdrop and the art under the vignette, the art's props just under Root.
+	_root_filter = root.mouse_filter
+	_ambient_layer = _new_layer(1)
+	_scene_art = _new_layer(2)
+	_scene_ui = _new_layer(root.get_index())
+	var veil_layer := CanvasLayer.new()
+	veil_layer.layer = 40
+	add_child(veil_layer)
+	_veil = ColorRect.new()
+	_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var veil_mat := ShaderMaterial.new()
+	veil_mat.shader = preload("res://theme/transition.gdshader")
+	_veil.material = veil_mat
+	_veil.visible = false
+	veil_layer.add_child(_veil)
 	render()
+
+
+var _root_filter := Control.MOUSE_FILTER_PASS
+var _veil: ColorRect
+var _veil_tw: Tween
+var _was_bleed := false
+var _navigated := false   # this render moved to another screen or tab
+
+
+func _new_layer(index: int) -> Control:
+	var c := Control.new()
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(c)
+	move_child(c, index)
+	return c
+
+
+## Uncovers the new screen: a quick fade from dark, or an iris opening with a
+## violet rim when stepping into a rift. Runs in real time (a rift's speed
+## setting doesn't touch it).
+func _play_transition(iris: bool) -> void:
+	if _veil == null:
+		return
+	var mat := _veil.material as ShaderMaterial
+	var win := get_viewport().get_visible_rect().size
+	mat.set_shader_parameter("iris", iris)
+	mat.set_shader_parameter("aspect", win.x / maxf(1.0, win.y))
+	mat.set_shader_parameter("progress", 0.0)
+	_veil.visible = true
+	if _veil_tw != null:
+		_veil_tw.kill()
+	_veil_tw = create_tween()
+	_veil_tw.set_ignore_time_scale(true)
+	_veil_tw.tween_interval(0.15 if iris else 0.04)
+	_veil_tw.tween_method(func(p: float): mat.set_shader_parameter("progress", p), 0.0, 1.0, 0.75 if iris else 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_veil_tw.tween_callback(func(): _veil.visible = false)
+
+
+## The art behind each screen that has no full-window scene of its own,
+## shown dim and drifting (see _set_ambient).
+func _ambient_path() -> String:
+	match screen:
+		"camp":
+			match term_tab:
+				"inventory": return GameData.INVENTORY_BG
+				"medical": return GameData.MEDICAL_BG
+				"management": return GameData.MANAGEMENT_BG
+				"quests": return GameData.QUEST_BOARD_BG
+				"roster", "recruits": return "res://assets/screens/roster_bg.png"
+			return GameData.HAMLET_BG
+		"crafting_hall": return GameData.CRAFTING_BG
+		"rift_hall", "party_assembly", "tower": return GameData.RIFTHALL_BG
+		"rift_run": return "res://assets/screens/riftpath_bg.png"
+	return GameData.TITLE_BG
 
 
 ## Desktop-only: on a Web export the browser/canvas already owns sizing (via
@@ -173,8 +245,10 @@ func render() -> void:
 	# would otherwise silently snap the scroll position back to the top every
 	# time — jarring on a long screen. Carry it over whenever we're rebuilding
 	# the SAME screen/tab; only a real navigation resets to the top.
-	var render_key := "%s|%s" % [screen, term_tab]
+	var render_key := "%s|%s|%s" % [screen, term_tab, hub_cluster]
 	var is_navigation := render_key != _last_render_key
+	var prev_screen := _last_render_key.get_slice("|", 0)
+	_navigated = is_navigation
 	if not is_navigation:
 		for c in root.get_children():
 			if c is VBoxContainer:
@@ -186,7 +260,13 @@ func render() -> void:
 	_last_render_key = render_key
 
 	_clear_root()
+	# On a full-window scene the UI lets clicks through to the art's props.
+	var bleed := _bleed_ui()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE if bleed else _root_filter
+	_set_ambient("" if bleed or screen == "title" else _ambient_path())
 	var outer := _vbox(10)
+	if bleed:
+		outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(outer)
 	if screen not in ["title", "load_game", "credits", "onboard"]:
 		_topbar(outer, _breadcrumb_for_screen())
@@ -198,19 +278,25 @@ func render() -> void:
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	outer.add_child(scroll)
-	scroll.set_deferred("scroll_vertical", _last_scroll_y)
 	var v := _vbox(14)
-	v.custom_minimum_size = Vector2(_column_width(), 0)
-	# Centered in the window instead of hugging the left edge.
-	var center := CenterContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(center)
-	center.add_child(v)
+	if bleed:
+		# The screen's panels sit straight on the art, no scrolling.
+		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		v.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		outer.add_child(v)
+	else:
+		var scroll := ScrollContainer.new()
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		outer.add_child(scroll)
+		scroll.set_deferred("scroll_vertical", _last_scroll_y)
+		v.custom_minimum_size = Vector2(_column_width(), 0)
+		# Centered in the window instead of hugging the left edge.
+		var center := CenterContainer.new()
+		center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(center)
+		center.add_child(v)
 
 	match screen:
 		"title": _render_title(v)
@@ -244,10 +330,17 @@ func render() -> void:
 			_sfx_seen[card_key] = true
 			AudioManager.play_sfx(GameData.SFX_PATH["story"])
 		_story_overlay(GameState.pending_stories[0])
-	if is_navigation:
+	# A new screen (or a switch to or from a full-window scene) uncovers
+	# from dark, stepping into a rift opens like one; a new tab within a
+	# screen just fades its panels in.
+	var bleed_now := bleed or screen == "title"
+	if is_navigation and (screen != prev_screen or bleed_now != _was_bleed):
+		_play_transition(screen == "rift_run" and prev_screen not in ["", "rift_run"])
+	elif is_navigation:
 		root.modulate = Color(1, 1, 1, 0)
 		var fade_tw := create_tween()
 		fade_tw.tween_property(root, "modulate:a", 1.0, 0.18).set_ease(Tween.EASE_OUT)
+	_was_bleed = bleed_now
 
 
 ## A campaign story card over the screen (act intros, finale outros, the
@@ -623,6 +716,8 @@ func _column_width() -> float:
 	var avail: float = get_viewport().get_visible_rect().size.x - 64.0
 	if screen == "rift_run":
 		return _battle_width()
+	if screen == "title":
+		return avail
 	if screen == "camp" and ((term_tab == "camp" and hub_cluster == "") or term_tab in ["roster", "inventory", "bestiary"]):
 		return clampf(avail, minf(760.0, avail), 1180.0)
 	return clampf(avail, minf(700.0, avail), 860.0)
@@ -714,22 +809,35 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 ## just does nothing visible — see _apply_resolution's identical OS.has_feature
 ## gate for the same "web owns this, not us" reasoning).
 func _render_title(v: VBoxContainer) -> void:
-	v.add_child(_banner(GameData.TITLE_BG, 760, 320))
+	_title_scene()
+	var narrow := _narrow()
+	# The name and menu on the left, what's new on the right (stacked on a
+	# portrait window), over the full-window art.
+	v.custom_minimum_size.y = get_viewport().get_visible_rect().size.y - 48.0
+	var cols: BoxContainer = VBoxContainer.new() if narrow else HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 24)
+	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(cols)
+	var left := _vbox(10)
+	left.custom_minimum_size.x = 320
+	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	cols.add_child(left)
 
-	var title_lbl := _label("Guildhold", 30)
+	var title_lbl := _on_art(_label("Guildhold", 60), 12)
 	title_lbl.add_theme_font_override("font", DISPLAY_FONT)
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(title_lbl)
-	var ver := _label("Test build %s · what's new is below" % _version(), 12, true)
-	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(ver)
-	v.add_child(_hsep())
+	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.87, 0.62))
+	title_lbl.add_theme_color_override("font_shadow_color", Color(1.0, 0.5, 0.15, 0.35))
+	title_lbl.add_theme_constant_override("shadow_outline_size", 22)
+	left.add_child(title_lbl)
+	left.add_child(_on_art(_label("A guild-management roguelite", 15)))
+	var ver := _on_art(_label("Test build %s · what's new is %s" % [_version(), "below" if narrow else "on the right"], 12, true))
+	left.add_child(ver)
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 10
+	left.add_child(gap)
 
-	var center := CenterContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var menu := _vbox(8)
-	menu.custom_minimum_size.x = 280
+	menu.custom_minimum_size.x = 300
 	menu.add_child(_icon_domain_button("violet", "", "New Game", func():
 		for i in GameState.SLOT_COUNT:
 			if GameState.slot_summary(i).get("empty", true):
@@ -756,16 +864,58 @@ func _render_title(v: VBoxContainer) -> void:
 		menu.add_child(_button("Quit", func():
 			get_tree().quit()
 		))
-	center.add_child(menu)
-	v.add_child(center)
-	if _feedback_open:
-		v.add_child(_feedback_panel())
+	left.add_child(menu)
 	if OS.has_feature("web_android") or OS.has_feature("web_ios"):
-		var ph := _wrap_label("This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped.", 12)
+		var ph := _on_art(_wrap_label("This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped.", 12))
 		ph.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		ph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		v.add_child(ph)
-	v.add_child(_whats_new_card())
+		left.add_child(ph)
+	if not narrow:
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cols.add_child(spacer)
+	var right: Control = _feedback_panel() if _feedback_open else _whats_new_card()
+	right.custom_minimum_size.x = 0.0 if narrow else 420.0
+	right.size_flags_vertical = Control.SIZE_SHRINK_END
+	cols.add_child(right)
+	if _navigated:
+		# Coming to the title: the name fades up first, then the menu, then the card.
+		var parts: Array[CanvasItem] = [title_lbl, menu, right]
+		for i in parts.size():
+			parts[i].modulate.a = 0.0
+			var tw := parts[i].create_tween()
+			tw.tween_interval(0.25 + 0.3 * i)
+			tw.tween_property(parts[i], "modulate:a", 1.0, 0.6)
+
+
+## The title art filling the window: its torches flicker, the portal in the
+## arch breathes, stars twinkle past it and dust drifts in the torchlight;
+## the left side darkens under the menu.
+func _title_scene() -> void:
+	var native := Vector2(380, 160)
+	var win := get_viewport().get_visible_rect().size
+	var r := _cover_rect(native)
+	var s := r.size.x / native.x
+	var at := func(p: Vector2) -> Vector2: return r.position + p * s
+	_art_rect(GameData.TITLE_BG, r, _scene_art)
+	_motes(_scene_art, Rect2(at.call(Vector2(150, 30)), Vector2(80, 45) * s), Color(1, 1, 1, 0.9), 12, Vector2.ZERO, 2.6, Vector2(3, 4))
+	for p in [Vector2(102, 62), Vector2(278, 62)]:
+		_glow(_scene_art, at.call(p), 34.0 * s, Color(1.0, 0.6, 0.25, 0.35), "flicker")
+	_glow(_scene_art, at.call(Vector2(189, 100)), 24.0 * s, Color(0.8, 0.3, 1.0, 0.4), "pulse")
+	_motes(_scene_art, Rect2(Vector2.ZERO, win), Color(1.0, 0.8, 0.55, 0.45), 36, Vector2(9, -6), 8.0, Vector2(2, 4))
+	if not _narrow():
+		var g := Gradient.new()
+		g.colors = PackedColorArray([Color(0.03, 0.02, 0.06, 0.85), Color(0.03, 0.02, 0.06, 0.0)])
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.width = 64
+		gt.height = 4
+		var shade := TextureRect.new()
+		shade.texture = gt
+		shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		shade.stretch_mode = TextureRect.STRETCH_SCALE
+		shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shade.size = Vector2(win.x * 0.5, win.y)
+		_scene_art.add_child(shade)
 
 
 ## The build's version, e.g. "0.9.0" (project setting application/config/version).
@@ -921,7 +1071,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 ## once GameState.greater_rift_unlocked() — inert (no hotspot at all) before that.
 ## The current act: its foe, objectives with progress, and the finale — open
 ## once every objective is met.
-func _render_campaign_panel(v: VBoxContainer) -> void:
+func _render_campaign_panel(v: Container) -> void:
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"CardPanelEmber"
 	var cv := _vbox(6)
@@ -969,7 +1119,9 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 
 
 func _render_rift_hall(v: VBoxContainer) -> void:
-	v.add_child(_label("Rift Hall", 20))
+	var wide := _bleed_ui()
+	if not wide:
+		v.add_child(_label("Rift Hall", 20))
 	if not GameState.heroes.is_empty():
 		var f := GameState.payday_forecast()
 		var msg := "Payday in %d day%s: %d Gold due, you have %d — " % [int(f["days"]), "" if int(f["days"]) == 1 else "s", int(f["bill"]), int(f["have"])]
@@ -979,27 +1131,13 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			msg += "short %d; about %d rift%s at your recent pay (%d each) covers it." % [int(f["short"]), int(f["runs"]), "" if int(f["runs"]) == 1 else "s", int(f["per_run"])]
 		else:
 			msg += "short %d." % int(f["short"])
-		var fl := _wrap_label(msg, 12)
+		var fl := _on_art(_wrap_label(msg, 13 if wide else 12))
 		fl.add_theme_color_override("font_color", Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD)
 		v.add_child(fl)
 	_coach(v, "rift_hall", "Choosing a rift", "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
 	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
 		_ladder_pick = GameState.highest_open_rank()
 
-	var scene_size := HUB_SCENE
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.RIFTHALL_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
-
-	var camp_scale := HUB_ART_SCALE
 	var unlocked := GameState.greater_rift_unlocked()
 	var go := func(rank_id: String, endless: bool):
 		pending_party.clear()
@@ -1023,52 +1161,126 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		return out
 	var lesser_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "lesser" else best_of.call("lesser")
 	var endless_open := GameState.endless_unlocked()
-	var gate_entries := [
-		["Rank %s Rift" % lesser_pick, Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(lesser_pick, false)],
-	]
-	if endless_open:
-		gate_entries.append(["Endless Rift", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130), go.bind("", true)])
 	var greater_pick: String = _ladder_pick if str(GameData.find_rift_rank(_ladder_pick)["base"]) == "greater" else best_of.call("greater")
 	var greater_open: bool = unlocked and greater_pick != ""
-	if greater_open:
-		gate_entries.append(["Rank %s Rift" % greater_pick, Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(greater_pick, false)])
-	for entry in gate_entries:
-		var native_rect: Rect2 = entry[2]
-		var glow_rect := Rect2(native_rect.position * camp_scale, native_rect.size * camp_scale)
-		var hotspot := _camp_area_hotspot(_hub_rect(entry[1]), glow_rect, str(entry[0]), entry[3])
-		hotspot.position = _hub_rect(entry[1]).position
-		scene.add_child(hotspot)
-	if not greater_open:
-		var lock_plaque := _camp_plaque("Ranks C-SSS — locked" if not unlocked else "Rank C — %s" % GameState.ladder_rank_lock("C"))
-		var lr := _hub_rect(Rect2(470, 0, 230, 340))
-		lock_plaque.position = Vector2(lr.position.x + (lr.size.x - lock_plaque.size.x) * 0.5, lr.end.y - lock_plaque.size.y - 6)
-		scene.add_child(lock_plaque)
-	if not endless_open:
-		var endless_plaque := _camp_plaque("Endless Rift — locked")
-		var er := _hub_rect(Rect2(230, 0, 240, 340))
-		endless_plaque.position = Vector2(er.position.x + (er.size.x - endless_plaque.size.x) * 0.5, er.end.y - endless_plaque.size.y - 6)
-		scene.add_child(endless_plaque)
-	v.add_child(scene)
-
-	_render_campaign_panel(v)
-
+	# Each gate: [its name, its area on the old 700x340 stage, the gate in the
+	# 320x200 art, where it leads (an empty Callable while it's locked)].
+	var gates := [
+		["Rank %s Rift" % lesser_pick, Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(lesser_pick, false)],
+		["Endless Rift" if endless_open else "Endless Rift — locked", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
+			go.bind("", true) if endless_open else Callable()],
+		["Rank %s Rift" % greater_pick if greater_open else ("Ranks C-SSS — locked" if not unlocked else "Rank C — %s" % GameState.ladder_rank_lock("C")),
+			Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(greater_pick, false) if greater_open else Callable()],
+	]
 	var best := _best_party_power()
-	v.add_child(_ladder_card(best, go))
+	if wide:
+		_rift_hall_wide(v, gates, best, go)
+		return
 
-	# The other modes: what each is, how your strongest party measures up,
-	# and the button to go.
-	var cards := HFlowContainer.new()
-	cards.alignment = FlowContainer.ALIGNMENT_CENTER
-	cards.add_theme_constant_override("h_separation", 10)
-	cards.add_theme_constant_override("v_separation", 10)
-	var card_defs := [
+	var scene := Control.new()
+	scene.custom_minimum_size = HUB_SCENE
+	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var bg := TextureRect.new()
+	bg.texture = load(GameData.RIFTHALL_BG)
+	bg.custom_minimum_size = HUB_SCENE
+	bg.size = HUB_SCENE
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scene.add_child(bg)
+	for g in gates:
+		var area := _hub_rect(g[1])
+		var cb: Callable = g[3]
+		if cb.is_valid():
+			var native_rect: Rect2 = g[2]
+			var hotspot := _camp_area_hotspot(area, Rect2(native_rect.position * HUB_ART_SCALE, native_rect.size * HUB_ART_SCALE), str(g[0]), cb)
+			hotspot.position = area.position
+			scene.add_child(hotspot)
+		else:
+			var lock_plaque := _camp_plaque(str(g[0]))
+			lock_plaque.position = Vector2(area.position.x + (area.size.x - lock_plaque.size.x) * 0.5, area.end.y - lock_plaque.size.y - 6)
+			scene.add_child(lock_plaque)
+	v.add_child(scene)
+	_render_campaign_panel(v)
+	v.add_child(_ladder_card(best, go))
+	v.add_child(_rift_mode_cards(best, go))
+
+
+## Height of the Rift Hall's bottom row of cards on a landscape window.
+const RIFT_DOCK_H := 236.0
+
+
+## The Rift Hall on a landscape window: the hall fills it (torches flicker,
+## the portal breathes and sheds motes), its gates are the way in, and the
+## campaign, the rift ladder and the other modes sit along the bottom.
+func _rift_hall_wide(v: VBoxContainer, gates: Array, best: int, go: Callable) -> void:
+	var native := Vector2(320, 200)
+	var win := get_viewport().get_visible_rect().size
+	var r := _cover_rect(native, Vector2(0.5, 0.3))
+	var s := r.size.x / native.x
+	var at := func(p: Vector2) -> Vector2: return r.position + p * s
+	_art_rect(GameData.RIFTHALL_BG, r, _scene_art)
+	for p in [Vector2(13, 70), Vector2(100, 78), Vector2(219, 77), Vector2(308, 70)]:
+		_glow(_scene_art, at.call(p), 18.0 * s, Color(1.0, 0.6, 0.25, 0.4), "flicker")
+	_glow(_scene_art, at.call(Vector2(160, 88)), 58.0 * s, Color(0.6, 0.3, 1.0, 0.3), "pulse")
+	_glow(_scene_art, at.call(Vector2(52, 118)), 26.0 * s, Color(0.3, 0.8, 1.0, 0.22), "pulse")
+	_motes(_scene_art, Rect2(at.call(Vector2(125, 50)), Vector2(70, 95) * s), Color(0.8, 0.6, 1.0, 0.8), 26, Vector2(0, -16), 3.5, Vector2(2, 4), 25.0)
+	_motes(_scene_art, Rect2(at.call(Vector2(0, 140)), Vector2(320, 60) * s), Color(1.0, 0.8, 0.6, 0.35), 18, Vector2(6, -3), 8.0, Vector2(2, 3))
+	# Name plaques stand at each gate's foot, or just above the cards.
+	var plaque_floor := win.y - 20.0 - RIFT_DOCK_H - 10.0
+	for g in gates:
+		var nr: Rect2 = g[2]
+		var gr := Rect2(at.call(nr.position), nr.size * s)
+		var cb: Callable = g[3]
+		if cb.is_valid():
+			var hotspot := _camp_area_hotspot(gr, gr, str(g[0]), cb, false)
+			hotspot.position = gr.position
+			_scene_ui.add_child(hotspot)
+		var plaque := _camp_plaque(str(g[0]))
+		plaque.position = Vector2(roundf(gr.get_center().x - plaque.size.x * 0.5), roundf(minf(gr.end.y, plaque_floor) - plaque.size.y - 4.0))
+		_scene_ui.add_child(plaque)
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(spacer)
+	var dock := ScrollContainer.new()
+	dock.custom_minimum_size.y = RIFT_DOCK_H
+	dock.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_render_campaign_panel(row)
+	(row.get_child(row.get_child_count() - 1) as Control).custom_minimum_size.x = 280
+	var ladder := _ladder_card(best, go)
+	ladder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(ladder)
+	var modes := _rift_mode_rows(best, go)
+	modes.custom_minimum_size.x = 330
+	row.add_child(modes)
+	dock.add_child(row)
+	v.add_child(dock)
+
+
+## The modes besides the ladder: [name, what it is, recommended power,
+## where it leads, why it's locked ("" when open), button text].
+func _rift_mode_defs(go: Callable) -> Array:
+	return [
 		["Endless Rift", "Steer your party through endless waves · best %d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("", true),
-			"" if endless_open else "Opens when you complete Act II"],
+			"" if GameState.endless_unlocked() else "Opens when you complete Act II", "Assemble party"],
 		["Tower of Trials", "100 fixed floors · best floor %d" % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
 		_daily_card_def(),
 	]
-	for cd in card_defs:
+
+
+## The other modes as cards: what each is, how your strongest party measures
+## up, and the button to go.
+func _rift_mode_cards(best: int, go: Callable) -> HFlowContainer:
+	var cards := HFlowContainer.new()
+	cards.alignment = FlowContainer.ALIGNMENT_CENTER
+	cards.add_theme_constant_override("h_separation", 10)
+	cards.add_theme_constant_override("v_separation", 10)
+	for cd in _rift_mode_defs(go):
 		var card := PanelContainer.new()
 		card.custom_minimum_size.x = 270
 		var cv := _vbox(6)
@@ -1081,12 +1293,50 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			var pr := _power_readout(best, int(cd[2]), "Your best party")
 			pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			cv.add_child(pr)
-			var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], str(cd[5]) if cd.size() > 5 else "Assemble party", cd[3])
+			var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], str(cd[5]), cd[3])
 			b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			cv.add_child(b)
 		card.add_child(cv)
 		cards.add_child(card)
-	v.add_child(cards)
+	return cards
+
+
+## The other modes as compact rows, for the Rift Hall's bottom row of cards.
+func _rift_mode_rows(best: int, go: Callable) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.theme_type_variation = &"CardPanelViolet"
+	var col := _vbox(8)
+	for cd in _rift_mode_defs(go):
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var tv := _vbox(0)
+		tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Two short lines each (what it is is the name's tooltip) so all three fit.
+		var name_l := _label(str(cd[0]), 15)
+		name_l.tooltip_text = str(cd[1])
+		name_l.mouse_filter = Control.MOUSE_FILTER_STOP
+		tv.add_child(name_l)
+		var locked := str(cd[4]) != ""
+		if locked:
+			var why := _label(str(cd[4]), 12, true)
+			why.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			why.clip_text = true
+			why.tooltip_text = why.text
+			why.mouse_filter = Control.MOUSE_FILTER_STOP
+			tv.add_child(why)
+		else:
+			tv.add_child(_power_readout(best, int(cd[2]), "Your best"))
+		row.add_child(tv)
+		if locked:
+			row.modulate = Color(1, 1, 1, 0.6)
+		else:
+			var b := _button("Go", cd[3])
+			b.tooltip_text = str(cd[5])
+			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(b)
+		col.add_child(row)
+	p.add_child(col)
+	return p
 
 
 ## The rift ladder: one button per rank (locked ones say why), and the picked
@@ -1103,7 +1353,7 @@ func _ladder_card(best: int, go: Callable) -> Control:
 		var rid := str(r["id"])
 		var lock := GameState.ladder_rank_lock(rid)
 		var b := _button(rid, func(): _ladder_pick = rid; render())
-		b.custom_minimum_size = Vector2(52, 40)
+		b.custom_minimum_size = Vector2(46, 40)
 		b.toggle_mode = true
 		b.button_pressed = rid == _ladder_pick
 		b.add_theme_color_override("font_color", Palette.rank_color(rid))
@@ -1129,12 +1379,16 @@ func _ladder_card(best: int, go: Callable) -> Control:
 	cv.add_child(t)
 	var foes := "Foes: base" if float(rank["hp"]) == 1.0 else "Foes: ×%s health, ×%s damage" % [str(rank["hp"]), str(rank["dmg"])]
 	cv.add_child(_wrap_label("%s%s · Rewards ×%s%s" % [base["name"] + " · ", foes, str(rank["reward"]), (" · " + ", ".join(rules)) if not rules.is_empty() else ""], 12, true))
+	var go_row := HBoxContainer.new()
+	go_row.add_theme_constant_override("separation", 10)
 	var pr := _power_readout(best, Combat.recommended_power("", _ladder_pick), "Your best party")
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	cv.add_child(pr)
+	pr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	go_row.add_child(pr)
 	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party", go.bind(_ladder_pick, false))
-	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	cv.add_child(b)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	go_row.add_child(b)
+	cv.add_child(go_row)
 	card.add_child(cv)
 	return card
 

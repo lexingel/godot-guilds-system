@@ -130,6 +130,162 @@ func _flush_render() -> void:
 func _clear_root() -> void:
 	for c in root.get_children():
 		c.queue_free()
+	for layer in [_scene_art, _scene_ui]:
+		if layer != null:
+			for c in layer.get_children():
+				c.queue_free()
+
+
+# ---------------- Scene layers ----------------
+## Screens whose art fills the window with clickable props on it (the camp
+## and the Rift Hall on a landscape window). The UI above lets clicks through.
+func _bleed_ui() -> bool:
+	if _narrow():
+		return false
+	return (screen == "camp" and term_tab == "camp" and hub_cluster == "") or screen == "rift_hall"
+
+
+## A label set straight on art: a dark outline keeps it readable.
+func _on_art(l: Label, outline: int = 6) -> Label:
+	l.add_theme_color_override("font_outline_color", Color(0.03, 0.02, 0.06, 0.9))
+	l.add_theme_constant_override("outline_size", outline)
+	return l
+
+
+## Full-window art under the UI (Main makes these in _ready). _scene_art holds
+## the pictures and their ambient animation, under the vignette; _scene_ui
+## holds what sits on the art (clickable props, plaques), just under Root.
+## Both are rebuilt with the screen. _ambient_layer holds a screen's art as a
+## dim drifting backdrop and survives re-renders, so the drift never jumps.
+var _scene_art: Control
+var _scene_ui: Control
+var _ambient_layer: Control
+var _ambient_key := ""
+
+
+## Where art of `native` size lands when scaled to cover the window;
+## `focus` picks which part stays in view when it's cropped.
+func _cover_rect(native: Vector2, focus: Vector2 = Vector2(0.5, 0.5)) -> Rect2:
+	var win := get_viewport().get_visible_rect().size
+	var s := maxf(win.x / native.x, win.y / native.y)
+	var size := (native * s).round()
+	return Rect2(((win - size) * focus).round(), size)
+
+
+## A pixel-art picture stretched over `rect` (crisp pixels).
+func _art_rect(path: String, rect: Rect2, parent: Control) -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = load(path)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	t.position = rect.position
+	t.size = rect.size
+	parent.add_child(t)
+	return t
+
+
+## The screen's art as a dim backdrop that drifts slowly side to side; ""
+## clears it. Kept across re-renders of the same screen.
+func _set_ambient(path: String) -> void:
+	if _ambient_layer == null:
+		return
+	var key := "%s|%s" % [path, get_viewport().get_visible_rect().size]
+	if key == _ambient_key:
+		return
+	_ambient_key = key
+	for c in _ambient_layer.get_children():
+		c.queue_free()
+	if path == "":
+		return
+	var tex: Texture2D = load(path)
+	var r := _cover_rect(tex.get_size())
+	var grown := (r.size * 1.08).round()
+	var t := _art_rect(path, Rect2(r.position - (grown - r.size) * 0.5, grown), _ambient_layer)
+	t.modulate = Color(0.26, 0.25, 0.3)
+	var drift := (grown.x - r.size.x) * 0.45
+	var x0 := t.position.x
+	var tw := t.create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+	tw.tween_property(t, "position:x", x0 - drift, 24.0)
+	tw.tween_property(t, "position:x", x0 + drift, 48.0)
+	tw.tween_property(t, "position:x", x0, 24.0)
+
+
+static var _glow_tex: GradientTexture2D
+
+
+## A white disc fading out to its edge (built once).
+static func _glow_texture() -> GradientTexture2D:
+	if _glow_tex == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
+		_glow_tex = GradientTexture2D.new()
+		_glow_tex.gradient = g
+		_glow_tex.fill = GradientTexture2D.FILL_RADIAL
+		_glow_tex.fill_from = Vector2(0.5, 0.5)
+		_glow_tex.fill_to = Vector2(1.0, 0.5)
+		_glow_tex.width = 64
+		_glow_tex.height = 64
+	return _glow_tex
+
+
+## A soft round light, added over whatever is under it: torches and fires
+## ("flicker"), portals ("pulse"), or steady ("").
+func _glow(parent: Control, center: Vector2, radius: float, color: Color, mode: String = "") -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = _glow_texture()
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	t.size = Vector2(radius, radius) * 2.0
+	t.position = center - Vector2(radius, radius)
+	t.pivot_offset = Vector2(radius, radius)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	t.material = mat
+	t.modulate = color
+	parent.add_child(t)
+	if mode == "flicker":
+		var tw := t.create_tween().set_loops()
+		for i in 6:
+			tw.tween_property(t, "modulate:a", color.a * randf_range(0.6, 1.0), randf_range(0.07, 0.2))
+	elif mode == "pulse":
+		var tw := t.create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+		tw.tween_property(t, "modulate:a", color.a * 0.5, 1.8)
+		tw.parallel().tween_property(t, "scale", Vector2(0.92, 0.92), 1.8)
+		tw.tween_property(t, "modulate:a", color.a, 1.8)
+		tw.parallel().tween_property(t, "scale", Vector2.ONE, 1.8)
+	return t
+
+
+## Ambient particles over `rect`: stars that twinkle in place (no velocity),
+## fireflies and dust that wander, motes that rise. Each fades in and out;
+## `soft` draws them as blurry blobs (mist) instead of square pixels.
+func _motes(parent: Control, rect: Rect2, color: Color, amount: int, velocity: Vector2, lifetime: float, size: Vector2, spread: float = 180.0, soft: bool = false) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.position = rect.get_center()
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = rect.size * 0.5
+	p.amount = amount
+	p.lifetime = lifetime
+	p.preprocess = lifetime
+	p.direction = velocity.normalized() if velocity != Vector2.ZERO else Vector2.UP
+	p.spread = spread
+	p.initial_velocity_min = velocity.length() * 0.4
+	p.initial_velocity_max = velocity.length()
+	p.gravity = Vector2.ZERO
+	p.scale_amount_min = size.x
+	p.scale_amount_max = size.y
+	if soft:
+		p.texture = _glow_texture()
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	ramp.colors = PackedColorArray([Color(color, 0.0), color, Color(color, 0.0)])
+	p.color_ramp = ramp
+	parent.add_child(p)
+	return p
 
 
 ## True on the portrait (760-wide) canvas — rows that sit side by side on

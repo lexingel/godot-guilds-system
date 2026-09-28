@@ -20,7 +20,8 @@ func _render_camp_screen(v: VBoxContainer) -> void:
 		elif GameState.runs_started >= 1 and GameState.run.is_empty():
 			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
-		_render_getting_started(v)
+		if not _bleed_ui():
+			_render_getting_started(v)
 		return
 	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management"}.get(term_tab, "")
 	if tab_feature != "" and not GameState.feature_unlocked(tab_feature):
@@ -57,15 +58,39 @@ func _render_camp(v: VBoxContainer) -> void:
 		_render_hub_cluster(v)
 		return
 
-	var scene_w: float = v.custom_minimum_size.x
+	var bleed := _bleed_ui()
+	var win := get_viewport().get_visible_rect().size
 	var native: Vector2 = GameData.HAMLET_SIZE
-	# A whole-number scale keeps the village's pixels square.
-	var whole: float = maxf(1.0, floorf(scene_w / native.x))
-	var SCENE_SIZE := native * whole
+	# Framed (portrait window): a whole-number scale keeps the pixels square.
+	# Full-window: the village spans the window's width standing on its
+	# bottom edge, and its night sky carries on up behind the menus.
+	var whole: float = maxf(1.0, floorf(v.custom_minimum_size.x / native.x))
+	if bleed:
+		whole = minf(win.x / native.x, (win.y - 150.0) / 125.0)
+	var SCENE_SIZE := (native * whole).round()
 	var sc := Vector2(whole, whole)
-	var scene := Control.new()
-	scene.custom_minimum_size = SCENE_SIZE
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var scene := Control.new()   # the clickable buildings and their plaques
+	var art_host: Control = scene   # the picture, tinted by the day/night drift
+	if bleed:
+		var origin := Vector2(roundf((win.x - SCENE_SIZE.x) * 0.5), win.y - SCENE_SIZE.y)
+		scene.position = origin
+		scene.size = SCENE_SIZE
+		scene.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_scene_ui.add_child(scene)
+		art_host = Control.new()
+		art_host.position = origin
+		art_host.size = SCENE_SIZE
+		art_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_scene_art.add_child(art_host)
+		var sky := ColorRect.new()
+		sky.color = GameData.HAMLET_SKY
+		sky.position = -origin
+		sky.size = win
+		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art_host.add_child(sky)
+	else:
+		scene.custom_minimum_size = SCENE_SIZE
+		scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var bg := TextureRect.new()
 	bg.texture = load(GameData.HAMLET_BG)
@@ -73,8 +98,8 @@ func _render_camp(v: VBoxContainer) -> void:
 	bg.size = SCENE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
-	_start_daynight_cycle(bg)
+	art_host.add_child(bg)
+	_start_daynight_cycle(art_host if bleed else bg)
 
 	# Buildings are children of the backdrop (so the day/night tint reaches
 	# them); their click areas and plaques go on the scene above.
@@ -121,8 +146,41 @@ func _render_camp(v: VBoxContainer) -> void:
 			chip.position = plaque.position + Vector2(plaque.size.x - 10.0, -12.0)
 			scene.add_child(chip)
 
+	# The night moving: stars twinkling across the sky, mist drifting past
+	# the hills, fireflies over the grass, the campfire's light flickering.
+	var sky_top := -art_host.position.y if bleed else 0.0
+	_motes(art_host, Rect2(Vector2(-art_host.position.x if bleed else 0.0, sky_top), Vector2(win.x if bleed else SCENE_SIZE.x, 50.0 * whole - sky_top)),
+		Color(1, 1, 1, 0.9), 34, Vector2.ZERO, 3.0, Vector2(maxf(2.0, whole * 0.8), maxf(3.0, whole)))
+	_motes(art_host, Rect2(Vector2(0, 95.0 * whole), Vector2(SCENE_SIZE.x, 40.0 * whole)), Color(0.75, 0.75, 0.95, 0.07), 9, Vector2(9, 0), 22.0, Vector2(2.5, 4.5), 8.0, true)
+	_motes(art_host, Rect2(Vector2(0, 135.0 * whole), Vector2(SCENE_SIZE.x, 40.0 * whole)), Color(0.85, 1.0, 0.45, 0.9), 16, Vector2(12, 0), 4.0, Vector2(maxf(2.0, whole * 0.7), maxf(2.0, whole)))
+	var fire: Vector2 = GameData.HAMLET_BUILDINGS.filter(func(b): return b["id"] == "campfire")[0]["pos"]
+	_glow(art_host, Vector2(fire.x, fire.y - 14.0) * whole, 34.0 * whole, Color(1.0, 0.55, 0.2, 0.3), "flicker")
+
 	# Guild tier banner in the sky's top-right; the status board top-left
-	# (below the scene on a narrow screen).
+	# (below the scene on a narrow screen). Full-window: both stand at the
+	# top under the menus, and the getting-started card under the banner.
+	if bleed:
+		var top_row := HBoxContainer.new()
+		top_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var board_w := _guild_status_board()
+		board_w.custom_minimum_size.x = 360
+		board_w.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		top_row.add_child(board_w)
+		var gap := Control.new()
+		gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top_row.add_child(gap)
+		var right := _vbox(8)
+		right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		right.custom_minimum_size.x = 340
+		right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		var tier_w := _guild_tier_banner()
+		tier_w.size_flags_horizontal = Control.SIZE_SHRINK_END
+		right.add_child(tier_w)
+		_render_getting_started(right)
+		top_row.add_child(right)
+		v.add_child(top_row)
+		return
 	var tier_panel := _guild_tier_banner()
 	scene.add_child(tier_panel)
 	tier_panel.position = Vector2(SCENE_SIZE.x - tier_panel.get_combined_minimum_size().x - 10.0, 10.0)

@@ -72,6 +72,12 @@ func run() -> void:
 	for cl in ["guild_hall", "arcane_lab", ""]:
 		main.hub_cluster = cl
 		await _show(main, "camp", "camp")
+	# Full-window scenes: the camp's buildings sit on the art layer and the UI
+	# above lets clicks through; other screens keep a normal UI over a backdrop.
+	await _show(main, "camp", "camp")
+	check(main._scene_ui.get_child_count() > 0 and main.root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the camp fills the window and its buildings take clicks")
+	await _show(main, "camp", "roster")
+	check(main._scene_ui.get_child_count() == 0 and main._ambient_layer.get_child_count() > 0 and main.root.mouse_filter != Control.MOUSE_FILTER_IGNORE, "a camp tab gets a drifting backdrop and a normal UI")
 	main._feedback_open = true
 	for scr in ["rift_hall", "tower", "crafting_hall", "settings", "title", "load_game", "credits"]:
 		await _show(main, scr)
