@@ -121,3 +121,52 @@ func run() -> void:
 	check(rows[0]["renown"] >= rows[-1]["renown"], "sorted by Renown")
 	GameState.reputation = 9999
 	check(GameState.guild_standings()[0]["you"] and GameState.milestone_progress({"type": "standings_top"}) == 1, "topping the Renown column counts for the achievement")
+
+	# This week at a glance.
+	GameState.coins = 10
+	var fc := GameState.payday_forecast()
+	check(int(fc["bill"]) == GameState.weekly_wages() + GameState.upkeep() and int(fc["short"]) == maxi(0, int(fc["bill"]) - 10), "the forecast adds wages and upkeep against the treasury")
+	GameState.run_history.push_front({"coins": 100})
+	fc = GameState.payday_forecast()
+	check(int(fc["short"]) == 0 or int(fc["runs"]) >= 1, "a shortfall is priced in rifts at recent pay")
+
+	# Hero requests: one mid-week, answered with a trade-off.
+	GameState.hero_request = {}
+	GameState.day = GameData.REQUEST_DAY
+	GameState.maybe_hero_request()
+	check(not GameState.hero_request.is_empty() and GameState.request_title() != "" and GameState.request_options().size() == 2, "a hero request comes in mid-week")
+	var hqq := GameState.heroes[0]
+	GameState.hero_request = {"type": "raise", "ids": [hqq.id], "day": GameState.day}
+	var wq0 := GameState.wage_of(hqq)
+	var mq0 := hqq.morale
+	check(GameState.answer_request(true) == "" and GameState.wage_of(hqq) > wq0 and hqq.morale > mq0 and GameState.hero_request.is_empty(), "a granted raise raises the wage and morale")
+	GameState.hero_request = {"type": "week_off", "ids": [hqq.id], "day": GameState.day}
+	GameState.answer_request(true)
+	check(hqq.busy_runs >= GameData.REQUEST_LEAVE_DAYS, "time off keeps the hero home a few days")
+	GameState.hero_request = {"type": "gear", "ids": [hqq.id], "day": GameState.day}
+	GameState.coins = 0
+	check(GameState.answer_request(true) != "" and not GameState.hero_request.is_empty(), "can't pay for kit without the Gold")
+	var mq1 := hqq.morale
+	GameState.answer_request(false)
+	check(hqq.morale < mq1, "refusing costs morale")
+	if GameState.heroes.size() >= 2:
+		var hbq := GameState.heroes[1]
+		hqq.morale = 50
+		hbq.morale = 50
+		GameState.hero_request = {"type": "feud", "ids": [hqq.id, hbq.id], "day": GameState.day}
+		GameState.answer_request(false)
+		check(hbq.morale > 50 and hqq.morale < 50, "siding in a feud pleases one and stings the other")
+	GameState.hero_request = {"type": "gear", "ids": [hqq.id], "day": GameState.day}
+	GameState.day = GameData.PAYDAY_DAYS * 10 - 1
+	GameState.run_payday()
+	check(GameState.hero_request.is_empty(), "an unanswered request lapses at payday")
+
+	# The rival: a leader with a face, and a monthly contest.
+	var rlead := GameState.rival_leader()
+	check(str(rlead["leader"]) != "" and ResourceLoader.exists(str(rlead["portrait"])) and ResourceLoader.exists(str(rlead["crest"])), "the rival has a leader, a portrait and a crest")
+	GameState.contest_seals_start = GameState.rifts_sealed
+	GameState.rival_contest_seals = 0
+	GameState.rifts_sealed += 3
+	var cq0 := GameState.coins
+	GameState._end_contest()
+	check(GameState.coins == cq0 + int(GameData.CONTEST_PRIZE["coins"]) and GameState.rival_contest_seals == 0 and GameState.contest_status()["ours"] == 0, "sealing more rifts in the month wins the prize, and a new month starts")

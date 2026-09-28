@@ -97,7 +97,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		if b["id"] == "campfire":
 			_start_ember_loop(scene, Vector2(anchor.x * sc.x, (anchor.y - 16.0) * sc.y))
 			continue
-		var tip := str(b["name"])
+		var tip := str(b["name"]) + (" — the %s" % b["building"] if b.has("building") else "")
 		if str(b.get("tier", "")) == "node":
 			tip += " — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5)" % [GameState.hamlet_tier(b), str(GameData.find_branch_node(str(b["node"]))["name"]), GameState.lvl(str(b["node"]))]
 		elif b["tier"] == "guild":
@@ -107,7 +107,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		var hotspot := _camp_area_hotspot(rect, rect, tip, targets.get(b["id"], func(): pass), false)
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
-		plaques.append([str(b["name"]), rect, b["row"] == "back"])
+		plaques.append([str(b["name"]), rect, b["row"] == "back", str(PLAQUE_BADGE.get(b["id"], ""))])
 
 	for pq in plaques:
 		var prect: Rect2 = pq[1]
@@ -115,7 +115,7 @@ func _render_camp(v: VBoxContainer) -> void:
 		var py: float = prect.position.y - plaque.size.y - 2.0 if pq[2] else minf(prect.end.y - plaque.size.y - 2.0, SCENE_SIZE.y - plaque.size.y - 2.0)
 		plaque.position = Vector2(clampf(prect.get_center().x - plaque.size.x * 0.5, 2.0, SCENE_SIZE.x - plaque.size.x - 2.0), py)
 		scene.add_child(plaque)
-		var badge: Array = badges.get(str(pq[0]), [])
+		var badge: Array = badges.get(str(pq[3]), [])
 		if not badge.is_empty():
 			var chip := _count_badge(str(badge[0]), str(badge[1]))
 			chip.position = plaque.position + Vector2(plaque.size.x - 10.0, -12.0)
@@ -135,6 +135,10 @@ func _render_camp(v: VBoxContainer) -> void:
 		board.custom_minimum_size.x = minf(360.0, SCENE_SIZE.x * 0.42)
 		scene.add_child(board)
 		v.add_child(scene)
+
+
+## Which tab's badge each building wears (its count of things to do).
+const PLAQUE_BADGE := {"scouts": "recruits", "barracks": "roster", "infirmary": "medical", "lab": "crafting", "vault": "inventory", "board": "quests"}
 
 
 ## Where each hamlet building leads.
@@ -198,6 +202,8 @@ func _guild_status_board() -> PanelContainer:
 	var head := _label("Guild status", 15)
 	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(head)
+	if not GameState.heroes.is_empty():
+		col.add_child(_week_strip())
 	var lines := _guild_status_lines()
 	if lines.is_empty():
 		col.add_child(_label("All quiet. The rifts are waiting.", 12, true))
@@ -223,13 +229,48 @@ func _guild_status_board() -> PanelContainer:
 	return p
 
 
+## This week: days to payday, the bill against the treasury, and what the
+## guild has made since the last one. Click for the Ledger.
+func _week_strip() -> Control:
+	var f := GameState.payday_forecast()
+	var box := _vbox(1)
+	var top := _label("This week · payday in %d day%s" % [int(f["days"]), "" if int(f["days"]) == 1 else "s"], 12)
+	top.add_theme_color_override("font_color", Palette.MUTED)
+	box.add_child(top)
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(0, 6)
+	bar.max_value = maxi(1, int(f["bill"]))
+	bar.value = mini(int(f["have"]), int(f["bill"]))
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Palette.RANK_E if int(f["short"]) == 0 else Palette.HAZARD
+	var back := StyleBoxFlat.new()
+	back.bg_color = Color(Palette.LINE, 0.6)
+	bar.add_theme_stylebox_override("fill", fill)
+	bar.add_theme_stylebox_override("background", back)
+	box.add_child(bar)
+	var bill := "Bill %d (wages %d + upkeep %d) · %s" % [int(f["bill"]), int(f["wages"]), int(f["upkeep"]), "covered" if int(f["short"]) == 0 else "short %d" % int(f["short"])]
+	var bl := _label(bill, 12)
+	bl.add_theme_color_override("font_color", Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD)
+	box.add_child(bl)
+	var since := int(f["since"])
+	box.add_child(_label("Since last payday: %s%d Gold" % ["+" if since >= 0 else "", since], 11, true))
+	box.mouse_filter = Control.MOUSE_FILTER_STOP
+	box.tooltip_text = "Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger." % GameData.PAYDAY_DAYS
+	box.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			term_tab = "ledger"
+			render())
+	return box
+
+
 ## [text, colour, action] for the status board, most urgent first.
 func _guild_status_lines() -> Array:
 	var out: Array = []
 	var go_term := func(tab: String): return func(): term_tab = tab; render()
 	var go_screen := func(s: String): return func(): screen = s; render()
 	if GameState.heroes.is_empty():
-		out.append(["Hire your first hero at the Scouts' Lodge", Palette.EMBER_BRIGHT, go_term.call("recruits")])
+		out.append(["Hire your first hero in Recruits", Palette.EMBER_BRIGHT, go_term.call("recruits")])
 	var act := GameState.current_act()
 	if not act.is_empty():
 		if GameState.finale_ready():
@@ -241,10 +282,8 @@ func _guild_status_lines() -> Array:
 					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
 					break
 	if not GameState.heroes.is_empty():
-		var wages := GameState.weekly_wages() + GameState.upkeep()
-		var dtp := GameState.days_to_payday()
-		if wages > GameState.coins or dtp <= 2:
-			out.append(["Payday in %d day%s: %d Gold in wages and upkeep%s" % [dtp, "" if dtp == 1 else "s", wages, " (short %d)" % (wages - GameState.coins) if wages > GameState.coins else ""], Palette.HAZARD if wages > GameState.coins else Palette.COINS, go_term.call("ledger")])
+		if not GameState.hero_request.is_empty():
+			out.append([GameState.request_title() + " — answer before payday", Palette.EMBER_BRIGHT, go_term.call("ledger")])
 		var low := GameState.heroes.filter(func(h): return h.morale < 40)
 		if not low.is_empty():
 			out.append(["%d hero%s with low morale" % [low.size(), "" if low.size() == 1 else "es"], Palette.HAZARD, go_term.call("ledger")])
@@ -431,8 +470,51 @@ var _dismiss_confirm: String = ""   # hero id awaiting a second click on Dismiss
 
 ## The Ledger: payday and wages, the weekly feast, every hero's wage and
 ## morale (and Dismiss), the rival guild, and recent guild news.
+## This week's hero request: who asks, what, and the two answers.
+func _request_card() -> PanelContainer:
+	var req: Dictionary = GameState.hero_request
+	var def: Dictionary = GameData.HERO_REQUESTS[req["type"]]
+	var p := PanelContainer.new()
+	p.theme_type_variation = &"CardPanelEmber"
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	for id in req["ids"]:
+		var h := GameState.find_hero(str(id))
+		if h:
+			row.add_child(_icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), 64))
+	var col := _vbox(6)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var t := _label(GameState.request_title(), 16)
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(t)
+	var first := GameState.find_hero(str(req["ids"][0]))
+	var body := str(def["text"])
+	col.add_child(_wrap_label(body % first.name.split(" the ")[0] if body.contains("%s") and first else body, 13))
+	var opts: Array = GameState.request_options()
+	var btns := HBoxContainer.new()
+	btns.add_theme_constant_override("separation", 8)
+	for k in 2:
+		var yes := k == 0
+		var b := _button(str(opts[k]), func():
+			var err := GameState.answer_request(yes)
+			if err != "":
+				_flavor_toast = err
+			render())
+		if yes and req["type"] == "gear" and GameState.coins < GameData.REQUEST_GEAR_COST:
+			b.disabled = true
+			b.tooltip_text = "Not enough Gold."
+		btns.add_child(b)
+	col.add_child(btns)
+	col.add_child(_label("No answer by payday counts as a no.", 11, true))
+	row.add_child(col)
+	p.add_child(row)
+	return p
+
+
 func _render_ledger(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Ledger", 20))
+	if not GameState.hero_request.is_empty():
+		v.add_child(_request_card())
 	var wages := GameState.weekly_wages() + GameState.upkeep()
 	var dtp := GameState.days_to_payday()
 	var short := wages > GameState.coins
@@ -469,11 +551,24 @@ func _render_ledger(v: VBoxContainer) -> void:
 	var rival := PanelContainer.new()
 	rival.theme_type_variation = &"CardPanelViolet"
 	var rv := _vbox(4)
-	rv.add_child(_label("Rival: %s" % GameState.rival_name, 16))
+	var rlead := GameState.rival_leader()
+	var rhead := HBoxContainer.new()
+	rhead.add_theme_constant_override("separation", 10)
+	rhead.add_child(_icon(str(rlead["crest"]), 40))
+	rhead.add_child(_icon_trimmed(str(rlead["portrait"]), 64))
+	var rnames := _vbox(0)
+	rnames.add_child(_label("Rival: %s" % GameState.rival_name, 16))
+	rnames.add_child(_label("Led by %s" % rlead["leader"], 12, true))
+	rhead.add_child(rnames)
+	rv.add_child(rhead)
 	var lead := GameState.reputation - GameState.rival_renown
 	var rl := _label("Renown — you %d · them %d (%s)" % [GameState.reputation, GameState.rival_renown, "you lead by %d" % lead if lead > 0 else ("they lead by %d" % -lead if lead < 0 else "level")], 14)
 	rl.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
 	rv.add_child(rl)
+	var cs := GameState.contest_status()
+	var cl := _label("This month's contest: rifts sealed — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown." % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), "" if int(cs["days_left"]) == 1 else "s", GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
+	cl.add_theme_color_override("font_color", Palette.good() if int(cs["ours"]) > int(cs["theirs"]) else (Palette.HAZARD if int(cs["ours"]) < int(cs["theirs"]) else Palette.TEXT))
+	rv.add_child(cl)
 	rv.add_child(_wrap_label("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.", 12, true))
 	rival.add_child(rv)
 	v.add_child(rival)
@@ -547,10 +642,10 @@ func _render_getting_started(v: VBoxContainer) -> void:
 	if GameState.guide_hidden or GameState.rifts_sealed >= 3:
 		return
 	var steps := [
-		["Recruit a hero at the Scouts' Lodge", not GameState.heroes.is_empty()],
-		["Assemble a party at the Rift Gate and enter a rift", not GameState.monsters_seen.is_empty()],
-		["Equip an item on a hero (Roster > Hero)", GameState.items.any(func(it): return it.equipped_to != "")],
-		["Spend a skill point (Roster > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
+		["Recruit a hero (Roster > Recruits)", not GameState.heroes.is_empty()],
+		["Assemble a party in the Rift Hall and enter a rift", not GameState.monsters_seen.is_empty()],
+		["Equip an item on a hero (Roster > Heroes)", GameState.items.any(func(it): return it.equipped_to != "")],
+		["Spend a skill point (Roster > Heroes > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
 		["Seal your first rift by beating its boss", GameState.rifts_sealed >= 1],
 	]
 	var done: int = steps.filter(func(s): return s[1]).size()
@@ -608,14 +703,14 @@ func _camp_badges() -> Dictionary:
 		if not reasons.is_empty():
 			needy.append("%s: %s" % [h.name.split(" the ")[0], ", ".join(reasons)])
 	if not needy.is_empty():
-		out["Barracks"] = [str(needy.size()), "\n".join(needy)]
+		out["roster"] = [str(needy.size()), "\n".join(needy)]
 	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded)
 	if not hurt.is_empty():
-		out["Infirmary"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
+		out["medical"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
 	if GameState.heroes.size() < GameState.hero_slot_cap():
 		var affordable := GameState.recruit_pool.filter(func(h): return GameState.coins >= int(GameData.find_rank(h.rank)["cost"]))
 		if not affordable.is_empty():
-			out["Scouts' Lodge"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
+			out["recruits"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
 	var craftable := 0
 	var groups := {}
 	for it in GameState.items:
@@ -629,14 +724,14 @@ func _camp_badges() -> Dictionary:
 	for k in groups:
 		craftable += int(groups[k]) / 3
 	if craftable > 0:
-		out["Arcane Lab"] = [str(craftable), "%d craft(s) ready at the Crafting Hall" % craftable]
+		out["crafting"] = [str(craftable), "%d craft(s) ready in Crafting" % craftable]
 	var free_relic_slots := GameState.relic_slot_cap() - Combat.equipped_relics().size()
 	var spare_relics := GameState.relics.filter(func(r): return not r.equipped).size()
 	if free_relic_slots > 0 and spare_relics > 0:
-		out["Relic Vault"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic from Inventory" % free_relic_slots]
+		out["inventory"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic under Items > Relics" % free_relic_slots]
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty():
-		out["Quest Board"] = [str(claimable.size()), "%d Guild Board quest(s) ready to claim" % claimable.size()]
+		out["quests"] = [str(claimable.size()), "%d quest(s) ready to claim" % claimable.size()]
 	return out
 
 
@@ -650,40 +745,41 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 		"command":
 			title = "Command Tent"
 			entries = [
-				[GameData.CAMP_HUB_ICON_PATH["roster"], "Roster", func(): hub_cluster = ""; term_tab = "roster"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["roster"], "Heroes", func(): hub_cluster = ""; term_tab = "roster"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["management"], "Management", func(): hub_cluster = ""; term_tab = "management"; render()],
 			]
 		"guild_hall":
 			title = "Guild Hall"
 			entries = [
-				[GameData.CAMP_HUB_ICON_PATH["management"], "Guild Management", func(): hub_cluster = ""; term_tab = "management"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Compendium", func(): hub_cluster = ""; term_tab = "compendium"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["management"], "Management", func(): hub_cluster = ""; term_tab = "management"; render()],
+				["res://assets/skills/gem_blue_a.png", "Ledger", func(): hub_cluster = ""; term_tab = "ledger"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Codex", func(): hub_cluster = ""; term_tab = "compendium"; render()],
 				["res://assets/skills/trophy.png", "Records", func(): hub_cluster = ""; term_tab = "records"; render()],
 				["res://assets/skills/helm.png", "Memorial", func(): hub_cluster = ""; term_tab = "memorial"; render()],
 			]
 		"arcane_lab":
 			title = "Arcane Lab"
 			entries = [
-				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting Hall", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
 				[GameData.CAMP_HUB_ICON_PATH["bestiary"], "Bestiary", func(): hub_cluster = ""; term_tab = "bestiary"; render()],
 			]
 		"trading_post":
 			title = "Trading Post"
 			entries = [
-				[GameData.CAMP_HUB_ICON_PATH["inventory"], "Inventory", func(): hub_cluster = ""; term_tab = "inventory"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting Hall", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["inventory"], "Items", func(): hub_cluster = ""; term_tab = "inventory"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["crafting"], "Crafting", func(): hub_cluster = ""; screen = "crafting_hall"; render()],
 			]
 		"scholars_lodge":
 			title = "Scholar's Lodge"
 			entries = [
 				[GameData.CAMP_HUB_ICON_PATH["bestiary"], "Bestiary", func(): hub_cluster = ""; term_tab = "bestiary"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Compendium", func(): hub_cluster = ""; term_tab = "compendium"; render()],
-				[GameData.CAMP_HUB_ICON_PATH["quests"], "Guild Board", func(): hub_cluster = ""; term_tab = "quests"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["compendium"], "Codex", func(): hub_cluster = ""; term_tab = "compendium"; render()],
+				[GameData.CAMP_HUB_ICON_PATH["quests"], "Quests", func(): hub_cluster = ""; term_tab = "quests"; render()],
 			]
 	v.add_child(_label(title, 18))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	var entry_feature := {"Guild Management": "management", "Inventory": "inventory", "Crafting Hall": "crafting", "Bestiary": "bestiary", "Guild Board": "quests"}
+	var entry_feature := {"Management": "management", "Items": "inventory", "Crafting": "crafting", "Bestiary": "bestiary", "Quests": "quests", "Ledger": "management"}
 	for entry in entries:
 		var fid: String = entry_feature.get(str(entry[1]), "")
 		if fid != "" and not GameState.feature_unlocked(fid):
@@ -928,7 +1024,7 @@ func _craft_count(count: int) -> String:
 
 
 func _render_crafting_hall(v: VBoxContainer) -> void:
-	v.add_child(_label("Crafting Hall", 20))
+	v.add_child(_label("Crafting", 20))
 	v.add_child(_label("Combine 3 of the same kind and rarity into 1 of the next rarity up.", 12, true))
 
 	var scene := _hub_banner(GameData.CRAFTING_BG, 200)
@@ -1146,7 +1242,7 @@ func _render_compendium_relics(v: VBoxContainer) -> void:
 
 
 func _render_compendium_crafting(v: VBoxContainer) -> void:
-	v.add_child(_wrap_label("The Crafting Hall combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.", 12, true))
+	v.add_child(_wrap_label("Crafting combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.", 12, true))
 	for rarity in GameState.CRAFT_RARITY_UP:
 		v.add_child(_wrap_label("• 3× %s → 1× %s" % [str(rarity).capitalize(), str(GameState.CRAFT_RARITY_UP[rarity]).capitalize()], 13))
 	v.add_child(_wrap_label("Legendary items/relics are fixed hand-authored drops — not craftable from Epics.", 12, true))
@@ -1183,8 +1279,9 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."],
 		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
-		["Guild Board & Milestones", "The Guild Board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
-		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily and poaches posted contracts; at payday, the leader on Renown gets the better recruits."],
+		["Quests & Milestones", "The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
+		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, poaches posted contracts and taunts you in the news; at payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild sealed more rifts wins a prize."],
+		["Hero requests", "Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no."],
 	]
 	for entry in entries:
 		v.add_child(_label(str(entry[0]), 15))
@@ -1228,7 +1325,7 @@ func _render_quests(v: VBoxContainer) -> void:
 	var head := _vbox(0)
 	head.position = Vector2(pad_x, 34)
 	head.size = Vector2(board_w - pad_x * 2.0, 60)
-	var title := _label("Guild Board", 22)
+	var title := _label("Quests", 22)
 	title.add_theme_color_override("font_color", Color("f1e2c0"))
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	title.add_theme_constant_override("shadow_offset_y", 2)

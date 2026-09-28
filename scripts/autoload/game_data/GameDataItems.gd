@@ -123,7 +123,7 @@ const UNIQUE_RELICS := [
 	{"id": "quartermasters_ledger", "name": "Quartermaster's Ledger", "type": "Arcane", "effect": "quest_bonus", "value": 0.5,
 	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
 	 "special_kind": "loot_rarity_pct", "special_value": 0.05,
-	 "desc": "Guild Board quests pay 50% more Gold and Essence. +5% odds toward Rare/Epic loot."},
+	 "desc": "Quests pay 50% more Gold and Essence. +5% odds toward Rare/Epic loot."},
 	{"id": "lantern_of_the_lost", "name": "Lantern of the Lost", "type": "Verdant", "effect": "free_carry", "value": 0.0,
 	 "drawback_kind": "", "drawback_value": 0.0, "drawback_label": "", "combo_with": "",
 	 "special_kind": "mend_pct", "special_value": 0.02,

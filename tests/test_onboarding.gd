@@ -52,7 +52,7 @@ func run() -> void:
 	GameState.rifts_sealed = 1
 	var fresh := GameState.check_feature_unlocks()
 	check(fresh.has("quests") and fresh.has("crafting") and fresh.has("management"), "first seal unlocks quests/crafting/management %s" % [fresh])
-	check(GameState.pending_toasts.size() == 1 and str(GameState.pending_toasts[0]["text"]).contains("Guild Board"), "one combined unlock toast")
+	check(GameState.pending_toasts.size() == 1 and str(GameState.pending_toasts[0]["text"]).contains("Quests"), "one combined unlock toast")
 	check(GameState.check_feature_unlocks().is_empty(), "announced only once")
 	# Tips.
 	check(GameState.hint_pending("battle"), "tip pending")

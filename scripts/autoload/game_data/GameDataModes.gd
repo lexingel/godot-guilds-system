@@ -100,6 +100,26 @@ const TOWER_BOSSES := {
 }
 
 ## Guild titles for reaching a floor (the highest shows beside the guild name).
+## Weekly hero requests: on this day of the week (day % PAYDAY_DAYS) one
+## hero (two for a feud) asks for something. Each answer costs something;
+## no answer by payday counts as "no". %s in the texts is the hero's name.
+const REQUEST_DAY := 3
+const REQUEST_RAISE := 0.25       # a granted raise: +25% wage for good
+const REQUEST_GEAR_COST := 60
+const REQUEST_LEAVE_DAYS := 3
+const HERO_REQUESTS := {
+	"week_off": {"title": "%s asks for time off", "text": "%s has been in the rifts a lot and wants a few days away from the guild.",
+		"yes": "Grant it: away %d days, +15 morale" % REQUEST_LEAVE_DAYS, "no": "Refuse: -10 morale", "yes_morale": 15, "no_morale": -10},
+	"raise": {"title": "%s asks for a raise", "text": "%s says the rifts are worth more than the guild pays and wants a bigger share.",
+		"yes": "Raise their wage %d%%: +20 morale" % int(REQUEST_RAISE * 100), "no": "Refuse: -12 morale", "yes_morale": 20, "no_morale": -12},
+	"gear": {"title": "%s wants better kit", "text": "%s says their gear is falling apart and asks for Gold for repairs.",
+		"yes": "Pay %d Gold: +15 morale" % REQUEST_GEAR_COST, "no": "Refuse: -8 morale", "yes_morale": 15, "no_morale": -8},
+	"train": {"title": "%s wants extra drills", "text": "%s asks for a spot in the Training Yard this week.",
+		"yes": "Give them a slot: +1 attribute point, +5 morale", "no": "Not this week: -6 morale", "yes_morale": 5, "no_morale": -6},
+	"feud": {"title": "%s and %s are feuding", "text": "An argument over the last rift's spoils has turned sour. Each wants you on their side.",
+		"yes": "Side with %s", "no": "Side with %s", "yes_morale": 10, "no_morale": -12},
+}
+
 ## A fight won by hand (Auto never on) with no hero down pays this share
 ## of its gold again.
 const HAND_BONUS := 0.3
@@ -408,17 +428,17 @@ const MANAGEMENT_NODE_ICON := {
 const HAMLET_BG := "res://assets/hamlet/backdrop.png"
 const HAMLET_SIZE := Vector2(400, 180)
 const HAMLET_BUILDINGS := [
-	{"id": "scouts", "name": "Scouts' Lodge", "tier": "node", "node": "log.scouts", "pos": Vector2(62, 150), "row": "back"},
+	{"id": "scouts", "name": "Recruits", "building": "Scouts' Lodge", "tier": "node", "node": "log.scouts", "pos": Vector2(62, 150), "row": "back"},
 	{"id": "hall", "name": "Guild Hall", "tier": "guild", "pos": Vector2(200, 152), "row": "back"},
 	{"id": "lab", "name": "Arcane Lab", "tier": "node", "node": "res.lab", "pos": Vector2(338, 150), "row": "back"},
-	{"id": "barracks", "name": "Barracks", "tier": "node", "node": "ops.barracks", "pos": Vector2(32, 177), "row": "front"},
-	{"id": "infirmary", "name": "Infirmary", "tier": "node", "node": "ops.infirmary", "pos": Vector2(96, 177), "row": "front"},
-	{"id": "drill", "name": "Drill Yard", "tier": "node", "node": "ops.drill", "pos": Vector2(152, 177), "row": "front"},
+	{"id": "barracks", "name": "Heroes", "building": "Barracks", "tier": "node", "node": "ops.barracks", "pos": Vector2(32, 177), "row": "front"},
+	{"id": "infirmary", "name": "Medical Bay", "building": "Infirmary", "tier": "node", "node": "ops.infirmary", "pos": Vector2(96, 177), "row": "front"},
+	{"id": "drill", "name": "Skills", "building": "Drill Yard", "tier": "node", "node": "ops.drill", "pos": Vector2(152, 177), "row": "front"},
 	{"id": "campfire", "name": "", "tier": "", "pos": Vector2(200, 178), "row": "front"},
-	{"id": "board", "name": "Quest Board", "tier": "", "pos": Vector2(234, 176), "row": "front"},
-	{"id": "gate", "name": "Rift Gate", "tier": "act", "pos": Vector2(270, 177), "row": "front"},
-	{"id": "market", "name": "Market", "tier": "node", "node": "log.trade", "pos": Vector2(322, 177), "row": "front"},
-	{"id": "vault", "name": "Relic Vault", "tier": "node", "node": "res.vault", "pos": Vector2(374, 177), "row": "front"},
+	{"id": "board", "name": "Quests", "building": "Quest Board", "tier": "", "pos": Vector2(234, 176), "row": "front"},
+	{"id": "gate", "name": "Rift Hall", "building": "Rift Gate", "tier": "act", "pos": Vector2(270, 177), "row": "front"},
+	{"id": "market", "name": "Items", "building": "Market", "tier": "node", "node": "log.trade", "pos": Vector2(322, 177), "row": "front"},
+	{"id": "vault", "name": "Relics", "building": "Relic Vault", "tier": "node", "node": "res.vault", "pos": Vector2(374, 177), "row": "front"},
 ]
 ## Gold in a Rift Cache (a chance on sealing, DIFFICULTIES "cache_chance").
 const RIFT_CACHE_GOLD := {"lesser": 70, "greater": 170}
@@ -445,8 +465,8 @@ const CAMPAIGN := [
 	{"act": 3, "name": "The Ashen Crown", "foe": "Sythrane", "boss": "Sythrane, the Ashen Crown",
 	 "finale": "The Heart of the Rift", "tier": "greater", "mult": 1.45, "opens": "",
 	 "intro": "Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",
-	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the Guild Board carry on.)",
-	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 Guild Board quests"}],
+	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the quests carry on.)",
+	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 quests"}],
 	 "reward": {"crystals": 280}},
 ]
 const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}
@@ -545,6 +565,28 @@ const QUEST_DUE_DAYS := {1: 6, 2: 8, 3: 10}
 const RIVAL_NAMES := ["The Iron Chorus", "The Ashen Wolves", "The Gilded Lance", "The Last Lantern", "The Hollow Crown Company"]
 const RIVAL_DAILY_RENOWN := {1: [0, 1], 2: [1, 2], 3: [1, 3]}   # [min, max] per day by campaign act (3 = Act III and after)
 const RIVAL_SNATCH_CHANCE := 0.25   # a day's chance it takes one posted contract
+## Each rival guild's leader: a name, a portrait (a subclass id) and a crest.
+const RIVAL_LEADERS := {
+	"The Iron Chorus": {"leader": "Marshal Orla Venn", "portrait": "iron-guard", "crest": 1},
+	"The Ashen Wolves": {"leader": "Kael Ashborn", "portrait": "berserker", "crest": 2},
+	"The Gilded Lance": {"leader": "Ser Aldric Vane", "portrait": "radiant-vanguard", "crest": 3},
+	"The Last Lantern": {"leader": "Mother Ilse", "portrait": "dawnkeeper", "crest": 4},
+	"The Hollow Crown Company": {"leader": "Captain Morrow", "portrait": "nightblade", "crest": 5},
+}
+## What the rival's leader says about you in the guild news (%s: your guild).
+const RIVAL_TAUNTS := [
+	"Seal the small rifts, %s. Leave the real ones to us.",
+	"%s pays its heroes in promises, I hear.",
+	"Our recruits ask about %s. Then they sign with us.",
+	"Tell %s the quest board isn't a charity.",
+	"We'll send flowers when %s closes its doors.",
+	"%s? I thought they'd disbanded.",
+]
+const RIVAL_TAUNT_CHANCE := 0.2
+## A monthly contest: whoever seals more rifts in CONTEST_DAYS wins a prize.
+const CONTEST_DAYS := 28
+const CONTEST_PRIZE := {"coins": 200, "reputation": 8}
+const RIVAL_SEAL_CHANCE := {1: 0.25, 2: 0.4, 3: 0.55}   # per day, by campaign act
 ## Sealing a rift earns Renown: 1, +1 per three ladder ranks.
 const SEAL_RENOWN_BASE := 1
 

@@ -313,7 +313,7 @@ func _update_screen_music() -> void:
 
 ## Pinned HUD stays outside the ScrollContainer, so the guild identity,
 ## currencies, and "where am I" breadcrumb never scroll out of view.
-const TAB_TITLE := {"roster": "Heroes", "management": "Guild Management", "quests": "Guild Board", "compendium": "Codex"}
+const TAB_TITLE := {"roster": "Heroes", "management": "Management", "quests": "Quests", "compendium": "Codex", "medical": "Medical Bay", "inventory": "Items"}
 
 
 func _breadcrumb_for_screen() -> String:
@@ -323,7 +323,7 @@ func _breadcrumb_for_screen() -> String:
 		"party_assembly": return "Party Assembly"
 		"rift_run" when GameState.run.has("tower"): return "Tower of Trials — Floor %d" % int(GameState.run["tower"])
 		"rift_run": return "Rift Run — Floor %d/%d" % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
-		"crafting_hall": return "Crafting Hall"
+		"crafting_hall": return "Crafting"
 		"settings": return "Settings"
 		"camp": return "Camp" if term_tab == "camp" else "Camp — %s" % TAB_TITLE.get(term_tab, term_tab.capitalize())
 		_: return ""
@@ -435,11 +435,11 @@ func _count_label(key: String, value: int, size: int) -> Label:
 ## than one shows them as sub-tabs underneath.
 ## [label, icon id, [[screen id, sub-tab label, camp building whose attention badge it shares], ...]]
 const NAV_GROUPS := [
-	["Roster", "roster", [["roster", "Heroes", "Command Tent"], ["recruits", "Recruits", "Hero Recruits"], ["medical", "Medical", "Medical Tent"]]],
-	["Inventory", "inventory", [["inventory", "Items", "Inventory"], ["crafting", "Crafting", "Trading Post"]]],
-	["Rift Hall", "rift", [["rift", "Rift Hall", "Rift Gate"]]],
-	["Guild", "management", [["management", "Manage", ""], ["ledger", "Ledger", ""], ["quests", "Quests", "Scholar's Lodge"], ["records", "Records", ""], ["memorial", "Memorial", ""]]],
-	["Library", "bestiary", [["bestiary", "Bestiary", ""], ["compendium", "Codex", ""]]],
+	["Roster", "roster", [["roster", "Heroes"], ["recruits", "Recruits"], ["medical", "Medical Bay"]]],
+	["Inventory", "inventory", [["inventory", "Items"], ["crafting", "Crafting"]]],
+	["Rift Hall", "rift", [["rift", "Rift Hall"]]],
+	["Guild", "management", [["management", "Management"], ["ledger", "Ledger"], ["quests", "Quests"], ["records", "Records"], ["memorial", "Memorial"]]],
+	["Library", "bestiary", [["bestiary", "Bestiary"], ["compendium", "Codex"]]],
 ]
 const NAV_FEATURE := {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}
 
@@ -533,7 +533,7 @@ func _quick_nav() -> Control:
 		kl.position = Vector2(3, 0)
 		b.add_child(kl)
 		for m in members:
-			var badge: Array = badges.get(str(m[2]), [])
+			var badge: Array = badges.get(str(m[0]), [])
 			if not badge.is_empty() and not _nav_locked(str(m[0])):
 				var chip := _count_badge(str(badge[0]), str(badge[1]))
 				chip.position = Vector2(70, -6)
@@ -551,7 +551,7 @@ func _quick_nav() -> Control:
 				sb.toggle_mode = true
 				sb.button_pressed = sid == current
 				sb.custom_minimum_size = Vector2(92, 32)
-				var badge: Array = badges.get(str(m[2]), [])
+				var badge: Array = badges.get(str(m[0]), [])
 				if _nav_locked(sid):
 					sb.disabled = true
 					sb.modulate = Color(1, 1, 1, 0.45)
@@ -600,7 +600,7 @@ func _header_back() -> Array:
 			, "Rift Hall"]
 		"settings":
 			const NAMES := {"camp": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "tower": "Tower",
-				"party_assembly": "Party Assembly", "crafting_hall": "Crafting Hall"}
+				"party_assembly": "Party Assembly", "crafting_hall": "Crafting"}
 			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
 	return []
 
@@ -825,7 +825,7 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 	var cv := _vbox(6)
 	if GameState.campaign_done():
 		cv.add_child(_label("The campaign is complete", 16))
-		cv.add_child(_wrap_label("The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on the Guild Board.", 12, true))
+		cv.add_child(_wrap_label("The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on quests.", 12, true))
 		panel.add_child(cv)
 		v.add_child(panel)
 		return
@@ -868,6 +868,18 @@ func _render_campaign_panel(v: VBoxContainer) -> void:
 
 func _render_rift_hall(v: VBoxContainer) -> void:
 	v.add_child(_label("Rift Hall", 20))
+	if not GameState.heroes.is_empty():
+		var f := GameState.payday_forecast()
+		var msg := "Payday in %d day%s: %d Gold due, you have %d — " % [int(f["days"]), "" if int(f["days"]) == 1 else "s", int(f["bill"]), int(f["have"])]
+		if int(f["short"]) == 0:
+			msg += "covered."
+		elif int(f["runs"]) > 0:
+			msg += "short %d; about %d rift%s at your recent pay (%d each) covers it." % [int(f["short"]), int(f["runs"]), "" if int(f["runs"]) == 1 else "s", int(f["per_run"])]
+		else:
+			msg += "short %d." % int(f["short"])
+		var fl := _wrap_label(msg, 12)
+		fl.add_theme_color_override("font_color", Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD)
+		v.add_child(fl)
 	_coach(v, "rift_hall", "Choosing a rift", "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
 	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
 		_ladder_pick = GameState.highest_open_rank()

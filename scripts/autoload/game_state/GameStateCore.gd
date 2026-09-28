@@ -91,6 +91,11 @@ var rival_ahead: int = 0          # set at payday: 1 = we lead (better recruits)
 var feast_week: int = -1          # the payday week a feast was last held
 var training_week: int = -1       # the week the Training Yard count below belongs to
 var trained_this_week: int = 0
+var contest_seals_start: int = -1   # rifts_sealed when this month's contest began (-1: not started)
+var rival_contest_seals: int = 0
+var hero_request: Dictionary = {}   # this week's request: {type, ids, day}, or empty
+var wage_raise: Dictionary = {}     # hero id -> extra wage share from granted raises
+var week_start_coins: int = -1   # Gold right after the last payday (-1: not yet), for "since payday"
 var payday_report: Dictionary = {}   # the last payday: {day, due, paid, unpaid, left, rival}
 var guild_news: Array = []        # recent rival/contract/payday lines for the Ledger (newest first)
 var runs_started: int = 0   # the first one is a training rift (GameData.TRAINING_RIFT)
@@ -514,7 +519,7 @@ func save() -> void:
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "endless_best": endless_best, "endless_milestones": endless_milestones, "boon_set4_reached": boon_set4_reached,
-		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "guild_news": guild_news,
+		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "contest_seals_start": contest_seals_start, "rival_contest_seals": rival_contest_seals, "guild_news": guild_news,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,

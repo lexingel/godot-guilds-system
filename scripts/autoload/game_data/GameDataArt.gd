@@ -62,11 +62,11 @@ const ESCORT_NAMES := ["Wounded Survivor", "Lost Scout", "Stranded Merchant", "F
 ## announces it. Roster, Recruits, Rift Hall and the Codex are always open.
 const FEATURE_UNLOCKS := {
 	"inventory": {"name": "Inventory", "hint": "Opens once you find your first item or relic", "news": "Loot you find is kept here — equip items on the Roster's Hero tab."},
-	"medical": {"name": "Medical Tent", "hint": "Opens after your first rift run", "news": "Wounded and downed heroes recover faster in a bed."},
+	"medical": {"name": "Medical Bay", "hint": "Opens after your first rift run", "news": "Wounded and downed heroes recover faster in a bed."},
 	"bestiary": {"name": "Bestiary", "hint": "Opens after your first fight", "news": "Every foe you meet is recorded here."},
-	"crafting": {"name": "Crafting Hall", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
-	"quests": {"name": "Guild Board", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
-	"management": {"name": "Guild Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
+	"crafting": {"name": "Crafting", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
+	"quests": {"name": "Quests", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
+	"management": {"name": "Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
 	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
 }
 

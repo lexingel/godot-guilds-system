@@ -128,7 +128,7 @@ func _complete_act(act_num: int) -> void:
 		subtitle += " · %s unlocked" % act["opens"]
 	pending_stories.append({"title": act["finale"] + " — sealed", "subtitle": subtitle, "text": str(act["outro"])})
 	if campaign_done():
-		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on the Guild Board for as long as rifts keep opening."})
+		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening."})
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
 

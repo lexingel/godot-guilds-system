@@ -1064,6 +1064,7 @@ func pass_time() -> void:
 	rival_day()
 	if day % GameData.PAYDAY_DAYS == 0:
 		run_payday()
+	maybe_hero_request()
 	for h in heroes:
 		if h.busy_runs > 0:
 			h.busy_runs -= 1

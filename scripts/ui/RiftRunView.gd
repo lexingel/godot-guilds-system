@@ -570,7 +570,7 @@ func _injury_panel() -> Control:
 			b.disabled = disabled
 			b.tooltip_text = tip
 			acts.add_child(b)
-		act.call("Carry out (+1 day)", "The party carries them home. A day passes and the Guild Board moves on.", false,
+		act.call("Carry out (+1 day)", "The party carries them home. A day passes and the quest board moves on.", false,
 			func(): return GameState.injury_carry(h.id))
 		var need := int(GameData.INJURY_REINFORCEMENTS[sev])
 		var sent: Array = idle.slice(0, need).map(func(x): return x.name.split(" the ")[0])

@@ -260,7 +260,7 @@ func _news(line: String) -> void:
 
 
 func wage_of(h: Hero) -> int:
-	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1))))
+	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1)) * (1.0 + float(wage_raise.get(h.id, 0.0)))))
 
 
 func weekly_wages() -> int:
@@ -274,6 +274,116 @@ func days_to_payday() -> int:
 	return GameData.PAYDAY_DAYS - (day % GameData.PAYDAY_DAYS)
 
 
+## The coming payday at a glance: {days, wages, upkeep, bill, have, short,
+## since (Gold gained since the last payday), per_run (average pay of the
+## last few rifts, 0 if none), runs (rifts at that pay to cover the gap)}.
+func payday_forecast() -> Dictionary:
+	var w := weekly_wages()
+	var up := upkeep()
+	var bill := w + up
+	var pays: Array = run_history.slice(0, 5).map(func(e): return int(e.get("coins", 0))).filter(func(c): return c > 0)
+	var per_run := 0
+	if not pays.is_empty():
+		per_run = int(pays.reduce(func(a, b): return a + b, 0) / pays.size())
+	var short := maxi(0, bill - coins)
+	return {"days": days_to_payday(), "wages": w, "upkeep": up, "bill": bill, "have": coins, "short": short,
+		"since": coins - (week_start_coins if week_start_coins >= 0 else coins), "per_run": per_run,
+		"runs": (int(ceil(float(short) / per_run)) if per_run > 0 else -1) if short > 0 else 0}
+
+
+# ---------------- Hero requests ----------------
+
+## Mid-week, maybe a hero asks for something (see HERO_REQUESTS).
+func maybe_hero_request() -> void:
+	if not hero_request.is_empty() or day % GameData.PAYDAY_DAYS != GameData.REQUEST_DAY:
+		return
+	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
+	var pool: Array = heroes.filter(func(h): return not h.is_champion and not in_rift.has(h.id) and not h.is_downed())
+	if pool.is_empty():
+		return
+	pool.shuffle()
+	var types: Array = ["week_off", "raise", "gear"]
+	if training_left() > 0:
+		types.append("train")
+	if pool.size() >= 2:
+		types.append("feud")
+	var t: String = types[randi() % types.size()]
+	var ids: Array = [pool[0].id] if t != "feud" else [pool[0].id, pool[1].id]
+	hero_request = {"type": t, "ids": ids, "day": day}
+	_news(request_title() + ".")
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": "A request", "text": request_title() + ". Answer it in the Ledger before payday."})
+
+
+func _request_names() -> Array:
+	var out: Array = []
+	for id in hero_request.get("ids", []):
+		var h := find_hero(str(id))
+		out.append(h.name.split(" the ")[0] if h else "someone")
+	return out
+
+
+func request_title() -> String:
+	if hero_request.is_empty():
+		return ""
+	var def: Dictionary = GameData.HERO_REQUESTS[hero_request["type"]]
+	var n := _request_names()
+	return str(def["title"]) % (n if hero_request["type"] == "feud" else [n[0]])
+
+
+## The two answers' button texts.
+func request_options() -> Array:
+	var def: Dictionary = GameData.HERO_REQUESTS[hero_request["type"]]
+	var n := _request_names()
+	if hero_request["type"] == "feud":
+		return [str(def["yes"]) % n[0], str(def["no"]) % n[1]]
+	return [str(def["yes"]), str(def["no"])]
+
+
+## Answers this week's request. For a feud, "yes" sides with the first hero,
+## "no" with the second. Returns "" or why it can't be done.
+func answer_request(yes: bool) -> String:
+	if hero_request.is_empty():
+		return "No request is waiting."
+	var t := str(hero_request["type"])
+	var def: Dictionary = GameData.HERO_REQUESTS[t]
+	var hs: Array = (hero_request["ids"] as Array).map(func(id): return find_hero(str(id))).filter(func(h): return h != null)
+	if hs.is_empty():
+		hero_request = {}
+		return ""
+	var h: Hero = hs[0]
+	if t == "feud":
+		if hs.size() >= 2:
+			var winner: Hero = hs[0] if yes else hs[1]
+			var loser: Hero = hs[1] if yes else hs[0]
+			change_morale(winner, int(def["yes_morale"]))
+			change_morale(loser, int(def["no_morale"]))
+	elif yes:
+		match t:
+			"week_off":
+				h.busy_runs = maxi(h.busy_runs, GameData.REQUEST_LEAVE_DAYS)
+			"raise":
+				wage_raise[h.id] = float(wage_raise.get(h.id, 0.0)) + GameData.REQUEST_RAISE
+			"gear":
+				if coins < GameData.REQUEST_GEAR_COST:
+					return "Not enough Gold."
+				coins -= GameData.REQUEST_GEAR_COST
+			"train":
+				if training_left() <= 0:
+					return "The Training Yard is full this week."
+				if training_week != day / GameData.PAYDAY_DAYS:
+					training_week = day / GameData.PAYDAY_DAYS
+					trained_this_week = 0
+				trained_this_week += 1
+				h.attr_points += 1
+		change_morale(h, int(def["yes_morale"]))
+	else:
+		change_morale(h, int(def["no_morale"]))
+	hero_request = {}
+	save()
+	state_changed.emit()
+	return ""
+
+
 func change_morale(h: Hero, delta: int) -> void:
 	h.morale = clampi(h.morale + delta, 0, 100)
 
@@ -283,6 +393,9 @@ func change_morale(h: Hero, delta: int) -> void:
 ## hero unpaid twice running or at rock-bottom morale walks out (never one
 ## on a rift right now). Then the guild is compared with its rival.
 func run_payday() -> void:
+	if not hero_request.is_empty():
+		_news("%s — no answer by payday, taken as a no." % request_title())
+		answer_request(false)
 	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
 	var paid := 0
 	var unpaid: Array[String] = []
@@ -328,6 +441,7 @@ func run_payday() -> void:
 	if not left.is_empty():
 		text += " · %s walked out" % ", ".join(left)
 	pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Payday", "text": text + "."})
+	week_start_coins = coins
 
 
 ## A hero leaves the guild (dismissed or walked out): their gear returns to
@@ -394,6 +508,48 @@ func rival_day() -> void:
 			var q: Dictionary = posted[randi() % posted.size()]
 			guild_board.erase(q)
 			_news("%s took the contract: %s." % [rival_name, quest_desc(q)])
+	if randf() < GameData.RIVAL_TAUNT_CHANCE:
+		_news("%s of %s: \"%s\"" % [rival_leader()["leader"], rival_name, str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name])
+	# This month's contest.
+	if contest_seals_start < 0:
+		contest_seals_start = rifts_sealed
+		rival_contest_seals = 0
+	if randf() < float(GameData.RIVAL_SEAL_CHANCE[clampi(campaign_act, 1, 3)]):
+		rival_contest_seals += 1
+	if day % GameData.CONTEST_DAYS == 0:
+		_end_contest()
+
+
+## The rival's leader: {leader, portrait (path), crest (path)}.
+func rival_leader() -> Dictionary:
+	var d: Dictionary = GameData.RIVAL_LEADERS.get(rival_name, {"leader": "Their captain", "portrait": "footman", "crest": 1})
+	return {"leader": d["leader"], "portrait": GameData.portrait_for_hero("", str(d["portrait"])), "crest": GameData.CREST_PATH[int(d["crest"]) % GameData.CREST_PATH.size()]}
+
+
+## This month's contest: {ours, theirs, days_left}.
+func contest_status() -> Dictionary:
+	var ours := rifts_sealed - contest_seals_start if contest_seals_start >= 0 else 0
+	return {"ours": ours, "theirs": rival_contest_seals, "days_left": GameData.CONTEST_DAYS - (day % GameData.CONTEST_DAYS)}
+
+
+## The month is up: whoever sealed more rifts takes the prize (a tie, nobody).
+func _end_contest() -> void:
+	var c := contest_status()
+	var ours: int = c["ours"]
+	var theirs: int = c["theirs"]
+	if ours > theirs:
+		coins += int(GameData.CONTEST_PRIZE["coins"])
+		add_reputation(int(GameData.CONTEST_PRIZE["reputation"]))
+		_news("You won the month's contest, %d rifts to %d: +%d Gold, +%d Renown." % [ours, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contest won", "text": "%d rifts sealed to %s's %d. +%d Gold, +%d Renown." % [ours, rival_name, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]]})
+	elif theirs > ours:
+		rival_renown += int(GameData.CONTEST_PRIZE["reputation"])
+		_news("%s won the month's contest, %d rifts to your %d." % [rival_name, theirs, ours])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contest lost", "text": "%s sealed %d rifts to your %d and takes the prize." % [rival_name, theirs, ours]})
+	else:
+		_news("The month's contest ends level at %d rifts each." % ours)
+	contest_seals_start = rifts_sealed
+	rival_contest_seals = 0
 
 
 ## The Guild Standings, best Renown first: your guild, the rival, and three
