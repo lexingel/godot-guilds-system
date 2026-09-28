@@ -827,7 +827,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		var any := false
 		for kind in GameData.BUILD_KINDS:
 			var d: float = float(a.get(kind, 0.0)) - float(b.get(kind, 0.0))
-			if absf(d) >= 0.001:
+			if absf(d) >= 0.01:
 				# hazard guard reads inverted ("-8% hazard severity" is good), so
 				# judge better/worse by the raw delta, not the text's sign.
 				lines.append(_bb(Palette.good() if d > 0 else Palette.HAZARD, ("▲ " if d > 0 else "▼ ") + Combat.describe_skill(kind, d)))

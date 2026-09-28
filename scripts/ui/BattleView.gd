@@ -1027,6 +1027,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		victory_col.add_child(gains_row)
 		if result.has("heroes"):
 			victory_col.add_child(_victory_party(result))
+		if int(result.get("hand_bonus", 0)) > 0:
+			var hb := _label("Flawless, by hand: +%d Gold (no one went down and you played every turn)." % int(result["hand_bonus"]), 12)
+			hb.add_theme_color_override("font_color", Palette.RANK_S)
+			victory_col.add_child(hb)
 		if str(result.get("escort_saved", "")) != "":
 			victory_col.add_child(_label("%s made it through safely — +2 Renown, +1 Token." % str(result["escort_saved"]), 12, true))
 		if kind == "boss" or kind == "elite":
@@ -1793,10 +1797,15 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 	# Auto-play any turn that needs no input (a monster's, a skipped hero, or
 	# every turn while Auto is on).
 	if (current_hero == null or _auto_battle) and not living_heroes.is_empty():
+		if current_hero != null:
+			state["auto_used"] = true   # no hand-played bonus for this fight
 		_run_combat_turns(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
 
 
 var _tut_key := ""   # the command key the guided first fight is pointing at
+var _more_open := false   # the command bar's "More" group (Guard, Move, Tonics, Call) is showing
+var _mom_pips: Array = []   # the Momentum meter's pips, for the hover preview
+var _mom_shown := -1        # the Momentum the meter showed last time, to flash what was just earned
 
 
 ## The guided first fight (training rift): the next step to teach, or {}.
@@ -1948,6 +1957,7 @@ func _momentum_meter(n: int) -> Control:
 	l.add_theme_color_override("font_color", Palette.MUTED)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(l)
+	_mom_pips.clear()
 	for k in GameData.MOMENTUM_MAX:
 		var pip := ColorRect.new()
 		pip.custom_minimum_size = Vector2(7, 9)
@@ -1955,7 +1965,38 @@ func _momentum_meter(n: int) -> Control:
 		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(pip)
+		_mom_pips.append(pip)
+		# Pips earned since the last look flash once.
+		if _mom_shown >= 0 and k >= _mom_shown and k < n:
+			pip.modulate = Color(2.2, 2.2, 1.6)
+			pip.create_tween().tween_property(pip, "modulate", Color.WHITE, 0.6)
+	_mom_shown = n
 	return row
+
+
+## Hovering an action previews the Momentum it leaves: pips it spends turn
+## dark red, pips it earns show pale.
+func _momentum_hover(b: Control, n: int, delta: int) -> void:
+	b.mouse_entered.connect(func(): _paint_pips(n, delta))
+	b.mouse_exited.connect(func(): _paint_pips(n, 0))
+	b.focus_entered.connect(func(): _paint_pips(n, delta))
+	b.focus_exited.connect(func(): _paint_pips(n, 0))
+
+
+func _paint_pips(n: int, delta: int) -> void:
+	var after := clampi(n + delta, 0, GameData.MOMENTUM_MAX)
+	for k in _mom_pips.size():
+		var pip: ColorRect = _mom_pips[k]
+		if not is_instance_valid(pip):
+			return
+		if k < mini(n, after):
+			pip.color = Palette.EMBER_BRIGHT
+		elif k < n:
+			pip.color = Palette.EMBER_DEEP        # would be spent
+		elif k < after:
+			pip.color = Color(Palette.EMBER_BRIGHT, 0.45)   # would be earned
+		else:
+			pip.color = Color(Palette.LINE, 0.6)
 
 
 ## Replaces the command buttons with "Guard whom?": one button per ally
@@ -2092,7 +2133,10 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var atk_tip := "Attack %s (1): +1 Momentum. Click a foe to pick another, Tab to cycle." % tgt_name
 		if weak_reach:
 			atk_tip += "\nFrom the back row a %s hits at half strength." % current_hero.cls_id
-		row.add_child(_cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack"))
+		var mom := int(state.get("momentum", 0))
+		var ab_atk := _cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack")
+		_momentum_hover(ab_atk, mom, 1)
+		row.add_child(ab_atk)
 		_combat_hotkeys["1"] = do_attack
 		if last_action == "attack":
 			_combat_hotkeys["Space"] = do_attack
@@ -2118,6 +2162,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var tip := "%s (%s) — %d Momentum. %s%s" % [d[2], key, int(d[4]), d[3], ("\n" + block) if block != "" else ""]
 			var sb := _cmd_button(str(d[1]), str(d[2]), key, do_skill, tip, last_action == act_id, block, int(d[4]))
 			sb.custom_minimum_size.x = 104
+			_momentum_hover(sb, mom, -int(d[4]) if block == "" else 0)
 			row.add_child(sb)
 			if block == "":
 				_combat_hotkeys[key] = do_skill
@@ -2128,6 +2173,21 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		_combat_hotkeys["5"] = do_defend
 		if last_action == "defend":
 			_combat_hotkeys["Space"] = do_defend
+		# Guard, Move, Tonics and the Champion's Call sit behind "More" (their
+		# keys 6-9 work either way); the guided fight opens it when it points there.
+		var call_ready := GameState.champion_call_ready(current_hero)
+		var show_more: bool = _more_open or _tut_key in ["6", "7", "8", "9"] or last_action == "guard"
+		var more_tip := "More (M) — Guard (6), Move (7), Tonics (8)%s" % (", Champion's Call (9)" if call_ready else "")
+		var toggle_more := func():
+			_more_open = not show_more
+			render()
+		var more_btn := _cmd_button("res://assets/skills/gear.png", "Less" if show_more else ("More ★" if call_ready else "More"), "M", toggle_more, more_tip, false)
+		more_btn.custom_minimum_size.x = 72
+		if call_ready and not show_more:
+			more_btn.modulate = Color(1.15, 1.0, 0.7)
+		row.add_child(more_btn)
+		_combat_hotkeys["M"] = more_btn.pressed.emit
+		var more_row: Container = row if show_more else HBoxContainer.new()   # hidden buttons still register their keys
 		var allies: Array = living_heroes.filter(func(a): return a != current_hero)
 		if not allies.is_empty():
 			var start_guard := func():
@@ -2136,18 +2196,18 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 				_ally_pick = "guard"
 				render()
 			var gb := _cmd_button("res://assets/skills/shield_blue.png", "Guard", "6", start_guard, "Guard (6) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker, for +1 Momentum each.", last_action == "guard")
-			row.add_child(gb)
+			more_row.add_child(gb)
 			_combat_hotkeys["6"] = start_guard
 		if GameState.champion_call_ready(current_hero):
 			var call := GameState.champion_call(current_hero)
 			var do_call := func(): run_turns.call(func(): GameState.set_hero_action(hid, "call"))
 			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, "Champion's Call (9) — %s. Once per rift." % call["desc"], false)
 			cb.modulate = Color(1.15, 1.0, 0.7)
-			row.add_child(cb)
+			more_row.add_child(cb)
 			_combat_hotkeys["9"] = do_call
 		var to_row := "back" if current_hero.formation != "back" else "front"
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
-		row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "7", do_swap, "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row." % to_row, false))
+		more_row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "7", do_swap, "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row." % to_row, false))
 		_combat_hotkeys["7"] = do_swap
 		if GameState.tonic_count() > 0:
 			var start_tonic := func():
@@ -2155,8 +2215,10 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_ally_pick = "tonic_kind"
 				render()
-			row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonics ×%d" % GameState.tonic_count(), "8", start_tonic, "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.", false))
+			more_row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonics ×%d" % GameState.tonic_count(), "8", start_tonic, "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.", false))
 			_combat_hotkeys["8"] = start_tonic
+		if more_row != row:
+			more_row.queue_free()
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
 		var living_idx: Array[int] = []
@@ -2193,7 +2255,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", "Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe", func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", "Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold." % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()

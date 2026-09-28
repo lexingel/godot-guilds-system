@@ -265,6 +265,10 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 					break
 			if flawless:
 				flawless_wins += 1
+				# Played by hand (no Auto) with no one down: a bonus on top.
+				if not state.get("auto_used", false) and not run.has("tower"):
+					result["hand_bonus"] = maxi(1, int(round(int(result["coin"]) * GameData.HAND_BONUS)))
+					coins += int(result["hand_bonus"])
 			# An escort NPC (start_combat's ~25% chance on a "combat" node) pays
 			# out a small bonus only if it survived the whole fight — dying
 			# mid-fight is a softer failure than a party wipe, so it never

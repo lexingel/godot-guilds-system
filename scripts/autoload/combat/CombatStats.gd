@@ -183,20 +183,20 @@ func gain_xp(h: Hero, amount: int) -> void:
 ## Negative values (traits like Frail, scars, drawbacks) read as a penalty —
 ## "-15% HP", "+8% hazard severity" — never "+-15%".
 func describe_skill(kind: String, value: float) -> String:
-	var pct: float = round(absf(value) * 100)
+	var pct: String = str(int(round(absf(value) * 100))) if absf(value) >= 0.005 else "<1"
 	var up := "+" if value >= 0.0 else "-"
 	var down := "-" if value >= 0.0 else "+"
 	match kind:
-		"dmg_pct": return "%s%d%% damage" % [up, pct]
-		"hp_pct": return "%s%d%% HP" % [up, pct]
-		"first_round_pct": return "%s%d%% first-strike damage" % [up, pct]
-		"escalate_pct": return "%s%d%% damage per round (stacking)" % [up, pct]
-		"mend_pct": return ("Mends %d%% of the party's HP pool each round" if value >= 0.0 else "-%d%% party mending per round") % pct
-		"hazard_guard_pct": return "%s%d%% hazard severity" % [down, pct]
-		"dodge_pct": return ("%d%% chance to block a retaliation" if value >= 0.0 else "-%d%% chance to block a retaliation") % pct
-		"speed_pct": return "%s%d%% turn speed" % [up, pct]
-		"ability_power": return "%s%d%% ability power" % [up, pct]
-		"wipe_guard": return ("Once per rift, survive a wipe at %d%% HP" if value >= 0.0 else "-%d%% HP on a survived wipe") % pct
+		"dmg_pct": return "%s%s%% damage" % [up, pct]
+		"hp_pct": return "%s%s%% HP" % [up, pct]
+		"first_round_pct": return "%s%s%% first-strike damage" % [up, pct]
+		"escalate_pct": return "%s%s%% damage per round (stacking)" % [up, pct]
+		"mend_pct": return ("Mends %s%% of the party's HP pool each round" if value >= 0.0 else "-%s%% party mending per round") % pct
+		"hazard_guard_pct": return "%s%s%% hazard severity" % [down, pct]
+		"dodge_pct": return ("%s%% chance to block a retaliation" if value >= 0.0 else "-%s%% chance to block a retaliation") % pct
+		"speed_pct": return "%s%s%% turn speed" % [up, pct]
+		"ability_power": return "%s%s%% ability power" % [up, pct]
+		"wipe_guard": return ("Once per rift, survive a wipe at %s%% HP" if value >= 0.0 else "-%s%% HP on a survived wipe") % pct
 		"boss_alpha_strike": return "Opens every Boss fight with a free strike"
 		_: return ""
 

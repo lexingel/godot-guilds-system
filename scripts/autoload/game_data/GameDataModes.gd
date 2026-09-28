@@ -100,6 +100,10 @@ const TOWER_BOSSES := {
 }
 
 ## Guild titles for reaching a floor (the highest shows beside the guild name).
+## A fight won by hand (Auto never on) with no hero down pays this share
+## of its gold again.
+const HAND_BONUS := 0.3
+
 ## The Endless Rift pays once for each of these, the first time the guild
 ## survives that long (any region); "sealed" means beating the Rift Warden.
 const ENDLESS_MILESTONES := [

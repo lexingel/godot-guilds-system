@@ -415,12 +415,15 @@ func _attr_panel(h: Hero) -> PanelContainer:
 			var val: float = (total - GameData.ATTR_BASELINE) * float(per[k]) * 100.0
 			if is_zero_approx(val):
 				continue
-			bits.append(("%+.1f%% %s" if absf(val) < 1.0 else "%+.0f%% %s") % [val, _ATTR_SHORT.get(k, k)])
 			long_bits.append(Combat.describe_skill(str(k), val / 100.0))
-		row.tooltip_text += "
-" + "
-".join(long_bits)
-		row.add_child(_label(", ".join(bits) if not bits.is_empty() else "no bonus yet (%d is the baseline)" % GameData.ATTR_BASELINE, 12, true))
+			if val >= 1.0:   # the sheet lists real gains; the rest is in the tooltip
+				bits.append("%+.0f%% %s" % [val, _ATTR_SHORT.get(k, k)])
+		row.tooltip_text += "\n%d is the baseline: above it adds, below it takes a little away.\n" % GameData.ATTR_BASELINE + "\n".join(long_bits)
+		row.add_child(_attr_bar(total))
+		var note := ", ".join(bits) if not bits.is_empty() else ("at the baseline" if total == GameData.ATTR_BASELINE else ("below the baseline" if total < GameData.ATTR_BASELINE else "small gains"))
+		var nlab := _label(note, 12, true)
+		nlab.custom_minimum_size.x = 150
+		row.add_child(nlab)
 		if h.attr_points > 0:
 			var plus := _button("+", func(id=h.id, at=a): GameState.spend_attr_point(id, at); render())
 			plus.custom_minimum_size = Vector2(36, 30)
@@ -474,6 +477,28 @@ func _attr_panel(h: Hero) -> PanelContainer:
 	return panel
 
 
+## An attribute as a bar: a tick at the baseline, filled warm above it and
+## grey below it, so a low score reads as "not much yet", not as a penalty.
+func _attr_bar(total: int) -> Control:
+	var bar := Control.new()
+	bar.custom_minimum_size = Vector2(90, 10)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var top := maxf(25.0, total)
+	bar.draw.connect(func():
+		var w := bar.size.x
+		bar.draw_rect(Rect2(0, 0, w, 10), Color(Palette.INK, 0.8))
+		var base_x := w * GameData.ATTR_BASELINE / top
+		var x := w * clampf(total / top, 0.0, 1.0)
+		if total >= GameData.ATTR_BASELINE:
+			bar.draw_rect(Rect2(0, 1, base_x, 8), Palette.GUNMETAL)
+			bar.draw_rect(Rect2(base_x, 1, x - base_x, 8), Palette.EMBER_BRIGHT)
+		else:
+			bar.draw_rect(Rect2(0, 1, x, 8), Palette.GUNMETAL)
+		bar.draw_rect(Rect2(base_x - 1, 0, 2, 10), Palette.TEXT))
+	return bar
+
+
 ## HP, damage and speed, then every bonus the hero has — hover any line for
 ## where it comes from.
 func _stat_panel(h: Hero) -> PanelContainer:
@@ -506,9 +531,9 @@ func _stat_panel(h: Hero) -> PanelContainer:
 		if kind in ["dmg_pct", "hp_pct", "speed_pct"]:
 			continue
 		var total := Combat.hero_skill_total(h, kind)
-		if absf(total) < 0.0005:
+		if absf(total) < 0.01:   # under 1% changes nothing you'd notice; it's still in the breakdown
 			continue
-		add.call(str(_KIND_LABEL.get(kind, kind)), "%+.1f%%" % (total * 100.0), _stat_breakdown_card(h, kind, total))
+		add.call(str(_KIND_LABEL.get(kind, kind)), "%+.0f%%" % (total * 100.0), _stat_breakdown_card(h, kind, total))
 	v.add_child(grid)
 	panel.add_child(v)
 	return panel
