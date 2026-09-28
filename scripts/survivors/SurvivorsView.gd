@@ -358,7 +358,7 @@ func _play_events() -> void:
 				if run.time > 1.0 and str(e["wave"]) != "horde":
 					_banner(str(e["name"]), Palette.TEXT, str(e["hint"]))
 			"chest":
-				AudioManager.cue("relic", "[A chest drops]")
+				AudioManager.cue("relic", tr("[A chest drops]"))
 			"lightning":
 				Fx.line(_fx, e["pos"] + Vector2(randf_range(-30, 30), -260), e["pos"], Color(0.8, 0.9, 1.0), 0.25)
 				Fx.burst(_fx, "explosion", e["pos"], 60.0, Color(0.7, 0.85, 1.0), 26.0)
@@ -375,9 +375,9 @@ func _play_events() -> void:
 			"slam":
 				Fx.ring(_fx, e["pos"], e["r"], Color(1, 0.5, 0.3), 0.35)
 				if e.get("hit", false):
-					AudioManager.cue("hit_heavy", "[A slam hits the party]", Palette.HAZARD)
+					AudioManager.cue("hit_heavy", tr("[A slam hits the party]"), Palette.HAZARD)
 				else:
-					AudioManager.cue("hit_heavy", "[Ground slam]")
+					AudioManager.cue("hit_heavy", tr("[Ground slam]"))
 			"won":
 				_banner("The rift is sealed!", Palette.RANK_S)
 				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
