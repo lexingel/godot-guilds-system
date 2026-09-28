@@ -56,6 +56,7 @@ const SLAM_CD := {"elite": 6.0, "boss": 7.0}
 const SLAM_R := {"elite": 85.0, "boss": 130.0}
 const SLAM_MULT := 2.0
 const GRID := 48.0
+const _NEIGHBOUR_CELLS: Array[Vector2i] = [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 0), Vector2i(0, 0), Vector2i(1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
 const REVIVE_AFTER := 15.0        # a downed companion gets back up (the lead's fall ends the run)
 
 ## Auto-attacks per role. kind: "arc" (hits everything around the hero),
@@ -173,6 +174,7 @@ var _chunks := {}           # Vector2i -> {features, brazier}
 var _broken := {}           # brazier id -> true
 var _terrain_t := 0.0
 var _seed := 0
+var _sep_half := 0   # which half of the crowd checks its neighbours this tick
 var heroes: Array = []      # {hero, role, pos, hp, max_hp, alive, lead, cd, ab_cd, facing, has_ability}
 var foes: Array = []        # {id, name, tier, pos, hp, max_hp, dmg, speed, r, hit_cd, xp, alive, phased}
 var gems: Array = []        # {pos, xp}
@@ -476,29 +478,46 @@ func _nearest_hero(p: Vector2) -> Dictionary:
 
 func _move_foes(dt: float) -> void:
 	# Spatial hash for separation, so crowds spread instead of stacking.
+	# Positions and radii are copied into packed arrays first (reading them
+	# out of each foe's Dictionary in the inner loop was most of the cost),
+	# and each tick only half the crowd checks its neighbours, pushing twice
+	# as hard: the crowd spreads the same for half the work.
+	var n := foes.size()
+	var pos := PackedVector2Array()
+	pos.resize(n)
+	var rad := PackedFloat32Array()
+	rad.resize(n)
 	var grid := {}
-	for i in foes.size():
-		var c := Vector2i(floori(foes[i]["pos"].x / GRID), floori(foes[i]["pos"].y / GRID))
-		grid.get_or_add(c, []).append(i)
+	for i in n:
+		var fp: Vector2 = foes[i]["pos"]
+		pos[i] = fp
+		rad[i] = foes[i]["r"]
+		grid.get_or_add(Vector2i(floori(fp.x / GRID), floori(fp.y / GRID)), []).append(i)
+	_sep_half = 1 - _sep_half
 	var lp: Vector2 = lead()["pos"]
-	for i in foes.size():
+	for i in n:
 		var f: Dictionary = foes[i]
 		f["flash"] = maxf(0.0, f["flash"] - dt)
-		var t := _nearest_hero(f["pos"])
+		var t := _nearest_hero(pos[i])
 		if t.is_empty():
 			continue
-		var dir: Vector2 = (t["pos"] - f["pos"]).normalized()
+		var dir: Vector2 = (t["pos"] - pos[i]).normalized()
 		var push := Vector2.ZERO
-		var c := Vector2i(floori(f["pos"].x / GRID), floori(f["pos"].y / GRID))
-		for ox in [-1, 0, 1]:
-			for oy in [-1, 0, 1]:
-				for j in grid.get(c + Vector2i(ox, oy), []):
+		if i % 2 == _sep_half:
+			var p := pos[i]
+			var c := Vector2i(floori(p.x / GRID), floori(p.y / GRID))
+			for o in _NEIGHBOUR_CELLS:
+				var cell = grid.get(c + o)
+				if cell == null:
+					continue
+				for j in cell:
 					if j == i:
 						continue
-					var d: Vector2 = f["pos"] - foes[j]["pos"]
-					var min_d: float = f["r"] + foes[j]["r"]
-					var l := d.length()
-					if l < min_d and l > 0.01:
+					var d: Vector2 = p - pos[j]
+					var min_d: float = rad[i] + rad[j]
+					var l2 := d.length_squared()
+					if l2 < min_d * min_d and l2 > 0.0001:
+						var l := sqrt(l2)
 						push += d / l * (min_d - l)
 		f["stun_t"] = maxf(0.0, float(f.get("stun_t", 0.0)) - dt)
 		var slow := 0.0 if float(f["stun_t"]) > 0.0 else (0.4 if float(f.get("slow_t", 0.0)) > 0.0 else 1.0)
@@ -520,7 +539,7 @@ func _move_foes(dt: float) -> void:
 			if f["slam_cd"] <= 0.0 and f["pos"].distance_squared_to(lp) < 280.0 * 280.0:
 				f["slam_cd"] = SLAM_CD[f["tier"]]
 				slams.append({"pos": lp, "r": SLAM_R[f["tier"]], "t": SLAM_WARN, "dmg": float(f["dmg"]) * SLAM_MULT})
-		f["pos"] += move * f["speed"] * slow * dt + push * 0.5
+		f["pos"] += move * f["speed"] * slow * dt + push
 		if absf(dir.x) > 0.2:
 			f["facing"] = signf(dir.x)
 		# Stragglers far behind are pulled back in front of the party.

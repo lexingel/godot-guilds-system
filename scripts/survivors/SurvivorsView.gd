@@ -65,7 +65,10 @@ func setup(p_party: Array, p_biome: String) -> void:
 
 
 func _ready() -> void:
+	# Sprites sort themselves by height on screen (lower in front); the
+	# floor, its clutter and the shadows sit on fixed layers underneath.
 	_world = Node2D.new()
+	_world.y_sort_enabled = true
 	add_child(_world)
 	var floor_tex: Texture2D = load(FLOOR_PATH % biome) if ResourceLoader.exists(FLOOR_PATH % biome) else null
 	if floor_tex:
@@ -75,10 +78,12 @@ func _ready() -> void:
 		_floor.region_enabled = true
 		_floor.region_rect = Rect2(-4096, -4096, 8192, 8192)
 		_floor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_floor.z_index = -3
 		_world.add_child(_floor)
 	_overlay = _Overlay.new()
 	_overlay.view = self
 	_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_overlay.z_index = -1
 	_world.add_child(_overlay)
 	# Health bars and cooldowns float above every sprite.
 	_top = _TopOverlay.new()
@@ -235,15 +240,9 @@ func _refresh_decals() -> void:
 			d.chunk = c
 			d.biome = biome
 			d.run_seed = run._seed
+			d.z_index = -2
 			_world.add_child(d)
-			_world.move_child(d, _floor.get_index() + 1)
 			_decals[c] = d
-
-
-## Draw order by height on screen, lower in front. Measured from the lead so
-## it stays inside Godot's z range however far the party walks.
-func _depth(y: float) -> int:
-	return clampi(int((y - _cam.position.y) / 10.0), -900, 900) + 1000
 
 
 func _sync() -> void:
@@ -270,7 +269,6 @@ func _sync() -> void:
 		else:
 			n.stop()
 			n.frame = 0
-		n.z_index = _depth(h["pos"].y)
 	var seen := {}
 	for f in run.foes:
 		var id: int = f["id"]
@@ -284,7 +282,6 @@ func _sync() -> void:
 		n.position = f["pos"]
 		n.flip_h = f["facing"] > 0.0
 		n.modulate = Color(3, 3, 3) if f["flash"] > 0.0 else Color.WHITE
-		n.z_index = _depth(f["pos"].y)
 	for id in _foe_nodes.keys():
 		if not seen.has(id):
 			_foe_nodes[id].queue_free()
@@ -304,7 +301,6 @@ func _sync() -> void:
 			sp.centered = false
 			sp.offset = Vector2(-sp.texture.get_width() * 0.5, -sp.texture.get_height() + 8.0)
 			sp.position = props[id][0]
-			sp.z_index = _depth(sp.position.y)
 			_world.add_child(sp)
 			_prop_nodes[id] = sp
 	for id in _prop_nodes.keys():
