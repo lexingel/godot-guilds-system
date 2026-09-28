@@ -103,6 +103,17 @@ const SFX_PATH := {
 	"boss": "res://assets/audio/sfx/gen_boss.wav",
 }
 
+## The tester build: what changed lately and what to try, shown on the title
+## screen (newest first, a few lines each).
+const WHATS_NEW := [
+	"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.",
+	"Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.",
+	"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.",
+	"New music, larger text, and rank rules shown in the rift.",
+]
+const WHATS_NEW_TRY := "Try: take a party into the Endless Rift and see how far you get, then tell us where it got too hard or too dull."
+const FEEDBACK_ISSUES_URL := "https://github.com/lexingel/godot-guilds-system/issues/new"
+
 ## Looping background music (AudioManager.play_music loops it).
 ## The pools the game picks from: a new camp track each time you come home,
 ## a combat track per rift or Endless run (not the last one's).

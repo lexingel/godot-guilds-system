@@ -306,7 +306,7 @@ var _last_combat_track := ""
 
 
 func _update_screen_music() -> void:
-	if screen in ["camp", "rift_hall", "party_assembly", "tower", "crafting_hall", "settings"]:
+	if screen in ["camp", "rift_hall", "party_assembly", "tower", "crafting_hall", "settings", "title", "load_game", "credits", "onboard"]:
 		if _camp_track == "":
 			_camp_track = GameData.pick_track(GameData.CAMP_MUSIC, _last_camp_track)
 			_last_camp_track = _camp_track
@@ -721,6 +721,9 @@ func _render_title(v: VBoxContainer) -> void:
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_child(title_lbl)
+	var ver := _label("Test build %s · what's new is below" % _version(), 12, true)
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(ver)
 	v.add_child(_hsep())
 
 	var center := CenterContainer.new()
@@ -743,12 +746,98 @@ func _render_title(v: VBoxContainer) -> void:
 		screen = "credits"
 		render()
 	))
+	menu.add_child(_button("Feedback", func():
+		_feedback_open = not _feedback_open
+		render()
+	))
+	if OS.has_feature("web"):
+		menu.add_child(_fullscreen_button())
 	if not OS.has_feature("web"):
 		menu.add_child(_button("Quit", func():
 			get_tree().quit()
 		))
 	center.add_child(menu)
 	v.add_child(center)
+	if _feedback_open:
+		v.add_child(_feedback_panel())
+	if OS.has_feature("web_android") or OS.has_feature("web_ios"):
+		var ph := _wrap_label("This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped.", 12)
+		ph.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		ph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(ph)
+	v.add_child(_whats_new_card())
+
+
+## The build's version, e.g. "0.9.0" (project setting application/config/version).
+func _version() -> String:
+	return str(ProjectSettings.get_setting("application/config/version", "dev"))
+
+
+## What changed in this test build, what to try, and where saves live.
+func _whats_new_card() -> PanelContainer:
+	var p := PanelContainer.new()
+	p.theme_type_variation = &"CardPanelViolet"
+	var col := _vbox(4)
+	var head := _label("What's new in %s" % _version(), 15)
+	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(head)
+	for line in GameData.WHATS_NEW:
+		col.add_child(_wrap_label("• " + str(line), 12))
+	col.add_child(_wrap_label(GameData.WHATS_NEW_TRY, 12, true))
+	if OS.has_feature("web"):
+		col.add_child(_wrap_label("Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then.", 12, true))
+	p.add_child(col)
+	return p
+
+
+var _feedback_open := false
+var _feedback_note := ""
+
+
+## What a tester's report carries: the build, where they're playing, and how
+## far along the guild is, then a few prompts to fill in.
+func _feedback_report() -> String:
+	var bits: Array[String] = ["Version %s (%s)" % [_version(), "web" if OS.has_feature("web") else OS.get_name()]]
+	if GameState.guild_name != "":
+		bits.append("Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d" % [GameState.day, GameState.campaign_act, GameState.heroes.size(),
+			GameState.rifts_sealed, GameData.RIFT_RANKS[clampi(GameState.best_rift_rank_sealed, 0, GameData.RIFT_RANKS.size() - 1)]["id"] if GameState.best_rift_rank_sealed >= 0 else "none",
+			GameState.best_endless_time / 60, GameState.best_endless_time % 60, GameState.tower_best])
+	return "\n".join(bits) + "\n\nWhat happened:\n\nWhat you expected:\n\nAnything confusing, too hard or too easy:\n"
+
+
+## Copy the report, or open it as a GitHub issue.
+func _feedback_panel() -> PanelContainer:
+	var p := PanelContainer.new()
+	p.theme_type_variation = &"CardPanelEmber"
+	var col := _vbox(6)
+	col.add_child(_label("Send feedback", 15))
+	col.add_child(_wrap_label("Found a bug, or something felt off? Copy this report and paste it wherever you talk with us, or open it as an issue on GitHub. It already says which build you're on and how far your guild is.", 12, true))
+	var pre := _wrap_label(_feedback_report(), 12)
+	pre.add_theme_color_override("font_color", Palette.MUTED)
+	col.add_child(pre)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(_button("Copy report", func():
+		DisplayServer.clipboard_set(_feedback_report())
+		_feedback_note = "Copied — paste it into your message."
+		render()))
+	row.add_child(_button("Open a GitHub issue", func():
+		OS.shell_open("%s?title=%s&body=%s" % [GameData.FEEDBACK_ISSUES_URL, ("Feedback (%s)" % _version()).uri_encode(), _feedback_report().uri_encode()])))
+	col.add_child(row)
+	if _feedback_note != "":
+		var n := _label(_feedback_note, 12)
+		n.add_theme_color_override("font_color", Palette.RANK_E)
+		col.add_child(n)
+	p.add_child(col)
+	return p
+
+
+## Web: fill the screen (a browser only allows it from a click).
+func _fullscreen_button() -> Button:
+	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	return _button("Leave fullscreen" if full else "Fullscreen", func():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		render.call_deferred())
 
 
 func _render_load_game(v: VBoxContainer) -> void:
@@ -767,6 +856,7 @@ func _render_credits(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild System", 18))
 	v.add_child(_wrap_label("A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.", 13, true))
 	v.add_child(_hsep())
+	v.add_child(_label("Version %s" % _version(), 13))
 	v.add_child(_label("Built with Godot Engine 4.7", 13))
 	v.add_child(_label("Pixel art generated with PixelLab", 13))
 	v.add_child(_hsep())
@@ -1527,6 +1617,13 @@ func _switch_slot(slot: int) -> void:
 
 func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_label("Settings", 20))
+	var fb := _button("Send feedback" if not _feedback_open else "Hide feedback", func():
+		_feedback_open = not _feedback_open
+		render())
+	fb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	v.add_child(fb)
+	if _feedback_open:
+		v.add_child(_feedback_panel())
 
 	v.add_child(_label("Audio", 15))
 	v.add_child(_volume_row("Music", GameState.music_volume, func(val: float):
@@ -1577,6 +1674,7 @@ func _render_settings(v: VBoxContainer) -> void:
 		# Resolution switching is a desktop-only concept — on Web the browser
 		# tab/window already sizes the canvas correctly on its own.
 		v.add_child(_wrap_label("The game fits your browser window automatically.", 12, true))
+		v.add_child(_fullscreen_button())
 	else:
 		var res_opts: Array = GameData.RESOLUTION_OPTIONS
 		var res_idx := GameState.resolution_idx
