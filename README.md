@@ -1,58 +1,63 @@
 # Guildhold
 
-A guild-management roguelite in Godot 4 (formerly "Guilds System"). Web test build: https://lexingel.github.io/guildhold/
+A guild-management roguelite in Godot 4. You run a guild of heroes: hire
+them, pay them, keep their morale up, and send them through rifts in
+turn-based fights, or steer them through the real-time Endless Rift.
 
-## Origins: a Godot port
+**Play the test build:** https://lexingel.github.io/guildhold/
+**Found something?** Use Feedback on the title screen, or open an
+[issue](https://github.com/lexingel/guildhold/issues).
 
-A from-scratch GDScript port of `guild-system.html`'s core loop, per the plan
-recorded in `dreamy-munching-whistle.md`. Open `project.godot` in Godot 4.x
-and press F5.
+## The game
 
-## Scope
+- **Turn-based rifts:** a map of forked nodes (fights, elites, shops,
+  events, hazards, campfires) ending in a boss. Fights read like a puzzle:
+  foes show their next move, attacks and defence build a shared Momentum
+  pool, and each hero spends it on role skills and a signature Ability.
+  Rifts come in ranks F to SSS, each with its own rules.
+- **The Endless Rift:** a survivors-style run in one of three regions:
+  five-minute wave cycles, elite packs with chests, weapon evolutions,
+  rift relics, terrain and braziers, and a Rift Warden at 20:00 to beat.
+- **The guild:** 93 subclasses to recruit and evolve, gear, relics and
+  skill trees; weekly wages and upkeep, morale, hero requests, a rival
+  guild with a monthly contest, Guild Management upgrades, a three-act
+  campaign, the Tower of Trials and a quest board.
 
-**Fully ported (data + logic):** all 5 classes, 7 ranks, 3 rarities, all 50
-`CLASS_POOL` entries, all 11 traits (6 universal + 5 role-exclusive), all 5
-skill trees, relic types/specials/domains/synergy, item categories/slots
-(including dual-wield + rank-scaled gear slots), hero stat math
-(`Combat.gd`), hero/relic/item generation, skill learning + respec, trait
-reroll/scrub, relic upgrades + equip, item equip, recruitment, Guild
-Management's 20-node upgrade tree, Medical Bay, the Champion system, Endless
-Rift, Rift Detectors, Hardcore Mode, hero Evolution, boss mechanics (Enraged/
-Warded/Regenerating/Frenzied), Elite encounters, and branching rift paths
-(forked node choices per floor).
+## Running it
 
-**Combat** is turn-based: a fight resolves one round at a time, the player
-picking Attack / Ability / Defend / Retreat each round (`Combat.gd`'s
-`start_combat`/`resolve_round`) instead of the whole fight auto-resolving —
-class abilities are a single use per fight on a cooldown, not a one-time
-pre-fight choice.
+Open `project.godot` in Godot 4.7 and press F5. The web build is exported
+with the "Web" preset to the repo root (`index.html` + `index.pck`) and
+served by GitHub Pages from `master`.
 
-**Screens:** Onboard → Rift Hall (Lesser + Endless Rift) → Party Assembly
-(pick heroes, starting relic, Hardcore toggle) → Rift Run (combat/shop/
-hazard/elite/boss nodes, forked paths, reward choice) → Guild Terminal
-(Roster, Hero Recruits, Guild Management, Medical Bay tabs, with an
-Inventory section for unequipped items/relics/detectors).
+## Tests
 
-**Visuals:** a hand-authored `Theme` (`theme/guild_theme.tres`) applies a
-recolored version of a free CraftPix UI kit (`assets/ui/`) — panels/buttons
-as `StyleBoxTexture`s hue-shifted to the palette in `scripts/ui/Palette.gd`,
-which mirrors the original HTML prototype's CSS custom properties. Hero
-portraits (`assets/heroes/`) come from a separate free character pack,
-background-keyed and cropped. Monster sprites/dungeon art are their own
-mismatched sources by design — different rifts represent different worlds,
-so that variety is intentional, not a gap.
+```
+godot --headless --path . res://tests/run_tests.tscn            # everything
+godot --headless --path . res://tests/run_tests.tscn -- relic   # files matching "relic"
+```
 
-**Known gaps:**
-- An in-progress run only persists its stable fields (floor, party, chosen
-  path) across an app restart — whatever single node was mid-progress (a
-  fight, a shop browse) re-rolls fresh rather than resuming mid-round. See
-  the comment atop `GameState._run_for_save()`.
-- `export_presets.cfg` has a Web preset scaffolded but untested — needs
-  Godot's Web export templates installed and a manual export/serve check.
+Each `tests/test_*.gd` extends `base_test.gd` and calls `check()`. The run
+fails on any failed check or any script error (CI does the same on every
+push). `test_ui_smoke.gd` draws every screen once, so UI script errors fail
+too. Each test starts from its own random seed.
 
-## Project layout
-See the "Project structure" section of the Godot-scaffolding plan in
-`C:\Users\Semih\.claude\plans\dreamy-munching-whistle.md` for the intended
-shape; `scripts/ui/Main.gd` builds the entire UI procedurally (no per-screen
-.tscn files) rather than hand-authored scenes, mirroring how the HTML
-version's `render()` rebuilds the DOM from state each time.
+The balance sim (`tests/sim/balance_sim.tscn`) plays reference parties
+headless: `-- ranks` (clear rates per rift rank), `-- calibrate`
+(recommended power), `-- tower`, `-- survivors` (Endless Rift times).
+
+## Code layout
+
+- `scripts/autoload/`: the game itself, with no UI. `GameData` (constants,
+  split across `game_data/`), `GameState` (the save and every rule that
+  changes it, split across `game_state/`), `Combat` (stats, fights,
+  generation, split across `combat/`) and `AudioManager`.
+- `scripts/ui/`: the whole UI, built in code from state on every render
+  (no per-screen scenes). A chain of classes, each adding screens:
+  `UiKit` → `RosterView` → `BattleView` → `RiftRunView` → `GuildViews` →
+  `Main`.
+- `scripts/survivors/`: the Endless Rift, as a pure simulation
+  (`SurvivorsRun`) and its view (`SurvivorsView`).
+- `assets/`: pixel art (PixelLab and free packs), music and sounds.
+
+Saves: a reload mid-fight restarts that fight (same foes); everything else
+in a rift comes back exactly as it was.

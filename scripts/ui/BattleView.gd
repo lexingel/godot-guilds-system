@@ -251,10 +251,10 @@ func _spawn_damage_number(wrapper: Control, text: String, color: Color, big: boo
 ## Combat hotkeys (see _combat_hotkeys, filled while the action bar builds).
 ## Gamepad buttons stand in for hotkeys. In a fight: A repeats the last
 ## action, X Defend, Y the Ability, LB/RB the two role skills, the D-pad
-## cycles targets, Select toggles Auto. Everywhere: B goes back; in camp
+## cycles targets, Start opens More, Select toggles Auto. Everywhere: B goes back; in camp
 ## LB/RB switch tabs. Menus are otherwise driven by focus (D-pad + A).
 const PAD_BATTLE := {JOY_BUTTON_A: "Space", JOY_BUTTON_X: "5", JOY_BUTTON_Y: "4", JOY_BUTTON_LEFT_SHOULDER: "2", JOY_BUTTON_RIGHT_SHOULDER: "3",
-	JOY_BUTTON_DPAD_LEFT: "Tab", JOY_BUTTON_DPAD_RIGHT: "Tab", JOY_BUTTON_BACK: "A"}
+	JOY_BUTTON_DPAD_LEFT: "Tab", JOY_BUTTON_DPAD_RIGHT: "Tab", JOY_BUTTON_BACK: "A", JOY_BUTTON_START: "M"}
 var _pad_mode := false   # the last input came from a gamepad: keep a button focused after each rebuild
 
 
@@ -2188,7 +2188,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		# keys 6-9 work either way); the guided fight opens it when it points there.
 		var call_ready := GameState.champion_call_ready(current_hero)
 		var show_more: bool = _more_open or _tut_key in ["6", "7", "8", "9"] or last_action == "guard"
-		var more_tip := "More (M) — Guard (6), Move (7), Tonics (8)%s" % (", Champion's Call (9)" if call_ready else "")
+		var more_tip := "More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s" % (", Champion's Call (9)" if call_ready else "")
 		var toggle_more := func():
 			_more_open = not show_more
 			render()
