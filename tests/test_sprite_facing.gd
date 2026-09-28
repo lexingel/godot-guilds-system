@@ -38,5 +38,14 @@ func run() -> void:
 	await _frames()
 	check(shown.call(), "the intro shows once the guild exists")
 	GameState.pending_stories.clear()
+
+	# The turn-order strip mirrors the same art the arena does.
+	var party: Array[Hero] = []
+	var strip: Control = main._turn_order_strip({"party": party, "turn_idx": 0,
+		"monsters": [{"name": "Mire Sniper", "hp": 10.0}, {"name": "Ash Harrier", "hp": 10.0}],
+		"turn_order": [{"type": "monster", "id": 0}, {"type": "monster", "id": 1}]})
+	var icons := strip.find_children("*", "TextureRect", true, false)
+	check(icons.size() == 2 and icons[0].flip_h and not icons[1].flip_h, "turn-order icons: Mire Sniper mirrored, Ash Harrier not")
+	strip.free()
 	main.queue_free()
 	await _frames()

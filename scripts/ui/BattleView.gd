@@ -443,6 +443,7 @@ func _turn_order_strip(state: Dictionary) -> Control:
 		var icon := _icon_trimmed(icon_path, sz) if is_hero else _icon(icon_path, sz)
 		if is_hero:
 			_hero_look(icon, _hero_by_id(party, str(entry["id"])))
+		icon.flip_h = GameData.faces_away(icon_path)   # same facing as in the arena
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if i < turn_idx:
 			tile.modulate = Color(1, 1, 1, 0.35)
