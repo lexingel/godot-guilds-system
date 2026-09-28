@@ -7,7 +7,7 @@ extends Node
 ## Every call here gates on ResourceLoader.exists() and no-ops if a path
 ## isn't there yet — the same "safe to wire in before the asset exists"
 ## contract GameData.hero_anim_frames/monster_anim_frames already use, so
-## call sites can reference GameData.SFX_PATH/MUSIC_PATH entries for tracks
+## call sites can reference GameData.SFX_PATH / COMBAT_MUSIC / CAMP_MUSIC entries for tracks
 ## that haven't been sourced yet without erroring.
 
 const CROSSFADE_MIN_DB := -40.0

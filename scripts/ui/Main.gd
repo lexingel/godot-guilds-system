@@ -295,20 +295,32 @@ func _story_overlay(card_data: Dictionary) -> void:
 	root.add_child(overlay)
 
 
-## Only 2 music tracks are planned for now (combat, camp — see the Suno plan
-## in the project doc), so this only ever switches between those two states
-## and otherwise leaves whatever's already playing alone, rather than
-## stopping/restarting on every screen that doesn't have a track assigned
-## yet. Both AudioManager.play_music calls are safe to make unconditionally
-## (they already no-op on a repeat of the same path, or a missing file).
+## Camp-side screens play a camp track (a new one each time you come home);
+## a rift's fights play one combat track for the whole run. Screens between
+## (a rift's map, events) keep whatever is playing. AudioManager.play_music
+## no-ops on a repeat of the same path, so this is safe on every render.
+var _camp_track := ""     # this stay at camp's track ("" = pick one on arrival)
+var _combat_track := ""   # this run's combat track
+var _last_camp_track := ""
+var _last_combat_track := ""
+
+
 func _update_screen_music() -> void:
-	if screen == "camp":
-		AudioManager.play_music(GameData.MUSIC_PATH["camp"])
+	if screen in ["camp", "rift_hall", "party_assembly", "tower", "crafting_hall", "settings"]:
+		if _camp_track == "":
+			_camp_track = GameData.pick_track(GameData.CAMP_MUSIC, _last_camp_track)
+			_last_camp_track = _camp_track
+		_combat_track = ""   # the next run picks its own
+		AudioManager.play_music(_camp_track)
 	elif screen == "rift_run":
 		var kind := GameState.current_node_kind()
 		var ns: Dictionary = GameState.run.get("node_state", {})
 		if kind in ["combat", "boss", "elite"] and ns.has("combat_state"):
-			AudioManager.play_music(GameData.MUSIC_PATH["combat"])
+			if _combat_track == "":
+				_combat_track = GameData.pick_track(GameData.COMBAT_MUSIC, _last_combat_track)
+				_last_combat_track = _combat_track
+			_camp_track = ""   # coming home picks a new one
+			AudioManager.play_music(_combat_track)
 
 
 ## Pinned HUD stays outside the ScrollContainer, so the guild identity,
@@ -1455,6 +1467,7 @@ func _start_survivors(ids: Array[String]) -> void:
 		return
 	var view := SurvivorsView.new()
 	view.setup(party, _endless_biome if _endless_biome != "" else GameState.pick_biome())
+	_camp_track = ""   # home again afterwards: a fresh camp track
 	visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	get_tree().root.add_child(view)

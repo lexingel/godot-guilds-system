@@ -103,14 +103,17 @@ const SFX_PATH := {
 	"boss": "res://assets/audio/sfx/gen_boss.wav",
 }
 
-## Looping background music — none of these exist yet (a future session
-## generates them via Suno, per the plan doc), but every combat/camp screen
-## call site can reference these keys now; AudioManager.play_music no-ops
-## until a real file lands at the path.
-const MUSIC_PATH := {
-	"combat": "res://assets/audio/music/combat.ogg",
-	"camp": "res://assets/audio/music/camp.ogg",
-}
+## Looping background music (AudioManager.play_music loops it).
+## The pools the game picks from: a new camp track each time you come home,
+## a combat track per rift or Endless run.
+const COMBAT_MUSIC := ["res://assets/audio/music/combat.ogg", "res://assets/audio/music/metal_deep.ogg"]
+const CAMP_MUSIC := ["res://assets/audio/music/camp.ogg", "res://assets/audio/music/nocturnal_dread.ogg", "res://assets/audio/music/nocturnal_dread_2.ogg"]
+
+
+## A track from `pool`, not `last` when there's another to choose.
+static func pick_track(pool: Array, last: String = "") -> String:
+	var options: Array = pool.filter(func(p): return p != last)
+	return str((options if not options.is_empty() else pool)[randi() % (options if not options.is_empty() else pool).size()])
 
 ## The 4 new generic action icons Phase 14 needed on top of the existing
 ## assets/skills/ set (which already covered swords/shields/potions/gems/a
