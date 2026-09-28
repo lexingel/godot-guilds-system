@@ -38,3 +38,10 @@ func run() -> void:
 	var res2 := _fight(true)
 	check(res2.get("won", false) and int(res2.get("hand_bonus", 0)) == 0, "no bonus once Auto played a turn")
 	check(GameState.coins >= coins_before, "gold only goes up")
+	for h in GameState.heroes:
+		h.hp = Combat.max_hp(h)
+	GameState.run["node_state"] = {}
+	GameState.choose_node_type("combat")
+	GameState.quick_fight()
+	var res3: Dictionary = GameState.run["node_state"].get("result", {})
+	check(res3.get("won", false) and int(res3.get("hand_bonus", 0)) == 0, "Quick fight is auto play: no hand bonus")

@@ -175,6 +175,8 @@ func engage_node() -> void:
 func quick_fight() -> void:
 	engage_node()
 	var st: Dictionary = run.get("node_state", {}).get("combat_state", {})
+	if not st.is_empty():
+		st["auto_used"] = true   # played by the auto policy: no hand-played bonus
 	for i in 600:
 		if st.is_empty() or run.get("node_state", {}).has("result"):
 			break
