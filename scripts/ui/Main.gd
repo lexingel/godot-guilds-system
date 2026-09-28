@@ -173,6 +173,9 @@ var _toast_box: VBoxContainer
 func _drain_toasts() -> void:
 	if _toast_box == null:
 		return
+	# A story card is up: the pills wait for it (they'd sit on its title).
+	if not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
+		return
 	for t in GameState.pending_toasts:
 		# A slim pill: "Title · text" on one line where it fits.
 		var card := PanelContainer.new()
@@ -1807,6 +1810,7 @@ func _render_endless_assembly(v: VBoxContainer) -> void:
 	info.add_child(_endless_region_picker())
 	var lost_left := GameState.lost_champions().filter(func(e): return not GameState.champion_unlocked(str(e[0]))).size()
 	info.add_child(_wrap_label(tr("%d lost champions still wait in the rift.") % lost_left if lost_left > 0 else tr("Every lost champion has been found."), 12, true))
+	info.add_child(_wrap_label(tr("Rift strength %d%% — it grows with every champion you free and every act you pass.") % int(round(GameState.endless_threat() * 100.0)), 12, true))
 	brow.add_child(info)
 	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Enter the Rift"), func():
 		if pending_party.is_empty():

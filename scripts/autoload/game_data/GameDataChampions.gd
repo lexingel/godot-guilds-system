@@ -24,6 +24,12 @@ const CHAMPION_EXTRA_CALL_LEVEL := 3   # from this level the Call works twice a 
 const BEACON_HOLD := 12.0   # seconds inside the light to free a lost champion
 const BEACON_R := 90.0
 const BEACON_DIST := 520.0
+## Endless Rift threat (foe HP and damage scale): gentle when it first opens
+## after Act II, stronger with every lost champion freed and every act passed
+## after that, reaching full strength at the end.
+const THREAT_BASE := 0.6
+const THREAT_PER_RESCUE := 0.1
+const THREAT_PER_ACT := 0.1
 
 const CHAMPIONS := {
 	# Warriors

@@ -66,6 +66,7 @@ func setup(p_party: Array, p_biome: String) -> void:
 	run = SurvivorsRun.new(party, biome)
 	if not bench:
 		run.lost = GameState.lost_champions().filter(func(e): return not GameState.champion_unlocked(str(e[0])))
+		run.threat = GameState.endless_threat()
 
 
 func _ready() -> void:

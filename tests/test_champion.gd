@@ -127,6 +127,20 @@ func run() -> void:
 		if r.beacon.is_empty():
 			break
 	check(r.rescued == [lost_id], "standing in it for %d s frees them" % int(GameData.BEACON_HOLD))
+	# The rift is gentle when it opens and hardens with each rescue and act.
+	var act0 := GameState.campaign_act
+	GameState.campaign_act = 3
+	var t0 := GameState.endless_threat()
+	GameState.champions[lost_id] = 1
+	var t1 := GameState.endless_threat()
+	GameState.campaign_act = 4
+	var t2 := GameState.endless_threat()
+	GameState.champions.erase(lost_id)
+	GameState.campaign_act = act0
+	check(is_equal_approx(t0, GameData.THREAT_BASE) and t1 > t0 and t2 > t1 and t2 <= 1.0, "rift strength %.2f → %.2f after a rescue → %.2f after Act III" % [t0, t1, t2])
+	var soft := SurvivorsRun.new([fighter], "vale", 7)
+	soft.threat = t0
+	check(is_equal_approx(soft.foe_hp_mult(), t0) and is_equal_approx(soft.foe_dmg_mult(), t0), "foes start at that strength")
 	var day0 := GameState.day
 	var e0 := GameState.echoes
 	var sum := GameState.finish_survivors(r)

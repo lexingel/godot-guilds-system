@@ -4,7 +4,7 @@ extends Node
 ## loot/XP/attribute gains inside a run are modelled. Never saves. ~1 min:
 ##   godot --headless --path . res://tests/sim/balance_sim.tscn
 ## (`-- ranks`: only the ladder-rank profiles; `-- calibrate`: power at a
-## 65% clear per rank; `-- tower`, `-- survivors`)
+## 65% clear per rank; `-- tower`, `-- survivors`, `-- champions`)
 
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
@@ -43,6 +43,10 @@ func _ready() -> void:
 	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
 	if OS.get_cmdline_user_args().has("calibrate"):
 		_calibrate()
+		get_tree().quit()
+		return
+	if OS.get_cmdline_user_args().has("champions"):
+		_champions()
 		get_tree().quit()
 		return
 	if OS.get_cmdline_user_args().has("survivors"):
@@ -97,6 +101,41 @@ func _survivors(name: String, p: Array) -> void:
 	times.sort()
 	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d · sealed %d/%d" % [name, times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
 		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / SURV_RUNS, levels / SURV_RUNS, wins, SURV_RUNS])
+
+
+## Endless Rift with champions (`-- champions`): how long N champions last,
+## by act (the guild's best hero level sets theirs) and champion level, and
+## how often the first lost champion's light (at its depth) is held long
+## enough to free them.
+func _champions() -> void:
+	# [label, champions, best hero level, champion level, relics (rare), threat]
+	# Threat follows GameState.endless_threat: 0.6 when it opens, +0.1 a rescue, +0.1 for Act III.
+	var cases := [["Opens · 2 Lv1", 2, 6, 1, 1, 0.6], ["1 freed · 3 Lv1", 3, 6, 1, 1, 0.7],
+		["3 freed · 4 Lv2", 4, 7, 2, 2, 0.9], ["Act III, 3 freed · 4 Lv3", 4, 8, 3, 2, 1.0], ["All freed · 4 Lv5", 4, 10, 5, 3, 1.0]]
+	for c in cases:
+		var times: Array = []
+		var freed := 0
+		for i in SURV_RUNS:
+			GameState.reset()
+			GameState.guild_name = "Sim"
+			_build_party(["", ["C"], c[2], 0, "", c[4], "rare"])
+			var party: Array = []
+			for k in c[1]:
+				var id := GameState.champion_roll[k]
+				GameState.champions[id] = c[3]
+				party.append(GameState.champion_hero(id))
+			var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
+			r.lost = GameState.lost_champions().slice(0, 1)
+			r.threat = c[5]
+			while not r.over and r.time < 1500.0:
+				r.step(0.2, r.autopilot_dir())
+				r.events.clear()
+				r.settle_picks(_best_pick)
+			times.append(int(r.time))
+			freed += r.rescued.size()
+		times.sort()
+		print("%-24s median %d:%02d (min %d:%02d, max %d:%02d) · first light (%d:%02d) held %d/%d" % [c[0], times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
+			times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, GameData.CHAMPION_DEPTHS[0] / 60, GameData.CHAMPION_DEPTHS[0] % 60, freed, SURV_RUNS])
 
 
 ## Tower of Trials: how high each profile climbs (3 tries a floor, full HP

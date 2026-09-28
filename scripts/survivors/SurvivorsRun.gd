@@ -204,6 +204,7 @@ var traps: Array = []   # {pos, r, dmg, life}: the first foe to step in springs 
 var lost: Array = []       # [[champion id, depth seconds]]: champions lost in this rift (set by the caller)
 var beacon: Dictionary = {}   # {id, pos, held}: a lost champion's light; stand in it to free them
 var rescued: Array = []    # champion ids freed this run
+var threat := 1.0          # foe strength scale (GameState.endless_threat): gentle when the rift first opens
 
 
 func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
@@ -224,7 +225,7 @@ func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
 		# A champion's signature is their Call; a hero's, their subclass Ability.
 		var ab: Dictionary = GameState.champion_call_of(h.id.trim_prefix("champ:")) if h.is_champion else (GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}) if Combat.qualifies_for_ability(h) else {})
 		heroes.append({"hero": h, "role": GameData.hero_role(h), "pos": Vector2(-40.0 * i, 30.0 * (i % 2)), "hp": mhp, "max_hp": mhp,
-			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * 0.5, "facing": 1.0,
+			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * (0.5 + 0.2 * i), "facing": 1.0,
 			"has_ability": not ab.is_empty(), "ability_name": str(ab.get("name", "")), "style": str(ABILITY_STYLE.get(str(ab.get("effect", "")), "")),
 			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct")),
 			"skills": {}, "ab_rank": 0, "arch": Combat.hero_main_arch(h), "taunt_t": 0.0,
@@ -254,11 +255,11 @@ func dmg_mult() -> float:
 ## Foe strength grows with time: HP faster than damage.
 func foe_hp_mult() -> float:
 	var m := minutes()
-	return 1.0 + 0.3 * m + 0.055 * m * m
+	return (1.0 + 0.3 * m + 0.055 * m * m) * threat
 
 
 func foe_dmg_mult() -> float:
-	return 1.0 + 0.22 * minutes()
+	return (1.0 + 0.22 * minutes()) * threat
 
 
 # ---------------- Step ----------------
@@ -1432,6 +1433,8 @@ func autopilot_dir() -> Vector2:
 	var lp: Vector2 = lead()["pos"]
 	var away := Vector2.ZERO
 	var close := false
+	# In a lost champion's light and healthy: hold it (step out of slams only).
+	var holding := not beacon.is_empty() and lp.distance_to(beacon["pos"]) < GameData.BEACON_R * 0.7 and float(lead()["hp"]) > float(lead()["max_hp"]) * 0.35
 	for s in slams:
 		var out: Vector2 = lp - s["pos"]
 		if out.length() < float(s["r"]) + 20.0:
@@ -1450,8 +1453,13 @@ func autopilot_dir() -> Vector2:
 		if l2 < 110.0 * 110.0:
 			away += d / maxf(l2, 1.0) * (4.0 if f["tier"] != "combat" else 1.0)
 			close = true
+	if holding:
+		return Vector2.ZERO
 	if close:
 		return away.normalized()
+	if not beacon.is_empty():
+		var to_b: Vector2 = beacon["pos"] - lp
+		return Vector2.ZERO if to_b.length() < GameData.BEACON_R * 0.5 else to_b.normalized()
 	var best := Vector2.INF
 	for c in chests:
 		if c["pos"].distance_squared_to(lp) < 600.0 * 600.0:
