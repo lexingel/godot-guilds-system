@@ -105,8 +105,8 @@ const SFX_PATH := {
 
 ## Looping background music (AudioManager.play_music loops it).
 ## The pools the game picks from: a new camp track each time you come home,
-## a combat track per rift or Endless run.
-const COMBAT_MUSIC := ["res://assets/audio/music/combat.ogg", "res://assets/audio/music/metal_deep.ogg"]
+## a combat track per rift or Endless run (not the last one's).
+const COMBAT_MUSIC := ["res://assets/audio/music/combat.ogg", "res://assets/audio/music/metal_deep.ogg", "res://assets/audio/music/iron_deep_2.ogg"]
 const CAMP_MUSIC := ["res://assets/audio/music/camp.ogg", "res://assets/audio/music/nocturnal_dread.ogg", "res://assets/audio/music/nocturnal_dread_2.ogg"]
 
 

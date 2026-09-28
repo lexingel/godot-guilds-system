@@ -24,6 +24,9 @@ func _ready() -> void:
 			continue
 		var t: Node = script.new()
 		add_child(t)
+		# Each test starts from its own seed, so what it rolls doesn't depend
+		# on which tests ran before it (a test may seed again itself).
+		seed(hash(f))
 		await t.run()
 		print("%s %-34s %3d passed%s" % ["ok  " if t.fails == 0 else "FAIL", f.trim_suffix(".gd"), t.passes, "" if t.fails == 0 else ", %d failed" % t.fails])
 		total_pass += t.passes

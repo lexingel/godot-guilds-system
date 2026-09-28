@@ -66,6 +66,8 @@ func run() -> void:
 	GameState.retreat_now()
 	check(GameState.run_history[0]["result"] == "Retreated", "a retreat is recorded")
 	for i in 40:
+		for hh in GameState.heroes:
+			hh.morale = 80   # forty idle weeks and unanswered requests would drive them off
 		GameState.start_run("lesser", ids, null)
 		GameState.retreat_now()
 	check(GameState.run_history.size() == GameData.RUN_HISTORY_MAX, "history is capped")
