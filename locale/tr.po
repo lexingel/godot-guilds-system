@@ -1901,7 +1901,7 @@ msgstr "ekibi ayakta tut: can, tehlike/yok olma koruması, araya girmeler"
 
 #: scripts/autoload/game_data/GameDataHeroes.gd:291 scripts/autoload/game_data/GameDataHeroes.gd:324
 msgid "Evasion"
-msgstr "Kaçınma"
+msgstr "Sıyrılma"
 
 #: scripts/autoload/game_data/GameDataHeroes.gd:291
 msgid "avoid hits: dodge and punishing counters"
@@ -11797,7 +11797,7 @@ msgstr "muhafız\\w*"
 
 #: locale/extra_msgids.txt
 msgid "evasion"
-msgstr ""
+msgstr "sıyrılma\\w*"
 
 #: locale/extra_msgids.txt
 msgid "sustain"

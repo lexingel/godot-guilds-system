@@ -30,6 +30,8 @@ func run() -> void:
 	check(kw.call("Ekip iyileşiyor.").has("Mend") and kw.call("İyileştirme").has("Mend"), "iyileş… → Mend")
 	check(kw.call("ön sırada").has("Formation"), "ön sıra → Formation")
 	check(not kw.call("hızlı").has("Speed"), "hız doesn't catch hızlı (fast)")
+	check(kw.call("◆ Sıyrılma").has("Evasion") and not kw.call("◆ Sıyrılma").has("Dodge"), "Sıyrılma → Evasion, not Dodge")
+	check(not kw.call("darbeden sıyrıldı").has("Evasion"), "the dodge log's sıyrıldı stays unhovered")
 	check(kw.call("turda ilk davrandığında").has("Turn order") and kw.call("ekip bu tur önce davranır").has("Turn order"), "ilk/önce davran… → Turn order")
 	TranslationServer.set_locale("en")
 	check(kw.call("+5% dodge chance").has("Dodge") and not kw.call("kaçınma şansı").has("Dodge"), "English glossary back to English only")

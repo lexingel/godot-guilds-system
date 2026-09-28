@@ -472,7 +472,7 @@ Attrition,Yıpratıcı,scripts/autoload/game_data/GameDataHeroes.gd:289
 win long fights: bonuses that grow with every round,uzun dövüşleri kazan: her turla büyüyen bonuslar,scripts/autoload/game_data/GameDataHeroes.gd:289
 Guardian,Muhafız,scripts/autoload/game_data/GameDataHeroes.gd:290
 "keep the party standing: HP, hazard/wipe guard, intercepts","ekibi ayakta tut: can, tehlike/yok olma koruması, araya girmeler",scripts/autoload/game_data/GameDataHeroes.gd:290
-Evasion,Kaçınma,scripts/autoload/game_data/GameDataHeroes.gd:291
+Evasion,Sıyrılma,scripts/autoload/game_data/GameDataHeroes.gd:291
 avoid hits: dodge and punishing counters,darbelerden kaçın: kaçınma ve cezalandırıcı karşı saldırılar,scripts/autoload/game_data/GameDataHeroes.gd:291
 Sustain,Dayanıklılık,scripts/autoload/game_data/GameDataHeroes.gd:292
 "outlast: mending, lifesteal and shields","dayan: iyileşme, can çalma ve kalkanlar",scripts/autoload/game_data/GameDataHeroes.gd:292
@@ -2998,6 +2998,6 @@ first-strike,[iİ]lk vuruş\\w*,locale/extra_msgids.txt
 opener,açılış\\w*,locale/extra_msgids.txt
 attrition,yıpratıcı\\w*,locale/extra_msgids.txt
 guardian,muhafız\\w*,locale/extra_msgids.txt
-evasion,,locale/extra_msgids.txt
+evasion,sıyrılma\\w*,locale/extra_msgids.txt
 sustain,dayanıklılık\\w*,locale/extra_msgids.txt
 executioner,cellat\\w*,locale/extra_msgids.txt
