@@ -40,16 +40,15 @@ func _ready() -> void:
 	add_child(toast_layer)
 	_toast_box = VBoxContainer.new()
 	_toast_box.add_theme_constant_override("separation", 6)
-	# Bottom-right, stacking upward — clear of the header and the quick-travel bar.
-	_toast_box.anchor_left = 1.0
-	_toast_box.anchor_right = 1.0
-	_toast_box.anchor_top = 1.0
-	_toast_box.anchor_bottom = 1.0
+	# Top centre, just under the menus, stacking down: over the camp's open
+	# sky rather than its buildings or the Rift Hall's cards.
+	_toast_box.anchor_left = 0.5
+	_toast_box.anchor_right = 0.5
 	_toast_box.offset_left = -300
-	_toast_box.offset_right = -12
-	_toast_box.offset_top = -400
-	_toast_box.offset_bottom = -12
-	_toast_box.alignment = BoxContainer.ALIGNMENT_END
+	_toast_box.offset_right = 300
+	_toast_box.offset_top = 146
+	_toast_box.offset_bottom = 546
+	_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
 	# Full-window art under the UI (see UiKit's scene layers): the ambient
@@ -169,28 +168,38 @@ func _drain_toasts() -> void:
 	if _toast_box == null:
 		return
 	for t in GameState.pending_toasts:
+		# A slim pill: "Title · text" on one line where it fits.
 		var card := PanelContainer.new()
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var style := StyleBoxFlat.new()
-		style.bg_color = Palette.SURFACE2
+		style.bg_color = Color(Palette.SURFACE2, 0.94)
 		style.border_color = Palette.EMBER_BRIGHT
 		style.set_border_width_all(1)
-		style.set_corner_radius_all(8)
-		style.set_content_margin_all(8)
+		style.set_corner_radius_all(14)
+		style.content_margin_left = 12
+		style.content_margin_right = 14
+		style.content_margin_top = 4
+		style.content_margin_bottom = 4
 		card.add_theme_stylebox_override("panel", style)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		var portrait := GameData.portrait_for_hero(str(t["cls_id"]), str(t["pool_id"]))
 		if portrait != "":
-			row.add_child(_icon_trimmed(portrait, 44))
-		var col := _vbox(2)
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(_icon_trimmed(portrait, 28))
 		if str(t["title"]) != "":
-			var title := _label(str(t["title"]), 14)
+			var title := _label(str(t["title"]), 13)
 			title.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-			col.add_child(title)
-		col.add_child(_wrap_label(str(t["text"]), 12, true))
-		row.add_child(col)
+			title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(title)
+		var body := _label(str(t["text"]), 12, true)
+		body.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# Wraps only past the pill's widest.
+		var font := body.get_theme_font("font")
+		if font.get_string_size(body.text, HORIZONTAL_ALIGNMENT_LEFT, -1, body.get_theme_font_size("font_size")).x > 380.0:
+			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body.custom_minimum_size.x = 380.0
+		row.add_child(body)
 		card.add_child(row)
 		_toast_box.add_child(card)
 		AudioManager.play_sfx(GameData.SFX_PATH["ui_confirm"])
@@ -1350,22 +1359,29 @@ func _ladder_card(best: int, go: Callable) -> Control:
 	var row := HFlowContainer.new()
 	row.add_theme_constant_override("h_separation", 6)
 	row.add_theme_constant_override("v_separation", 6)
+	var next_locked := ""
 	for r in GameData.RIFT_RANKS:
 		var rid := str(r["id"])
 		var lock := GameState.ladder_rank_lock(rid)
+		if lock != "" and next_locked == "":
+			next_locked = "Next: Rank %s — %s" % [rid, lock]
 		var b := _button(rid, func(): _ladder_pick = rid; render())
 		b.custom_minimum_size = Vector2(46, 40)
 		b.toggle_mode = true
 		b.button_pressed = rid == _ladder_pick
 		b.add_theme_color_override("font_color", Palette.rank_color(rid))
 		if lock != "":
+			# Still in its rank's colour, just softer, so the whole ladder
+			# ahead reads at a glance.
 			b.disabled = true
-			b.modulate = Color(1, 1, 1, 0.45)
+			b.add_theme_color_override("font_disabled_color", Color(Palette.rank_color(rid), 0.6))
 			b.tooltip_text = "Rank %s — %s" % [rid, lock]
 		elif GameState.best_rift_rank_sealed >= GameData.rift_rank_index(rid):
 			b.tooltip_text = "Rank %s — sealed" % rid
 		row.add_child(b)
 	cv.add_child(row)
+	if next_locked != "":
+		cv.add_child(_label(next_locked, 12, true))
 	var rank: Dictionary = GameData.find_rift_rank(_ladder_pick)
 	var base: Dictionary = GameData.DIFFICULTIES[0]
 	for d in GameData.DIFFICULTIES:

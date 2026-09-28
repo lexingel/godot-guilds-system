@@ -595,8 +595,8 @@ func _roll_intent(state: Dictionary, mi: int, living: Array[Hero]) -> Dictionary
 ## One hero hit on monster `ti` at `mult` of their share of the party's
 ## damage (the basic attack is mult 1). Armor and wards soak it and reflect
 ## bites back unless `pierce`. Returns the damage dealt.
-func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = false) -> float:
-	var log: Array[String] = state["log"]
+## A hero's hit on foe `ti` before any on-hit effects, armor or wards.
+func _hit_base(state: Dictionary, h: Hero, ti: int, mult: float) -> float:
 	var monsters: Array = state["monsters"]
 	var formation_mult := 1.0 if bool(monsters[ti].get("is_main", true)) else 0.75
 	var weaken := 1.0 - GameData.CURSE_WEAKEN if state.get("_weakened", {}).has(h.id) else 1.0
@@ -608,8 +608,28 @@ func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = 
 		"opener":
 			if not state.get("_opened", {}).has(h.id):
 				mult *= 1.0 + GameData.TWIST_OPENER
+	return dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * float(state.get("_attack_mult", 1.0)) * formation_mult * mult * weaken * marked * (1.0 + hero_cond_stat(h, "dmg_pct", state, {"target": monsters[ti]}))
+
+
+## Whether a plain Attack from `h` would bring foe `ti` down, before chance
+## (crits and other on-hit effects can only add to it). For the Momentum
+## preview: a kill earns +1 on top of the attack's own.
+func attack_would_kill(state: Dictionary, h: Hero, ti: int) -> bool:
+	var monsters: Array = state["monsters"]
+	if ti < 0 or ti >= monsters.size() or float(monsters[ti]["hp"]) <= 0.0:
+		return false
+	var reach := GameData.BACK_ROW_MELEE_MULT if h.formation == "back" and GameData.MELEE_ROLES.has(h.cls_id) else 1.0
+	var dealt := _hit_base(state, h, ti, reach)
+	dealt -= dealt * float(monsters[ti].get("armor", 0.0))
+	dealt -= float(state["monster_shields"].get(ti, 0.0))
+	return round(dealt) >= float(monsters[ti]["hp"])
+
+
+func _hero_hit(state: Dictionary, h: Hero, ti: int, mult: float, pierce: bool = false) -> float:
+	var log: Array[String] = state["log"]
+	var monsters: Array = state["monsters"]
 	var hit := {"target": monsters[ti]}
-	hit["dealt"] = dmg_of(h) / float(state["raw_sum"]) * float(state["team_dmg_base"]) * float(state["_attack_mult"]) * formation_mult * mult * weaken * marked * (1.0 + hero_cond_stat(h, "dmg_pct", state, hit))
+	hit["dealt"] = _hit_base(state, h, ti, mult)
 	_fire("before_hit", state, h, hit)
 	var dealt: float = hit["dealt"]
 	var armor := float(monsters[ti].get("armor", 0.0))

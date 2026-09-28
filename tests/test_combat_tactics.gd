@@ -51,6 +51,17 @@ func run() -> void:
 	st["pending_actions"][war.id] = {"action": "attack", "target": 0}
 	Combat._resolve_hero_action(st, war)
 	check(int(st["momentum"]) == GameData.MOMENTUM_START + 1, "an attack builds 1 Momentum")
+	# The preview's kill check agrees with what a finishing blow earns (+1 more).
+	st = _state(party)
+	st["monsters"][0]["hp"] = 1.0
+	check(Combat.attack_would_kill(st, war, 0), "a foe on 1 HP: the attack preview expects the kill")
+	var mk := int(st["momentum"])
+	st["pending_actions"][war.id] = {"action": "attack", "target": 0}
+	Combat._resolve_hero_action(st, war)
+	check(float(st["monsters"][0]["hp"]) <= 0.0 and int(st["momentum"]) == mini(GameData.MOMENTUM_MAX, mk + 2), "and a finishing attack earns 2 Momentum")
+	st = _state(party)
+	st["monsters"][0]["hp"] = 99999.0
+	check(not Combat.attack_would_kill(st, war, 0), "a sturdy foe: no kill expected")
 	check(GameData.hero_role_skills(war).size() == 2 and GameData.hero_role_skills(Combat.gen_hero("F", 1)).size() == 1, "two role skills by Lv6, one at Lv1")
 
 	# Rows: skills need their row; melee hits at half strength from the back.

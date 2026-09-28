@@ -2143,12 +2143,14 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var tgt_name := str(monsters[tgt]["name"]) if tgt >= 0 and tgt < monsters.size() else "—"
 		var do_attack := func(): if tgt >= 0: attack_cb.call(tgt)
 		var weak_reach: bool = current_hero.formation == "back" and GameData.MELEE_ROLES.has(current_hero.cls_id)
-		var atk_tip := "Attack %s (1): +1 Momentum. Click a foe to pick another, Tab to cycle." % tgt_name
+		# A likely kill earns +1 more (the preview and the tip both say so).
+		var atk_kills := tgt >= 0 and Combat.attack_would_kill(state, current_hero, tgt)
+		var atk_tip := "Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle." % [tgt_name, 2 if atk_kills else 1, " (+1 for the kill: this hit should finish it)" if atk_kills else ""]
 		if weak_reach:
 			atk_tip += "\nFrom the back row a %s hits at half strength." % current_hero.cls_id
 		var mom := int(state.get("momentum", 0))
 		var ab_atk := _cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack")
-		_momentum_hover(ab_atk, mom, 1)
+		_momentum_hover(ab_atk, mom, 2 if atk_kills else 1)
 		row.add_child(ab_atk)
 		_combat_hotkeys["1"] = do_attack
 		if last_action == "attack":
