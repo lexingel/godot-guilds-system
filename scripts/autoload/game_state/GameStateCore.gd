@@ -129,7 +129,7 @@ func upgrade_node(key: String) -> String:
 		return ""
 	var cost: int = int(node["cost_base"]) + int(node["cost_step"]) * cur
 	if crystals < cost:
-		return "Not enough Essence"
+		return tr("Not enough Essence")
 	crystals -= cost
 	upgrades[key] = cur + 1
 	save()
@@ -483,7 +483,14 @@ func save_settings() -> void:
 
 ## Switches every translated line to `language` (the next render redraws).
 func apply_language() -> void:
+	if not _names_added:
+		# Hero, item, relic and warden names, assembled from translated parts.
+		_names_added = true
+		TranslationServer.add_translation(load("res://scripts/autoload/NameTranslation.gd").new("tr"))
 	TranslationServer.set_locale(language)
+
+
+var _names_added := false
 
 
 func load_settings() -> void:
@@ -580,12 +587,12 @@ func export_save_text() -> String:
 func import_save_text(text: String, slot: int) -> String:
 	var parsed = JSON.parse_string(text.strip_edges())
 	if typeof(parsed) != TYPE_DICTIONARY or String(parsed.get("guild_name", "")) == "":
-		return "That doesn't look like a Guildhold save"
+		return tr("That doesn't look like a Guildhold save")
 	if int(parsed.get("save_version", 1)) > SAVE_VERSION:
-		return "That save is from a newer version of the game"
+		return tr("That save is from a newer version of the game")
 	# The slot's current save is kept as .bak by _write_slot.
 	if not _write_slot(slot, JSON.stringify(parsed)):
-		return "Couldn't write the save slot"
+		return tr("Couldn't write the save slot")
 	return ""
 const HAZARD_BYPASS_COST := 15
 

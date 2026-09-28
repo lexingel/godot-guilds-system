@@ -30,7 +30,7 @@ func has_special() -> bool:
 
 
 func desc() -> String:
-	var parts: Array[String] = ["+%d DMG · +%d Shield" % [dmg, hp]]
+	var parts: Array[String] = [tr("+%d DMG · +%d Shield") % [dmg, hp]]
 	for s in specials:
 		parts.append(str(s["label"]))
 	if not trigger.is_empty():

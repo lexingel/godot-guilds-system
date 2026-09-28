@@ -6,7 +6,7 @@ extends "res://tests/base_test.gd"
 
 func _slots(s: String) -> Array[String]:
 	var out: Array[String] = []
-	var re := RegEx.create_from_string(r"%[-+ 0#]*\d*(?:\.\d+)?[sdfxXc%]")
+	var re := RegEx.create_from_string(r"%[-+0#]*\d*(?:\.\d+)?[sdfxXc%]")   # no space flag: "5% dodge" is prose
 	for m in re.search_all(s):
 		if m.get_string() != "%%":
 			out.append(m.get_string())

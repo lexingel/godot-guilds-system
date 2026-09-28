@@ -134,17 +134,17 @@ func roll_relic_special(type: String, rarity_id: String, exclude: Array) -> Dict
 func relic_special_label(kind: String, v: float) -> String:
 	var pct := ("%.1f%%" % (v * 100.0)) if v < 0.1 else ("%d%%" % int(round(v * 100.0)))
 	match kind:
-		"mend_pct": return "Mends %s HP/round" % pct
-		"dodge_pct": return "+%s dodge chance" % pct
-		"escalate_pct": return "+%s dmg/round (stacking)" % pct
-		"hazard_guard_pct": return "-%s hazard severity" % pct
-		"first_round_pct": return "+%s first-strike damage" % pct
-		"loot_rarity_pct": return "+%s odds toward Rare/Epic loot" % pct
-		"wipe_guard": return "Relic ward: survive a wipe at %d%% HP" % int(round(v * 100))
-		"boss_alpha_strike": return "+%d%% opening volley vs Bosses" % int(round(v * 100))
-		"counter_pct": return "+%d%% chance to counter when evading or hit hard" % int(round(v * 100))
-		"momentum_pct": return "+%d%% chance to gain 1 Momentum when evading or hit hard" % int(round(v * 100))
-		"kill_shield_pct": return "On a kill, shield the weakest ally for %d%% of max HP" % int(round(v * 100))
+		"mend_pct": return tr("Mends %s HP/round") % tr(str(pct))
+		"dodge_pct": return tr("+%s dodge chance") % tr(str(pct))
+		"escalate_pct": return tr("+%s dmg/round (stacking)") % tr(str(pct))
+		"hazard_guard_pct": return tr("-%s hazard severity") % tr(str(pct))
+		"first_round_pct": return tr("+%s first-strike damage") % tr(str(pct))
+		"loot_rarity_pct": return tr("+%s odds toward Rare/Epic loot") % tr(str(pct))
+		"wipe_guard": return tr("Relic ward: survive a wipe at %d%% HP") % int(round(v * 100))
+		"boss_alpha_strike": return tr("+%d%% opening volley vs Bosses") % int(round(v * 100))
+		"counter_pct": return tr("+%d%% chance to counter when evading or hit hard") % int(round(v * 100))
+		"momentum_pct": return tr("+%d%% chance to gain 1 Momentum when evading or hit hard") % int(round(v * 100))
+		"kill_shield_pct": return tr("On a kill, shield the weakest ally for %d%% of max HP") % int(round(v * 100))
 	return describe_skill(kind, v)
 
 
@@ -245,10 +245,11 @@ func gen_item(rarity_id: String, category_override: String = "", rank: String = 
 		it.effects = [affix]
 
 	var prefixes: Array = GameData.ITEM_AFFIX_PREFIX[it.kind]
-	var name := "%s %s" % [str(prefixes[randi() % prefixes.size()]), noun]
+	# Stored in English (it's in the save); NameTranslation shows it translated.
+	var name := "%s %s" % [prefixes[randi() % prefixes.size()], noun]
 	if it.secondary_kind != "":
 		var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[it.secondary_kind]
-		name += " %s" % str(suffixes[randi() % suffixes.size()])
+		name += " %s" % suffixes[randi() % suffixes.size()]
 	it.name = name
 	it.attr = str(GameData.ITEM_BASE_ATTR.get(noun, "might"))
 	it.attr_bonus = int(GameData.ITEM_ATTR_BONUS[rarity_id])
@@ -574,7 +575,7 @@ func _bark(state: Dictionary, h: Hero, moment: String, chance: float) -> void:
 	said[h.id] = int(said.get(h.id, 0)) + 1
 	var text := bark_line(h, moment)
 	state.get_or_add("_barks", []).append({"hero": h.id, "text": text})
-	(state["log"] as Array).append("%s: \"%s\"" % [h.name.split(" the ")[0], text])
+	(state["log"] as Array).append("%s: \"%s\"" % [tr(str(h.name.split(" the ")[0])), tr(str(text))])
 
 
 ## A boss turns once at half health (GameData.BOSS_PHASES).

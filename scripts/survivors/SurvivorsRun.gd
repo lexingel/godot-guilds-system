@@ -408,9 +408,9 @@ func upcoming() -> Array:
 		out.append({"label": str(WAVES[wave_at(next_min)]["name"]), "in": next_min - time})
 	if not _final_spawned:
 		if _next_boss < FINAL_AT:
-			out.append({"label": "Warden", "in": _next_boss - time})
+			out.append({"label": tr("Warden"), "in": _next_boss - time})
 		else:
-			out.append({"label": "Rift Warden", "in": FINAL_AT - time})
+			out.append({"label": tr("Rift Warden"), "in": FINAL_AT - time})
 	return out.filter(func(u): return float(u["in"]) > 0.0)
 
 
@@ -1324,15 +1324,15 @@ func ability_cd_max(h: Dictionary) -> float:
 func tray() -> Array:
 	var out: Array = []
 	for id in upgrades:
-		out.append({"icon": UPGRADES[id]["icon"], "name": "%s (%d/%d)" % [UPGRADES[id]["name"], upgrades[id], UPGRADES[id]["max"]], "count": int(upgrades[id]), "special": false})
+		out.append({"icon": UPGRADES[id]["icon"], "name": "%s (%d/%d)" % [tr(str(UPGRADES[id]["name"])), upgrades[id], UPGRADES[id]["max"]], "count": int(upgrades[id]), "special": false})
 	for role in evolved:
-		out.append({"icon": EVOLUTIONS[role]["icon"], "name": "%s: %s" % [EVOLUTIONS[role]["name"], EVOLUTIONS[role]["desc"]], "count": 0, "special": true})
+		out.append({"icon": EVOLUTIONS[role]["icon"], "name": "%s: %s" % [tr(str(EVOLUTIONS[role]["name"])), tr(str(EVOLUTIONS[role]["desc"]))], "count": 0, "special": true})
 	for id in relics:
-		out.append({"icon": RIFT_RELICS[id]["icon"], "name": "%s: %s" % [RIFT_RELICS[id]["name"], RIFT_RELICS[id]["desc"]], "count": 0, "special": true})
+		out.append({"icon": RIFT_RELICS[id]["icon"], "name": "%s: %s" % [tr(str(RIFT_RELICS[id]["name"])), tr(str(RIFT_RELICS[id]["desc"]))], "count": 0, "special": true})
 	for h in heroes:
 		for sid in h["skills"]:
 			var sk := GameData.find_role_skill(str(sid))
-			out.append({"icon": sk["icon"], "name": "%s: %s" % [h["hero"].name.split(" the ")[0], sk["name"]], "count": 0, "special": false})
+			out.append({"icon": sk["icon"], "name": "%s: %s" % [tr(str(h["hero"].name.split(" the ")[0])), tr(str(sk["name"]))], "count": 0, "special": false})
 	return out
 
 
@@ -1370,10 +1370,10 @@ func upgrade_info(id: String) -> Dictionary:
 	var parts := id.split(":")
 	if parts[0] == "evolve":
 		var ev: Dictionary = EVOLUTIONS[parts[1]]
-		return {"name": "Evolve: " + str(ev["name"]), "desc": ev["desc"], "icon": ev["icon"], "have": 0, "max": 1, "special": true}
+		return {"name": tr("Evolve: ") + tr(str(ev["name"])), "desc": ev["desc"], "icon": ev["icon"], "have": 0, "max": 1, "special": true}
 	if parts[0] == "twist":
 		var ht: Dictionary = heroes[int(parts[1])]
-		return {"name": "%s: %s twist" % [ht["hero"].name.split(" the ")[0], GameData.ARCHETYPES[ht["arch"]]], "desc": "%s %s" % [ht["ability_name"], TWIST_TEXT[ht["arch"]]],
+		return {"name": tr("%s: %s twist") % [tr(str(ht["hero"].name.split(" the ")[0])), tr(str(GameData.ARCHETYPES[ht["arch"]]))], "desc": "%s %s" % [tr(str(ht["ability_name"])), tr(str(TWIST_TEXT[ht["arch"]]))],
 			"icon": GameData.ability_icon(ht["hero"].pool_id), "have": 0, "max": 1}
 	if parts[0] == "relic":
 		var rl: Dictionary = RIFT_RELICS[parts[1]]
@@ -1381,27 +1381,27 @@ func upgrade_info(id: String) -> Dictionary:
 	if parts[0] == "skill":
 		var h: Dictionary = heroes[int(parts[1])]
 		var sk := GameData.find_role_skill(parts[2])
-		return {"name": "%s: %s" % [h["hero"].name.split(" the ")[0], sk["name"]], "desc": str(SKILL_MOVES[parts[2]]["desc"]), "icon": str(sk["icon"]), "have": 0, "max": 1}
+		return {"name": "%s: %s" % [tr(str(h["hero"].name.split(" the ")[0])), tr(str(sk["name"]))], "desc": str(SKILL_MOVES[parts[2]]["desc"]), "icon": str(sk["icon"]), "have": 0, "max": 1}
 	if parts[0] == "ability":
 		var h2: Dictionary = heroes[int(parts[1])]
 		var r := int(h2["ab_rank"])
-		var d := "Fires 20% sooner and hits 30% harder"
-		return {"name": "%s: %s" % [h2["hero"].name.split(" the ")[0], h2["ability_name"]], "desc": d, "icon": GameData.ability_icon(h2["hero"].pool_id), "have": r, "max": ABILITY_RANK_MAX}
+		var d := tr("Fires 20% sooner and hits 30% harder")
+		return {"name": "%s: %s" % [tr(str(h2["hero"].name.split(" the ")[0])), tr(str(h2["ability_name"]))], "desc": d, "icon": GameData.ability_icon(h2["hero"].pool_id), "have": r, "max": ABILITY_RANK_MAX}
 	var u: Dictionary = UPGRADES[id]
 	return {"name": u["name"], "desc": u["desc"], "icon": u["icon"], "have": _stat(id), "max": int(u["max"])}
 
 
 ## Everything picked so far, for the pause screen.
 func owned_lines() -> Array:
-	var out: Array = upgrades.keys().map(func(id): return "%s ×%d" % [UPGRADES[id]["name"], upgrades[id]])
+	var out: Array = upgrades.keys().map(func(id): return "%s ×%d" % [tr(str(UPGRADES[id]["name"])), upgrades[id]])
 	for h in heroes:
 		var who: String = h["hero"].name.split(" the ")[0]
 		for sid in h["skills"]:
-			out.append("%s: %s" % [who, GameData.find_role_skill(str(sid))["name"]])
+			out.append("%s: %s" % [tr(str(who)), tr(str(GameData.find_role_skill(str(sid))["name"]))])
 		if int(h["ab_rank"]) > 0:
-			out.append("%s: %s rank %d" % [who, h["ability_name"], int(h["ab_rank"])])
+			out.append(tr("%s: %s rank %d") % [tr(str(who)), tr(str(h["ability_name"])), int(h["ab_rank"])])
 		if h.get("twist", false):
-			out.append("%s: %s twist" % [who, GameData.ARCHETYPES[h["arch"]]])
+			out.append(tr("%s: %s twist") % [tr(str(who)), tr(str(GameData.ARCHETYPES[h["arch"]]))])
 	for role in evolved:
 		out.append(str(EVOLUTIONS[role]["name"]))
 	for id in relics:

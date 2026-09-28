@@ -5,3 +5,47 @@ Back
 front
 back
 all
+# Phrases the fight's sound picker looks for in the (translated) log; each
+# Turkish one must appear in the matching Turkish log lines.
+gathers its strength
+stunned
+ablaze
+chilled
+strikes every foe
+Phoenix
+uses 
+shield
+mends
+Tonic
+# Relic nouns (Combat.RARITY_NOUNS) and warden-name words, used by NameTranslation.
+Sigil
+Charm
+Shard
+Idol
+Emblem
+Warden
+Lesser
+Greater
+# Item nouns that clash with another word (the Guard action); NameTranslation
+# tries "item:<noun>" first.
+item:Guard
+# Lowercase words slotted into sentences (stat short names, slot types).
+dmg
+speed
+dodge
+mend
+weapon
+gear
+# Run outcomes: stored and compared in English, shown translated.
+Sealed
+Retreated
+Defeated
+Left
+Survived
+On hit
+On a kill
+Every third round
+When an ally falls
+When dodging or hit hard
+Whenever the party mends
+When an ally is attacked

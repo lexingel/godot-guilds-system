@@ -105,8 +105,8 @@ func load_save() -> bool:
 	if parsed.is_empty():
 		return false
 	if restored_from_backup:
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Save restored",
-			"text": "Your last save was damaged, so the one just before it was loaded."})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Save restored"),
+			"text": tr("Your last save was damaged, so the one just before it was loaded.")})
 	var data: Dictionary = _migrate_save(parsed)
 	# A save file can exist on disk for a slot that was never actually
 	# founded (e.g. a stray write while "Name Your Guild" was still open) —
@@ -124,8 +124,8 @@ func load_save() -> bool:
 	Hero.attrs_migrated = 0
 	heroes.assign(data.get("heroes", []).map(func(d): return Hero.from_dict(d)))
 	if Hero.attrs_migrated > 0:
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Heroes have attributes now",
-			"text": "Might, Agility and Focus — each hero has points from their past levels to spend (Roster > Hero)."})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Heroes have attributes now"),
+			"text": tr("Might, Agility and Focus — each hero has points from their past levels to spend (Roster > Hero).")})
 	recruit_pool.assign(data.get("recruit_pool", []).map(func(d): return Hero.from_dict(d)))
 	for h in heroes:
 		migrate_hero_skill_keys(h)
@@ -160,8 +160,8 @@ func load_save() -> bool:
 	upgrades = data.get("upgrades", {})
 	caps = data.get("caps", {})
 	if int(data.get("_mgmt_refund", 0)) > 0:
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Guild Management rebuilt",
-			"text": "Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded." % int(data["_mgmt_refund"])})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Guild Management rebuilt"),
+			"text": tr("Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded.") % int(data["_mgmt_refund"])})
 	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
 	tower_best = int(data.get("tower_best", 0))
 	daily_attempt_day = int(data.get("daily_attempt_day", -1))
@@ -218,8 +218,8 @@ func load_save() -> bool:
 		# A run of the old, floor-by-floor Endless Rift: it's a survival mode
 		# now, so the run ends here (heroes keep their HP and loot).
 		run_data = {}
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "The Endless Rift has changed",
-			"text": "Your Endless run was closed: it's a real-time survival run now (Rift Hall)."})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("The Endless Rift has changed"),
+			"text": tr("Your Endless run was closed: it's a real-time survival run now (Rift Hall).")})
 	if run_data.is_empty():
 		run = {}
 	else:
@@ -310,31 +310,31 @@ func orders_left() -> int:
 ## "" if `id` can be used right now, else why not.
 func order_blocker(id: String) -> String:
 	if run.is_empty():
-		return "Only inside a rift"
+		return tr("Only inside a rift")
 	if run.has("tower"):
-		return "The Tower is a trial: no orders"
+		return tr("The Tower is a trial: no orders")
 	if not orders_unlocked().has(id):
-		return "Not unlocked"
+		return tr("Not unlocked")
 	if orders_left() <= 0:
-		return "No orders left this rift"
+		return tr("No orders left this rift")
 	var ns: Dictionary = run.get("node_state", {})
 	var in_fight: bool = ns.has("combat_state") and not ns.has("result")
 	match id:
 		"supply":
 			if in_fight:
-				return "Not during a fight"
+				return tr("Not during a fight")
 			if not current_party().any(func(h): return h.hp > 0 and h.hp < Combat.max_hp(h)):
-				return "Everyone is at full HP"
+				return tr("Everyone is at full HP")
 		"rally":
 			if not in_fight:
-				return "Only during a fight"
+				return tr("Only during a fight")
 		"requisition":
 			var res: Dictionary = ns.get("result", {})
 			if not bool(res.get("won", false)) or (res.get("reward_options", []) as Array).is_empty() or ns.get("reward_chosen", false):
-				return "Only when choosing a fight's loot"
+				return tr("Only when choosing a fight's loot")
 		"scout":
 			if current_node_kind() != "" or current_layer_options().size() < 2:
-				return "Only when choosing a path"
+				return tr("Only when choosing a path")
 	return ""
 
 

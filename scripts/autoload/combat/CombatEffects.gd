@@ -34,19 +34,19 @@ func weighted_rank() -> String:
 ## version used a per-node JS closure that doesn't translate to static data.
 func describe_node_effect(node_id: String, level: int) -> String:
 	if level <= 0:
-		return "Not built yet"
+		return tr("Not built yet")
 	match node_id:
-		"barracks": return "+%d hero slots" % (level * 2)
-		"infirmary": return "-%d%% recovery time · %d bed%s" % [level * 15, 1 + int(ceil(level / 2.0)), "" if level == 0 else "s"]
-		"drill": return "+%d%% party damage and max HP" % (level * 4)
-		"amplifiers": return "+%d%% Essence from fights" % (level * 8)
-		"wardstones": return "-%d%% hazard damage · +%d%% Essence for sealing" % [level * 12, level * 10]
-		"trade": return "-%d%% shop prices · -%d%% auction fees · +%d%% Rift Cache chance" % [level * 6, level * 2, level * 5]
-		"scouts": return "%d recruit offers" % (4 + (1 if level >= 1 else 0) + (1 if level >= 4 else 0))
+		"barracks": return tr("+%d hero slots") % (level * 2)
+		"infirmary": return tr("-%d%% recovery time · %d bed%s") % [level * 15, 1 + int(ceil(level / 2.0)), GameData.pl(level + 1)]
+		"drill": return tr("+%d%% party damage and max HP") % (level * 4)
+		"amplifiers": return tr("+%d%% Essence from fights") % (level * 8)
+		"wardstones": return tr("-%d%% hazard damage · +%d%% Essence for sealing") % [level * 12, level * 10]
+		"trade": return tr("-%d%% shop prices · -%d%% auction fees · +%d%% Rift Cache chance") % [level * 6, level * 2, level * 5]
+		"scouts": return tr("%d recruit offers") % (4 + (1 if level >= 1 else 0) + (1 if level >= 4 else 0))
 		"vault":
 			var choices := 4 if level >= 4 else (3 if level >= 2 else 2)
-			return "%d starting relic choices · %d relic slots" % [choices, 3 + (1 if level >= 3 else 0) + (1 if level >= 5 else 0)]
-		"lab": return "+%d%% element-set bonuses" % (level * 10)
+			return tr("%d starting relic choices · %d relic slots") % [choices, 3 + (1 if level >= 3 else 0) + (1 if level >= 5 else 0)]
+		"lab": return tr("+%d%% element-set bonuses") % (level * 10)
 		_: return ""
 
 
@@ -287,29 +287,29 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 			var after_hp: float = float(t["hp"]) - float(ctx["dealt"])
 			if after_hp > 0.0 and float(t["max_hp"]) > 0.0 and after_hp / float(t["max_hp"]) < value:
 				ctx["dealt"] = float(t["hp"])
-				log.append("%s's %s finds the killing blow!" % [h.name, source])
+				log.append(tr("%s's %s finds the killing blow!") % [tr(str(h.name)), tr(str(source))])
 				_proc(state, h, source)
 		"lifesteal":
 			var healed: int = max(1, int(round(float(ctx["dealt"]) * value)))
 			h.hp = min(max_hp(h), h.hp + healed)
-			log.append("%s drains %d HP from the strike." % [h.name, healed])
-			_proc(state, h, "+%d HP" % healed)
+			log.append(tr("%s drains %d HP from the strike.") % [tr(str(h.name)), healed])
+			_proc(state, h, tr("+%d HP") % healed)
 		"shield_lowest":
 			var shielded := _shield_lowest(state, value)
 			if not shielded.is_empty():
-				log.append("The %s shields %s for %d." % [source, shielded[0].name, int(round(shielded[1]))])
-				_proc(state, shielded[0], "Shield +%d" % int(round(shielded[1])))
+				log.append(tr("The %s shields %s for %d.") % [tr(str(source)), tr(str(shielded[0].name)), int(round(shielded[1]))])
+				_proc(state, shielded[0], tr("Shield +%d") % int(round(shielded[1])))
 		"counter_attack":
 			if randf() < value:
 				var m: Dictionary = ctx["attacker"]
 				var counter_dmg: int = max(1, int(round(float(state["team_dmg_base"]) * 0.3)))
 				m["hp"] = max(0.0, float(m["hp"]) - counter_dmg)
-				log.append("%s counters, striking %s for %d!" % [h.name, m["name"], counter_dmg])
+				log.append(tr("%s counters, striking %s for %d!") % [tr(str(h.name)), tr(str(m["name"])), counter_dmg])
 				_proc(state, h, "Counter!")
 		"gain_momentum":
 			if randf() < value:
 				state["momentum"] = mini(GameData.MOMENTUM_MAX, int(state.get("momentum", 0)) + 1)
-				log.append("The %s hums — +1 Momentum!" % source)
+				log.append(tr("The %s hums — +1 Momentum!") % tr(str(source)))
 				_proc(state, h, "Momentum +1")
 		"extra_turn":
 			var used: Dictionary = state.get("_extra_turned", {})
@@ -317,38 +317,38 @@ func _apply_effect(effect: String, value: float, source: String, state: Dictiona
 				used[h.id] = true
 				state["_extra_turned"] = used
 				state["turn_order"].insert(int(state["turn_idx"]), {"type": "hero", "id": h.id, "_spd": 0.0})
-				log.append("%s's %s — they act again!" % [h.name, source])
+				log.append(tr("%s's %s — they act again!") % [tr(str(h.name)), tr(str(source))])
 				_proc(state, h, "Act again!")
 		"intercept":
 			var aimed: Hero = ctx["target"]
 			if aimed != h and float(aimed.hp) / float(max_hp(aimed)) < 0.5 and randf() < value:
 				ctx["target"] = h
-				log.append("%s steps in front of the blow meant for %s!" % [h.name, aimed.name])
+				log.append(tr("%s steps in front of the blow meant for %s!") % [tr(str(h.name)), tr(str(aimed.name))])
 				_proc(state, h, "Intercept!")
 		"weaken_attacker":
 			var m2: Dictionary = ctx["attacker"]
 			m2["dmg"] = float(m2["dmg"]) * (1.0 - value)
-			log.append("%s's %s blunts %s's strength." % [h.name, source, m2["name"]])
+			log.append(tr("%s's %s blunts %s's strength.") % [tr(str(h.name)), tr(str(source)), tr(str(m2["name"]))])
 			_proc(state, h, source)
 		"mend_party":
 			for a in state["party"]:
 				if a.hp > 0:
 					a.hp = min(max_hp(a), a.hp + max(1, int(round(max_hp(a) * value))))
-			log.append("The %s mends the party." % source)
+			log.append(tr("The %s mends the party.") % tr(str(source)))
 			_proc(state, h, source)
 		"nova":
 			var nova: int = max(1, int(round(float(state["team_dmg_base"]) * value)))
 			for mm in state["monsters"]:
 				if float(mm["hp"]) > 0:
 					mm["hp"] = float(mm["hp"]) - nova
-			log.append("The %s strikes every foe for %d!" % [source, nova])
+			log.append(tr("The %s strikes every foe for %d!") % [tr(str(source)), nova])
 			_proc(state, h, source)
 		"shield_party":
 			var sh: Dictionary = state["hero_shields"]
 			for a in state["party"]:
 				if a.hp > 0:
 					sh[a.id] = float(sh.get(a.id, 0.0)) + max_hp(a) * value
-			log.append("The %s shields the party." % source)
+			log.append(tr("The %s shields the party.") % tr(str(source)))
 			_proc(state, h, source)
 		_:
 			push_error("Unknown effect '%s'" % effect)
@@ -369,22 +369,22 @@ func describe_effect(e: Dictionary) -> String:
 	if e.has("kind"):
 		text = describe_skill(str(e["kind"]), v)
 		match e.get("scale", ""):
-			"missing_hp": text = "Up to %s as HP drops" % text.trim_prefix("+")
-			"speed_above_10": text = "%s per Speed above 10" % text
+			"missing_hp": text = tr("Up to %s as HP drops") % tr(str(text.trim_prefix("+")))
+			"speed_above_10": text = tr("%s per Speed above 10") % tr(str(text))
 	else:
 		var what := ""
 		match str(e.get("effect", "")):
-			"execute_below": what = "finish foes left below %s HP" % pct.call(v)
-			"lifesteal": what = "heal for %s of damage dealt" % pct.call(v)
-			"shield_lowest": what = "shield the lowest-HP ally for %s of their max HP" % pct.call(v)
-			"counter_attack": what = "%s chance to counter-attack" % pct.call(v)
-			"gain_momentum": what = "%s chance to gain 1 Momentum" % pct.call(v)
-			"extra_turn": what = "act again (once per round)"
-			"intercept": what = "%s chance to take the hit for an ally below half HP" % pct.call(v)
-			"weaken_attacker": what = "cut the attacker's damage by %s" % pct.call(v)
-			"mend_party": what = "mend every ally for %s of their max HP" % pct.call(v)
-			"nova": what = "strike every foe for %s of the party's damage" % pct.call(v)
-			"shield_party": what = "shield every ally for %s of their max HP" % pct.call(v)
+			"execute_below": what = tr("finish foes left below %s HP") % tr(str(pct.call(v)))
+			"lifesteal": what = tr("heal for %s of damage dealt") % tr(str(pct.call(v)))
+			"shield_lowest": what = tr("shield the lowest-HP ally for %s of their max HP") % tr(str(pct.call(v)))
+			"counter_attack": what = tr("%s chance to counter-attack") % tr(str(pct.call(v)))
+			"gain_momentum": what = tr("%s chance to gain 1 Momentum") % tr(str(pct.call(v)))
+			"extra_turn": what = tr("act again (once per round)")
+			"intercept": what = tr("%s chance to take the hit for an ally below half HP") % tr(str(pct.call(v)))
+			"weaken_attacker": what = tr("cut the attacker's damage by %s") % tr(str(pct.call(v)))
+			"mend_party": what = tr("mend every ally for %s of their max HP") % tr(str(pct.call(v)))
+			"nova": what = tr("strike every foe for %s of the party's damage") % tr(str(pct.call(v)))
+			"shield_party": what = tr("shield every ally for %s of their max HP") % tr(str(pct.call(v)))
 		var when := ""
 		match str(e.get("trigger", "")):
 			"after_hit", "before_hit": when = "On hit"
@@ -394,19 +394,19 @@ func describe_effect(e: Dictionary) -> String:
 			"evade_or_heavy": when = "When dodging or hit hard"
 			"party_mend": when = "Whenever the party mends"
 			"ally_targeted": when = "When an ally is attacked"
-		text = "%s: %s" % [when, what]
+		text = "%s: %s" % [tr(str(when)), tr(str(what))]
 	var conds: Array[String] = []
 	for key in e.get("cond", {}):
 		var c = e["cond"][key]
 		match key:
-			"round_max": conds.append("in round 1" if int(c) == 1 else "in the first %d rounds" % int(c))
-			"round_min": conds.append("from round %d on" % int(c))
-			"hp_above": conds.append("while above %s HP" % pct.call(c))
-			"hp_below": conds.append("while below %s HP" % pct.call(c))
-			"vs_boss": conds.append("against bosses" if bool(c) else "outside boss fights")
-			"formation": conds.append("in the %s row" % str(c))
-			"target_below": conds.append("vs foes below %s HP" % pct.call(c))
-			"ally_below": conds.append("while an ally is below %s HP" % pct.call(c))
+			"round_max": conds.append(tr("in round 1") if int(c) == 1 else tr("in the first %d rounds") % int(c))
+			"round_min": conds.append(tr("from round %d on") % int(c))
+			"hp_above": conds.append(tr("while above %s HP") % tr(str(pct.call(c))))
+			"hp_below": conds.append(tr("while below %s HP") % tr(str(pct.call(c))))
+			"vs_boss": conds.append(tr("against bosses") if bool(c) else tr("outside boss fights"))
+			"formation": conds.append(tr("in the %s row") % tr(str(c)))
+			"target_below": conds.append(tr("vs foes below %s HP") % tr(str(pct.call(c))))
+			"ally_below": conds.append(tr("while an ally is below %s HP") % tr(str(pct.call(c))))
 			"acting_first": conds.append("when acting first in the round")
 			"acting_last": conds.append("when acting last in the round")
 	if not conds.is_empty():

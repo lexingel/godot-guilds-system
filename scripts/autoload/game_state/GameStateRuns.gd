@@ -77,10 +77,10 @@ func check_feature_unlocks() -> Array:
 			fresh.append(f)
 	if fresh.size() == 1:
 		var def: Dictionary = GameData.FEATURE_UNLOCKS[fresh[0]]
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "New: %s" % def["name"], "text": str(def["news"])})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("New: %s") % tr(str(def["name"])), "text": str(def["news"])})
 	elif fresh.size() > 1:
 		# Several at once (e.g. the first seal): one toast, not a stack.
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "New at camp", "text": ", ".join(fresh.map(func(f): return GameData.FEATURE_UNLOCKS[f]["name"])) + " — check the tabs above."})
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("New at camp"), "text": ", ".join(fresh.map(func(f): return tr(str(GameData.FEATURE_UNLOCKS[f]["name"])))) + tr(" — check the tabs above.")})
 	if not fresh.is_empty():
 		save()
 	return fresh
@@ -357,14 +357,14 @@ func campfire_choose(choice: String) -> void:
 		"rest":
 			for h in party:
 				h.hp = min(Combat.max_hp(h), h.hp + int(ceil(Combat.max_hp(h) * GameData.CAMPFIRE_HEAL_PCT)))
-			log.append("The party rests by the fire and recovers %d%% HP." % int(GameData.CAMPFIRE_HEAL_PCT * 100))
+			log.append(tr("The party rests by the fire and recovers %d%% HP.") % int(GameData.CAMPFIRE_HEAL_PCT * 100))
 		"train":
 			for h in party:
 				Combat.gain_xp(h, GameData.CAMPFIRE_TRAIN_XP)
-			log.append("The party drills together: +%d XP each." % GameData.CAMPFIRE_TRAIN_XP)
+			log.append(tr("The party drills together: +%d XP each.") % GameData.CAMPFIRE_TRAIN_XP)
 		"sharpen":
 			run["momentum_bonus"] = int(run.get("momentum_bonus", 0)) + 4
-			log.append("Weapons sharpened, focus restored — the next fight starts with +4 Momentum.")
+			log.append(tr("Weapons sharpened, focus restored — the next fight starts with +4 Momentum."))
 	ns["type"] = "campfire"
 	ns["resolved"] = true
 	ns["log"] = log
@@ -411,17 +411,17 @@ func resolve_event(choice_idx: int) -> void:
 		var chk: Dictionary = c["check"]
 		var info := event_check(chk)
 		var passed := randf() < float(info["chance"])
-		log.append("%s check (%s, %d vs %d): %s." % [GameData.ATTR_LABEL[chk["attr"]], info["hero"], int(info["value"]), int(info["target"]), "passed" if passed else "failed"])
+		log.append(tr("%s check (%s, %d vs %d): %s.") % [tr(str(GameData.ATTR_LABEL[chk["attr"]])), tr(str(info["hero"])), int(info["value"]), int(info["target"]), tr(str("passed" if passed else "failed"))])
 		log.append_array(_apply_event_effect(chk["win"] if passed else chk["lose"]))
 	elif c.has("gamble"):
 		var g: Dictionary = c["gamble"]
 		var won := randf() < float(g["chance"])
-		log.append("Luck is with you." if won else "Luck is not with you.")
+		log.append(tr("Luck is with you.") if won else tr("Luck is not with you."))
 		log.append_array(_apply_event_effect(g["win"] if won else g["lose"]))
 	else:
 		log.append_array(_apply_event_effect(c.get("effect", {})))
 	if log.is_empty():
-		log.append("You move on.")
+		log.append(tr("You move on."))
 	ns["resolved"] = true
 	ns["log"] = log
 	run["node_state"] = ns
@@ -458,36 +458,36 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 	if e.has("coins"):
 		var n := _event_amount(e["coins"])
 		coins += n
-		log.append("+%d Gold." % n)
+		log.append(tr("+%d Gold.") % n)
 	if e.has("crystals"):
 		var n2 := _event_amount(e["crystals"])
 		crystals += n2
-		log.append("+%d Essence." % n2)
+		log.append(tr("+%d Essence.") % n2)
 	if e.has("reputation"):
 		var r := int(e["reputation"])
 		add_reputation(r)
-		log.append("%+d Renown." % r)
+		log.append(tr("%+d Renown.") % r)
 	if e.has("xp_all"):
 		for h in party:
 			Combat.gain_xp(h, int(e["xp_all"]))
-		log.append("Every hero gains %d XP." % int(e["xp_all"]))
+		log.append(tr("Every hero gains %d XP.") % int(e["xp_all"]))
 	if e.has("heal_pct"):
 		for h in party:
 			h.hp = min(Combat.max_hp(h), h.hp + int(ceil(Combat.max_hp(h) * float(e["heal_pct"]))))
-		log.append("The party heals %d%% HP." % int(float(e["heal_pct"]) * 100))
+		log.append(tr("The party heals %d%% HP.") % int(float(e["heal_pct"]) * 100))
 	if e.has("hurt_pct"):
 		for h in party:
 			h.hp = max(1, h.hp - int(ceil(Combat.max_hp(h) * float(e["hurt_pct"]))))
-		log.append("Everyone loses %d%% HP." % int(float(e["hurt_pct"]) * 100))
+		log.append(tr("Everyone loses %d%% HP.") % int(float(e["hurt_pct"]) * 100))
 	if e.get("ready", false):
 		run["momentum_bonus"] = int(run.get("momentum_bonus", 0)) + 3
-		log.append("The next fight starts with +3 Momentum.")
+		log.append(tr("The next fight starts with +3 Momentum."))
 	if e.has("tonic"):
 		var add := add_tonic("healing", int(e["tonic"]))
-		log.append("+%d Healing Tonic." % add if add > 0 else "You can't carry another tonic.")
+		log.append(tr("+%d Healing Tonic.") % add if add > 0 else tr("You can't carry another tonic."))
 	if e.has("shield"):
 		run["shield"] = int(run.get("shield", 0)) + int(e["shield"])
-		log.append("A %d-point shield against hazards." % int(e["shield"]))
+		log.append(tr("A %d-point shield against hazards.") % int(e["shield"]))
 	for kind in ["item", "relic"]:
 		if e.has(kind):
 			var rr := Combat.weighted_rarity()
@@ -495,14 +495,14 @@ func _apply_event_effect(e: Dictionary) -> Array[String]:
 				rr = str(e[kind])
 			var lt: Dictionary = {"loot_type": "item", "obj": Combat.gen_item(rr)} if kind == "item" else {"loot_type": "relic", "obj": Combat.gen_relic(rr)}
 			_grant_loot(lt)
-			log.append("You receive: %s (%s)." % [lt["obj"].name, rr.capitalize()])
+			log.append(tr("You receive: %s (%s).") % [tr(str(lt["obj"].name)), tr(str(rr.capitalize()))])
 	if e.has("loot"):
 		var rarity := Combat.weighted_rarity()
 		if _rarity_order(rarity) < _rarity_order(str(e["loot"])):
 			rarity = str(e["loot"])
 		var loot: Dictionary = Combat.gen_loot(rarity)
 		_grant_loot(loot)
-		log.append("You receive: %s (%s)." % [loot["obj"].name, rarity.capitalize()])
+		log.append(tr("You receive: %s (%s).") % [tr(str(loot["obj"].name)), tr(str(rarity.capitalize()))])
 	return log
 
 
@@ -606,12 +606,12 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 	var log: Array[String] = []
 	if pv["anchor"]:
 		run["anchor_used"] = true
-		log.append("The Anchor Artifact snuffs the hazard before it strikes.")
+		log.append(tr("The Anchor Artifact snuffs the hazard before it strikes."))
 	else:
 		var absorbed: int = pv["absorbed"]
 		run["shield"] = int(run.get("shield", 0)) - absorbed
 		if absorbed > 0:
-			log.append("Relic wards absorb %d of the hazard." % absorbed)
+			log.append(tr("Relic wards absorb %d of the hazard.") % absorbed)
 		var dmg: int = pv["total"]
 		if dmg > 0 and party.size() > 0:
 			var per: float = float(dmg) / party.size()
@@ -619,17 +619,17 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 				h.hp = max(1 if hazards_nonlethal() else 0, int(round(h.hp - per)))
 				if h.hp <= 0:
 					knock_out(h)
-			log.append("The hazard deals %d damage across the party." % dmg)
+			log.append(tr("The hazard deals %d damage across the party.") % dmg)
 			_note_injuries("wounded")
 	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
 	if randf() < bonus_chance:
 		var c := randi() % 5 + 2
 		if hz["bonus_type"] == "coins":
 			coins += c
-			log.append("You scavenge %d stray Gold." % c)
+			log.append(tr("You scavenge %d stray Gold.") % c)
 		else:
 			crystals += c
-			log.append("Stray Essence found in the rubble: +%d." % c)
+			log.append(tr("Stray Essence found in the rubble: +%d.") % c)
 	ns["resolved"] = true
 	ns["log"] = log
 	run["node_state"] = ns
@@ -660,7 +660,7 @@ func bypass_hazard() -> void:
 	var ns: Dictionary = run["node_state"]
 	crystals -= HAZARD_BYPASS_COST
 	ns["resolved"] = true
-	ns["log"] = ["You pay %d Essence and bypass the hazard entirely." % HAZARD_BYPASS_COST]
+	ns["log"] = [tr("You pay %d Essence and bypass the hazard entirely.") % HAZARD_BYPASS_COST]
 	run["node_state"] = ns
 	save()
 	state_changed.emit()
@@ -788,8 +788,8 @@ func seal_rift() -> void:
 			var before := GameData.bond_level(int(bonds.get(key, 0)))
 			bonds[key] = int(bonds.get(key, 0)) + 1
 			if GameData.bond_level(int(bonds[key])) > before:
-				flavor += " %s and %s's bond deepens (Lv%d)." % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], before + 1]
-				push_toast(sealers[i], "Bond deepened — Lv%d" % (before + 1), "%s & %s: +%d%% party damage while both stand" % [sealers[i].name.split(" the ")[0], sealers[j].name.split(" the ")[0], int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
+				flavor += tr(" %s and %s's bond deepens (Lv%d).") % [tr(str(sealers[i].name.split(" the ")[0])), tr(str(sealers[j].name.split(" the ")[0])), before + 1]
+				push_toast(sealers[i], tr("Bond deepened — Lv%d") % (before + 1), tr("%s & %s: +%d%% party damage while both stand") % [tr(str(sealers[i].name.split(" the ")[0])), tr(str(sealers[j].name.split(" the ")[0])), int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
 	for h in sealers:
 		change_morale(h, GameData.MORALE_SEAL)
 		for line in check_earned_quirks(h):
@@ -837,14 +837,14 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 		endless_milestones.append(int(m["at"]))
 		coins += int(m["coins"])
 		crystals += int(m["crystals"])
-		var line := "%s: %s+%d essence" % [m["name"], "+%d gold, " % int(m["coins"]) if int(m["coins"]) > 0 else "", int(m["crystals"])]
+		var line := tr("%s: %s+%d essence") % [tr(str(m["name"])), tr("+%d gold, ") % int(m["coins"]) if int(m["coins"]) > 0 else "", int(m["crystals"])]
 		if m.has("relic"):
 			var rl := Combat.relic_from_unique(GameData.ENDLESS_RELICS[m["relic"]])
 			rl.equipped = Combat.equipped_relics().size() < relic_slot_cap()
 			relics.append(rl)
-			line += ", the relic %s" % rl.name
+			line += tr(", the relic %s") % tr(str(rl.name))
 		if m.has("title"):
-			line += ", the title \"%s\"" % m["title"]
+			line += tr(", the title \"%s\"") % tr(str(m["title"]))
 		got.append(line)
 	runs_finished += 1
 	run_history.push_front({"day": day, "kind": "Endless Rift", "result": "Sealed" if r.won else "Survived", "floor": "", "time": t, "kills": r.kills,
@@ -917,7 +917,7 @@ func field_healer() -> String:
 		if h and h.hp > 0 and GameData.hero_role(h) == "cleric" and GameData.rank_index(h.rank) >= min_rank:
 			return h.name.split(" the ")[0]
 	if field_triage_available():
-		return "Field Triage"
+		return tr("Field Triage")
 	return ""
 
 
@@ -941,7 +941,7 @@ func injury_reinforce(hero_id: String) -> String:
 	var need := int(GameData.INJURY_REINFORCEMENTS[sev])
 	var idle := idle_heroes()
 	if idle.size() < need:
-		return "Needs %d idle hero%s at camp" % [need, "" if need == 1 else "es"]
+		return tr("Needs %d idle hero%s at camp") % [need, GameData.pl(need, "es")]
 	for i in need:
 		idle[i].busy_runs = int(GameData.INJURY_BUSY_RUNS[sev])
 	_resolve_injury(hero_id, true)
@@ -954,7 +954,7 @@ func injury_heal(hero_id: String) -> String:
 	if _injury(hero_id).is_empty():
 		return ""
 	if field_healer() == "":
-		return "No healer can do it"
+		return tr("No healer can do it")
 	var h := find_hero(hero_id)
 	h.down_runs = 0
 	h.battered = true
@@ -970,7 +970,7 @@ func injury_leave(hero_id: String) -> String:
 	if _injury(hero_id).is_empty():
 		return ""
 	if rifts_sealed < 3:
-		return "A new guild can't leave anyone behind"
+		return tr("A new guild can't leave anyone behind")
 	var lb: Array = run.get("left_behind", [])
 	lb.append(hero_id)
 	run["left_behind"] = lb
@@ -985,7 +985,7 @@ func _rescue_left_behind() -> void:
 	for hid in run.get("left_behind", []):
 		var h := find_hero(str(hid))
 		if h:
-			push_toast(h, "Found alive", "%s is carried home from the sealed rift" % h.name.split(" the ")[0])
+			push_toast(h, tr("Found alive"), tr("%s is carried home from the sealed rift") % tr(str(h.name.split(" the ")[0])))
 	run["left_behind"] = []
 
 
@@ -1000,8 +1000,8 @@ func _lose_left_behind() -> void:
 			if it.equipped_to == h.id:
 				it.equipped_to = ""
 				it.equipped_idx = -1
-		push_toast(h, "Lost in the rift", "%s was left behind and never came back" % h.name.split(" the ")[0])
-		_memorialize(h, "Left behind in a %s" % _run_label())
+		push_toast(h, tr("Lost in the rift"), tr("%s was left behind and never came back") % tr(str(h.name.split(" the ")[0])))
+		_memorialize(h, tr("Left behind in a %s") % tr(str(_run_label())))
 		heroes.erase(h)
 		run["heroes_lost"] = int(run.get("heroes_lost", 0)) + 1
 	run["left_behind"] = []
@@ -1100,9 +1100,9 @@ func rest_guild() -> void:
 func ladder_rank_lock(rank_id: String) -> String:
 	var idx := GameData.rift_rank_index(rank_id)
 	if str(GameData.RIFT_RANKS[idx]["base"]) == "greater" and not greater_rift_unlocked():
-		return "Opens when you complete Act I"
+		return tr("Opens when you complete Act I")
 	if idx > best_rift_rank_sealed + 1:
-		return "Seal a Rank %s rift first" % GameData.RIFT_RANKS[idx - 1]["id"]
+		return tr("Seal a Rank %s rift first") % tr(str(GameData.RIFT_RANKS[idx - 1]["id"]))
 	return ""
 
 

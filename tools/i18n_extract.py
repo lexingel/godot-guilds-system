@@ -64,9 +64,10 @@ def key_like(line, a, b):
     API name, not text anyone reads."""
     before = line[:a].rstrip()
     after = line[b:].lstrip()
-    if after.startswith(":") or after.startswith("]"):
+    if after.startswith(":"):
         return True
-    if before.endswith("[") or before.endswith("&") or before.endswith("^"):
+    # x["key"] is indexing; a list literal ["A", ..., "Z"] is content
+    if re.search(r"[\w\])]\[$", before) or before.endswith("&") or before.endswith("^"):
         return True
     if re.search(r"(==|!=|\bin|\bhas\(|\bget\(|\berase\(|_meta\(|override\(|connect\(|\bmatch|print\(|printerr\(|split\(|\bbus\s*=|theme_type_variation\s*=|contains\(|begins_with\(|ends_with\()\s*$", before):
         return True
@@ -103,9 +104,11 @@ def collect():
                     continue
                 if not prose(lit) or key_like(line, a, b):
                     continue
-                if is_ui:
+                if is_ui or is_data:
+                    # the UI, and game_data (all content: names, word lists,
+                    # labels) — keys and ids are filtered out above
                     add(lit, where)
-                elif is_data:
+                else:   # content fields ("name": ..., "desc": ...) anywhere
                     m = re.search(r'"(%s)"\s*:\s*$' % "|".join(CONTENT_FIELDS), before)
                     if m:
                         add(lit, where)
@@ -179,7 +182,7 @@ def main():
             print("not in the code (skipped):", k)
         # Godot's % fills slots in order, so a translation must keep the
         # English's %s/%d sequence; one that doesn't is refused.
-        spec = re.compile(r"%[-+ 0#]*\d*(?:\.\d+)?[sdfxXc%]")
+        spec = re.compile(r"%[-+0#]*\d*(?:\.\d+)?[sdfxXc%]")   # no space flag: "5% dodge" is prose
         slots = lambda t: [x for x in spec.findall(t) if x != "%%"]
         for k, v in list(batch.items()):
             if v and slots(k) != slots(v):

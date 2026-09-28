@@ -125,8 +125,8 @@ func resolve_guild_board() -> void:
 			add_reputation(-2 * int(q.get("diff", 1)))
 			for h in heroes:
 				h.morale = clampi(h.morale + GameData.MORALE_QUEST_FAILED, 0, 100)
-			_news("Contract failed: %s (-%d Renown)." % [quest_desc(q), 2 * int(q.get("diff", 1))])
-			pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contract failed", "text": "%s ran out of time. -%d Renown, and the guild's morale dips." % [quest_desc(q), 2 * int(q.get("diff", 1))]})
+			_news(tr("Contract failed: %s (-%d Renown).") % [tr(str(quest_desc(q))), 2 * int(q.get("diff", 1))])
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contract failed"), "text": tr("%s ran out of time. -%d Renown, and the guild's morale dips.") % [tr(str(quest_desc(q))), 2 * int(q.get("diff", 1))]})
 			changed = true
 	if changed:
 		save()
@@ -138,7 +138,7 @@ func active_quests() -> Array:
 
 func accept_quest(quest_id: String) -> String:
 	if active_quests().size() >= GameData.QUEST_ACTIVE_MAX:
-		return "You can only take %d at a time" % GameData.QUEST_ACTIVE_MAX
+		return tr("You can only take %d at a time") % GameData.QUEST_ACTIVE_MAX
 	for q in guild_board:
 		if str(q["id"]) == quest_id and str(q["status"]) == "posted":
 			q["status"] = "active"
@@ -158,28 +158,28 @@ func abandon_quest(quest_id: String) -> void:
 
 func quest_desc(q: Dictionary) -> String:
 	var t := int(q["target"])
-	var s := "" if t == 1 else "s"
+	var s := GameData.pl(t)
 	match str(q["type"]):
-		"hunt": return "Hunt: defeat %s ×%d" % [q["param"], t]
-		"elite": return "Hunt: win %d Elite fight%s" % [t, s]
-		"bounty": return "Bounty: defeat %s" % q["param"]
-		"seal_rank": return "Seal: seal a Rank %s+ rift" % q["param"]
-		"seal_greater": return "Seal: seal a Rank C+ rift"
-		"trial_small": return "Trial: seal a rift with 2 heroes or fewer (plus the Champion)"
-		"trial_flawless": return "Trial: seal a rift without any hero going down"
-		"craft": return "Supply: craft %d item%s or relic%s" % [t, s, s]
-		"flawless_win": return "Trial: win %d fight%s without a hero going down" % [t, s]
+		"hunt": return tr("Hunt: defeat %s ×%d") % [tr(str(q["param"])), t]
+		"elite": return tr("Hunt: win %d Elite fight%s") % [t, tr(str(s))]
+		"bounty": return tr("Bounty: defeat %s") % tr(str(q["param"]))
+		"seal_rank": return tr("Seal: seal a Rank %s+ rift") % tr(str(q["param"]))
+		"seal_greater": return tr("Seal: seal a Rank C+ rift")
+		"trial_small": return tr("Trial: seal a rift with 2 heroes or fewer (plus the Champion)")
+		"trial_flawless": return tr("Trial: seal a rift without any hero going down")
+		"craft": return tr("Supply: craft %d item%s or relic%s") % [t, tr(str(s)), tr(str(s))]
+		"flawless_win": return tr("Trial: win %d fight%s without a hero going down") % [t, tr(str(s))]
 	return "?"
 
 
 func quest_reward_desc(reward: Dictionary) -> String:
 	var parts: Array[String] = []
 	if int(reward.get("coins", 0)) > 0:
-		parts.append("%d Gold" % int(reward["coins"]))
+		parts.append(tr("%d Gold") % int(reward["coins"]))
 	if int(reward.get("crystals", 0)) > 0:
-		parts.append("%d Essence" % int(reward["crystals"]))
+		parts.append(tr("%d Essence") % int(reward["crystals"]))
 	if int(reward.get("reputation", 0)) > 0:
-		parts.append("%d Renown" % int(reward["reputation"]))
+		parts.append(tr("%d Renown") % int(reward["reputation"]))
 	return ", ".join(parts)
 
 
@@ -254,7 +254,7 @@ func check_milestones() -> Array[String]:
 # ---------------- Running the guild: wages, morale, the rival ----------------
 
 func _news(line: String) -> void:
-	guild_news.push_front("Day %d: %s" % [day, line])
+	guild_news.push_front(tr("Day %d: %s") % [day, tr(str(line))])
 	if guild_news.size() > 12:
 		guild_news.resize(12)
 
@@ -311,7 +311,7 @@ func maybe_hero_request() -> void:
 	var ids: Array = [pool[0].id] if t != "feud" else [pool[0].id, pool[1].id]
 	hero_request = {"type": t, "ids": ids, "day": day}
 	_news(request_title() + ".")
-	pending_toasts.append({"cls_id": "", "pool_id": "", "title": "A request", "text": request_title() + ". Answer it in the Ledger before payday."})
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A request"), "text": request_title() + tr(". Answer it in the Ledger before payday.")})
 
 
 func _request_names() -> Array:
@@ -343,7 +343,7 @@ func request_options() -> Array:
 ## "no" with the second. Returns "" or why it can't be done.
 func answer_request(yes: bool) -> String:
 	if hero_request.is_empty():
-		return "No request is waiting."
+		return tr("No request is waiting.")
 	var t := str(hero_request["type"])
 	var def: Dictionary = GameData.HERO_REQUESTS[t]
 	var hs: Array = (hero_request["ids"] as Array).map(func(id): return find_hero(str(id))).filter(func(h): return h != null)
@@ -365,11 +365,11 @@ func answer_request(yes: bool) -> String:
 				wage_raise[h.id] = float(wage_raise.get(h.id, 0.0)) + GameData.REQUEST_RAISE
 			"gear":
 				if coins < GameData.REQUEST_GEAR_COST:
-					return "Not enough Gold."
+					return tr("Not enough Gold.")
 				coins -= GameData.REQUEST_GEAR_COST
 			"train":
 				if training_left() <= 0:
-					return "The Training Yard is full this week."
+					return tr("The Training Yard is full this week.")
 				if training_week != day / GameData.PAYDAY_DAYS:
 					training_week = day / GameData.PAYDAY_DAYS
 					trained_this_week = 0
@@ -394,7 +394,7 @@ func change_morale(h: Hero, delta: int) -> void:
 ## on a rift right now). Then the guild is compared with its rival.
 func run_payday() -> void:
 	if not hero_request.is_empty():
-		_news("%s — no answer by payday, taken as a no." % request_title())
+		_news(tr("%s — no answer by payday, taken as a no.") % tr(str(request_title())))
 		answer_request(false)
 	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
 	var paid := 0
@@ -427,20 +427,20 @@ func run_payday() -> void:
 			_release(h)
 	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
 	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid}
-	var line := "Payday: %d Gold in wages, %s." % [paid, ("%d in upkeep" % up) if upkeep_paid else "upkeep unpaid (-%d Renown)" % GameData.UPKEEP_UNPAID_RENOWN]
+	var line := tr("Payday: %d Gold in wages, %s.") % [paid, tr(str((tr("%d in upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
 	if not unpaid.is_empty():
-		line += " Unpaid: %s." % ", ".join(unpaid)
+		line += tr(" Unpaid: %s.") % tr(str(", ".join(unpaid)))
 	if not left.is_empty():
-		line += " Walked out: %s." % ", ".join(left)
+		line += tr(" Walked out: %s.") % tr(str(", ".join(left)))
 	_news(line)
-	_news("%s the %s (Renown %d vs %d)." % ["Your guild leads" if rival_ahead > 0 else ("The guild trails" if rival_ahead < 0 else "Your guild is level with"), rival_name, reputation, rival_renown] + (" Recruits favor you this week: +1 offer." if rival_ahead > 0 else (" Recruits favor them this week: -1 offer." if rival_ahead < 0 else "")))
+	_news(tr("%s the %s (Renown %d vs %d).") % [tr(str(tr("Your guild leads") if rival_ahead > 0 else (tr("The guild trails") if rival_ahead < 0 else tr("Your guild is level with")))), tr(str(rival_name)), reputation, rival_renown] + (tr(" Recruits favor you this week: +1 offer.") if rival_ahead > 0 else (tr(" Recruits favor them this week: -1 offer.") if rival_ahead < 0 else "")))
 	refresh_recruit_pool()
-	var text := "%d Gold in wages, %s" % [paid, ("%d upkeep" % up) if upkeep_paid else "upkeep unpaid (-%d Renown)" % GameData.UPKEEP_UNPAID_RENOWN]
+	var text := tr("%d Gold in wages, %s") % [paid, tr(str((tr("%d upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
 	if not unpaid.is_empty():
-		text += " · couldn't pay %s" % ", ".join(unpaid)
+		text += tr(" · couldn't pay %s") % tr(str(", ".join(unpaid)))
 	if not left.is_empty():
-		text += " · %s walked out" % ", ".join(left)
-	pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Payday", "text": text + "."})
+		text += tr(" · %s walked out") % tr(str(", ".join(left)))
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Payday"), "text": text + "."})
 	week_start_coins = coins
 
 
@@ -460,11 +460,11 @@ func dismiss_hero(hero_id: String) -> String:
 	if h == null:
 		return ""
 	if not run.is_empty() and (run.get("hero_ids", []) as Array).has(hero_id):
-		return "They're on a rift right now"
+		return tr("They're on a rift right now")
 	if heroes.size() <= 1:
-		return "The guild needs at least one hero"
+		return tr("The guild needs at least one hero")
 	_release(h)
-	_news("%s left the guild." % h.name.split(" the ")[0])
+	_news(tr("%s left the guild.") % tr(str(h.name.split(" the ")[0])))
 	save()
 	state_changed.emit()
 	return ""
@@ -481,9 +481,9 @@ func feast_ready() -> bool:
 ## Once a week: Gold for +FEAST_MORALE morale for every hero.
 func hold_feast() -> String:
 	if not feast_ready():
-		return "Already feasted this week"
+		return tr("Already feasted this week")
 	if coins < feast_cost():
-		return "Not enough Gold"
+		return tr("Not enough Gold")
 	coins -= feast_cost()
 	feast_week = day / GameData.PAYDAY_DAYS
 	var guests: Array = heroes.duplicate()
@@ -491,7 +491,7 @@ func hold_feast() -> String:
 	guests = guests.slice(0, feast_seats())
 	for h in guests:
 		change_morale(h, GameData.FEAST_MORALE)
-	_news("A feast in the hall: +%d morale for %d hero%s%s." % [GameData.FEAST_MORALE, guests.size(), "" if guests.size() == 1 else "es", "" if guests.size() == heroes.size() else " (no seats for %d)" % (heroes.size() - guests.size())])
+	_news(tr("A feast in the hall: +%d morale for %d hero%s%s.") % [GameData.FEAST_MORALE, guests.size(), GameData.pl(guests.size(), "es"), tr(str("" if guests.size() == heroes.size() else tr(" (no seats for %d)") % (heroes.size() - guests.size())))])
 	save()
 	state_changed.emit()
 	return ""
@@ -507,9 +507,9 @@ func rival_day() -> void:
 		if not posted.is_empty():
 			var q: Dictionary = posted[randi() % posted.size()]
 			guild_board.erase(q)
-			_news("%s took the contract: %s." % [rival_name, quest_desc(q)])
+			_news(tr("%s took the contract: %s.") % [tr(str(rival_name)), tr(str(quest_desc(q)))])
 	if randf() < GameData.RIVAL_TAUNT_CHANCE:
-		_news("%s of %s: \"%s\"" % [rival_leader()["leader"], rival_name, str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name])
+		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), tr(str(str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name))])
 	# This month's contest.
 	if contest_seals_start < 0:
 		contest_seals_start = rifts_sealed
@@ -540,14 +540,14 @@ func _end_contest() -> void:
 	if ours > theirs:
 		coins += int(GameData.CONTEST_PRIZE["coins"])
 		add_reputation(int(GameData.CONTEST_PRIZE["reputation"]))
-		_news("You won the month's contest, %d rifts to %d: +%d Gold, +%d Renown." % [ours, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]])
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contest won", "text": "%d rifts sealed to %s's %d. +%d Gold, +%d Renown." % [ours, rival_name, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]]})
+		_news(tr("You won the month's contest, %d rifts to %d: +%d Gold, +%d Renown.") % [ours, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest won"), "text": tr("%d rifts sealed to %s's %d. +%d Gold, +%d Renown.") % [ours, tr(str(rival_name)), theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]]})
 	elif theirs > ours:
 		rival_renown += int(GameData.CONTEST_PRIZE["reputation"])
-		_news("%s won the month's contest, %d rifts to your %d." % [rival_name, theirs, ours])
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Contest lost", "text": "%s sealed %d rifts to your %d and takes the prize." % [rival_name, theirs, ours]})
+		_news(tr("%s won the month's contest, %d rifts to your %d.") % [tr(str(rival_name)), theirs, ours])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest lost"), "text": tr("%s sealed %d rifts to your %d and takes the prize.") % [tr(str(rival_name)), theirs, ours]})
 	else:
-		_news("The month's contest ends level at %d rifts each." % ours)
+		_news(tr("The month's contest ends level at %d rifts each.") % ours)
 	contest_seals_start = rifts_sealed
 	rival_contest_seals = 0
 

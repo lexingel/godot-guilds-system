@@ -236,14 +236,14 @@ func render() -> void:
 	var newly_claimed := GameState.check_milestones()
 	if newly_claimed.size() == 1:
 		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Achievement earned", "text": str(m["label"])})
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Achievement earned"), "text": str(m["label"])})
 	elif newly_claimed.size() > 1:
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("%d achievements earned") % newly_claimed.size(), "text": "See Records in the Guild Hall."})
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("%d achievements earned") % newly_claimed.size(), "text": tr("See Records in the Guild Hall.")})
 	# Once, on the web, after a guild has something worth losing.
 	if OS.has_feature("web") and GameState.guild_name != "" and GameState.last_export_day < 0 and GameState.rifts_sealed >= 3 and not GameState.hints_seen.has("backup_nudge"):
 		GameState.hints_seen.append("backup_nudge")
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Back up your guild",
-			"text": "It lives in this browser only. Settings > Backup > Export save keeps a copy."})
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Back up your guild"),
+			"text": tr("It lives in this browser only. Settings > Backup > Export save keeps a copy.")})
 	if _flavor_toast != "":
 		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": "", "text": _flavor_toast})
 		_flavor_toast = ""
@@ -446,7 +446,7 @@ func _breadcrumb_for_screen() -> String:
 		"rift_run": return tr("Rift Run — Floor %d/%d") % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting"
 		"settings": return "Settings"
-		"camp": return "Camp" if term_tab == "camp" else tr("Camp — %s") % TAB_TITLE.get(term_tab, term_tab.capitalize())
+		"camp": return tr("Camp") if term_tab == "camp" else tr("Camp — %s") % tr(str(TAB_TITLE.get(term_tab, term_tab.capitalize())))
 		_: return ""
 
 
@@ -497,8 +497,8 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 	var headline := _label("★ RANK S ★", 18)
 	headline.add_theme_color_override("font_color", Palette.RANK_S)
 	mid.add_child(headline)
-	var source_text := "is offered as a Champion!" if str(data["source"]) == "champion" else "is available to recruit!"
-	mid.add_child(_label("%s %s" % [str(data["name"]), source_text], 13))
+	var source_text := tr("is offered as a Champion!") if str(data["source"]) == "champion" else tr("is available to recruit!")
+	mid.add_child(_label("%s %s" % [tr(str(data["name"])), tr(str(source_text))], 13))
 	row.add_child(mid)
 
 	banner.add_child(row)
@@ -628,12 +628,12 @@ func _quick_nav() -> Control:
 		b.custom_minimum_size = Vector2(88, 54)
 		b.toggle_mode = true
 		b.button_pressed = ids.has(current)
-		b.tooltip_text = tr("%s  (key %s)") % [g[0], key]
+		b.tooltip_text = tr("%s  (key %s)") % [tr(str(g[0])), tr(str(key))]
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		if locked:
 			b.disabled = true
 			b.modulate = Color(1, 1, 1, 0.45)
-			b.tooltip_text = "%s — %s" % [g[0], GameData.FEATURE_UNLOCKS[NAV_FEATURE[ids[0]]]["hint"]]
+			b.tooltip_text = "%s — %s" % [tr(str(g[0])), tr(str(GameData.FEATURE_UNLOCKS[NAV_FEATURE[ids[0]]]["hint"]))]
 		var tile := VBoxContainer.new()
 		tile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tile.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -678,7 +678,7 @@ func _quick_nav() -> Control:
 					sb.modulate = Color(1, 1, 1, 0.45)
 					sb.tooltip_text = GameData.FEATURE_UNLOCKS[NAV_FEATURE[sid]]["hint"]
 				elif not badge.is_empty():
-					sb.text = "%s  %s" % [m[1], badge[0]]
+					sb.text = "%s  %s" % [tr(str(m[1])), tr(str(badge[0]))]
 					sb.tooltip_text = str(badge[1])
 				sub.add_child(sb)
 			col.add_child(sub)
@@ -722,7 +722,7 @@ func _header_back() -> Array:
 		"settings":
 			const NAMES := {"camp": "Camp", "rift_run": "Rift", "rift_hall": "Rift Hall", "tower": "Tower",
 				"party_assembly": "Party Assembly", "crafting_hall": "Crafting"}
-			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, "Back")]
+			return [func(): screen = _pre_settings_screen; render(), NAMES.get(_pre_settings_screen, tr("Back"))]
 	return []
 
 
@@ -758,7 +758,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	if not back.is_empty():
 		var bb := _button(str(back[1]), back[0])
 		bb.icon = load(GameData.BUTTON_ICON_PATH["back"])
-		bb.tooltip_text = tr("Back to %s") % str(back[1])
+		bb.tooltip_text = tr("Back to %s") % tr(str(back[1]))
 		bb.custom_minimum_size = Vector2(40, 36)
 		row.add_child(bb)
 	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
@@ -775,7 +775,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		title_lbl.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.add_child(title_lbl)
 	if breadcrumb != "" and not _narrow():
-		var crumb := _label("›  " + breadcrumb, 16)
+		var crumb := _label("›  " + tr(breadcrumb), 16)
 		crumb.add_theme_color_override("font_color", Palette.MUTED)
 		crumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(crumb)
@@ -848,7 +848,7 @@ func _render_title(v: VBoxContainer) -> void:
 	title_lbl.add_theme_constant_override("shadow_outline_size", 22)
 	left.add_child(title_lbl)
 	left.add_child(_on_art(_label("A guild-management roguelite", 15)))
-	var ver := _on_art(_label(tr("Test build %s · what's new is %s") % [_version(), tr("below") if narrow else tr("on the right")], 12, true))
+	var ver := _on_art(_label(tr("Test build %s · what's new is %s") % [tr(str(_version())), tr("below") if narrow else tr("on the right")], 12, true))
 	left.add_child(ver)
 	var gap := Control.new()
 	gap.custom_minimum_size.y = 10
@@ -967,11 +967,11 @@ func _whats_new_card() -> PanelContainer:
 	var p := PanelContainer.new()
 	p.theme_type_variation = &"CardPanelViolet"
 	var col := _vbox(4)
-	var head := _label(tr("What's new in %s") % _version(), 15)
+	var head := _label(tr("What's new in %s") % tr(str(_version())), 15)
 	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(head)
 	for line in GameData.WHATS_NEW.slice(0, 4):
-		col.add_child(_wrap_label("• " + str(line), 12))
+		col.add_child(_wrap_label("• " + tr(str(line)), 12))
 	col.add_child(_wrap_label(GameData.WHATS_NEW_TRY, 12, true))
 	if OS.has_feature("web"):
 		col.add_child(_wrap_label("Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then.", 12, true))
@@ -986,7 +986,7 @@ var _feedback_note := ""
 ## What a tester's report carries: the build, where they're playing, and how
 ## far along the guild is, then a few prompts to fill in.
 func _feedback_report() -> String:
-	var bits: Array[String] = [tr("Version %s (%s)") % [_version(), "web" if OS.has_feature("web") else OS.get_name()]]
+	var bits: Array[String] = [tr("Version %s (%s)") % [tr(str(_version())), tr(str("web" if OS.has_feature("web") else OS.get_name()))]]
 	if GameState.guild_name != "":
 		bits.append(tr("Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d") % [GameState.day, GameState.campaign_act, GameState.heroes.size(),
 			GameState.rifts_sealed, GameData.RIFT_RANKS[clampi(GameState.best_rift_rank_sealed, 0, GameData.RIFT_RANKS.size() - 1)]["id"] if GameState.best_rift_rank_sealed >= 0 else "none",
@@ -1011,7 +1011,7 @@ func _feedback_panel() -> PanelContainer:
 		_feedback_note = "Copied — paste it into your message."
 		render()))
 	row.add_child(_button("Open a GitHub issue", func():
-		OS.shell_open(tr("%s?title=%s&body=%s") % [GameData.FEEDBACK_ISSUES_URL, (tr("Feedback (%s)") % _version()).uri_encode(), _feedback_report().uri_encode()])))
+		OS.shell_open(tr("%s?title=%s&body=%s") % [tr(str(GameData.FEEDBACK_ISSUES_URL)), tr(str((tr("Feedback (%s)") % tr(str(_version()))).uri_encode())), tr(str(_feedback_report().uri_encode()))])))
 	col.add_child(row)
 	if _feedback_note != "":
 		var n := _label(_feedback_note, 12)
@@ -1024,7 +1024,7 @@ func _feedback_panel() -> PanelContainer:
 ## Web: fill the screen (a browser only allows it from a click).
 func _fullscreen_button() -> Button:
 	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
-	return _button("Leave fullscreen" if full else "Fullscreen", func():
+	return _button(tr("Leave fullscreen") if full else tr("Fullscreen"), func():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
 		render.call_deferred())
 
@@ -1045,7 +1045,7 @@ func _render_credits(v: VBoxContainer) -> void:
 	v.add_child(_label("Guildhold", 18))
 	v.add_child(_wrap_label("A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.", 13, true))
 	v.add_child(_hsep())
-	v.add_child(_label(tr("Version %s") % _version(), 13))
+	v.add_child(_label(tr("Version %s") % tr(str(_version())), 13))
 	v.add_child(_label("Built with Godot Engine 4.7", 13))
 	v.add_child(_label("Pixel art generated with PixelLab", 13))
 	v.add_child(_hsep())
@@ -1127,20 +1127,20 @@ func _render_campaign_panel(v: Container) -> void:
 	head.add_child(foe_icon)
 	var hv := _vbox(2)
 	hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var t := _label(tr("Act %s — %s") % [GameState._roman(int(act["act"])), act["name"]], 17)
+	var t := _label(tr("Act %s — %s") % [tr(str(GameState._roman(int(act["act"])))), tr(str(act["name"]))], 17)
 	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	hv.add_child(t)
-	hv.add_child(_label(tr("Foe: %s") % act["foe"], 12, true))
+	hv.add_child(_label(tr("Foe: %s") % tr(str(act["foe"])), 12, true))
 	head.add_child(hv)
 	cv.add_child(head)
 	for o in act["objectives"]:
 		var met := GameState.campaign_objective_met(o)
 		var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [min(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
-		var ol := _label("%s %s%s" % ["✓" if met else "○", o["label"], prog], 13)
+		var ol := _label("%s %s%s" % [tr(str("✓" if met else "○")), tr(str(o["label"])), tr(str(prog))], 13)
 		ol.add_theme_color_override("font_color", Palette.RANK_E if met else Palette.TEXT)
 		cv.add_child(ol)
 	var ready := GameState.finale_ready()
-	var fb := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Face the finale: %s") % act["finale"], func():
+	var fb := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Face the finale: %s") % tr(str(act["finale"])), func():
 		pending_party.clear()
 		screen = "party_assembly"
 		_pending_diff_id = str(act["tier"])
@@ -1150,7 +1150,7 @@ func _render_campaign_panel(v: Container) -> void:
 		render()
 	)
 	fb.disabled = not ready
-	fb.tooltip_text = tr("Recommended power %d") % GameState.finale_recommended_power() if ready else "Complete every objective above first"
+	fb.tooltip_text = tr("Recommended power %d") % GameState.finale_recommended_power() if ready else tr("Complete every objective above first")
 	fb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	cv.add_child(fb)
 	panel.add_child(cv)
@@ -1163,11 +1163,11 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		v.add_child(_label("Rift Hall", 20))
 	if not GameState.heroes.is_empty():
 		var f := GameState.payday_forecast()
-		var msg := tr("Payday in %d day%s: %d Gold due, you have %d — ") % [int(f["days"]), _pl(int(f["days"])), int(f["bill"]), int(f["have"])]
+		var msg := tr("Payday in %d day%s: %d Gold due, you have %d — ") % [int(f["days"]), tr(str(_pl(int(f["days"])))), int(f["bill"]), int(f["have"])]
 		if int(f["short"]) == 0:
 			msg += "covered."
 		elif int(f["runs"]) > 0:
-			msg += tr("short %d; about %d rift%s at your recent pay (%d each) covers it.") % [int(f["short"]), int(f["runs"]), _pl(int(f["runs"])), int(f["per_run"])]
+			msg += tr("short %d; about %d rift%s at your recent pay (%d each) covers it.") % [int(f["short"]), int(f["runs"]), tr(str(_pl(int(f["runs"])))), int(f["per_run"])]
 		else:
 			msg += tr("short %d.") % int(f["short"])
 		var pay_col: Color = Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD
@@ -1213,10 +1213,10 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	# Each gate: [its name, its area on the old 700x340 stage, the gate in the
 	# 320x200 art, where it leads (an empty Callable while it's locked)].
 	var gates := [
-		[tr("Rank %s Rift") % lesser_pick, Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(lesser_pick, false)],
-		["Endless Rift" if endless_open else "Endless Rift — locked", Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
+		[tr("Rank %s Rift") % tr(str(lesser_pick)), Rect2(0, 0, 230, 340), Rect2(18, 65, 68, 98), go.bind(lesser_pick, false)],
+		["Endless Rift" if endless_open else tr("Endless Rift — locked"), Rect2(230, 0, 240, 340), Rect2(110, 20, 97, 130),
 			go.bind("", true) if endless_open else Callable()],
-		[tr("Rank %s Rift") % greater_pick if greater_open else ("Ranks C-SSS — locked" if not unlocked else tr("Rank C — %s") % GameState.ladder_rank_lock("C")),
+		[tr("Rank %s Rift") % tr(str(greater_pick)) if greater_open else (tr("Ranks C-SSS — locked") if not unlocked else tr("Rank C — %s") % tr(str(GameState.ladder_rank_lock("C")))),
 			Rect2(470, 0, 230, 340), Rect2(230, 30, 78, 140), go.bind(greater_pick, false) if greater_open else Callable()],
 	]
 	var best := _best_party_power()
@@ -1336,9 +1336,9 @@ func _rift_hall_wide(v: VBoxContainer, gates: Array, best: int, go: Callable) ->
 func _rift_mode_defs(go: Callable) -> Array:
 	return [
 		["Endless Rift", tr("Steer your party through endless waves · best %d:%02d") % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("", true),
-			"" if GameState.endless_unlocked() else "Opens when you complete Act II", "Assemble party"],
+			"" if GameState.endless_unlocked() else tr("Opens when you complete Act II"), "Assemble party"],
 		["Tower of Trials", tr("100 fixed floors · best floor %d") % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
-			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else "Opens when you complete Act I", "Enter the Tower"],
+			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else tr("Opens when you complete Act I"), "Enter the Tower"],
 		_daily_card_def(),
 	]
 
@@ -1424,7 +1424,7 @@ func _ladder_card(best: int, go: Callable) -> Control:
 		var rid := str(r["id"])
 		var lock := GameState.ladder_rank_lock(rid)
 		if lock != "" and next_locked == "":
-			next_locked = tr("Next: Rank %s — %s") % [rid, lock]
+			next_locked = tr("Next: Rank %s — %s") % [tr(str(rid)), tr(str(lock))]
 		var b := _button(rid, func(): _ladder_pick = rid; render())
 		b.custom_minimum_size = Vector2(46, 40)
 		b.toggle_mode = true
@@ -1435,9 +1435,9 @@ func _ladder_card(best: int, go: Callable) -> Control:
 			# ahead reads at a glance.
 			b.disabled = true
 			b.add_theme_color_override("font_disabled_color", Color(Palette.rank_color(rid), 0.6))
-			b.tooltip_text = tr("Rank %s — %s") % [rid, lock]
+			b.tooltip_text = tr("Rank %s — %s") % [tr(str(rid)), tr(str(lock))]
 		elif GameState.best_rift_rank_sealed >= GameData.rift_rank_index(rid):
-			b.tooltip_text = tr("Rank %s — sealed") % rid
+			b.tooltip_text = tr("Rank %s — sealed") % tr(str(rid))
 		row.add_child(b)
 	cv.add_child(row)
 	if next_locked != "":
@@ -1450,12 +1450,12 @@ func _ladder_card(best: int, go: Callable) -> Control:
 	var rules: Array[String] = []
 	for k in GameData.RIFT_RANK_RULE_TEXT:
 		if rank.get(k, false):
-			rules.append(str(GameData.RIFT_RANK_RULE_TEXT[k]))
-	var t := _label(tr("Rank %s · %d floors") % [_ladder_pick, int(base["floors"])], 15)
+			rules.append(tr(str(GameData.RIFT_RANK_RULE_TEXT[k])))
+	var t := _label(tr("Rank %s · %d floors") % [tr(str(_ladder_pick)), int(base["floors"])], 15)
 	t.add_theme_color_override("font_color", Palette.rank_color(_ladder_pick))
 	cv.add_child(t)
-	var foes := "Foes: base" if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [str(rank["hp"]), str(rank["dmg"])]
-	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [base["name"] + " · ", foes, str(rank["reward"]), (" · " + ", ".join(rules)) if not rules.is_empty() else ""], 12, true))
+	var foes := tr("Foes: base") if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [tr(str(rank["hp"])), tr(str(rank["dmg"]))]
+	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [tr(str(base["name"])) + " · ", tr(str(foes)), tr(str(rank["reward"])), tr(str((" · " + ", ".join(rules)) if not rules.is_empty() else ""))], 12, true))
 	var go_row := HBoxContainer.new()
 	go_row.add_theme_constant_override("separation", 10)
 	var pr := _power_readout(best, Combat.recommended_power("", _ladder_pick), "Your best party")
@@ -1476,12 +1476,12 @@ func _ladder_card(best: int, go: Callable) -> Control:
 func _render_tower(v: VBoxContainer) -> void:
 	v.add_child(_label("Tower of Trials", 20))
 	var title := GameState.tower_title()
-	v.add_child(_label(tr("Best floor %d / %d%s") % [GameState.tower_best, GameData.TOWER_FLOORS, ("  ·  " + title) if title != "" else ""], 13, true))
+	v.add_child(_label(tr("Best floor %d / %d%s") % [GameState.tower_best, GameData.TOWER_FLOORS, tr(str(("  ·  " + title) if title != "" else ""))], 13, true))
 	_coach(v, "tower", "The Tower", "Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic.")
 	var f := GameState.tower_next_floor()
 	if f == 0:
 		var days_left := 7 - int(fmod(Time.get_unix_time_from_system(), 604800.0) / 86400.0)
-		var done := _wrap_label(tr("You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s.") % [GameData.TOWER_WEEKLY_FROM, GameData.TOWER_FLOORS, days_left, _pl(days_left)], 14)
+		var done := _wrap_label(tr("You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s.") % [GameData.TOWER_WEEKLY_FROM, GameData.TOWER_FLOORS, days_left, tr(str(_pl(days_left)))], 14)
 		done.add_theme_color_override("font_color", Palette.RANK_E)
 		v.add_child(done)
 	else:
@@ -1505,14 +1505,14 @@ func _render_tower(v: VBoxContainer) -> void:
 		var nm := _label(str(boss["name"]), 13)
 		nm.custom_minimum_size.x = 170
 		row.add_child(nm)
-		var rl := _label(("✓ " if done_g else "") + str(rdef["name"]), 13)
+		var rl := _label(("✓ " if done_g else "") + tr(str(rdef["name"])), 13)
 		rl.add_theme_color_override("font_color", Palette.RANK_E if done_g else Palette.RANK_S)
 		rl.tooltip_text = str(rdef["desc"])
 		rl.mouse_filter = Control.MOUSE_FILTER_STOP
 		rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(rl)
 		v.add_child(row)
-	var titles := GameData.TOWER_TITLES.map(func(e): return ("✓ " if GameState.tower_best >= int(e[0]) else "") + tr("%s (floor %d)") % [e[1], int(e[0])])
+	var titles := GameData.TOWER_TITLES.map(func(e): return ("✓ " if GameState.tower_best >= int(e[0]) else "") + tr("%s (floor %d)") % [tr(str(e[1])), int(e[0])])
 	v.add_child(_wrap_label(tr("Titles: ") + ", ".join(titles), 12, true))
 
 
@@ -1532,16 +1532,16 @@ func _tower_floor_card(info: Dictionary) -> Control:
 	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if not boss.is_empty() else Palette.TEXT)
 	hv.add_child(t)
 	var kind_name: String = {"boss": tr("Guardian: ") + str(boss.get("name", "")), "elite": "Elite fight", "combat": "Fight"}[str(info["kind"])]
-	hv.add_child(_label("%s  ·  %s%s" % [kind_name, GameData.BIOMES[str(info["biome"])]["name"], "  ·  weekly ladder" if info["weekly"] else ""], 12, true))
+	hv.add_child(_label("%s  ·  %s%s" % [tr(str(kind_name)), tr(str(GameData.BIOMES[str(info["biome"])]["name"])), tr(str(tr("  ·  weekly ladder") if info["weekly"] else ""))], 12, true))
 	head.add_child(hv)
 	cv.add_child(head)
 	if not boss.is_empty():
 		cv.add_child(_wrap_label(str(boss["line"]), 12, true))
 		for mid in boss["mechanics"]:
 			var bm: Dictionary = GameData.BOSS_MECHANICS.filter(func(x): return x["id"] == mid)[0]
-			cv.add_child(_wrap_label("%s — %s" % [bm["name"], bm["desc"]], 13))
+			cv.add_child(_wrap_label("%s — %s" % [tr(str(bm["name"])), tr(str(bm["desc"]))], 13))
 	for r in info["rules"]:
-		var rl := _wrap_label(tr("Rule · %s — %s") % [r["name"], r["desc"]], 13)
+		var rl := _wrap_label(tr("Rule · %s — %s") % [tr(str(r["name"])), tr(str(r["desc"]))], 13)
 		rl.add_theme_color_override("font_color", Palette.HAZARD)
 		cv.add_child(rl)
 	if info["rules"].is_empty() and boss.is_empty():
@@ -1569,14 +1569,14 @@ func _tower_reward_line(info: Dictionary) -> Control:
 	var first := f > GameState.tower_best
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	row.add_child(_label("First clear:" if first else "This week's re-clear:", 13))
+	row.add_child(_label(tr("First clear:") if first else tr("This week's re-clear:"), 13))
 	row.add_child(_icon(GameData.CURRENCY_ICON_PATH["coins"], 16))
 	row.add_child(_label("+%d" % (int(rw["coins"]) if first else int(rw["coins"]) / 2), 13))
 	row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 16))
 	row.add_child(_label("+%d" % (int(rw["crystals"]) if first else int(rw["crystals"]) / 2), 13))
 	var rdef: Dictionary = rw["relic"]
 	if first and not rdef.is_empty():
-		var rl := _label("+ %s" % rdef["name"], 13)
+		var rl := _label("+ %s" % tr(str(rdef["name"])), 13)
 		rl.add_theme_color_override("font_color", Palette.RANK_S)
 		rl.tooltip_text = str(rdef["desc"])
 		rl.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1606,9 +1606,9 @@ func _tower_strip(next_f: int) -> Control:
 		var l := _label(("✓ " if cleared else "") + str(f), 14, cleared)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		chip.add_child(l)
-		var tip := tr("Floor %d — %s") % [f, str(info["boss"]["name"]) if guardian else ("Elite fight" if info["kind"] == "elite" else "Fight")]
+		var tip := tr("Floor %d — %s") % [f, tr(str(info["boss"]["name"]) if guardian else (tr("Elite fight") if info["kind"] == "elite" else tr("Fight")))]
 		for r in info["rules"]:
-			tip += "\n%s: %s" % [r["name"], r["desc"]]
+			tip += "\n%s: %s" % [tr(str(r["name"])), tr(str(r["desc"]))]
 		chip.tooltip_text = tip
 		flow.add_child(chip)
 	return flow
@@ -1617,14 +1617,14 @@ func _tower_strip(next_f: int) -> Control:
 ## The Daily Rift's Rift Hall card (same shape as the other card_defs rows).
 func _daily_card_def() -> Array:
 	var info := GameState.daily_info()
-	var sub := tr("Today: %s · starts with %s") % [info["rule"]["name"], GameData.find_boon(str(info["boon"]))["name"]]
+	var sub := tr("Today: %s · starts with %s") % [tr(str(info["rule"]["name"])), tr(str(GameData.find_boon(str(info["boon"]))["name"]))]
 	if GameState.daily_streak > 0:
 		sub += tr(" · streak %d") % GameState.daily_streak
 	var lock := ""
 	if GameState.rifts_sealed < 1:
 		lock = "Opens after you seal your first rift"
 	elif not GameState.daily_available():
-		lock = tr("Done for today. A new Daily Rift opens tomorrow (%s).") % sub.split(" · ")[0]
+		lock = tr("Done for today. A new Daily Rift opens tomorrow (%s).") % tr(str(sub.split(" · ")[0]))
 	return ["Daily Rift", sub, Combat.recommended_power(str(info["diff_id"])), func():
 		pending_party.clear()
 		_pending_daily = true
@@ -1642,15 +1642,15 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var tower_info := GameState.tower_floor_info(GameState.tower_next_floor()) if _pending_tower else {}
 	if _pending_daily:
 		var dinfo := GameState.daily_info()
-		v.add_child(_label(tr("Daily Rift — %s") % dinfo["rule"]["name"], 20))
-		v.add_child(_wrap_label(tr("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence.") % [dinfo["rule"]["desc"], GameData.find_boon(str(dinfo["boon"]))["name"], GameData.find_boon(str(dinfo["boon"]))["desc"], GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)], 12, true))
+		v.add_child(_label(tr("Daily Rift — %s") % tr(str(dinfo["rule"]["name"])), 20))
+		v.add_child(_wrap_label(tr("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence.") % [tr(str(dinfo["rule"]["desc"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["name"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["desc"])), GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)], 12, true))
 	elif _pending_tower:
 		v.add_child(_label(tr("Tower of Trials — Floor %d") % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]
-		v.add_child(_wrap_label(tr("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s") % [_party_cap(), (tr(" Rules: ") + ", ".join(rules.map(func(r): return "%s (%s)" % [r["name"], r["desc"]]))) if not rules.is_empty() else ""], 12, true))
+		v.add_child(_wrap_label(tr("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s") % [_party_cap(), tr(str((tr(" Rules: ") + ", ".join(rules.map(func(r): return "%s (%s)" % [tr(str(r["name"])), tr(str(r["desc"]))]))) if not rules.is_empty() else ""))], 12, true))
 	elif _pending_finale and not GameState.current_act().is_empty():
-		v.add_child(_label(tr("Finale — %s") % GameState.current_act()["finale"], 20))
-		v.add_child(_wrap_label(tr("A harder %s Rift that ends in %s. Up to 4 heroes.") % [str(GameState.current_act()["tier"]).capitalize(), GameState.current_act()["boss"]], 12, true))
+		v.add_child(_label(tr("Finale — %s") % tr(str(GameState.current_act()["finale"])), 20))
+		v.add_child(_wrap_label(tr("A harder %s Rift that ends in %s. Up to 4 heroes.") % [tr(str(GameState.current_act()["tier"]).capitalize()), tr(str(GameState.current_act()["boss"]))], 12, true))
 	else:
 		v.add_child(_label("Assemble Party (up to 4)", 20))
 	_coach(v, "party", "Pick your party", "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less.")
@@ -1687,7 +1687,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		zv.mouse_filter = Control.MOUSE_FILTER_PASS
 		var in_row: Array = lineup.filter(func(x): return x.formation == row_id)
 		zv.add_child(_label(tr("%s row (%d) — %s") % [tr(row_id.capitalize()), in_row.size(),
-			"takes most of the enemy's attacks" if row_id == "front" else "attacked far less often"], 13))
+			tr("takes most of the enemy's attacks") if row_id == "front" else tr("attacked far less often")], 13))
 		var cards := HFlowContainer.new()
 		cards.add_theme_constant_override("h_separation", 8)
 		cards.add_theme_constant_override("v_separation", 8)
@@ -1734,7 +1734,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			pending_relic_choice = i if on else -1
 			render()
 		)
-		v.add_child(_info_row("%s (%s) — %s" % [r.name, r.type, r.desc()], 14, [], rb))
+		v.add_child(_info_row("%s (%s) — %s" % [tr(str(r.name)), tr(str(r.type)), tr(str(r.desc()))], 14, [], rb))
 
 
 	var launch := _party_launch_bar()
@@ -1770,7 +1770,7 @@ func _party_launch_bar() -> Control:
 	if pending_party.is_empty():
 		info.add_child(_label("Add at least one hero to the party.", 12, true))
 	elif not hurt.is_empty() and not _pending_tower:
-		var hl := _wrap_label(tr("Wounded: %s — they start the rift hurt.") % ", ".join(hurt.map(func(h): return "%s (%d/%d)" % [h.name.split(" the ")[0], h.hp, Combat.max_hp(h)])), 12)
+		var hl := _wrap_label(tr("Wounded: %s — they start the rift hurt.") % tr(str(", ".join(hurt.map(func(h): return "%s (%d/%d)" % [tr(str(h.name.split(" the ")[0])), h.hp, Combat.max_hp(h)])))), 12)
 		hl.add_theme_color_override("font_color", Palette.HAZARD)
 		info.add_child(hl)
 	if _pending_endless and _pending_rift_rank == "":
@@ -1778,9 +1778,9 @@ func _party_launch_bar() -> Control:
 	if _pending_endless and not pending_party.is_empty():
 		var lead := GameState.find_hero(pending_party[0])
 		if lead:
-			info.add_child(_wrap_label(tr("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift.") % lead.name.split(" the ")[0], 12, true))
+			info.add_child(_wrap_label(tr("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift.") % tr(str(lead.name.split(" the ")[0])), 12, true))
 	row.add_child(info)
-	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Begin the trial" if _pending_tower else "Enter the Rift", func():
+	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Begin the trial") if _pending_tower else tr("Enter the Rift"), func():
 		if pending_party.is_empty():
 			return
 		var chosen: Relic = pending_relic_options[pending_relic_choice] if pending_relic_choice >= 0 else null
@@ -1850,10 +1850,10 @@ func _endless_region_picker() -> Control:
 	for b in ["vale", "marsh", "ashen"]:
 		var best := int(GameState.endless_best.get(b, 0))
 		var btn := Button.new()
-		btn.text = "%s  %s" % [str(GameData.BIOMES[b]["name"]).trim_prefix("The "), "%d:%02d" % [best / 60, best % 60] if best > 0 else "—"]
+		btn.text = "%s  %s" % [tr(str(GameData.BIOMES[b]["name"]).trim_prefix("The ")), tr(str("%d:%02d" % [best / 60, best % 60] if best > 0 else "—"))]
 		btn.toggle_mode = true
 		btn.button_pressed = b == _endless_biome
-		btn.tooltip_text = tr("Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s).") % [GameData.BIOMES[b]["name"], SurvivorsRun.FINAL_WARDEN[b]]
+		btn.tooltip_text = tr("Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s).") % [tr(str(GameData.BIOMES[b]["name"])), tr(str(SurvivorsRun.FINAL_WARDEN[b]))]
 		btn.pressed.connect(func(): _endless_biome = b; render())
 		row.add_child(btn)
 	box.add_child(row)
@@ -1868,11 +1868,11 @@ func _endless_region_picker() -> Control:
 			bits.append(tr("%d gold") % int(next["coins"]))
 		bits.append(tr("%d essence") % int(next["crystals"]))
 		if next.has("relic"):
-			bits.append(tr("the relic %s") % GameData.ENDLESS_RELICS[next["relic"]]["name"])
+			bits.append(tr("the relic %s") % tr(str(GameData.ENDLESS_RELICS[next["relic"]]["name"])))
 		if next.has("title"):
-			bits.append(tr("the title \"%s\"") % next["title"])
-		var goal := "Beat the Rift Warden at 20:00" if next.get("sealed", false) else tr("Survive %d:00") % (int(next["at"]) / 60)
-		box.add_child(_wrap_label(tr("Next milestone: %s for %s.") % [goal, ", ".join(bits)], 12, true))
+			bits.append(tr("the title \"%s\"") % tr(str(next["title"])))
+		var goal := tr("Beat the Rift Warden at 20:00") if next.get("sealed", false) else tr("Survive %d:00") % (int(next["at"]) / 60)
+		box.add_child(_wrap_label(tr("Next milestone: %s for %s.") % [tr(str(goal)), tr(str(", ".join(bits)))], 12, true))
 	return box
 
 
@@ -1949,7 +1949,7 @@ func _switch_slot(slot: int) -> void:
 func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_label("Settings", 20))
 	v.add_child(_language_row())
-	var fb := _button("Send feedback" if not _feedback_open else "Hide feedback", func():
+	var fb := _button(tr("Send feedback") if not _feedback_open else tr("Hide feedback"), func():
 		_feedback_open = not _feedback_open
 		render())
 	fb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -1973,14 +1973,14 @@ func _render_settings(v: VBoxContainer) -> void:
 	speed_row.add_theme_constant_override("separation", 6)
 	speed_row.add_child(_label("Battle speed", 13))
 	for spd in [1.0, 2.0, 3.0, INSTANT_SPEED]:
-		var spb := _button("Instant" if spd >= INSTANT_SPEED else "×%d" % int(spd), func(val=spd):
+		var spb := _button(tr("Instant") if spd >= INSTANT_SPEED else "×%d" % int(spd), func(val=spd):
 			GameState.combat_speed = val
 			GameState.save_settings()
 			render()
 		)
 		spb.toggle_mode = true
 		spb.button_pressed = is_equal_approx(GameState.combat_speed, spd)
-		spb.tooltip_text = "Fights resolve with no animation; the screen updates when it's your turn" if spd >= INSTANT_SPEED else tr("Battle animations at %d× speed") % int(spd)
+		spb.tooltip_text = tr("Fights resolve with no animation; the screen updates when it's your turn") if spd >= INSTANT_SPEED else tr("Battle animations at %d× speed") % int(spd)
 		speed_row.add_child(spb)
 	v.add_child(speed_row)
 
@@ -2010,7 +2010,7 @@ func _render_settings(v: VBoxContainer) -> void:
 	else:
 		var res_opts: Array = GameData.RESOLUTION_OPTIONS
 		var res_idx := GameState.resolution_idx
-		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Resolution: %s") % str(res_opts[res_idx]["label"]), func():
+		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Resolution: %s") % tr(str(res_opts[res_idx]["label"])), func():
 			var next_idx: int = (res_idx + 1) % res_opts.size()
 			GameState.resolution_idx = next_idx
 			GameState.save_settings()
@@ -2022,19 +2022,19 @@ func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_label("Accessibility", 15))
 	var acc_row := HFlowContainer.new()
 	acc_row.add_theme_constant_override("h_separation", 8)
-	var rm := _button(tr("Reduce motion: %s") % (tr("on") if GameState.reduce_motion else tr("off")), func():
+	var rm := _button(tr("Reduce motion: %s") % tr(str((tr("on") if GameState.reduce_motion else tr("off")))), func():
 		GameState.reduce_motion = not GameState.reduce_motion
 		GameState.save_settings()
 		render())
 	rm.tooltip_text = "No screen shake, zooms, knockbacks, idle sway or flashing in fights"
 	acc_row.add_child(rm)
-	var cb := _button(tr("Colour-blind mode: %s") % (tr("on") if GameState.colorblind else tr("off")), func():
+	var cb := _button(tr("Colour-blind mode: %s") % tr(str((tr("on") if GameState.colorblind else tr("off")))), func():
 		GameState.colorblind = not GameState.colorblind
 		GameState.save_settings()
 		render())
 	cb.tooltip_text = "Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item"
 	acc_row.add_child(cb)
-	var ha := _button(tr("Hearing aid: %s") % (tr("on") if GameState.hearing_aid else tr("off")), func():
+	var ha := _button(tr("Hearing aid: %s") % tr(str((tr("on") if GameState.hearing_aid else tr("off")))), func():
 		GameState.hearing_aid = not GameState.hearing_aid
 		GameState.save_settings()
 		render())
@@ -2046,7 +2046,7 @@ func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_label("Tips", 15))
 	var tips_row := HBoxContainer.new()
 	tips_row.add_theme_constant_override("separation", 8)
-	tips_row.add_child(_button(tr("Tips: %s") % (tr("off") if GameState.tips_off else tr("on")), func():
+	tips_row.add_child(_button(tr("Tips: %s") % tr(str((tr("off") if GameState.tips_off else tr("on")))), func():
 		GameState.tips_off = not GameState.tips_off
 		GameState.save()
 		render()
@@ -2079,7 +2079,7 @@ func _render_save_backup(v: VBoxContainer) -> void:
 	v.add_child(_label("Backup", 15))
 	v.add_child(_wrap_label("Saves live in this browser/device only; clearing site data erases them. Export one to keep a copy or move it to another device. The previous save is also kept automatically in case one gets damaged.", 12, true))
 	if GameState.guild_name != "":
-		var le := _label(tr("Last exported: %s") % ("never" if GameState.last_export_day < 0 else tr("day %d (today is day %d)") % [GameState.last_export_day, GameState.day]), 12)
+		var le := _label(tr("Last exported: %s") % tr(str(("never" if GameState.last_export_day < 0 else tr("day %d (today is day %d)") % [GameState.last_export_day, GameState.day]))), 12)
 		le.add_theme_color_override("font_color", Palette.HAZARD if GameState.last_export_day < 0 and GameState.rifts_sealed >= 3 else Palette.MUTED)
 		v.add_child(le)
 	var row := HBoxContainer.new()
@@ -2099,7 +2099,7 @@ func _render_save_backup(v: VBoxContainer) -> void:
 	)
 	exp.disabled = GameState.guild_name == ""
 	row.add_child(exp)
-	row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], "Import save…" if not _import_open else "Cancel import", func():
+	row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Import save…") if not _import_open else tr("Cancel import"), func():
 		_import_open = not _import_open
 		_import_text = ""
 		_backup_msg = ""
@@ -2108,7 +2108,7 @@ func _render_save_backup(v: VBoxContainer) -> void:
 	v.add_child(row)
 	if _import_open:
 		var slot := GameState.active_slot
-		v.add_child(_wrap_label(tr("Paste an exported save below%s. It replaces Slot %d%s.") % [" or pick the file" if OS.has_feature("web") else "", slot + 1, " (%s)" % GameState.guild_name if GameState.guild_name != "" else ""], 12))
+		v.add_child(_wrap_label(tr("Paste an exported save below%s. It replaces Slot %d%s.") % [tr(str(tr(" or pick the file") if OS.has_feature("web") else "")), slot + 1, tr(str(" (%s)" % tr(str(GameState.guild_name)) if GameState.guild_name != "" else ""))], 12))
 		if OS.has_feature("web"):
 			v.add_child(_button("Choose file…", func(): _web_pick_save_file()))
 		var te := TextEdit.new()
@@ -2158,9 +2158,9 @@ func _render_slot_list(v: VBoxContainer) -> void:
 		var text := tr("Slot %d — Empty") % (slot + 1)
 		if not is_empty:
 			var sealed := int(summary.get("rifts_sealed", 0))
-			text = tr("Slot %d — %s (%d rift%s sealed)") % [slot + 1, str(summary.get("guild_name", "")), sealed, _pl(sealed)]
+			text = tr("Slot %d — %s (%d rift%s sealed)") % [slot + 1, tr(str(summary.get("guild_name", ""))), sealed, tr(str(_pl(sealed)))]
 		if is_active:
-			text += "  (Active)"
+			text += tr("  (Active)")
 		var actions: Array[Control] = []
 		# From the title's Load Game, the active slot still needs a way back in.
 		if is_active and not is_empty and screen == "load_game":
@@ -2228,12 +2228,12 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 		top.add_child(icon)
 	var names := _vbox(0)
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
-	names.add_child(_label(("Champion: " if is_champ else "") + h.name.split(" the ")[0], 12))
+	names.add_child(_label((tr("Champion: ") if is_champ else "") + h.name.split(" the ")[0], 12))
 	if is_champ:
 		var boon := _wrap_label(GameState.champion_boon_text(h), 12, true)
 		boon.add_theme_color_override("font_color", Palette.RANK_E)
 		names.add_child(boon)
-	names.add_child(_label(tr("Lv%d %s · %d/%d HP%s") % [h.level, GameData.hero_role(h).capitalize(), h.hp, Combat.max_hp(h), (tr(" · out %d run%s") % [h.down_runs, _pl(h.down_runs)] if h.down_runs > 0 else tr(" · away %d run%s") % [h.busy_runs, _pl(h.busy_runs)]) if downed else ""], 10, true))
+	names.add_child(_label(tr("Lv%d %s · %d/%d HP%s") % [h.level, tr(str(GameData.hero_role(h).capitalize())), h.hp, Combat.max_hp(h), tr(str((tr(" · out %d run%s") % [h.down_runs, tr(str(_pl(h.down_runs)))] if h.down_runs > 0 else tr(" · away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]) if downed else ""))], 10, true))
 	if not downed and h.hp < Combat.max_hp(h) * 0.5:
 		var wl := _label(tr("Wounded — %d%% HP") % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)
 		wl.add_theme_color_override("font_color", Palette.HAZARD)

@@ -61,25 +61,25 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 			out.append([label, v])
 	for n in GameData.tier1_for_role(h.cls_id):
 		if n["kind"] == kind and h.skills.get(n["id"], false):
-			add.call("Skill: %s" % n["name"], float(n["value"]))
+			add.call(tr("Skill: %s") % tr(str(n["name"])), float(n["value"]))
 	for summary in GameData.hero_tree_summaries(h):
 		var tree_kind: String = summary["kind"]
 		for n in GameData.KIND_SKILL_PACKAGE.get(tree_kind, []):
 			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
-				add.call("Skill: %s" % n["name"], float(n["value"]))
+				add.call(tr("Skill: %s") % tr(str(n["name"])), float(n["value"]))
 				if n.has("combo_kind") and GameState.party_has_other_kind_capstone(h.id, str(n["combo_kind"])):
-					add.call("Combo: %s" % n["name"], float(n.get("combo_bonus", 0.0)))
+					add.call(tr("Combo: %s") % tr(str(n["name"])), float(n.get("combo_bonus", 0.0)))
 		for n in GameData.rift_nodes(tree_kind):
 			if n["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, n["id"]), false):
-				add.call("Skill: %s" % n["name"], float(n["value"]))
+				add.call(tr("Skill: %s") % tr(str(n["name"])), float(n["value"]))
 		var ks := GameData.keystone_node(tree_kind)
 		if not ks.is_empty() and ks["kind"] == kind and h.skills.get(GameData.skill_storage_key(tree_kind, "keystone"), false):
-			add.call("Keystone drawback: %s" % ks["name"], float(ks["value"]))
+			add.call(tr("Keystone drawback: %s") % tr(str(ks["name"])), float(ks["value"]))
 	add.call("Champion Boon", GameState.champion_boon(kind))
 	if h.battered and kind == "hp_pct":
 		add.call("Battered (patched up mid-rift)", -GameData.BATTERED_HP_PCT)
 	if h.innate_kind == kind:
-		add.call("Innate (%s)" % GameData.find_class(h.pool_id).get("name", "class"), h.innate_value)
+		add.call(tr("Innate (%s)") % tr(str(GameData.find_class(h.pool_id).get("name", "class"))), h.innate_value)
 	if h.prior_innate_kind == kind:
 		add.call("Innate (former class)", h.prior_innate_value)
 	for it in GameState.items:
@@ -93,12 +93,12 @@ func hero_skill_sources(h: Hero, kind: String) -> Array:
 	for a in GameData.ATTRIBUTES:
 		var per: float = float(GameData.ATTR_EFFECTS[a].get(kind, 0.0))
 		if per != 0.0:
-			add.call("%s %d" % [GameData.ATTR_LABEL[a], hero_attr(h, a)], (hero_attr(h, a) - GameData.ATTR_BASELINE) * per)
+			add.call("%s %d" % [tr(str(GameData.ATTR_LABEL[a])), hero_attr(h, a)], (hero_attr(h, a) - GameData.ATTR_BASELINE) * per)
 	if kind == "dmg_pct":
 		var mt: Array = GameData.morale_tier(h.morale)
-		add.call("Morale: %s" % mt[1], float(mt[2]))
+		add.call(tr("Morale: %s") % tr(str(mt[1])), float(mt[2]))
 	for q in h.quirks:
-		add.call("Quirk: %s" % q, float(GameData.quirk(q).get("stats", {}).get(kind, 0.0)))
+		add.call(tr("Quirk: %s") % tr(str(q)), float(GameData.quirk(q).get("stats", {}).get(kind, 0.0)))
 	return out
 
 
@@ -187,17 +187,17 @@ func describe_skill(kind: String, value: float) -> String:
 	var up := "+" if value >= 0.0 else "-"
 	var down := "-" if value >= 0.0 else "+"
 	match kind:
-		"dmg_pct": return "%s%s%% damage" % [up, pct]
-		"hp_pct": return "%s%s%% HP" % [up, pct]
-		"first_round_pct": return "%s%s%% first-strike damage" % [up, pct]
-		"escalate_pct": return "%s%s%% damage per round (stacking)" % [up, pct]
-		"mend_pct": return ("Mends %s%% of the party's HP pool each round" if value >= 0.0 else "-%s%% party mending per round") % pct
-		"hazard_guard_pct": return "%s%s%% hazard severity" % [down, pct]
-		"dodge_pct": return ("%s%% chance to block a retaliation" if value >= 0.0 else "-%s%% chance to block a retaliation") % pct
-		"speed_pct": return "%s%s%% turn speed" % [up, pct]
-		"ability_power": return "%s%s%% ability power" % [up, pct]
-		"wipe_guard": return ("Once per rift, survive a wipe at %s%% HP" if value >= 0.0 else "-%s%% HP on a survived wipe") % pct
-		"boss_alpha_strike": return "Opens every Boss fight with a free strike"
+		"dmg_pct": return tr("%s%s%% damage") % [tr(str(up)), tr(str(pct))]
+		"hp_pct": return tr("%s%s%% HP") % [tr(str(up)), tr(str(pct))]
+		"first_round_pct": return tr("%s%s%% first-strike damage") % [tr(str(up)), tr(str(pct))]
+		"escalate_pct": return tr("%s%s%% damage per round (stacking)") % [tr(str(up)), tr(str(pct))]
+		"mend_pct": return (tr("Mends %s%% of the party's HP pool each round") if value >= 0.0 else tr("-%s%% party mending per round")) % pct
+		"hazard_guard_pct": return tr("%s%s%% hazard severity") % [tr(str(down)), tr(str(pct))]
+		"dodge_pct": return (tr("%s%% chance to block a retaliation") if value >= 0.0 else tr("-%s%% chance to block a retaliation")) % pct
+		"speed_pct": return tr("%s%s%% turn speed") % [tr(str(up)), tr(str(pct))]
+		"ability_power": return tr("%s%s%% ability power") % [tr(str(up)), tr(str(pct))]
+		"wipe_guard": return (tr("Once per rift, survive a wipe at %s%% HP") if value >= 0.0 else tr("-%s%% HP on a survived wipe")) % pct
+		"boss_alpha_strike": return tr("Opens every Boss fight with a free strike")
 		_: return ""
 
 

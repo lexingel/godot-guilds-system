@@ -63,8 +63,8 @@ func _render_roster(v: VBoxContainer) -> void:
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	var voice := GameData.hero_voice(h)
-	var head := _label(tr("Lv%d %s (%s) · %d/%d HP · Power %d · %s · Morale %d %s") % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), Combat.power_of(h), GameData.VOICE_NAME[voice], h.morale, GameData.morale_tier(h.morale)[1]])
-	head.tooltip_text = tr("Personality (from their trait) — e.g. “%s”") % str(GameData.BARKS[voice]["victory"][0])
+	var head := _label(tr("Lv%d %s (%s) · %d/%d HP · Power %d · %s · Morale %d %s") % [h.level, tr(str(h.cls_id.capitalize())), tr(str(h.rank)), h.hp, Combat.max_hp(h), Combat.power_of(h), tr(str(GameData.VOICE_NAME[voice])), h.morale, tr(str(GameData.morale_tier(h.morale)[1]))])
+	head.tooltip_text = tr("Personality (from their trait) — e.g. “%s”") % tr(str(GameData.BARKS[voice]["victory"][0]))
 	head.mouse_filter = Control.MOUSE_FILTER_STOP
 	cv.add_child(head)
 
@@ -117,8 +117,8 @@ func _render_roster(v: VBoxContainer) -> void:
 				sk_row.add_child(sic)
 				var sk_mid := _vbox(0)
 				sk_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				sk_mid.add_child(_label(tr("Skill: %s · %d Momentum%s") % [sk["name"], int(sk["cost"]), "" if str(sk["row"]) == "any" else tr(" · %s row") % str(sk["row"])], 12))
-				sk_mid.add_child(_wrap_label(str(sk["desc"]) + (tr(" %s twist: %s.") % [GameData.ARCHETYPES[arch], GameData.ARCH_TWIST[arch]] if arch != "" else ""), 11, true))
+				sk_mid.add_child(_label(tr("Skill: %s · %d Momentum%s") % [tr(str(sk["name"])), int(sk["cost"]), tr(str("" if str(sk["row"]) == "any" else tr(" · %s row") % tr(str(sk["row"]))))], 12))
+				sk_mid.add_child(_wrap_label(tr(str(sk["desc"])) + (tr(" %s twist: %s.") % [tr(str(GameData.ARCHETYPES[arch])), tr(str(GameData.ARCH_TWIST[arch]))] if arch != "" else ""), 11, true))
 				sk_row.add_child(sk_mid)
 				if h.level < int(sk["level"]):
 					sk_row.add_child(_label(tr("Unlocks at Lv%d") % int(sk["level"]), 11, true))
@@ -130,15 +130,15 @@ func _render_roster(v: VBoxContainer) -> void:
 				ab_row.add_child(_icon(GameData.ability_icon(h.pool_id), 28))
 				var ab_mid := _vbox(0)
 				ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				ab_mid.add_child(_label(tr("Ability: %s") % str(ab["name"]), 12))
+				ab_mid.add_child(_label(tr("Ability: %s") % tr(str(ab["name"])), 12))
 				ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
 				ab_row.add_child(ab_mid)
 				if h.level < 3:
 					ab_row.add_child(_label("Unlocks at Lv3", 11, true))
 				elif h.ability_awakened:
-					ab_row.add_child(_label(tr("Awakened (%s)") % GameData.awakening_bonus_text(h.pool_id), 11, true))
+					ab_row.add_child(_label(tr("Awakened (%s)") % tr(str(GameData.awakening_bonus_text(h.pool_id))), 11, true))
 				else:
-					ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", tr("Awaken (%d SP, %s)") % [GameData.ABILITY_AWAKENING_COST, GameData.awakening_bonus_text(h.pool_id)], func(id=h.id):
+					ab_row.add_child(_icon_button("res://assets/skills/gem_red.png", tr("Awaken (%d SP, %s)") % [GameData.ABILITY_AWAKENING_COST, tr(str(GameData.awakening_bonus_text(h.pool_id)))], func(id=h.id):
 						var err := GameState.awaken_ability(id)
 						if err != "":
 							push_warning(err)
@@ -154,7 +154,7 @@ func _render_roster(v: VBoxContainer) -> void:
 				var next_rank_id: String = evolve_choices[0]["rank"]
 				var next_rank := GameData.find_rank(next_rank_id)
 				var gate := GameState.evolve_rank_gate(next_rank_id)
-				var evolve_label := tr("Evolve (%d Essence)") % int(next_rank["cost"]) if gate == "" else tr("Evolve — %s") % gate
+				var evolve_label := tr("Evolve (%d Essence)") % int(next_rank["cost"]) if gate == "" else tr("Evolve — %s") % tr(str(gate))
 				var picking := evolve_picker_hero_id == h.id
 				cv.add_child(_icon_button("res://assets/skills/star.png", "Hide evolution paths" if picking else evolve_label, func(id=h.id):
 					evolve_picker_hero_id = "" if evolve_picker_hero_id == id else id
@@ -164,12 +164,12 @@ func _render_roster(v: VBoxContainer) -> void:
 					for c in evolve_choices:
 						var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(str(c["id"]), {})
 						var lines: Array[String] = [
-							tr("[b]%s[/b] — Rank %s, %s") % [str(c["name"]), str(c["rank"]), str(c["type"])],
-							tr("Main stat: %s") % Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))),
-							tr("Passive: %s") % _passive_bb(str(c["id"])),
+							tr("[b]%s[/b] — Rank %s, %s") % [tr(str(c["name"])), tr(str(c["rank"])), tr(str(c["type"]))],
+							tr("Main stat: %s") % tr(str(Combat.describe_skill(str(c["kind"]), Combat.hero_innate_value(c, GameData.rank_index(str(c["rank"])))))),
+							tr("Passive: %s") % tr(str(_passive_bb(str(c["id"])))),
 						]
 						if not ab.is_empty():
-							lines.append(tr("Ability: %s — %s") % [str(ab["name"]), str(ab["desc"])])
+							lines.append(tr("Ability: %s — %s") % [tr(str(ab["name"])), tr(str(ab["desc"]))])
 						lines.append(str(c["flavor"]))
 						cv.add_child(_rich_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
 							var err := GameState.evolve_hero(id, pid)
@@ -191,7 +191,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			for summary in tree_summaries:
 				var kind: String = summary["kind"]
 				var is_open: bool = expanded_skill_tree_kind == kind
-				pills.add_child(_icon_button("res://assets/skills/eye_gem.png", tr("Hide %s") % str(summary["label"]) if is_open else str(summary["label"]), func(k=kind):
+				pills.add_child(_icon_button("res://assets/skills/eye_gem.png", tr("Hide %s") % tr(str(summary["label"])) if is_open else str(summary["label"]), func(k=kind):
 					expanded_skill_tree_kind = "" if expanded_skill_tree_kind == k else k
 					render()
 				))
@@ -204,7 +204,7 @@ func _render_roster(v: VBoxContainer) -> void:
 				# Per-tree, not "respec everything" — a hero holds at most 2 trees
 				# (current + one prior evolution stage), so undoing just the one
 				# fork choice you regret no longer means nuking the other tree too.
-				var tree_prefix := "%s:" % expanded_skill_tree_kind
+				var tree_prefix := "%s:" % tr(str(expanded_skill_tree_kind))
 				var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
 				if tree_spent:
 					cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], tr("Respec this tree (%d Gold)") % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
@@ -264,7 +264,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 		var eb := _button(tr("Equip best (%d)") % changes, func(id=h.id):
 			var before := Combat.power_of(h)
 			GameState.equip_best(id)
-			GameState.pending_toasts.append({"cls_id": h.cls_id, "pool_id": h.pool_id, "title": "Equipped best gear", "text": tr("Power %d → %d") % [before, Combat.power_of(h)]})
+			GameState.pending_toasts.append({"cls_id": h.cls_id, "pool_id": h.pool_id, "title": tr("Equipped best gear"), "text": tr("Power %d → %d") % [before, Combat.power_of(h)]})
 			render())
 		eb.tooltip_text = "Fill this hero's slots with the strongest free gear that fits them. Gear worn by other heroes is left alone."
 		mid.add_child(eb)
@@ -278,7 +278,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 		var rid := str(GameData.RANKS[r]["id"])
 		if GameData.gear_slots(rid) > GameData.gear_slots(h.rank):
 			var locked := _vbox(2)
-			locked.tooltip_text = tr("Another gear slot opens at rank %s") % rid
+			locked.tooltip_text = tr("Another gear slot opens at rank %s") % tr(str(rid))
 			locked.mouse_filter = Control.MOUSE_FILTER_STOP
 			var fr := _icon(GameData.RARITY_FRAME_PATH["common"], 58)
 			fr.stretch_mode = TextureRect.STRETCH_SCALE
@@ -286,7 +286,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 			fr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			fr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			locked.add_child(fr)
-			var ll := _label(tr("Rank %s") % rid, 12, true)
+			var ll := _label(tr("Rank %s") % tr(str(rid)), 12, true)
 			ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			ll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			locked.add_child(ll)
@@ -346,7 +346,7 @@ func _quirk_row(h: Hero) -> Control:
 		var bad: bool = t.get("treatable", false)
 		var chip := _label(q, 12)
 		chip.add_theme_color_override("font_color", Palette.HAZARD if bad else Palette.good())
-		chip.tooltip_text = "%s (%s) — %s" % [q, {"born": "born with it", "scar": "a scar", "earned": "earned"}.get(str(t.get("origin", "")), ""), GameState.quirk_text(q)]
+		chip.tooltip_text = "%s (%s) — %s" % [tr(str(q)), tr(str({"born": "born with it", "scar": "a scar", "earned": "earned"}.get(str(t.get("origin", "")), ""))), tr(str(GameState.quirk_text(q)))]
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.add_child(chip)
 		if bad and GameState.lvl("res.lab") >= 1:
@@ -379,7 +379,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 	head.add_theme_constant_override("separation", 10)
 	head.add_child(_label("Attributes", 15))
 	if h.attr_points > 0:
-		var pts := _label(tr("%d point%s to spend") % [h.attr_points, _pl(h.attr_points)], 13)
+		var pts := _label(tr("%d point%s to spend") % [h.attr_points, tr(str(_pl(h.attr_points)))], 13)
 		pts.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		pts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		head.add_child(pts)
@@ -387,13 +387,13 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		head.add_child(sp)
 		var auto := _button("Auto", func(id=h.id): GameState.auto_assign_attrs(id); render())
-		auto.tooltip_text = tr("Spend them the %s way") % GameData.hero_role(h).capitalize()
+		auto.tooltip_text = tr("Spend them the %s way") % tr(str(GameData.hero_role(h).capitalize()))
 		head.add_child(auto)
 	v.add_child(head)
 	for a in GameData.ATTRIBUTES:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
-		row.tooltip_text = "%s — %s" % [GameData.ATTR_LABEL[a], GameData.ATTR_DESC[a]]
+		row.tooltip_text = "%s — %s" % [tr(str(GameData.ATTR_LABEL[a])), tr(str(GameData.ATTR_DESC[a]))]
 		row.mouse_filter = Control.MOUSE_FILTER_STOP
 		var nl := _label(GameData.ATTR_LABEL[a], 14)
 		nl.custom_minimum_size.x = 76
@@ -417,17 +417,17 @@ func _attr_panel(h: Hero) -> PanelContainer:
 				continue
 			long_bits.append(Combat.describe_skill(str(k), val / 100.0))
 			if val >= 1.0:   # the sheet lists real gains; the rest is in the tooltip
-				bits.append("%+.0f%% %s" % [val, _ATTR_SHORT.get(k, k)])
+				bits.append("%+.0f%% %s" % [val, tr(str(_ATTR_SHORT.get(k, k)))])
 		row.tooltip_text += tr("\n%d is the baseline: above it adds, below it takes a little away.\n") % GameData.ATTR_BASELINE + "\n".join(long_bits)
 		row.add_child(_attr_bar(total))
-		var note := ", ".join(bits) if not bits.is_empty() else ("at the baseline" if total == GameData.ATTR_BASELINE else ("below the baseline" if total < GameData.ATTR_BASELINE else "small gains"))
+		var note := ", ".join(bits) if not bits.is_empty() else (tr("at the baseline") if total == GameData.ATTR_BASELINE else (tr("below the baseline") if total < GameData.ATTR_BASELINE else tr("small gains")))
 		var nlab := _label(note, 12, true)
 		nlab.custom_minimum_size.x = 150
 		row.add_child(nlab)
 		if h.attr_points > 0:
 			var plus := _button("+", func(id=h.id, at=a): GameState.spend_attr_point(id, at); render())
 			plus.custom_minimum_size = Vector2(36, 30)
-			plus.tooltip_text = "+1 %s" % GameData.ATTR_LABEL[a]
+			plus.tooltip_text = "+1 %s" % tr(str(GameData.ATTR_LABEL[a]))
 			row.add_child(plus)
 		v.add_child(row)
 	# Camp training (Gold) and a full reset (Essence).
@@ -576,7 +576,7 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 		elif missing_prereq:
 			reason = "Needs prerequisite"
 		elif missing_rift:
-			reason = tr("Seal a Rank %s+ rift first") % n["rift_rank"]
+			reason = tr("Seal a Rank %s+ rift first") % tr(str(n["rift_rank"]))
 		elif missing_stone:
 			reason = tr("Needs %d Essence") % GameData.STONEBOUND_CRYSTALS
 		elif missing_sp:
@@ -749,11 +749,11 @@ func _roster_row(h: Hero) -> Control:
 	top.add_child(nm)
 	var arch := _main_arch(h)
 	if arch != "":
-		var chip := _label("◆ " + str(GameData.ARCHETYPES[arch]), 12)
+		var chip := _label("◆ " + tr(str(GameData.ARCHETYPES[arch])), 12)
 		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
 		top.add_child(chip)
 	col.add_child(top)
-	col.add_child(_label(tr("Lv%d %s (%s) · %d/%d HP%s") % [h.level, h.cls_id.capitalize(), h.rank, h.hp, Combat.max_hp(h), (tr(" · away %d run%s") % [h.busy_runs, _pl(h.busy_runs)]) if h.busy_runs > 0 else ""], 12, true))
+	col.add_child(_label(tr("Lv%d %s (%s) · %d/%d HP%s") % [h.level, tr(str(h.cls_id.capitalize())), tr(str(h.rank)), h.hp, Combat.max_hp(h), tr(str((tr(" · away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]) if h.busy_runs > 0 else ""))], 12, true))
 	col.add_child(_flat_bar(Combat.max_hp(h), h.hp, 170, 4, _hp_color(float(h.hp) / float(max(1, Combat.max_hp(h))))))
 	row.add_child(col)
 	var needs := h.skill_points > 0
@@ -777,9 +777,9 @@ func _roster_row(h: Hero) -> Control:
 ## the Skills button and Medical Bay's bed picker.
 func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0) -> Control:
 	var equipped := _find_equipped_at(h.id, slot_type, idx)
-	var slot_key := "%s:%s:%d" % [h.id, slot_type, idx]
+	var slot_key := "%s:%s:%d" % [tr(str(h.id)), tr(str(slot_type)), idx]
 	var is_open := expanded_slot == slot_key
-	var label_text := equipped.name.split(" ")[0] if equipped else ("Weapon" if slot_type == "weapon" else "Gear")
+	var label_text := equipped.name.split(" ")[0] if equipped else (tr("Weapon") if slot_type == "weapon" else tr("Gear"))
 	var icon_path: String = GameData.item_icon(equipped) if equipped else ""
 	var cb := func():
 		expanded_slot = "" if is_open else slot_key
@@ -826,7 +826,7 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	var pv := _vbox(4)
 
 	if equipped:
-		var eq_row := _info_row("%s (%s) — %s" % [_loot_display_name(equipped), GameData.ITEM_CATEGORY_LABEL[equipped.category], _loot_desc(equipped, false)], 12, [], _icon(GameData.item_icon(equipped), 18))
+		var eq_row := _info_row("%s (%s) — %s" % [tr(str(_loot_display_name(equipped))), tr(str(GameData.ITEM_CATEGORY_LABEL[equipped.category])), tr(str(_loot_desc(equipped, false)))], 12, [], _icon(GameData.item_icon(equipped), 18))
 		_rich_tip(eq_row, _item_card(equipped))
 		pv.add_child(eq_row)
 		var eactions := HBoxContainer.new()
@@ -840,14 +840,14 @@ func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: in
 	var candidates: Array[Item] = []
 	candidates.assign(GameState.items.filter(func(it): return it.equipped_to == "" and it.slot_type() == slot_type and GameState.item_fits_hero(it, h)))
 	if candidates.is_empty():
-		pv.add_child(_label(tr("No unequipped %s available.") % ("weapons" if slot_type == "weapon" else "gear"), 11, true))
+		pv.add_child(_label(tr("No unequipped %s available.") % tr(str(("weapons" if slot_type == "weapon" else "gear"))), 11, true))
 	for it in candidates:
 		var equip_btn := _icon_button(GameData.item_icon(it), "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
 			GameState.equip_item(hid, st, i, iid)
 			expanded_slot = ""
 			render()
 		)
-		var cand_row := _info_row("%s (%s) — %s" % [_loot_display_name(it), GameData.ITEM_CATEGORY_LABEL[it.category], _loot_desc(it, false)], 12, [equip_btn], _icon(GameData.item_icon(it), 18))
+		var cand_row := _info_row("%s (%s) — %s" % [tr(str(_loot_display_name(it))), tr(str(GameData.ITEM_CATEGORY_LABEL[it.category])), tr(str(_loot_desc(it, false)))], 12, [equip_btn], _icon(GameData.item_icon(it), 18))
 		_rich_tip(cand_row, _item_card(it, h, idx))
 		pv.add_child(cand_row)
 		var cmp := _item_compare_text(it, h, idx)
@@ -946,7 +946,7 @@ func _render_inventory_items(v: VBoxContainer) -> void:
 	head.add_theme_constant_override("separation", 8)
 	for f in [["all", "All"], ["weapon", "Weapons"], ["armor", "Armor"], ["focus", "Focus"]]:
 		var n: int = loose.filter(func(it): return f[0] == "all" or it.category == f[0]).size()
-		var chip := _button("%s %d" % [f[1], n], func(id=str(f[0])):
+		var chip := _button("%s %d" % [tr(str(f[1])), n], func(id=str(f[0])):
 			inv_filter = id
 			render()
 		)
@@ -1028,12 +1028,12 @@ func _inv_tile(it: Item) -> Button:
 	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(nl)
 	if it.attr != "" and it.attr_bonus > 0:
-		var al := _label("+%d %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr]], 12, true)
+		var al := _label("+%d %s" % [it.attr_bonus, tr(str(GameData.ATTR_LABEL[it.attr]))], 12, true)
 		al.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		al.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(al)
 	b.add_child(col)
-	b.tooltip_text = tr("%s — click for details") % _loot_display_name(it)
+	b.tooltip_text = tr("%s — click for details") % tr(str(_loot_display_name(it)))
 	return b
 
 
@@ -1096,7 +1096,7 @@ func _item_modal(it: Item) -> void:
 		if not GameState.attr_req_met(it, h2):
 			blocked.append(h2.name.split(" the ")[0])
 			continue
-		var verb := "Equip → %s" if _first_free_slot(h2, slot) >= 0 else "Swap → %s"
+		var verb := tr("Equip → %s") if _first_free_slot(h2, slot) >= 0 else tr("Swap → %s")
 		equip_row.add_child(_icon_button(GameData.item_icon(it), verb % h2.name.split(" the ")[0], func(hid=h2.id, iid=it.id, idx=target_idx):
 			selected_item_id = ""
 			GameState.equip_item(hid, slot, idx, iid)
@@ -1106,7 +1106,7 @@ func _item_modal(it: Item) -> void:
 		cv.add_child(_label("Equip on", 13, true))
 		cv.add_child(equip_row)
 	if not blocked.is_empty():
-		cv.add_child(_wrap_label(tr("Needs %d %s: %s") % [it.attr_req, GameData.ATTR_LABEL.get(it.attr, it.attr), ", ".join(blocked)], 12, true))
+		cv.add_child(_wrap_label(tr("Needs %d %s: %s") % [it.attr_req, tr(str(GameData.ATTR_LABEL.get(it.attr, it.attr))), tr(str(", ".join(blocked)))], 12, true))
 	if it.unique_id == "":
 		var rcost := GameState.reforge_cost(it)
 		cv.add_child(_label(tr("Reforge — reroll one stat (%d Essence)") % rcost, 13, true))
@@ -1117,14 +1117,14 @@ func _item_modal(it: Item) -> void:
 		for li in lines.size():
 			if str(lines[li]) == "":
 				continue
-			var rb := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], ("Reroll %s value" if li == 0 else "Reroll %s") % _KIND_LABEL.get(lines[li], lines[li]), func(id=it.id, l=li):
+			var rb := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], (tr("Reroll %s value") if li == 0 else tr("Reroll %s")) % _KIND_LABEL.get(lines[li], lines[li]), func(id=it.id, l=li):
 				var err := GameState.reforge_item(id, l)
 				if err != "":
 					push_warning(err)
 				render()
 			)
 			rb.disabled = GameState.crystals < rcost
-			rb.tooltip_text = "The value rerolls; the kind stays." if li == 0 else "Rerolls into any stat this item doesn't already have (or the same one)."
+			rb.tooltip_text = tr("The value rerolls; the kind stays.") if li == 0 else tr("Rerolls into any stat this item doesn't already have (or the same one).")
 			ref_row.add_child(rb)
 		cv.add_child(ref_row)
 	cv.add_child(_hsep())
@@ -1162,7 +1162,7 @@ func _render_inventory_supplies(v: VBoxContainer) -> void:
 			render()
 		)
 		buy.disabled = GameState.tonic_count() >= GameData.TONIC_CAP or GameState.coins < int(def["cost"])
-		v.add_child(_info_row(tr("%s (%d Gold) — %s · carrying %d") % [def["name"], int(def["cost"]), def["desc"], GameState.tonic_count(tid)], 12, [buy], _icon(str(def["icon"]), 24)))
+		v.add_child(_info_row(tr("%s (%d Gold) — %s · carrying %d") % [tr(str(def["name"])), int(def["cost"]), tr(str(def["desc"])), GameState.tonic_count(tid)], 12, [buy], _icon(str(def["icon"]), 24)))
 
 
 ## Inventory → Relics: the Relic Altar. Equipped relics sit in the altar's
@@ -1241,7 +1241,7 @@ func _relic_slot_card(r: Relic) -> Control:
 	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nm.custom_minimum_size.x = 170
 	col.add_child(nm)
-	col.add_child(_label(tr("%s · Lv%d%s") % [r.type, r.level, " · Awakened" if r.awakened else ""], 12, true))
+	col.add_child(_label(tr("%s · Lv%d%s") % [tr(str(r.type)), r.level, tr(str(tr(" · Awakened") if r.awakened else ""))], 12, true))
 	var lines := _relic_effect_lines(r)
 	for line in lines:
 		var l := _label(("• " if lines.size() > 1 else "") + line, 12)
@@ -1252,10 +1252,7 @@ func _relic_slot_card(r: Relic) -> Control:
 		col.add_child(l)
 	row.add_child(col)
 	b.add_child(row)
-	b.tooltip_text = tr("%s
-%s
-Click for details") % [_loot_display_name(r), "
-".join(lines)]
+	b.tooltip_text = tr("%s\n%s\nClick for details") % [_loot_display_name(r), "\n".join(lines)]
 	return b
 
 
@@ -1301,12 +1298,12 @@ func _relic_tile(r: Relic) -> Button:
 	nl.custom_minimum_size.x = 100
 	nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(nl)
-	var ll := _label(tr("Lv%d%s") % [r.level, " ★" if r.awakened else ""], 12, true)
+	var ll := _label(tr("Lv%d%s") % [r.level, tr(str(" ★" if r.awakened else ""))], 12, true)
 	ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(ll)
 	b.add_child(col)
-	b.tooltip_text = tr("%s — click for details") % _loot_display_name(r)
+	b.tooltip_text = tr("%s — click for details") % tr(str(_loot_display_name(r)))
 	return b
 
 
@@ -1346,7 +1343,7 @@ func _relic_modal(r: Relic) -> void:
 	var nm := _label(_loot_display_name(r), 16)
 	nm.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(r.rarity, Palette.TEXT))
 	tcol.add_child(nm)
-	tcol.add_child(_label(tr("%s %s relic · Lv%d/%d%s") % [r.rarity.capitalize(), r.type, r.level, GameState.RELIC_MAX_LEVEL, " · Awakened" if r.awakened else ""], 12, true))
+	tcol.add_child(_label(tr("%s %s relic · Lv%d/%d%s") % [tr(str(r.rarity.capitalize())), tr(str(r.type)), r.level, GameState.RELIC_MAX_LEVEL, tr(str(tr(" · Awakened") if r.awakened else ""))], 12, true))
 	tcol.add_child(_label(tr("+%d party damage · +%d rift shield") % [r.dmg, r.hp], 13))
 	top.add_child(tcol)
 	cv.add_child(top)
@@ -1356,7 +1353,7 @@ func _relic_modal(r: Relic) -> void:
 		effects.add_child(_wrap_label(str(GameData.find_unique_relic(r.unique_id).get("desc", "")), 13))
 		if r.combo_with != "":
 			var partner := str(GameData.find_unique_relic(r.combo_with).get("name", ""))
-			effects.add_child(_wrap_label(tr("Combo: stronger with %s%s") % [partner, " (active!)" if Combat.party_has_unique_relic(r.combo_with) else ""], 12, true))
+			effects.add_child(_wrap_label(tr("Combo: stronger with %s%s") % [tr(str(partner)), tr(str(" (active!)" if Combat.party_has_unique_relic(r.combo_with) else ""))], 12, true))
 	else:
 		var rows: Array = []
 		for i in r.specials.size():
@@ -1399,7 +1396,7 @@ func _relic_modal(r: Relic) -> void:
 			render()
 		)
 		eb.disabled = used >= GameState.relic_slot_cap()
-		eb.tooltip_text = "Every altar slot is full — take a relic off first" if eb.disabled else ""
+		eb.tooltip_text = tr("Every altar slot is full — take a relic off first") if eb.disabled else ""
 		acts.add_child(eb)
 	if r.level < GameState.RELIC_MAX_LEVEL:
 		var ucost := GameState.relic_upgrade_cost(r)

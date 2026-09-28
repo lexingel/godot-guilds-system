@@ -18,6 +18,14 @@ static func portrait_for_hero(cls_id: String, pool_id: String) -> String:
 	return HERO_PORTRAIT_PATH.get(role, "")
 
 
+## An English plural ending for `n` things ("s", or "es" for hero), none in
+## Turkish, where a noun after a number stays singular ("3 gün").
+## ponytail: suffix-only plurals; switch call sites to tr_n() when a language
+## with real plural forms (German, Russian...) is added.
+static func pl(n: int, suffix: String = "s") -> String:
+	return "" if n == 1 or not TranslationServer.get_locale().begins_with("en") else suffix
+
+
 static func find_role(role_id: String) -> Dictionary:
 	for c in CLASSES:
 		if c["id"] == role_id:

@@ -7,9 +7,9 @@ func buy_tonic(id: String = "healing") -> String:
 	if def.is_empty():
 		return ""
 	if tonic_count() >= GameData.TONIC_CAP:
-		return "Your belt is full (%d tonics)" % GameData.TONIC_CAP
+		return tr("Your belt is full (%d tonics)") % GameData.TONIC_CAP
 	if coins < int(def["cost"]):
-		return "Not enough Gold"
+		return tr("Not enough Gold")
 	coins -= int(def["cost"])
 	add_tonic(id)
 	save()
@@ -108,7 +108,7 @@ func _attune_gear(party: Array) -> void:
 				it.value = snappedf(it.value * g, 0.001)
 				it.secondary_value = snappedf(it.secondary_value * g, 0.001)
 				it.tertiary_value = snappedf(it.tertiary_value * g, 0.001)
-				push_toast(h, "Gear attuned", "%s grows stronger (%d/%d)" % [it.name, it.attune_level, GameData.ATTUNE_MAX])
+				push_toast(h, tr("Gear attuned"), tr("%s grows stronger (%d/%d)") % [tr(str(it.name)), it.attune_level, GameData.ATTUNE_MAX])
 
 
 func reforge_cost(it: Item) -> int:
@@ -124,13 +124,13 @@ func reforge_item(item_id: String, line: int) -> String:
 		if x.id == item_id:
 			it = x
 	if not it or it.unique_id != "" or it.equipped_to != "":
-		return "Can't reforge this item"
+		return tr("Can't reforge this item")
 	var kinds := [it.kind, it.secondary_kind, it.tertiary_kind]
 	if line < 0 or line > 2 or str(kinds[line]) == "":
-		return "No such stat"
+		return tr("No such stat")
 	var cost := reforge_cost(it)
 	if crystals < cost:
-		return "Not enough Essence"
+		return tr("Not enough Essence")
 	crystals -= cost
 	it.reforges += 1
 	var kind: String = kinds[line]
@@ -322,20 +322,20 @@ func reroll_relic(relic_id: String, idx: int) -> String:
 		if r.id != relic_id:
 			continue
 		if r.unique_id != "":
-			return "Legendaries can't be rerolled"
+			return tr("Legendaries can't be rerolled")
 		var cost := relic_reroll_cost(r)
 		if crystals < cost:
-			return "Not enough Essence"
+			return tr("Not enough Essence")
 		if idx < 0:
 			if r.trigger.is_empty():
-				return "No trigger"
+				return tr("No trigger")
 			crystals -= cost
 			var lvl_mult := pow(1.1, r.level - 1)
 			r.trigger = Combat.roll_relic_trigger(r.rarity)
 			r.trigger["value"] = snappedf(float(r.trigger["value"]) * lvl_mult, 0.001)
 		else:
 			if idx >= r.specials.size():
-				return "No such effect"
+				return tr("No such effect")
 			crystals -= cost
 			var others: Array = []
 			for i in r.specials.size():
@@ -360,10 +360,10 @@ func upgrade_relic(relic_id: String) -> String:
 		if r.id != relic_id:
 			continue
 		if r.level >= RELIC_MAX_LEVEL:
-			return "Already max level"
+			return tr("Already max level")
 		var cost := relic_upgrade_cost(r)
 		if crystals < cost:
-			return "Not enough Essence"
+			return tr("Not enough Essence")
 		crystals -= cost
 		r.dmg = int(round(r.dmg * 1.15))
 		r.hp = int(round(r.hp * 1.15))
@@ -377,7 +377,7 @@ func upgrade_relic(relic_id: String) -> String:
 		if next_lvl >= RELIC_MAX_LEVEL and r.unique_id == "" and not r.awakened:
 			r.awakened = true
 			r.specials.append(Combat.roll_relic_special(r.type, r.rarity, r.specials.map(func(x): return x["kind"])))
-			pending_toasts.append({"cls_id": "", "pool_id": "", "title": "Relic awakened", "text": "%s gains a new power" % r.name})
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Relic awakened"), "text": tr("%s gains a new power") % tr(str(r.name))})
 		r.level = next_lvl
 		save()
 		state_changed.emit()

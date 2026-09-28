@@ -23,8 +23,8 @@ func check_earned_quirks(h: Hero) -> Array[String]:
 		var t := GameData.quirk(q)
 		if not h.quirks.has(q) and int(h.history.get(t["stat"], 0)) >= int(t["need"]):
 			h.quirks.append(q)
-			gained.append("%s earned %s!" % [h.name, q])
-			push_toast(h, "Quirk earned: %s" % q, "%s — %s" % [h.name.split(" the ")[0], quirk_text(q)])
+			gained.append(tr("%s earned %s!") % [tr(str(h.name)), tr(str(q))])
+			push_toast(h, tr("Quirk earned: %s") % tr(str(q)), "%s — %s" % [tr(str(h.name.split(" the ")[0])), tr(str(quirk_text(q)))])
 	return gained
 
 
@@ -43,13 +43,13 @@ func quirk_text(q: String) -> String:
 ## Treats a treatable quirk (a bad born quirk or a scar) at the Arcane Lab.
 func treat_quirk(hero_id: String, q: String) -> String:
 	if lvl("res.lab") < 1:
-		return "Build the Arcane Lab first"
+		return tr("Build the Arcane Lab first")
 	var h := find_hero(hero_id)
 	if not h or not h.quirks.has(q) or not GameData.quirk(q).get("treatable", false):
 		return ""
 	var cost := quirk_treat_cost()
 	if coins < cost:
-		return "Need %d Gold" % cost
+		return tr("Need %d Gold") % cost
 	coins -= cost
 	h.quirks.erase(q)
 	h.hp = mini(h.hp, Combat.max_hp(h))
@@ -142,11 +142,11 @@ func recruit_hero(offer_id: String) -> String:
 	if idx < 0:
 		return ""
 	if heroes.size() >= hero_slot_cap():
-		return "Roster is full."
+		return tr("Roster is full.")
 	var offer := recruit_pool[idx]
 	var rank := GameData.find_rank(offer.rank)
 	if coins < int(rank["cost"]):
-		return "Not enough Gold."
+		return tr("Not enough Gold.")
 	coins -= int(rank["cost"])
 	var is_dupe := heroes.any(func(h): return h.pool_id == offer.pool_id)
 	if guild_mentor():
@@ -180,7 +180,7 @@ func reroll_recruit_offer(offer_id: String) -> String:
 	if idx < 0:
 		return ""
 	if coins < recruit_reroll_cost():
-		return "Not enough Gold."
+		return tr("Not enough Gold.")
 	coins -= recruit_reroll_cost()
 	recruit_pool[idx] = gen_recruit_offer()
 	_maybe_flag_s_rank(recruit_pool[idx], "recruit")
@@ -192,7 +192,7 @@ func reroll_recruit_offer(offer_id: String) -> String:
 ## A fresh set of Champion offers for Coins (a free set arrives every seal).
 func reroll_champion() -> String:
 	if coins < GameData.CHAMPION_REROLL_COST:
-		return "Not enough Gold."
+		return tr("Not enough Gold.")
 	coins -= GameData.CHAMPION_REROLL_COST
 	refresh_champion_offers()
 	save()
@@ -251,7 +251,7 @@ func champion_boon_text(c: Hero) -> String:
 	var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(c), {})
 	if b.is_empty():
 		return ""
-	return "%s — party %s" % [b["name"], Combat.describe_skill(str(b["kind"]), float(b["value"]) * float(GameData.find_rank(c.rank)["mult"]))]
+	return tr("%s — party %s") % [tr(str(b["name"])), tr(str(Combat.describe_skill(str(b["kind"]), float(b["value"]) * float(GameData.find_rank(c.rank)["mult"]))))]
 
 
 ## The Champion's Call as an Active-Ability-shaped dict {name, effect, value}.
@@ -276,11 +276,11 @@ func hire_champion(idx: int) -> String:
 	if idx < 0 or idx >= champion_offers.size():
 		return ""
 	if heroes.size() >= hero_slot_cap():
-		return "Roster is full."
+		return tr("Roster is full.")
 	var c := champion_offers[idx]
 	var cost := champion_hire_cost(c)
 	if coins < cost:
-		return "Not enough Gold."
+		return tr("Not enough Gold.")
 	coins -= cost
 	var cls := GameData.find_class(c.pool_id)
 	c.cls_id = str(cls.get("role", "warrior"))
@@ -291,7 +291,7 @@ func hire_champion(idx: int) -> String:
 	c.hp = Combat.max_hp(c)
 	heroes.append(c)
 	champion_offers.remove_at(idx)
-	push_toast(c, "Champion hired", "%s joins your roster" % c.name.split(" the ")[0])
+	push_toast(c, tr("Champion hired"), tr("%s joins your roster") % tr(str(c.name.split(" the ")[0])))
 	save()
 	state_changed.emit()
 	return ""
@@ -317,23 +317,23 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	if not h:
 		return ""
 	if h.level < 10:
-		return "Must be Level 10 to evolve"
+		return tr("Must be Level 10 to evolve")
 	var cur_cls := GameData.find_class(h.pool_id)
 	if cur_cls.is_empty():
-		return "This hero predates the evolution system"
+		return tr("This hero predates the evolution system")
 	var choices := GameData.evolution_choices(cur_cls)
 	if choices.is_empty():
-		return "No further evolution available"
+		return tr("No further evolution available")
 	var next_rank_id: String = choices[0]["rank"]
 	var next_rank := GameData.find_rank(next_rank_id)
 	if crystals < int(next_rank["cost"]):
-		return "Not enough Essence"
+		return tr("Not enough Essence")
 	var gate := evolve_rank_gate(next_rank_id)
 	if gate != "":
 		return gate
 	var picked: Array = choices.filter(func(c): return c["id"] == target_pool_id)
 	if picked.is_empty():
-		return "Pick an evolution path"
+		return tr("Pick an evolution path")
 	var next: Dictionary = picked[0]
 	var cur_rank := GameData.find_rank(cur_cls["rank"])
 	crystals -= int(next_rank["cost"])
@@ -356,7 +356,7 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	h.name = "%s the %s" % [h.name.split(" the ")[0], next["name"]]
 	h.hp = Combat.max_hp(h)
 	var passive := GameData.subclass_passive(h.pool_id)
-	push_toast(h, "Evolved — Rank %s" % h.rank, "%s · new passive: %s" % [h.name, str(passive.get("name", "none"))])
+	push_toast(h, tr("Evolved — Rank %s") % tr(str(h.rank)), tr("%s · new passive: %s") % [tr(str(h.name)), tr(str(passive.get("name", "none")))])
 	save()
 	state_changed.emit()
 	return ""
@@ -365,7 +365,7 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 ## B/A/S evolutions need a rift of that rank sealed once; "" if met.
 func evolve_rank_gate(rank_id: String) -> String:
 	if rank_id in ["B", "A", "S"] and best_rift_rank_sealed < GameData.rift_rank_index(rank_id):
-		return "Seal a Rank %s rift first" % rank_id
+		return tr("Seal a Rank %s rift first") % tr(str(rank_id))
 	return ""
 
 
@@ -389,22 +389,22 @@ func learn_skill(hero_id: String, kind: String, skill_id: String) -> String:
 	if n.is_empty() or h.skills.get(key, false):
 		return ""
 	if h.level < int(n["req_level"]):
-		return "Requires Level %d" % n["req_level"]
+		return tr("Requires Level %d") % n["req_level"]
 	for req in n["requires"]:
 		if not h.skills.get(GameData.skill_storage_key(kind, req), false):
-			return "Learn the prerequisite skill(s) first"
+			return tr("Learn the prerequisite skill(s) first")
 	if not n.get("requires_any", []).is_empty() and not n["requires_any"].any(func(r): return h.skills.get(GameData.skill_storage_key(kind, r), false)):
-		return "Master one of this tree's paths first"
+		return tr("Master one of this tree's paths first")
 	for excl in n.get("excludes", []):
 		if h.skills.get(GameData.skill_storage_key(kind, excl), false):
-			return "Locked out — you already chose the other path"
+			return tr("Locked out — you already chose the other path")
 	if n.has("rift_rank") and best_rift_rank_sealed < GameData.rift_rank_index(str(n["rift_rank"])):
-		return "Seal a Rank %s or higher rift first" % n["rift_rank"]
+		return tr("Seal a Rank %s or higher rift first") % tr(str(n["rift_rank"]))
 	if n.get("stone", false) and crystals < GameData.STONEBOUND_CRYSTALS:
-		return "Needs %d Essence" % GameData.STONEBOUND_CRYSTALS
+		return tr("Needs %d Essence") % GameData.STONEBOUND_CRYSTALS
 	var cost := skill_node_cost(h, kind, n)
 	if h.skill_points < cost:
-		return "Not enough Skill Points"
+		return tr("Not enough Skill Points")
 	h.skill_points -= cost
 	if n.get("stone", false):
 		crystals -= GameData.STONEBOUND_CRYSTALS
@@ -443,11 +443,11 @@ func awaken_ability(hero_id: String) -> String:
 	if not h:
 		return ""
 	if not Combat.qualifies_for_ability(h):
-		return "This hero has no Active Ability yet"
+		return tr("This hero has no Active Ability yet")
 	if h.ability_awakened:
-		return "Already awakened"
+		return tr("Already awakened")
 	if h.skill_points < GameData.ABILITY_AWAKENING_COST:
-		return "Not enough Skill Points"
+		return tr("Not enough Skill Points")
 	h.skill_points -= GameData.ABILITY_AWAKENING_COST
 	h.ability_awakened = true
 	save()
@@ -501,7 +501,7 @@ func respec_cost(spent_sp: int) -> int:
 func tree_respec_cost(h: Hero, kind: String = "") -> int:
 	var target_keys: Array = []
 	for key in h.skills.keys():
-		if h.skills[key] and (kind == "" or str(key).begins_with("%s:" % kind)):
+		if h.skills[key] and (kind == "" or str(key).begins_with("%s:" % tr(str(kind)))):
 			target_keys.append(key)
 	return respec_cost(_skill_keys_sp_cost(target_keys, h))
 
@@ -519,14 +519,14 @@ func respec_hero(hero_id: String, kind: String = "") -> String:
 	for key in h.skills.keys():
 		if not h.skills[key]:
 			continue
-		if kind == "" or str(key).begins_with("%s:" % kind):
+		if kind == "" or str(key).begins_with("%s:" % tr(str(kind))):
 			target_keys.append(key)
 	if target_keys.is_empty():
 		return ""
 	var spent_sp := _skill_keys_sp_cost(target_keys, h)
 	var cost := respec_cost(spent_sp)
 	if coins < cost:
-		return "Need %d Gold" % cost
+		return tr("Need %d Gold") % cost
 	coins -= cost
 	h.skill_points += spent_sp
 	for key in target_keys:
@@ -572,13 +572,13 @@ func attr_respec_cost(h: Hero) -> int:
 func respec_attrs(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
-		return "Can't reset this hero"
+		return tr("Can't reset this hero")
 	var refund := attr_points_spent(h)
 	if refund <= 0:
-		return "Nothing to reset"
+		return tr("Nothing to reset")
 	var cost := attr_respec_cost(h)
 	if crystals < cost:
-		return "Not enough Essence"
+		return tr("Not enough Essence")
 	crystals -= cost
 	h.attrs = GameData.role_attrs(GameData.hero_role(h))
 	h.attr_points += refund
@@ -599,14 +599,14 @@ func attr_train_cost(h: Hero) -> int:
 func train_attr(hero_id: String) -> String:
 	var h := find_hero(hero_id)
 	if not h:
-		return "Can't train this hero"
+		return tr("Can't train this hero")
 	if h.attr_trained >= GameData.ATTR_TRAIN_CAP:
-		return "Fully trained"
+		return tr("Fully trained")
 	if training_left() <= 0:
-		return "The Training Yard is full this week"
+		return tr("The Training Yard is full this week")
 	var cost := attr_train_cost(h)
 	if coins < cost:
-		return "Not enough Gold"
+		return tr("Not enough Gold")
 	coins -= cost
 	var week := day / GameData.PAYDAY_DAYS
 	if training_week != week:

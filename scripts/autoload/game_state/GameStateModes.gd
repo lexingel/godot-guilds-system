@@ -123,23 +123,23 @@ func _complete_act(act_num: int) -> void:
 	var relic := Combat.gen_unique_relic()
 	relics.append(relic)
 	campaign_act = act_num + 1
-	var subtitle := "Act %s complete — +%d Essence, %s" % [_roman(act_num), int(reward.get("crystals", 0)), relic.name]
+	var subtitle := tr("Act %s complete — +%d Essence, %s") % [tr(str(_roman(act_num))), int(reward.get("crystals", 0)), tr(str(relic.name))]
 	if str(act["opens"]) != "":
-		subtitle += " · %s unlocked" % act["opens"]
-	pending_stories.append({"title": act["finale"] + " — sealed", "subtitle": subtitle, "text": str(act["outro"])})
+		subtitle += tr(" · %s unlocked") % tr(str(act["opens"]))
+	pending_stories.append({"title": tr(str(act["finale"])) + tr(" — sealed"), "subtitle": subtitle, "text": str(act["outro"])})
 	if campaign_done():
-		pending_stories.append({"title": "The End", "subtitle": "The campaign is complete", "text": "Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening."})
+		pending_stories.append({"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")})
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
 
 
 func _act_intro_card(act_num: int) -> Dictionary:
 	var act: Dictionary = GameData.CAMPAIGN[act_num - 1]
-	return {"title": "Act %s — %s" % [_roman(act_num), act["name"]], "subtitle": "Foe: %s" % act["foe"], "text": str(act["intro"])}
+	return {"title": tr("Act %s — %s") % [tr(str(_roman(act_num))), tr(str(act["name"]))], "subtitle": tr("Foe: %s") % tr(str(act["foe"])), "text": str(act["intro"])}
 
 
 static func _roman(n: int) -> String:
-	return ["I", "II", "III", "IV"][clampi(n - 1, 0, 3)]
+	return ["I", String(TranslationServer.translate("II")), String(TranslationServer.translate("III")), "IV"][clampi(n - 1, 0, 3)]
 
 
 # ---------------- Daily Rift ----------------
@@ -191,12 +191,12 @@ func _complete_daily() -> Dictionary:
 
 func _run_label() -> String:
 	if run.has("daily"):
-		return "Daily Rift"
+		return tr("Daily Rift")
 	if str(run.get("rift_rank", "")) != "":
-		return "Rank %s rift" % run["rift_rank"]
+		return tr("Rank %s rift") % tr(str(run["rift_rank"]))
 	if int(run.get("finale", 0)) > 0:
-		return "Act %s finale" % _roman(int(run["finale"]))
-	return str(_diff().get("name", "Rift"))
+		return tr("Act %s finale") % tr(str(_roman(int(run["finale"]))))
+	return str(_diff().get("name", tr("Rift")))
 
 
 ## Appends the run that's ending to run_history (newest first).
@@ -216,6 +216,7 @@ func _record_run(outcome: String) -> void:
 	runs_finished += 1
 
 
+## A key (English): compared, and kept in run history; shown translated.
 func _run_outcome() -> String:
 	if run.get("sealed") != null:
 		return "Sealed"

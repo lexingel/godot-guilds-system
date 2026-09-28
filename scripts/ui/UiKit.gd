@@ -132,7 +132,7 @@ func _flush_render() -> void:
 ## ponytail: suffix-only plurals; switch these call sites to tr_n() when a
 ## language with real plural forms (German, Russian...) is added.
 func _pl(n: int, suffix: String = "s") -> String:
-	return "" if n == 1 or not TranslationServer.get_locale().begins_with("en") else suffix
+	return GameData.pl(n, suffix)
 
 
 func _clear_root() -> void:
@@ -340,12 +340,12 @@ func _rank_rules(rank_id: String) -> Array:
 	var r := GameData.find_rift_rank(rank_id)
 	var out: Array = []
 	if float(r["hp"]) != 1.0 or float(r["dmg"]) != 1.0:
-		out.append(["foes", tr("Foes ×%s HP · ×%s damage") % [str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1))],
-			tr("Rank %s foes have %s× the HP and %s× the damage of a base %s Rift.") % [rank_id, str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1)), str(r["base"]).capitalize()]])
+		out.append(["foes", tr("Foes ×%s HP · ×%s damage") % [tr(str(snappedf(float(r["hp"]), 0.1))), tr(str(snappedf(float(r["dmg"]), 0.1)))],
+			tr("Rank %s foes have %s× the HP and %s× the damage of a base %s Rift.") % [tr(str(rank_id)), tr(str(snappedf(float(r["hp"]), 0.1))), tr(str(snappedf(float(r["dmg"]), 0.1))), tr(str(r["base"]).capitalize())]])
 	for flag in GameData.RIFT_RANK_RULE_TEXT:
 		if r.get(flag, false):
-			var t := str(GameData.RIFT_RANK_RULE_TEXT[flag])
-			out.append([flag, t[0].to_upper() + t.substr(1), str(GameData.RIFT_RANK_RULE_TIP.get(flag, ""))])
+			var t := tr(str(GameData.RIFT_RANK_RULE_TEXT[flag]))
+			out.append([flag, t[0].to_upper() + t.substr(1), tr(str(GameData.RIFT_RANK_RULE_TIP.get(flag, "")))])
 	return out
 
 
@@ -621,7 +621,7 @@ func _reward_tile(icon_path: String, name_text: String, rarity_text: String, des
 	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
 		btn.add_theme_stylebox_override(style_name, clear_style)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.tooltip_text = "%s — %s" % [name_text, desc_text]
+	btn.tooltip_text = "%s — %s" % [tr(str(name_text)), tr(str(desc_text))]
 	if tip_bbcode != "":
 		_rich_tip(btn, tip_bbcode)
 	btn.pressed.connect(cb)
@@ -811,11 +811,12 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 	var out := line.replace("[", "[lb]")
 	for h in party:
 		if h.name != "":
-			out = out.replace(h.name, tr("[color=#%s]%s[/color]") % [Palette.VIOLET.to_html(false), h.name])
+			out = out.replace(h.name, "[color=#%s]%s[/color]" % [Palette.VIOLET.to_html(false), h.name])
 	for m in monsters:
-		var mname: String = str(m.get("name", ""))
+		# The log names foes in the player's language.
+		var mname := tr(str(m.get("name", "")))
 		if mname != "":
-			out = out.replace(mname, tr("[color=#%s]%s[/color]") % [Palette.HAZARD.to_html(false), mname])
+			out = out.replace(mname, "[color=#%s]%s[/color]" % [Palette.HAZARD.to_html(false), mname])
 	return out
 
 
@@ -830,17 +831,17 @@ func _loot_desc(obj, is_relic: bool) -> String:
 		if r.unique_id != "":
 			var d := str(GameData.find_unique_relic(r.unique_id).get("desc", ""))
 			if r.combo_with != "" and Combat.party_has_unique_relic(r.combo_with):
-				d += " [combo active!]"
+				d += tr(" [combo active!]")
 			return d
 		return r.desc()
 	var it: Item = obj
 	if it.unique_id != "":
 		var udef := GameData.find_unique_item(it.unique_id)
-		var utext := "%s [%s]" % [str(udef.get("desc", "")), GameData.ARCHETYPES.get(str(udef.get("arch", "")), "Unique")]
+		var utext := "%s [%s]" % [tr(str(udef.get("desc", ""))), tr(str(GameData.ARCHETYPES.get(str(udef.get("arch", "")), "Unique")))]
 		if it.kind != "":
-			utext = "%s · %s" % [Combat.describe_skill(it.kind, it.value), utext]
+			utext = "%s · %s" % [tr(str(Combat.describe_skill(it.kind, it.value))), tr(str(utext))]
 		if it.item_rank != "":
-			utext = tr("Rank %s · %s") % [it.item_rank, utext]
+			utext = tr("Rank %s · %s") % [tr(str(it.item_rank)), tr(str(utext))]
 		return utext
 	var parts: Array[String] = [Combat.describe_skill(it.kind, it.value)]
 	if it.secondary_kind != "":
@@ -848,14 +849,14 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	if it.tertiary_kind != "":
 		parts.append(Combat.describe_skill(it.tertiary_kind, it.tertiary_value))
 	for e in it.effects:
-		parts.append("%s [%s]" % [Combat.describe_effect(e), GameData.ARCHETYPES.get(str(e.get("arch", "")), "")])
+		parts.append("%s [%s]" % [tr(str(Combat.describe_effect(e))), tr(str(GameData.ARCHETYPES.get(str(e.get("arch", "")), "")))])
 	var text := ", ".join(parts)
 	if it.implicit_kind != "":
-		text = tr("Base: %s · %s") % [Combat.describe_skill(it.implicit_kind, it.implicit_value), text]
+		text = tr("Base: %s · %s") % [tr(str(Combat.describe_skill(it.implicit_kind, it.implicit_value))), tr(str(text))]
 	if it.attr != "":
-		text = "+%d %s%s · %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr], (tr(" (needs %d)") % it.attr_req) if it.attr_req > 0 else "", text]
+		text = "+%d %s%s · %s" % [it.attr_bonus, tr(str(GameData.ATTR_LABEL[it.attr])), tr(str((tr(" (needs %d)") % it.attr_req) if it.attr_req > 0 else "")), tr(str(text))]
 	if it.item_rank != "":
-		text = tr("Rank %s · %s") % [it.item_rank, text]
+		text = tr("Rank %s · %s") % [tr(str(it.item_rank)), tr(str(text))]
 	return text
 
 
@@ -866,11 +867,11 @@ func _position_text(h: Hero) -> String:
 	if pos.is_empty():
 		return ""
 	if h.formation != pos["row"]:
-		return tr("Out of position — suits the %s row (%s)") % [pos["row"], pos["name"]]
+		return tr("Out of position — suits the %s row (%s)") % [tr(str(pos["row"])), tr(str(pos["name"]))]
 	var parts: Array[String] = []
 	for e in pos["effects"]:
 		parts.append(Combat.describe_effect(e))
-	return tr("%s row · %s: %s") % [tr(str(pos["row"]).capitalize()), tr(str(pos["name"])), "; ".join(parts)]
+	return tr("%s row · %s: %s") % [tr(str(pos["row"]).capitalize()), tr(str(pos["name"])), tr(str("; ".join(parts)))]
 
 
 ## A subclass passive as BBCode — "Killer's Eye: +14% damage vs foes below
@@ -878,11 +879,11 @@ func _position_text(h: Hero) -> String:
 func _passive_bb(pool_id: String) -> String:
 	var p := GameData.subclass_passive(pool_id)
 	if p.is_empty():
-		return "None"
+		return tr("None")
 	var parts: Array[String] = []
 	for e in p["effects"]:
 		parts.append(Combat.describe_effect(e))
-	return "[b]%s[/b]: %s  %s" % [str(p["name"]).replace("[", "[lb]"), "; ".join(parts).replace("[", "[lb]"), _arch_chip(str(p["arch"]))]
+	return "[b]%s[/b]: %s  %s" % [tr(str(p["name"]).replace("[", "[lb]")), tr(str("; ".join(parts).replace("[", "[lb]"))), tr(str(_arch_chip(str(p["arch"]))))]
 
 
 ## The hero's archetype counts as colored chips, biggest first.
@@ -892,7 +893,7 @@ func _build_bb(h: Hero) -> String:
 	keys.sort_custom(func(a, b): return int(counts[a]) > int(counts[b]))
 	var parts: Array[String] = []
 	for k in keys:
-		parts.append("%s ×%d" % [_arch_chip(str(k)), int(counts[k])])
+		parts.append("%s ×%d" % [tr(str(_arch_chip(str(k)))), int(counts[k])])
 	return "  ".join(parts)
 
 
@@ -951,7 +952,7 @@ func _kw_hints(bbcode: String) -> String:
 				continue
 			# Quoted: an apostrophe in an unquoted hint value breaks the parse and
 			# the whole line then renders as raw BBCode.
-			var wrapped := tr("[hint=\"%s — %s\"][u]%s[/u][/hint]") % [k[0], k[1], m.get_string()]
+			var wrapped := tr("[hint=\"%s — %s\"][u]%s[/u][/hint]") % [tr(str(k[0])), tr(str(k[1])), tr(str(m.get_string()))]
 			out = out.substr(0, m.get_start()) + wrapped + out.substr(m.get_end())
 			break
 	return out
@@ -963,10 +964,10 @@ func _kw_footer(text: String) -> String:
 	for k in GameData.keyword_regexes():
 		var re: RegEx = k[2]
 		if re.search(text) != null:
-			lines.append("[b]%s[/b] — %s" % [k[0], k[1]])
+			lines.append("[b]%s[/b] — %s" % [tr(str(k[0])), tr(str(k[1]))])
 	if lines.is_empty():
 		return ""
-	return tr("\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]") % [Palette.MUTED2.to_html(false), Palette.MUTED.to_html(false), "\n".join(lines)]
+	return tr("\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]") % [tr(str(Palette.MUTED2.to_html(false))), tr(str(Palette.MUTED.to_html(false))), tr(str("\n".join(lines)))]
 
 
 ## History, earned quirks, the nearest quirk still to earn, and grown bonds —
@@ -977,7 +978,7 @@ func _history_lines(h: Hero) -> Array[String]:
 	for stat in GameData.HISTORY_LABEL:
 		var n := int(h.history.get(stat, 0))
 		if n > 0:
-			hist.append("%d %s" % [n, GameData.HISTORY_LABEL[stat]])
+			hist.append("%d %s" % [n, tr(str(GameData.HISTORY_LABEL[stat]))])
 	if not hist.is_empty():
 		lines.append(tr("History: ") + " · ".join(hist))
 	var next_best := {}
@@ -985,21 +986,21 @@ func _history_lines(h: Hero) -> Array[String]:
 	for q in GameData.quirks_from("earned"):
 		var t := GameData.quirk(q)
 		if h.quirks.has(q):
-			lines.append(tr("Earned: [b]%s[/b] — %s  %s") % [q, GameState.quirk_text(q).replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
+			lines.append(tr("Earned: [b]%s[/b] — %s  %s") % [tr(str(q)), tr(str(GameState.quirk_text(q).replace("[", "[lb]"))), tr(str(_arch_chip(str(t["arch"]))))])
 		else:
 			var frac := float(h.history.get(t["stat"], 0)) / float(t["need"])
 			if frac > next_frac:
 				next_frac = frac
 				next_best = t.merged({"name": q})
 	if not next_best.is_empty():
-		lines.append(tr("Next quirk: %s (%d/%d %s)") % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
+		lines.append(tr("Next quirk: %s (%d/%d %s)") % [tr(str(next_best["name"])), int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), tr(str(GameData.HISTORY_LABEL[next_best["stat"]]))])
 	var bond_parts: Array[String] = []
 	for other in GameState.heroes:
 		if other == h:
 			continue
 		var together := GameState.bond_rifts(h.id, other.id)
 		if together > 0:
-			bond_parts.append(tr("%s Lv%d (%d rifts)") % [other.name.split(" the ")[0], GameData.bond_level(together), together])
+			bond_parts.append(tr("%s Lv%d (%d rifts)") % [tr(str(other.name.split(" the ")[0])), GameData.bond_level(together), together])
 	if not bond_parts.is_empty():
 		lines.append(tr("Bonds: ") + " · ".join(bond_parts))
 	return lines
@@ -1011,11 +1012,11 @@ const ARCH_COLOR := {"opener": Palette.CRYSTALS, "attrition": Palette.EMBER, "gu
 
 
 func _bb(c: Color, text: String) -> String:
-	return tr("[color=#%s]%s[/color]") % [c.to_html(false), text.replace("[", "[lb]")]
+	return tr("[color=#%s]%s[/color]") % [tr(str(c.to_html(false))), tr(str(text.replace("[", "[lb]")))]
 
 
 func _arch_chip(arch: String) -> String:
-	return _bb(ARCH_COLOR.get(arch, Palette.MUTED), "◆ " + str(GameData.ARCHETYPES.get(arch, arch))) if arch != "" else ""
+	return _bb(ARCH_COLOR.get(arch, Palette.MUTED), "◆ " + tr(str(GameData.ARCHETYPES.get(arch, arch)))) if arch != "" else ""
 
 
 ## An item as a tooltip card (RichTip): rarity-colored name, type/rank line,
@@ -1026,16 +1027,16 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 	var lines: Array[String] = []
 	var rc: Color = ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT)
 	lines.append("[b]%s[/b]" % _bb(rc, it.name))
-	var sub := "%s %s" % [it.rarity.capitalize(), GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category)]
+	var sub := "%s %s" % [tr(str(it.rarity.capitalize())), tr(str(GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category)))]
 	if it.item_rank != "":
-		sub += tr(" · Rank %s") % it.item_rank
+		sub += tr(" · Rank %s") % tr(str(it.item_rank))
 	lines.append(_bb(Palette.MUTED, sub))
 	if it.attr != "":
-		lines.append(_bb(Palette.EMBER_BRIGHT, "+%d %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr]]))
+		lines.append(_bb(Palette.EMBER_BRIGHT, "+%d %s" % [it.attr_bonus, tr(str(GameData.ATTR_LABEL[it.attr]))]))
 		if it.attr_req > 0:
 			var met := compare_for == null or GameState.attr_req_met(it, compare_for)
-			var have := (tr("  (%s has %d)") % [compare_for.name.split(" the ")[0], Combat.hero_attr(compare_for, it.attr)]) if compare_for != null else ""
-			lines.append(_bb(Palette.MUTED if met else Palette.HAZARD, tr("Requires %d %s%s") % [it.attr_req, GameData.ATTR_LABEL[it.attr], have]))
+			var have := (tr("  (%s has %d)") % [tr(str(compare_for.name.split(" the ")[0])), Combat.hero_attr(compare_for, it.attr)]) if compare_for != null else ""
+			lines.append(_bb(Palette.MUTED if met else Palette.HAZARD, tr("Requires %d %s%s") % [it.attr_req, tr(str(GameData.ATTR_LABEL[it.attr])), tr(str(have))]))
 	if it.implicit_kind != "":
 		lines.append(_bb(Palette.MUTED, tr("Base: ") + Combat.describe_skill(it.implicit_kind, it.implicit_value)))
 	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value]]:
@@ -1044,22 +1045,22 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 	if it.unique_id != "":
 		var udef := GameData.find_unique_item(it.unique_id)
 		for e in udef.get("effects", []):
-			lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(udef.get("arch", "")))])
+			lines.append("[i]%s[/i]  %s" % [tr(str(Combat.describe_effect(e).replace("[", "[lb]"))), tr(str(_arch_chip(str(udef.get("arch", "")))))])
 		if it.drawback_kind != "":
 			lines.append(_bb(Palette.HAZARD, tr("Drawback: ") + Combat.describe_skill(it.drawback_kind, it.drawback_value)))
 		if it.locked_role != "":
-			lines.append(_bb(Palette.MUTED, tr("%s only") % it.locked_role.capitalize()))
+			lines.append(_bb(Palette.MUTED, tr("%s only") % tr(str(it.locked_role.capitalize()))))
 	for e in it.effects:
-		lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(e.get("arch", "")))])
+		lines.append("[i]%s[/i]  %s" % [tr(str(Combat.describe_effect(e).replace("[", "[lb]"))), tr(str(_arch_chip(str(e.get("arch", "")))))])
 	if it.attune_level > 0 or it.attune_wins > 0:
 		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else tr(" · %d/%d wins to next") % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
-		lines.append(_bb(Palette.RANK_E, tr("Attuned %d/%d (+%d%% stats)%s") % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), nxt]))
+		lines.append(_bb(Palette.RANK_E, tr("Attuned %d/%d (+%d%% stats)%s") % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), tr(str(nxt))]))
 	if compare_for != null and it.equipped_to != compare_for.id:
 		if slot == -2:
 			slot = _best_swap_slot(compare_for, it.slot_type())
 		var current: Item = _find_equipped_at(compare_for.id, it.slot_type(), slot) if slot >= 0 else null
 		lines.append("")
-		lines.append(_bb(Palette.MUTED, tr("If equipped on %s%s:") % [compare_for.name.split(" the ")[0], (tr(" (replacing %s)") % current.name) if current else ""]))
+		lines.append(_bb(Palette.MUTED, tr("If equipped on %s%s:") % [tr(str(compare_for.name.split(" the ")[0])), tr(str((tr(" (replacing %s)") % tr(str(current.name))) if current else ""))]))
 		var a := _item_stat_map(it)
 		var b := _item_stat_map(current)
 		var any := false
@@ -1073,7 +1074,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		for at in GameData.ATTRIBUTES:
 			var da: int = (it.attr_bonus if it.attr == at else 0) - ((current.attr_bonus if current.attr == at else 0) if current else 0)
 			if da != 0:
-				lines.append(_bb(Palette.good() if da > 0 else Palette.HAZARD, ("▲ " if da > 0 else "▼ ") + "%+d %s" % [da, GameData.ATTR_LABEL[at]]))
+				lines.append(_bb(Palette.good() if da > 0 else Palette.HAZARD, ("▲ " if da > 0 else "▼ ") + "%+d %s" % [da, tr(str(GameData.ATTR_LABEL[at]))]))
 				any = true
 		if current:
 			var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
@@ -1081,7 +1082,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 				lines.append(_bb(Palette.HAZARD, tr("▼ loses: ") + Combat.describe_effect(e)))
 				any = true
 		if not any:
-			lines.append(_bb(Palette.MUTED, "No stat change"))
+			lines.append(_bb(Palette.MUTED, tr("No stat change")))
 	var card := "\n".join(lines)
 	return card + _kw_footer(card)
 
@@ -1092,13 +1093,11 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 ## 1.2x+ nearly always.
 func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Label:
 	var ratio := float(power) / float(max(1, rec))
-	var verdict := "Deadly" if ratio < 0.8 else ("Risky" if ratio < 0.95 else ("Even fight" if ratio < 1.2 else "Favored"))
+	var verdict := tr("Deadly") if ratio < 0.8 else (tr("Risky") if ratio < 0.95 else (tr("Even fight") if ratio < 1.2 else tr("Favored")))
 	var color: Color = Palette.HAZARD if ratio < 0.95 else (Palette.COINS if ratio < 1.2 else Palette.good())
 	var l := _label(tr("%s %d / Recommended %d — %s") % [tr(prefix), power, rec, tr(verdict)], 13)
 	l.add_theme_color_override("font_color", color)
-	l.tooltip_text = "Power = damage ×2 + effective health ÷3.
-Damage counts ability power and ramp; health counts dodge, mending and relic wards.
-At Recommended, a party seals about 2 rifts in 3."
+	l.tooltip_text = "Power = damage ×2 + effective health ÷3.\nDamage counts ability power and ramp; health counts dodge, mending and relic wards.\nAt Recommended, a party seals about 2 rifts in 3."
 	l.mouse_filter = Control.MOUSE_FILTER_STOP
 	return l
 
@@ -1168,16 +1167,16 @@ func _stat_breakdown_card(h: Hero, kind: String, total: float) -> String:
 		var sub := 0.0
 		for r in rows:
 			sub += float(r[1])
-		lines.append("%s  %s" % [_bb(Palette.EMBER_BRIGHT, g), _pct_bb(sub)])
+		lines.append("%s  %s" % [_bb(Palette.EMBER_BRIGHT, tr(g)), _pct_bb(sub)])
 		for r in rows:
-			lines.append("    %s  %s" % [_pct_bb(float(r[1])), str(r[0]).replace("[", "[lb]")])
+			lines.append("    %s  %s" % [tr(str(_pct_bb(float(r[1])))), tr(str(r[0]).replace("[", "[lb]"))])
 	var situational: Array[String] = []
 	for e in Combat.hero_effects(h):
 		if e.get("kind", "") == kind:
-			situational.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _bb(Palette.MUTED, str(e.get("source", "")))])
+			situational.append("[i]%s[/i]  %s" % [tr(str(Combat.describe_effect(e).replace("[", "[lb]"))), tr(str(_bb(Palette.MUTED, str(e.get("source", "")))))])
 	if not situational.is_empty():
 		lines.append("")
-		lines.append(_bb(Palette.MUTED, "Situational:"))
+		lines.append(_bb(Palette.MUTED, tr("Situational:")))
 		lines.append_array(situational)
 	var card := "\n".join(lines)
 	return card + _kw_footer(card)
@@ -1223,7 +1222,7 @@ func _item_compare_text(it: Item, h: Hero, slot: int = -2) -> String:
 			lines.append(tr("loses: ") + Combat.describe_effect(e))
 	if lines.is_empty():
 		return ""
-	return "%s:\n%s" % ["vs " + current.name if current else "Into an empty slot", "\n".join(lines)]
+	return "%s:\n%s" % [tr(str(tr("vs ") + current.name if current else tr("Into an empty slot"))), tr(str("\n".join(lines)))]
 
 
 ## Who a piece of loot helps, for shop offers and victory rewards:
@@ -1233,23 +1232,23 @@ func _loot_fit_note(obj, is_relic: bool, party: Array) -> Array:
 	if is_relic:
 		var used := Combat.equipped_relics().size()
 		var cap := GameState.relic_slot_cap()
-		return [tr("Relic slots %d/%d — %s") % [used, cap, "equips right away" if used < cap else "goes to your Inventory"], Palette.MUTED, null]
+		return [tr("Relic slots %d/%d — %s") % [used, cap, tr(str(tr("equips right away") if used < cap else tr("goes to your Inventory")))], Palette.MUTED, null]
 	var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
 	if fits.is_empty():
 		return ["No one in this party can use it", Palette.HAZARD, null]
 	var able: Array = fits.filter(func(h): return GameState.attr_req_met(obj, h))
 	if able.is_empty():
-		return [tr("Needs %d %s — no one here has that yet") % [obj.attr_req, GameData.ATTR_LABEL.get(obj.attr, "")], Palette.HAZARD, fits[0]]
+		return [tr("Needs %d %s — no one here has that yet") % [obj.attr_req, tr(str(GameData.ATTR_LABEL.get(obj.attr, "")))], Palette.HAZARD, fits[0]]
 	fits = able
 	var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
 	if not free.is_empty():
-		return [tr("Fills an empty slot on %s") % free[0].name.split(" the ")[0], Palette.RANK_E, free[0]]
-	return [tr("For %s — hover to compare") % ", ".join(fits.map(func(h): return h.name.split(" the ")[0])), Palette.MUTED, fits[0]]
+		return [tr("Fills an empty slot on %s") % tr(str(free[0].name.split(" the ")[0])), Palette.RANK_E, free[0]]
+	return [tr("For %s — hover to compare") % tr(str(", ".join(fits.map(func(h): return h.name.split(" the ")[0])))), Palette.MUTED, fits[0]]
 
 
 func _loot_display_name(obj) -> String:
 	var uid: String = obj.unique_id
-	return "★ %s" % obj.name if uid != "" else obj.name
+	return "★ %s" % tr(str(obj.name)) if uid != "" else obj.name
 
 
 ## Fixed-height, internally-scrolled log — `fit_content` used to grow the
@@ -1434,7 +1433,7 @@ const INSTANT_SPEED := 4.0
 
 
 func _speed_label() -> String:
-	return "Instant" if GameState.combat_speed >= INSTANT_SPEED else "×%d" % int(GameState.combat_speed)
+	return tr("Instant") if GameState.combat_speed >= INSTANT_SPEED else "×%d" % int(GameState.combat_speed)
 var _auto_battle: bool = false   # hero turns play themselves (Combat.auto_action)
 var _sfx_seen := {}   # one-shot sounds already played for a given result/card (by id)
 
@@ -1532,8 +1531,8 @@ func _locked_feature(v: VBoxContainer, id: String) -> void:
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"CardPanelViolet"
 	var col := _vbox(6)
-	col.add_child(_label(tr("%s — locked") % def.get("name", id.capitalize()), 18))
-	col.add_child(_wrap_label("%s." % def.get("hint", "Not open yet"), 13, true))
+	col.add_child(_label(tr("%s — locked") % tr(str(def.get("name", id.capitalize()))), 18))
+	col.add_child(_wrap_label("%s." % tr(str(def.get("hint", "Not open yet"))), 13, true))
 	panel.add_child(col)
 	v.add_child(panel)
 
@@ -1823,7 +1822,7 @@ func _sort_cycle_button(current: String, options: Array, on_change: Callable) ->
 	for i in options.size():
 		if options[i]["id"] == current:
 			idx = i
-	return _icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Sort: %s") % str(options[idx]["label"]), func():
+	return _icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Sort: %s") % tr(str(options[idx]["label"])), func():
 		var next_idx: int = (idx + 1) % options.size()
 		on_change.call(options[next_idx]["id"])
 		render()
@@ -1840,7 +1839,7 @@ func _node_effect_text(n: Dictionary) -> String:
 		var flat := Combat.describe_skill(str(n["kind"]), float(n["value"]))
 		parts.append((tr("Drawback: ") + flat) if float(n["value"]) < 0.0 else flat)
 	if n.has("arch"):
-		parts.append("[%s]" % GameData.ARCHETYPES.get(str(n["arch"]), ""))
+		parts.append("[%s]" % tr(str(GameData.ARCHETYPES.get(str(n["arch"]), ""))))
 	return "\n".join(parts)
 
 

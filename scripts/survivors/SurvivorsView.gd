@@ -336,7 +336,7 @@ func _play_events() -> void:
 			"kill":
 				if e["tier"] != "combat":
 					Fx.burst(_fx, "explosion", e["pos"], 120.0 if e["tier"] == "elite" else 220.0, Color(0.8, 0.75, 0.9), 18.0)
-					AudioManager.cue("victory" if e["tier"] == "boss" else "hit_heavy", "[The warden falls]" if e["tier"] == "boss" else "[An elite falls]")
+					AudioManager.cue("victory" if e["tier"] == "boss" else "hit_heavy", tr("[The warden falls]") if e["tier"] == "boss" else tr("[An elite falls]"))
 			"hurt", "dodge":
 				pass
 			"ability":
@@ -350,10 +350,10 @@ func _play_events() -> void:
 				AudioManager.play_sfx(GameData.SFX_PATH["level_up"])
 			"boss":
 				if e.get("final", false):
-					_banner(tr("The Rift Warden: %s!") % str(e["name"]), Palette.HAZARD, "Bring it down to seal the rift")
+					_banner(tr("The Rift Warden: %s!") % tr(str(e["name"])), Palette.HAZARD, "Bring it down to seal the rift")
 				else:
-					_banner(tr("%s emerges!") % str(e["name"]), Palette.EMBER_BRIGHT)
-				AudioManager.cue("boss", tr("[%s roars]") % str(e["name"]).split(",")[0], Palette.HAZARD)
+					_banner(tr("%s emerges!") % tr(str(e["name"])), Palette.EMBER_BRIGHT)
+				AudioManager.cue("boss", tr("[%s roars]") % tr(str(str(e["name"]).split(",")[0])), Palette.HAZARD)
 			"wave":
 				if run.time > 1.0 and str(e["wave"]) != "horde":
 					_banner(str(e["name"]), Palette.TEXT, str(e["hint"]))
@@ -382,9 +382,9 @@ func _play_events() -> void:
 				_banner("The rift is sealed!", Palette.RANK_S)
 				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 			"phase":
-				_banner(tr("%s calls the horde!") % str(e["name"]), Palette.HAZARD)
+				_banner(tr("%s calls the horde!") % tr(str(e["name"])), Palette.HAZARD)
 			"down":
-				AudioManager.cue("knockout", tr("[%s is down]") % _hero_name(str(e["hero"])), Palette.HAZARD)
+				AudioManager.cue("knockout", tr("[%s is down]") % tr(str(_hero_name(str(e["hero"])))), Palette.HAZARD)
 			"revive":
 				var rn: Node2D = _hero_nodes.get(e["hero"])
 				if rn:
@@ -396,7 +396,7 @@ func _hero_name(hero_id: String) -> String:
 	for h in run.heroes:
 		if h["hero"].id == hero_id:
 			return str(h["hero"].name).split(" the ")[0]
-	return "A hero"
+	return tr("A hero")
 
 
 ## A short name floating up over the field (an Ability going off).
@@ -572,7 +572,7 @@ func _update_hud() -> void:
 	_hud_kills.text = tr("%d kills") % run.kills
 	_hud_level.text = tr("Level %d") % run.level
 	var up: Array = run.upcoming()
-	_timeline.text = "  ·  ".join(up.map(func(u): return "%s %d:%02d" % [u["label"], int(u["in"]) / 60, int(u["in"]) % 60]))
+	_timeline.text = "  ·  ".join(up.map(func(u): return "%s %d:%02d" % [tr(str(u["label"])), int(u["in"]) / 60, int(u["in"]) % 60]))
 	var tray: Array = run.tray()
 	var sig := str(tray.map(func(t): return [t["name"], t["count"]]))
 	if sig != _tray_sig:
@@ -761,7 +761,7 @@ func _pick_cards(v: VBoxContainer, offer: Array, choose: Callable, empty_text: S
 		col.add_child(ic)
 		var nm := Label.new()
 		var have := int(u["have"])
-		nm.text = "%d. %s%s" % [i + 1, u["name"], "  (%d/%d)" % [have + 1, u["max"]] if have > 0 else ""]
+		nm.text = "%d. %s%s" % [i + 1, tr(str(u["name"])), tr(str("  (%d/%d)" % [have + 1, u["max"]] if have > 0 else ""))]
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nm.add_theme_color_override("font_color", Palette.RANK_S if u.get("special", false) else Palette.EMBER_BRIGHT)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -799,7 +799,7 @@ func _toggle_pause() -> void:
 	var v := _modal("Paused")
 	var owned: Array = run.owned_lines()
 	var l := Label.new()
-	l.text = tr("Upgrades: ") + (", ".join(owned) if not owned.is_empty() else "none yet")
+	l.text = tr("Upgrades: ") + (", ".join(owned) if not owned.is_empty() else tr("none yet"))
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = 420
 	v.add_child(l)
@@ -841,14 +841,14 @@ func _show_results() -> void:
 		return
 	_summary = GameState.finish_survivors(run)
 	var t := int(run.time)
-	var v := _modal("The rift is sealed!" if run.won else "The rift closes")
+	var v := _modal(tr("The rift is sealed!") if run.won else tr("The rift closes"))
 	var lines := [
-		("Sealed at %d:%02d" if run.won else "Survived %d:%02d") % [t / 60, t % 60] + ("  — a new best!" if _summary.get("best", false) else ""),
+		(tr("Sealed at %d:%02d") if run.won else tr("Survived %d:%02d")) % [t / 60, t % 60] + (tr("  — a new best!") if _summary.get("best", false) else ""),
 		tr("%d kills · %d elites · %d wardens · reached level %d") % [run.kills, run.elites_killed, run.bosses_killed, run.level],
 		tr("+%d gold · +%d essence · +%d XP for every hero") % [_summary["coins"], _summary["crystals"], _summary["xp"]],
 	]
 	for name in _summary.get("loot", []):
-		lines.append(tr("Found: %s") % name)
+		lines.append(tr("Found: %s") % tr(str(name)))
 	for m in _summary.get("milestones", []):
 		lines.append(tr("Milestone! ") + str(m))
 	for s in lines:
