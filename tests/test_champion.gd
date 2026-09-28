@@ -28,13 +28,16 @@ func run() -> void:
 		var d: Dictionary = GameData.CHAMPIONS[id]
 		if not ResourceLoader.exists("res://assets/champions/%s.png" % id):
 			bad.append(id + ": portrait")
+		for dir in ["walk", "skill"]:
+			if not ResourceLoader.exists("res://assets/survivors/%s/sub_champ_%s_7.png" % [dir, id]):
+				bad.append(id + ": " + dir)
 		if Combat.describe_skill(str(d["boon"]["kind"]), float(d["boon"]["value"])) == "":
 			bad.append(id + ": boon")
 		if not SurvivorsRun.ABILITY_STYLE.has(str(d["call"]["effect"])) or not GameData.ABILITY_EFFECT_ICON.has(str(d["call"]["effect"])):
 			bad.append(id + ": call")
 		if GameData.find_role(str(d["role"])).is_empty():
 			bad.append(id + ": role")
-	check(bad.is_empty(), "every champion has art, a Boon and a Call %s" % [bad])
+	check(bad.is_empty(), "every champion has a portrait, walk, signature move, Boon and Call %s" % [bad])
 	check(GameData.CHAMPIONS.size() >= 20, "a pool of %d" % GameData.CHAMPIONS.size())
 
 	var ids: Array[String] = []
