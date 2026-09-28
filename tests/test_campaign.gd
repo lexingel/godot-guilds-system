@@ -41,7 +41,8 @@ func run() -> void:
 	GameState.seal_rift()
 	check(GameState.campaign_act == 2 and GameState.greater_rift_unlocked() and not GameState.endless_unlocked(), "Act I done: Greater open, Endless still closed")
 	check(GameState.relics.size() == relics0 + 1 and GameState.relics[-1].rarity == "legendary" and GameState.crystals > cr0, "reward: crystals and a Legendary relic")
-	check(GameState.pending_stories.size() == 2 and str(GameState.pending_stories[1]["title"]).contains("Act II"), "outro card then the Act II intro")
+	check(GameState.pending_stories.size() == 3 and str(GameState.pending_stories[2]["title"]).contains("Act II"), "outro card, the freed champion, then the Act II intro")
+	check(GameState.champion_unlocked(GameState.story_champion(1)), "Act I frees its champion")
 	GameState.finish_run()
 	# A normal seal doesn't complete an act.
 	GameState.start_run("lesser", ids, null)

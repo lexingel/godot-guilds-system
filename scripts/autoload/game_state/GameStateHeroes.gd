@@ -166,11 +166,6 @@ func recruit_hero(offer_id: String) -> String:
 
 
 ## Champions for hire: fills the offers if there are none.
-func ensure_champion_offers() -> void:
-	if champion_offers.is_empty():
-		refresh_champion_offers()
-
-
 func reroll_recruit_offer(offer_id: String) -> String:
 	var idx := -1
 	for i in recruit_pool.size():
@@ -189,113 +184,167 @@ func reroll_recruit_offer(offer_id: String) -> String:
 	return ""
 
 
-## A fresh set of Champion offers for Coins (a free set arrives every seal).
-func reroll_champion() -> String:
-	if coins < GameData.CHAMPION_REROLL_COST:
-		return tr("Not enough Gold.")
-	coins -= GameData.CHAMPION_REROLL_COST
-	refresh_champion_offers()
+# ---------------- Champions ----------------
+## This guild's champions: GameData.CHAMPION_ROLL drawn from the pool. The
+## first CHAMPION_STORY_ACTS are freed at the end of Acts I-III, the rest are
+## lost in the Endless Rift (see lost_champions).
+func roll_champions() -> void:
+	var ids: Array = GameData.CHAMPIONS.keys()
+	ids.shuffle()
+	champion_roll.assign(ids.slice(0, GameData.CHAMPION_ROLL))
+
+
+## The champion freed at the end of Act `act`, or "".
+func story_champion(act: int) -> String:
+	return champion_roll[act - 1] if act >= 1 and act <= mini(GameData.CHAMPION_STORY_ACTS, champion_roll.size()) else ""
+
+
+## [[id, depth seconds], ...]: this guild's champions lost in the Endless Rift.
+func lost_champions() -> Array:
+	var out: Array = []
+	for i in range(GameData.CHAMPION_STORY_ACTS, champion_roll.size()):
+		out.append([champion_roll[i], int(GameData.CHAMPION_DEPTHS[mini(i - GameData.CHAMPION_STORY_ACTS, GameData.CHAMPION_DEPTHS.size() - 1)])])
+	return out
+
+
+func champion_unlocked(id: String) -> bool:
+	return champions.has(id)
+
+
+func champion_level(id: String) -> int:
+	return int(champions.get(id, 0))
+
+
+## Frees a champion (the first one freed also takes up overseeing).
+func unlock_champion(id: String) -> void:
+	if id == "" or champions.has(id):
+		return
+	champions[id] = 1
+	if overseer == "":
+		overseer = id
+
+
+## Echoes to raise `id` one level, or -1 at the top.
+func champion_level_cost(id: String) -> int:
+	var lv := champion_level(id)
+	return int(GameData.CHAMPION_LEVEL_COST[lv]) if lv >= 1 and lv < GameData.CHAMPION_LEVEL_MAX else -1
+
+
+func level_champion(id: String) -> String:
+	var cost := champion_level_cost(id)
+	if cost < 0:
+		return tr("Already at the top level.")
+	if echoes < cost:
+		return tr("Not enough Echoes.")
+	echoes -= cost
+	champions[id] = champion_level(id) + 1
 	save()
 	state_changed.emit()
 	return ""
 
 
-func refresh_champion_offers() -> void:
-	champion_offers.clear()
-	var roles := {}
-	for i in GameData.CHAMPION_OFFER_COUNT:
-		# Different roles where the dice allow, so it's a real choice of Boon/Call.
-		var c := Combat.generate_champion()
-		for attempt in 12:
-			if not roles.has(champion_role(c)):
-				break
-			c = Combat.generate_champion()
-		roles[champion_role(c)] = true
-		_maybe_flag_s_rank(c, "champion")
-		_sync_level(c)
-		c.hp = Combat.max_hp(c)
-		champion_offers.append(c)
+func set_overseer(id: String) -> void:
+	if id != "" and not champions.has(id):
+		return
+	overseer = id
+	save()
+	state_changed.emit()
 
 
-func _sync_level(c: Hero) -> void:
-	var target := 1
-	for h in heroes:
-		target = max(target, h.level)
-	while c.level < target:
-		c.level += 1
-		c.base_hp = int(round(c.base_hp * (1.0 + GameData.LEVEL_GROWTH)))
-		c.base_dmg = int(round(c.base_dmg * (1.0 + GameData.LEVEL_GROWTH)))
-		c.attr_points += GameData.ATTR_POINTS_PER_LEVEL
-	Combat.auto_spend_attrs(c)
+## The champion overseeing this run ("" outside a run or with none).
+func run_overseer() -> String:
+	return str(run.get("overseer", "")) if not run.is_empty() else ""
 
 
-func champion_role(c: Hero) -> String:
-	return str(GameData.find_class(c.pool_id).get("role", "warrior"))
-
-
-## The party-wide Boon while the Champion is standing in a run.
+## The overseer's party-wide Boon for `kind` during a run.
 func champion_boon(kind: String) -> float:
-	if run.is_empty():
+	var id := run_overseer()
+	var b: Dictionary = GameData.champion_def(id).get("boon", {})
+	if b.is_empty() or str(b["kind"]) != kind:
 		return 0.0
-	var total := 0.0
-	for c in current_party():
-		if not c.is_champion or c.hp <= 0:
-			continue
-		var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(c), {})
-		if b.get("kind", "") == kind:
-			total += float(b["value"]) * float(GameData.find_rank(c.rank)["mult"])
-	return total
+	return float(b["value"]) * GameData.champion_power(champion_level(id))
 
 
-func champion_boon_text(c: Hero) -> String:
-	var b: Dictionary = GameData.CHAMPION_BOONS.get(champion_role(c), {})
+func champion_boon_text(id: String) -> String:
+	var b: Dictionary = GameData.champion_def(id).get("boon", {})
 	if b.is_empty():
 		return ""
-	return tr("%s — party %s") % [tr(str(b["name"])), tr(str(Combat.describe_skill(str(b["kind"]), float(b["value"]) * float(GameData.find_rank(c.rank)["mult"]))))]
+	return tr("%s — party %s") % [tr(str(b["name"])), tr(str(Combat.describe_skill(str(b["kind"]), float(b["value"]) * GameData.champion_power(maxi(1, champion_level(id))))))]
 
 
-## The Champion's Call as an Active-Ability-shaped dict {name, effect, value}.
-func champion_call(c: Hero) -> Dictionary:
-	return GameData.CHAMPION_CALLS.get(champion_role(c), GameData.CHAMPION_CALLS["warrior"])
+## `id`'s Call at their level, Ability-shaped {name, effect, value, desc}.
+## A multiplier (x1.25) grows on its bonus, anything else on its value.
+func champion_call_of(id: String) -> Dictionary:
+	var c: Dictionary = (GameData.champion_def(id).get("call", {}) as Dictionary).duplicate()
+	if c.is_empty():
+		return c
+	var k := GameData.champion_power(maxi(1, champion_level(id)))
+	var v := float(c["value"])
+	c["value"] = 1.0 + (v - 1.0) * k if v > 1.0 and str(c["effect"]).ends_with("_mult") else v * k
+	return c
 
 
-func champion_call_ready(h: Hero) -> bool:
-	if not h.is_champion or run.is_empty():
-		return false
-	var allowed := 2 if Combat.party_has_unique_relic("crown_of_oaths") else 1
-	return int(run.get("champion_calls", 0)) < allowed
+## The overseer's Call (any hero can spend their turn on it). `_h` is kept
+## for the combat code's call sites.
+func champion_call(_h: Hero = null) -> Dictionary:
+	return champion_call_of(run_overseer())
 
 
-func champion_hire_cost(c: Hero) -> int:
-	return int(GameData.find_rank(c.rank)["cost"]) * GameData.CHAMPION_HIRE_MULT
+func champion_calls_allowed() -> int:
+	var id := run_overseer()
+	if id == "":
+		return 0
+	var n := 2 if champion_level(id) >= GameData.CHAMPION_EXTRA_CALL_LEVEL else 1
+	return n + (1 if Combat.party_has_unique_relic("crown_of_oaths") else 0)
 
 
-## Hires Champion offer `idx` for Gold: a seasoned hero (as experienced as
-## your best) who keeps their party Boon and Champion's Call.
-func hire_champion(idx: int) -> String:
-	if idx < 0 or idx >= champion_offers.size():
-		return ""
-	if heroes.size() >= hero_slot_cap():
-		return tr("Roster is full.")
-	var c := champion_offers[idx]
-	var cost := champion_hire_cost(c)
-	if coins < cost:
-		return tr("Not enough Gold.")
-	coins -= cost
-	var cls := GameData.find_class(c.pool_id)
-	c.cls_id = str(cls.get("role", "warrior"))
-	c.innate_value = Combat.hero_innate_value(cls, GameData.rank_index(c.rank))
-	var born := Combat.roll_born_quirk(c.cls_id)
-	c.quirks.assign([born] if born != "" else [])
-	c.skill_points = c.level - 1
-	c.hp = Combat.max_hp(c)
-	heroes.append(c)
-	champion_offers.remove_at(idx)
-	push_toast(c, tr("Champion hired"), tr("%s joins your roster") % tr(str(c.name.split(" the ")[0])))
-	save()
-	state_changed.emit()
-	return ""
+func champion_calls_left() -> int:
+	return maxi(0, champion_calls_allowed() - int(run.get("champion_calls", 0)))
 
+
+func champion_call_ready(_h: Hero = null) -> bool:
+	return not run.is_empty() and champion_calls_left() > 0
+
+
+## A champion as a fighter for the Endless Rift: rank CHAMPION_RANK, as
+## experienced as the guild's best hero, stronger with their own level.
+func champion_hero(id: String) -> Hero:
+	var d := GameData.champion_def(id)
+	var role := str(d.get("role", "warrior"))
+	var template: Dictionary = {}
+	for c in GameData.CLASS_POOL:
+		if str(c["role"]) == role and str(c["rank"]) == GameData.CHAMPION_RANK:
+			template = c
+			break
+	if template.is_empty():
+		template = GameData.CLASS_POOL.filter(func(c): return str(c["role"]) == role)[0]
+	var rank := GameData.find_rank(GameData.CHAMPION_RANK)
+	var h := Hero.new()
+	h.id = "champ:" + id
+	h.name = str(d.get("name", id))
+	h.is_champion = true
+	h.cls_id = role
+	h.pool_id = "champ_" + id
+	h.rank = GameData.CHAMPION_RANK
+	h.type = str(template.get("type", ""))
+	var boon: Dictionary = d.get("boon", {})
+	h.innate_kind = str(boon.get("kind", template.get("kind", "dmg_pct")))
+	h.innate_value = Combat.innate_value_for(template, GameData.rank_index(GameData.CHAMPION_RANK))
+	h.flavor = str(d.get("lore", ""))
+	var lv := 1
+	for o in heroes:
+		lv = maxi(lv, o.level)
+	h.level = lv
+	var grow := pow(1.0 + GameData.LEVEL_GROWTH, lv - 1) * (1.0 + GameData.CHAMPION_LEVEL_STATS * (maxi(1, champion_level(id)) - 1))
+	h.base_hp = int(round(30.0 * float(template["hp_ratio"]) * float(rank["mult"]) * grow))
+	h.base_dmg = int(round(8.0 * float(template["dmg_ratio"]) * float(rank["mult"]) * grow))
+	h.base_spd = int(round(float(GameData.find_role(role)["base_spd"]) * float(rank["mult"])))
+	h.formation = str(GameData.ROLE_POSITION.get(role, {}).get("row", "front"))
+	h.attrs = GameData.role_attrs(role)
+	h.attr_points = (lv - 1) * GameData.ATTR_POINTS_PER_LEVEL
+	Combat.auto_spend_attrs(h)
+	h.hp = Combat.max_hp(h)
+	return h
 
 func current_party() -> Array[Hero]:
 	var out: Array[Hero] = []

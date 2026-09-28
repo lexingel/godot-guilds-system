@@ -68,6 +68,7 @@ const FEATURE_UNLOCKS := {
 	"quests": {"name": "Quests", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
 	"management": {"name": "Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
 	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
+	"champions": {"name": "Champions", "hint": "Opens when you free your first champion (the end of Act I)", "news": "A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions."},
 }
 
 ## One-shot SFX, all CC0 (Kenney.nl — Interface Sounds/RPG Audio/Impact
@@ -109,6 +110,8 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.",
+	"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.",
 	"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.",
 	"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.",
 	"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",
@@ -119,7 +122,7 @@ const WHATS_NEW := [
 	"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.",
 	"New music, larger text, and rank rules shown in the rift.",
 ]
-const WHATS_NEW_TRY := "Try: take a party into the Endless Rift and see how far you get, then tell us where it got too hard or too dull."
+const WHATS_NEW_TRY := "Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones."
 const FEEDBACK_ISSUES_URL := "https://github.com/lexingel/guildhold/issues/new"
 
 ## Looping background music (AudioManager.play_music loops it).

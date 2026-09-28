@@ -18,7 +18,10 @@ func reset() -> void:
 	recruit_pool = []
 	upgrades = {}
 	caps = {}
-	champion_offers = []
+	champions = {}
+	overseer = ""
+	echoes = 0
+	roll_champions()
 	daily_attempt_day = -1
 	daily_clears = 0
 	daily_streak = 0
@@ -162,7 +165,13 @@ func load_save() -> bool:
 	if int(data.get("_mgmt_refund", 0)) > 0:
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Guild Management rebuilt"),
 			"text": tr("Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded.") % int(data["_mgmt_refund"])})
-	champion_offers.assign((data.get("champion_offers", []) as Array).map(func(c): return Hero.from_dict(c)))
+	champions = data.get("champions", {})
+	overseer = str(data.get("overseer", ""))
+	echoes = int(data.get("echoes", 0))
+	if data.has("champion_roll"):
+		champion_roll.assign(data["champion_roll"])
+	else:
+		roll_champions()
 	tower_best = int(data.get("tower_best", 0))
 	daily_attempt_day = int(data.get("daily_attempt_day", -1))
 	daily_clears = int(data.get("daily_clears", 0))
@@ -201,6 +210,19 @@ func load_save() -> bool:
 	else:
 		# A guild from before the campaign keeps what it had unlocked.
 		campaign_act = 3 if int(data.get("best_endless_cycle", 0)) > 0 else (2 if rifts_sealed >= 3 else 1)
+	# Champions: the acts already behind this guild have freed theirs.
+	for act in range(1, mini(campaign_act, GameData.CHAMPION_STORY_ACTS + 1)):
+		unlock_champion(story_champion(act))
+	if not data.has("champion_roll"):
+		# Champions used to be hired for Gold: the ones hired stay on as heroes.
+		var kept := 0
+		for h in heroes:
+			if h.is_champion:
+				h.is_champion = false
+				kept += 1
+		if not champions.is_empty() or kept > 0:
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Champions have changed"),
+				"text": tr("Champions are no longer hired: they're freed by the story and rescued in the Endless Rift, and oversee your rift runs. Champions you hired stay on as heroes.")})
 	hints_seen = data.get("hints_seen", [])
 	last_export_day = int(data.get("last_export_day", -1))
 	tips_off = bool(data.get("tips_off", false))
@@ -241,7 +263,7 @@ func load_save() -> bool:
 			"rift_rank": run_data.get("rift_rank", ""), "champion_call_used": bool(run_data.get("champion_call_used", false)),
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"any_ko": bool(run_data.get("any_ko", false)),
-			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "phoenix_used": bool(run_data.get("phoenix_used", false)),
+			"champion_calls": int(run_data.get("champion_calls", 1 if run_data.get("champion_call_used", false) else 0)), "overseer": str(run_data.get("overseer", "")), "phoenix_used": bool(run_data.get("phoenix_used", false)),
 			"finale": int(run_data.get("finale", 0)), "momentum_bonus": int(run_data.get("momentum_bonus", 0)), "training": bool(run_data.get("training", false)), "biome": str(run_data.get("biome", "vale")),
 			"orders_used": int(run_data.get("orders_used", 0)), "boons": run_data.get("boons", []), "events_seen": run_data.get("events_seen", []),
 		}

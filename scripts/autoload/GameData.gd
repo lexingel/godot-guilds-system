@@ -1,7 +1,7 @@
-extends "res://scripts/autoload/game_data/GameDataModes.gd"
+extends "res://scripts/autoload/game_data/GameDataChampions.gd"
 ## GameData, part 7 (the autoload): lookups across all of the above.
 ## The chain, bottom up: game_data/GameDataArt.gd (paths, icons, sprites) -> Heroes -> Items
-## -> Monsters -> Skills -> Modes -> this file; each part only uses names from below it.
+## -> Monsters -> Skills -> Modes -> Champions -> this file; each part only uses names from below it.
 
 
 ## Prefers a subclass-specific portrait (SUBCLASS_PORTRAIT_PATH, one of the 50
@@ -10,6 +10,8 @@ extends "res://scripts/autoload/game_data/GameDataModes.gd"
 ## map — a Champion's pool_id is never a real subclass id, so this covers
 ## Champions the same way it always has.
 static func portrait_for_hero(cls_id: String, pool_id: String) -> String:
+	if pool_id.begins_with("champ_"):
+		return champion_portrait(pool_id.trim_prefix("champ_"))
 	if SUBCLASS_PORTRAIT_PATH.has(pool_id):
 		return SUBCLASS_PORTRAIT_PATH[pool_id]
 	var role := cls_id

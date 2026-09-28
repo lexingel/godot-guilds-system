@@ -31,6 +31,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
 		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
 		"rift_rank": rift_rank, "seed": randi(), "training": training, "biome": pick_biome(),
+		"overseer": overseer if champions.has(overseer) else "",
 	}
 	if training:
 		# No elites in the training rift — a campfire takes their place.
@@ -64,6 +65,7 @@ func feature_unlocked(id: String) -> bool:
 		"bestiary": return not monsters_seen.is_empty()
 		"crafting", "quests", "management": return rifts_sealed >= 1
 		"tower": return campaign_act >= 2
+		"champions": return not champions.is_empty()
 	return true
 
 
@@ -796,7 +798,6 @@ func seal_rift() -> void:
 			flavor += " " + line
 	triage_used_this_cycle = false
 	refresh_recruit_pool()
-	refresh_champion_offers()   # new Champions for hire
 	run["sealed"] = {"essence": earned, "fast_clear": fast_clear, "cache": cache, "flavor": flavor}
 	if run.has("daily"):
 		run["sealed"]["daily"] = _complete_daily()
@@ -806,16 +807,22 @@ func seal_rift() -> void:
 
 ## Earned by playing (sealing 3 rifts, lesser/greater/endless all count),
 ## not by spending Guild Management currency like every other unlock today.
-## Pays out a finished Endless Rift (survivors) run: coins and crystals for
-## time and kills, XP for every hero, loot for elites and wardens. Returns
-## what was earned for the result screen.
+## Pays out a finished Endless Rift (survivors) run: a little gold, Essence,
+## Echoes for the champions, loot for elites and wardens, and every lost
+## champion freed on the way. The guild spends a day on it (wages, healing).
+## Returns what was earned for the result screen.
 func finish_survivors(r: SurvivorsRun) -> Dictionary:
 	var pay := r.rewards()
 	coins += int(pay["coins"])
 	crystals += int(pay["crystals"])
+	echoes += int(pay["echoes"])
+	var freed: Array = []
+	for id in r.rescued:
+		if not champions.has(id):
+			unlock_champion(id)
+			freed.append(GameData.champion_full_name(id))
 	var names: Array = []
 	for h in r.heroes:
-		Combat.gain_xp(h["hero"], int(pay["xp"]))
 		names.append(h["hero"].name.split(" the ")[0])
 	var loot_names: Array = []
 	for i in int(pay["loot"]):
@@ -847,13 +854,14 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 			line += tr(", the title \"%s\"") % tr(str(m["title"]))
 		got.append(line)
 	runs_finished += 1
+	pass_time()
 	run_history.push_front({"day": day, "kind": "Endless Rift", "result": "Sealed" if r.won else "Survived", "floor": "", "time": t, "kills": r.kills,
 		"heroes": names, "boons": [], "coins": int(pay["coins"]), "crystals": int(pay["crystals"])})
 	if run_history.size() > GameData.RUN_HISTORY_MAX:
 		run_history.resize(GameData.RUN_HISTORY_MAX)
 	save()
 	state_changed.emit()
-	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "xp": int(pay["xp"]), "loot": loot_names, "best": best, "milestones": got}
+	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "echoes": int(pay["echoes"]), "freed": freed, "loot": loot_names, "best": best, "milestones": got}
 
 
 ## The guild's Endless Rift title (the last milestone title earned), or "".

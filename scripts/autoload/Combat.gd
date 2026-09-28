@@ -854,7 +854,10 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 					val = 1.0 + (val - 1.0) * (1.0 + ap)
 				_:
 					val *= 1.0 + ap
-		log.append(tr("%s uses %s%s!") % [tr(str(h.name)), tr(str(ab["name"])), tr(str(" (Awakened)" if h.ability_awakened else ""))])
+		if action == "call":
+			log.append(tr("%s calls on %s: %s!") % [tr(str(h.name)), GameData.champion_full_name(GameState.run_overseer()), tr(str(ab["name"]))])
+		else:
+			log.append(tr("%s uses %s%s!") % [tr(str(h.name)), tr(str(ab["name"])), tr(str(" (Awakened)" if h.ability_awakened else ""))])
 		var living: Array[Hero] = []
 		living.assign(party.filter(func(hh): return hh.hp > 0))
 		match eff:

@@ -70,3 +70,28 @@ weapons
 Established
 Renowned
 Founding
+# champion titles (GameData.champion_full_name translates them)
+the Unbroken
+Ironjaw
+the Deathless
+Shieldmaiden
+the Oathsworn
+Swiftwind
+the Beastcaller
+Thornwood
+the Trapper
+Greyfeather
+the Ashborn
+the Starwright
+of the Frost
+Sparkwright
+the Pale
+of the Tides
+the Lamplighter
+Dawnbringer
+the Friar
+the Penitent
+of the Hollow Moon
+Quickfingers
+the Red
+Ashwhisper

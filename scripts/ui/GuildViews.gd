@@ -23,7 +23,7 @@ func _render_camp_screen(v: VBoxContainer) -> void:
 		if not _bleed_ui():
 			_render_getting_started(v)
 		return
-	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management"}.get(term_tab, "")
+	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management", "champions": "champions"}.get(term_tab, "")
 	if tab_feature != "" and not GameState.feature_unlocked(tab_feature):
 		_locked_feature(v, tab_feature)
 		return
@@ -31,6 +31,7 @@ func _render_camp_screen(v: VBoxContainer) -> void:
 	match term_tab:
 		"inventory": _render_inventory(v)
 		"recruits": _render_recruits(v)
+		"champions": _render_champions(v)
 		"medical": _render_medical_bay(v)
 		"management": _render_management(v)
 		"bestiary": _render_bestiary(v)
@@ -850,61 +851,98 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	v.add_child(row)
 
 
-## A Champion for hire: who they are, their Boon and Call, and Hire.
-func _champion_card(c: Hero, offer_idx: int) -> PanelContainer:
+## A champion's card: portrait, Boon, Call and story, with Oversee and Level
+## up; a champion not yet freed is a silhouette with where to find them.
+func _champion_card(id: String) -> PanelContainer:
+	var d := GameData.champion_def(id)
+	var freed := GameState.champion_unlocked(id)
 	var card := PanelContainer.new()
-	card.theme_type_variation = &"CardPanelEmber"
-	card.custom_minimum_size.x = 270
+	card.theme_type_variation = &"CardPanelEmber" if GameState.overseer == id else &"CardPanel"
+	card.custom_minimum_size.x = 320
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 56.0, GameState.look_for(c)))
+	var pic := _icon_trimmed(GameData.champion_portrait(id), 96)
+	if not freed:
+		pic.modulate = Color(0.05, 0.04, 0.08, 0.9)
+	row.add_child(pic)
 	var col := _vbox(3)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var nm := _label(c.name, 14)
+	if not freed:
+		col.add_child(_label("???", 15))
+		var act := GameState.champion_roll.find(id) + 1
+		var hint := ""
+		if act >= 1 and act <= GameData.CHAMPION_STORY_ACTS:
+			hint = tr("Freed at the end of Act %s.") % tr(str(GameState._roman(act)))
+		else:
+			for e in GameState.lost_champions():
+				if str(e[0]) == id:
+					hint = tr("Lost in the Endless Rift: survive past %d:%02d to find their light.") % [int(e[1]) / 60, int(e[1]) % 60]
+		col.add_child(_wrap_label(hint, 12, true))
+		row.add_child(col)
+		card.add_child(row)
+		return card
+	var lv := GameState.champion_level(id)
+	var nm := _label(GameData.champion_full_name(id), 15)
 	nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(nm)
-	col.add_child(_label(tr("Rank %s · Lv%d %s · Power %d") % [tr(str(c.rank)), c.level, tr(str(GameState.champion_role(c).capitalize())), Combat.power_of(c)], 12, true))
-	var boon := _wrap_label(tr("Boon: ") + GameState.champion_boon_text(c), 12)
+	col.add_child(_label(tr("%s · Level %d/%d") % [tr(str(d["role"]).capitalize()), lv, GameData.CHAMPION_LEVEL_MAX], 12, true))
+	var boon := _wrap_label(tr("Boon: ") + GameState.champion_boon_text(id), 12)
 	boon.add_theme_color_override("font_color", Palette.good())
 	col.add_child(boon)
-	var call := GameState.champion_call(c)
-	col.add_child(_wrap_label(tr("Call: %s — %s (once per rift)") % [tr(str(call["name"])), tr(str(call["desc"]))], 12))
-	var cost := GameState.champion_hire_cost(c)
-	var hire := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], tr("Hire — %d Gold") % cost, func(i=offer_idx):
-		var err := GameState.hire_champion(i)
-		if err != "":
-			push_warning(err)
+	var call := GameState.champion_call_of(id)
+	var times := 2 if lv >= GameData.CHAMPION_EXTRA_CALL_LEVEL else 1
+	col.add_child(_wrap_label(tr("Call: %s — %s (%s)") % [tr(str(call["name"])), tr(str(call["desc"])), tr("twice a rift") if times == 2 else tr("once a rift")], 12))
+	var lore := _wrap_label(tr(str(d.get("lore", ""))), 11, true)
+	col.add_child(lore)
+	var btns := HBoxContainer.new()
+	btns.add_theme_constant_override("separation", 6)
+	var oversee := _button(tr("Overseeing") if GameState.overseer == id else tr("Oversee rifts"), func(i=id):
+		GameState.set_overseer(i)
 		render()
 	)
-	hire.disabled = GameState.coins < cost or GameState.heroes.size() >= GameState.hero_slot_cap()
-	hire.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	col.add_child(hire)
+	oversee.disabled = GameState.overseer == id
+	oversee.tooltip_text = tr("The overseer's Boon lifts the whole party in every rift run, and any hero can spend their turn on the Call.")
+	btns.add_child(oversee)
+	var cost := GameState.champion_level_cost(id)
+	if cost >= 0:
+		var up := _button(tr("Level up — %d Echoes") % cost, func(i=id):
+			var err := GameState.level_champion(i)
+			if err != "":
+				push_warning(err)
+			render()
+		)
+		up.disabled = GameState.echoes < cost
+		up.tooltip_text = tr("Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift.") % [int(GameData.CHAMPION_LEVEL_POWER * 100), int(GameData.CHAMPION_LEVEL_STATS * 100), GameData.CHAMPION_EXTRA_CALL_LEVEL]
+		btns.add_child(up)
+	col.add_child(btns)
 	row.add_child(col)
 	card.add_child(row)
 	return card
 
 
+func _render_champions(v: VBoxContainer) -> void:
+	_coach(v, "champions", "Champions", "Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party, and the Echoes they earn there level them up.")
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 14)
+	head.add_child(_label("Champions", 20))
+	var ech := _label(tr("Echoes: %d") % GameState.echoes, 15)
+	ech.add_theme_color_override("font_color", Palette.CRYSTALS)
+	ech.tooltip_text = tr("Earned in the Endless Rift; spend them to level up champions.")
+	ech.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(ech)
+	v.add_child(head)
+	var freed := GameState.champion_roll.filter(func(i): return GameState.champion_unlocked(i)).size()
+	v.add_child(_wrap_label(tr("%d of %d champions found. Every new guild meets a different twelve.") % [freed, GameState.champion_roll.size()], 12, true))
+	var grid := HFlowContainer.new()
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	for id in GameState.champion_roll:
+		grid.add_child(_champion_card(id))
+	v.add_child(grid)
+
+
 func _render_recruits(v: VBoxContainer) -> void:
-	_coach(v, "recruits", "Hiring heroes", "Recruit heroes below; higher ranks are stronger. Champions cost more but arrive as experienced as your best hero, lift the whole party with their Boon, and have a Champion's Call for the big fights.")
-	GameState.ensure_champion_offers()
-	v.add_child(_label("Champions for hire — a party Boon and a Champion's Call", 16))
-	var offers := HFlowContainer.new()
-	offers.add_theme_constant_override("h_separation", 10)
-	offers.add_theme_constant_override("v_separation", 10)
-	for i in GameState.champion_offers.size():
-		offers.add_child(_champion_card(GameState.champion_offers[i], i))
-	if GameState.champion_offers.is_empty():
-		offers.add_child(_label("All hired — new Champions arrive when you seal a rift.", 12, true))
-	v.add_child(offers)
-	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], tr("New offers (%d Gold)") % GameData.CHAMPION_REROLL_COST, func():
-		var err := GameState.reroll_champion()
-		if err != "":
-			push_warning(err)
-		render()
-	)
-	reroll.disabled = GameState.coins < GameData.CHAMPION_REROLL_COST
-	reroll.tooltip_text = "A free set of offers also arrives every time you seal a rift."
-	v.add_child(reroll)
+	_coach(v, "recruits", "Hiring heroes", "Recruit heroes below; higher ranks are stronger.")
 	v.add_child(_wrap_label(tr("Rank odds: %s%s") % [tr(str(GameData.rank_odds_text())), tr(str(tr("  ·  Scouts' Lodge: a C+ recruit is assured each refresh") if GameState.headhunter_guarantee() else ""))], 11, true))
 	v.add_child(_hsep())
 
@@ -1335,7 +1373,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Foes & regions", "Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun."],
 		["Campaign", "Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift."],
 		["Relics", "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."],
-		["Champions", "Champions for hire (Recruits) cost more than recruits but arrive as experienced as your best hero. While standing in a rift they give the whole party their role\'s Boon, and once per rift they can use a Champion\'s Call (key 7) in a big fight. A fresh set of offers arrives every time you seal a rift."],
+		["Champions", "Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Echoes earned there level them up (to 5)."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Quests & Milestones", "The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
 		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, poaches posted contracts and taunts you in the news; at payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild sealed more rifts wins a prize."],

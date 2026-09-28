@@ -81,8 +81,8 @@ const TOWER_RULES := [
 	{"id": "colossus", "name": "Colossus", "desc": "A single foe with double health.", "diff": {"tower_single": true}},
 	{"id": "glass", "name": "Glass Cannon", "desc": "Foes hit 40% harder but have 30% less health.", "diff": {"hp_mult": 0.7, "dmg_mult": 1.4}},
 	{"id": "bulwark", "name": "Bulwark", "desc": "Foes have 50% more health but hit 20% softer.", "diff": {"hp_mult": 1.5, "dmg_mult": 0.8}},
-	{"id": "trio", "name": "Trio", "desc": "At most 3 heroes (plus the Champion).", "party_cap": 3},
-	{"id": "duo", "name": "Duo", "desc": "At most 2 heroes (plus the Champion).", "party_cap": 2},
+	{"id": "trio", "name": "Trio", "desc": "At most 3 heroes.", "party_cap": 3},
+	{"id": "duo", "name": "Duo", "desc": "At most 2 heroes.", "party_cap": 2},
 ]
 
 ## Every 10th floor: a named guardian with fixed mechanics and a Tower relic.

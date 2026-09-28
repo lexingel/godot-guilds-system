@@ -201,6 +201,9 @@ var dodge_t := 0.0   # a Smoke Bomb or an evasion twist: extra dodge while > 0
 var wall_t := 0.0    # a shield wall: the party takes half damage while > 0
 var regen_t := 0.0   # lifesteal: the party regains 3% HP a second while > 0
 var traps: Array = []   # {pos, r, dmg, life}: the first foe to step in springs it
+var lost: Array = []       # [[champion id, depth seconds]]: champions lost in this rift (set by the caller)
+var beacon: Dictionary = {}   # {id, pos, held}: a lost champion's light; stand in it to free them
+var rescued: Array = []    # champion ids freed this run
 
 
 func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
@@ -218,12 +221,14 @@ func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
 	for i in party.size():
 		var h: Hero = party[i]
 		var mhp := float(Combat.max_hp(h)) + ward / n
-		var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}) if Combat.qualifies_for_ability(h) else {}
+		# A champion's signature is their Call; a hero's, their subclass Ability.
+		var ab: Dictionary = GameState.champion_call_of(h.id.trim_prefix("champ:")) if h.is_champion else (GameData.SUBCLASS_ABILITIES.get(h.pool_id, {}) if Combat.qualifies_for_ability(h) else {})
 		heroes.append({"hero": h, "role": GameData.hero_role(h), "pos": Vector2(-40.0 * i, 30.0 * (i % 2)), "hp": mhp, "max_hp": mhp,
 			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * 0.5, "facing": 1.0,
 			"has_ability": not ab.is_empty(), "ability_name": str(ab.get("name", "")), "style": str(ABILITY_STYLE.get(str(ab.get("effect", "")), "")),
 			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct")),
-			"skills": {}, "ab_rank": 0, "arch": Combat.hero_main_arch(h), "taunt_t": 0.0})
+			"skills": {}, "ab_rank": 0, "arch": Combat.hero_main_arch(h), "taunt_t": 0.0,
+			"ab_icon": str(GameData.ABILITY_EFFECT_ICON.get(str(ab.get("effect", "")), "res://assets/skills/sword_a.png"))})
 
 
 func lead() -> Dictionary:
@@ -273,6 +278,7 @@ func step(dt: float, move_dir: Vector2) -> void:
 	_pickups(dt)
 	_tick_relics(dt)
 	_tick_slams(dt)
+	_tick_beacon(dt)
 	rally_t = maxf(0.0, rally_t - dt)
 	dodge_t = maxf(0.0, dodge_t - dt)
 	wall_t = maxf(0.0, wall_t - dt)
@@ -722,7 +728,7 @@ func _skill_move(h: Dictionary, id: String, area: float) -> bool:
 
 
 func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
-	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", ""))})
+	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", "")), "hero": h["hero"].id})
 	var pw := _ability_power(h)
 	match str(h.get("style", "")):
 		"riposte":
@@ -1374,7 +1380,7 @@ func upgrade_info(id: String) -> Dictionary:
 	if parts[0] == "twist":
 		var ht: Dictionary = heroes[int(parts[1])]
 		return {"name": tr("%s: %s twist") % [tr(str(ht["hero"].name.split(" the ")[0])), tr(str(GameData.ARCHETYPES[ht["arch"]]))], "desc": "%s %s" % [tr(str(ht["ability_name"])), tr(str(TWIST_TEXT[ht["arch"]]))],
-			"icon": GameData.ability_icon(ht["hero"].pool_id), "have": 0, "max": 1}
+			"icon": ht["ab_icon"], "have": 0, "max": 1}
 	if parts[0] == "relic":
 		var rl: Dictionary = RIFT_RELICS[parts[1]]
 		return {"name": rl["name"], "desc": rl["desc"], "icon": rl["icon"], "have": 0, "max": 1, "special": true}
@@ -1386,7 +1392,7 @@ func upgrade_info(id: String) -> Dictionary:
 		var h2: Dictionary = heroes[int(parts[1])]
 		var r := int(h2["ab_rank"])
 		var d := tr("Fires 20% sooner and hits 30% harder")
-		return {"name": "%s: %s" % [tr(str(h2["hero"].name.split(" the ")[0])), tr(str(h2["ability_name"]))], "desc": d, "icon": GameData.ability_icon(h2["hero"].pool_id), "have": r, "max": ABILITY_RANK_MAX}
+		return {"name": "%s: %s" % [tr(str(h2["hero"].name.split(" the ")[0])), tr(str(h2["ability_name"]))], "desc": d, "icon": h2["ab_icon"], "have": r, "max": ABILITY_RANK_MAX}
 	var u: Dictionary = UPGRADES[id]
 	return {"name": u["name"], "desc": u["desc"], "icon": u["icon"], "have": _stat(id), "max": int(u["max"])}
 
@@ -1461,8 +1467,40 @@ func autopilot_dir() -> Vector2:
 # ---------------- Rewards ----------------
 
 ## What the guild earns for this run (time survived and kills).
+## Gold is light here (the champions don't draw wages, and a run costs the
+## guild a day); Echoes level the champions.
 func rewards() -> Dictionary:
 	var m := minutes()
-	var coins := (45.0 * m + 0.05 * kills + (250.0 if won else 0.0)) * (1.4 if relics.has("idol") else 1.0) + bonus_coins
+	var coins := (15.0 * m + 0.02 * kills + (100.0 if won else 0.0)) * (1.4 if relics.has("idol") else 1.0) + bonus_coins
 	return {"coins": int(round(coins)), "crystals": int(round(7.0 * m + 3.0 * elites_killed + 20.0 * bosses_killed + (50.0 if won else 0.0))),
-		"xp": int(round(12.0 * m)), "loot": elites_killed / 4 + bosses_killed + (2 if won else 0)}
+		"echoes": int(round(2.0 * m + 1.0 * elites_killed + 5.0 * bosses_killed + (20.0 if won else 0.0) + 10.0 * rescued.size())),
+		"loot": elites_killed / 4 + bosses_killed + (2 if won else 0)}
+
+
+# ---------------- Lost champions ----------------
+
+## A lost champion's light appears once the run is deep enough (one at a
+## time, in depth order); standing in it for BEACON_HOLD seconds frees them.
+func _tick_beacon(dt: float) -> void:
+	if beacon.is_empty():
+		for e in lost:
+			var id := str(e[0])
+			if time >= float(e[1]) and not rescued.has(id):
+				var ang := rng.randf() * TAU
+				beacon = {"id": id, "pos": lead()["pos"] + Vector2.RIGHT.rotated(ang) * GameData.BEACON_DIST, "held": 0.0}
+				events.append({"type": "beacon", "id": id, "pos": beacon["pos"]})
+				return
+		return
+	var inside := false
+	for h in heroes:
+		if h["alive"] and (h["pos"] as Vector2).distance_to(beacon["pos"]) <= GameData.BEACON_R:
+			inside = true
+			break
+	if not inside:
+		return
+	beacon["held"] = float(beacon["held"]) + dt
+	if float(beacon["held"]) >= GameData.BEACON_HOLD:
+		rescued.append(beacon["id"])
+		events.append({"type": "rescue", "id": beacon["id"], "pos": beacon["pos"]})
+		_heal_all(0.25)
+		beacon = {}

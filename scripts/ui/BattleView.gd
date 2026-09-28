@@ -2222,7 +2222,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if GameState.champion_call_ready(current_hero):
 			var call := GameState.champion_call(current_hero)
 			var do_call := func(): run_turns.call(func(): GameState.set_hero_action(hid, "call"))
-			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, tr("Champion's Call (9) — %s. Once per rift.") % tr(str(call["desc"])), false)
+			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, tr("%s's Call (9) — %s. Uses this hero's turn; %d left this rift.") % [GameData.champion_full_name(GameState.run_overseer()), tr(str(call["desc"])), GameState.champion_calls_left()], false)
 			cb.modulate = Color(1.15, 1.0, 0.7)
 			more_row.add_child(cb)
 			_combat_hotkeys["9"] = do_call

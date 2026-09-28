@@ -125,13 +125,14 @@ func run() -> void:
 
 	var crown := _uniq("crown_of_oaths")
 	_equip_only([crown])
-	var champ := Combat.generate_champion()
-	champ.is_champion = true
+	var champ_id := GameState.champion_roll[0]
+	GameState.unlock_champion(champ_id)
+	GameState.set_overseer(champ_id)
 	GameState.start_run("lesser", ids, null)
 	GameState.run["champion_calls"] = 1
-	check(GameState.champion_call_ready(champ), "Crown: a second Call")
+	check(GameState.champion_call_ready(), "Crown: a second Call")
 	GameState.run["champion_calls"] = 2
-	check(not GameState.champion_call_ready(champ), "…not a third")
+	check(not GameState.champion_call_ready(), "…not a third")
 	GameState.run = {}
 
 	var mirror := _uniq("mirror_shard")

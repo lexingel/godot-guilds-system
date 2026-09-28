@@ -8,6 +8,7 @@ extends Node2D
 signal finished(summary: Dictionary)
 
 const WALK_DIR := "res://assets/survivors/walk/"
+const SKILL_DIR := "res://assets/survivors/skill/"   # a champion's signature move (frames 0-7)
 const FLOOR_PATH := "res://assets/survivors/floor_%s.png"
 const THEME := preload("res://theme/guild_theme.tres")
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
@@ -56,12 +57,15 @@ var _frames_cache := {}
 var _drag_from := Vector2.INF
 var _drag_to := Vector2.INF
 var _summary := {}
+var _beacon_node: _Beacon
 
 
 func setup(p_party: Array, p_biome: String) -> void:
 	party = p_party
 	biome = p_biome
 	run = SurvivorsRun.new(party, biome)
+	if not bench:
+		run.lost = GameState.lost_champions().filter(func(e): return not GameState.champion_unlocked(str(e[0])))
 
 
 func _ready() -> void:
@@ -100,7 +104,8 @@ func _ready() -> void:
 	for h in run.heroes:
 		# The hero's own walk cycle (their subclass look), else their role's.
 		var own := "sub_" + str(h["hero"].pool_id)
-		var key := own if ResourceLoader.exists(WALK_DIR + own + "_0.png") else str(h["role"])
+		# A champion without a walk cycle yet still looks like themself.
+		var key := own if ResourceLoader.exists(WALK_DIR + own + "_0.png") or own.begins_with("sub_champ_") else str(h["role"])
 		var n := _make_sprite(key, 1.0)
 		n.set_meta("away", GameData.faces_away(key))
 		n.material = UiKit.look_material(GameState.look_for(h["hero"]))
@@ -121,9 +126,19 @@ func _frames_for(key: String) -> SpriteFrames:
 		var p := WALK_DIR + "%s_%d.png" % [key, i]
 		if ResourceLoader.exists(p):
 			sf.add_frame("default", load(p))
+	for i in 8:
+		var sp := SKILL_DIR + "%s_%d.png" % [key, i]
+		if ResourceLoader.exists(sp):
+			if not sf.has_animation("skill"):
+				sf.add_animation("skill")
+				sf.set_animation_speed("skill", 12.0)
+				sf.set_animation_loop("skill", false)
+			sf.add_frame("skill", load(sp))
 	if sf.get_frame_count("default") == 0:
 		# No walk cycle yet: the static battle sprite, scaled down.
 		var still := str(GameData.MONSTER_SPRITE_PATH.get(key, GameData.HERO_PORTRAIT_PATH.get(key, "")))
+		if key.begins_with("sub_champ_"):
+			still = GameData.champion_portrait(key.trim_prefix("sub_champ_"))
 		if still != "":
 			sf.add_frame("default", load(still))
 	_frames_cache[key] = sf
@@ -134,9 +149,9 @@ func _make_sprite(key: String, scale_mult: float) -> AnimatedSprite2D:
 	var s := AnimatedSprite2D.new()
 	s.sprite_frames = _frames_for(key)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	s.offset = Vector2(0, -28)
 	var tex := s.sprite_frames.get_frame_texture("default", 0)
 	var h := float(tex.get_height()) if tex else 64.0
+	s.offset = Vector2(0, 4.0 - h * 0.5)   # feet on the spot (-28 for a 64px walk frame)
 	s.scale = Vector2.ONE * scale_mult * (64.0 / h if h > 64.0 else 1.0)
 	s.play()
 	return s
@@ -265,12 +280,25 @@ func _sync() -> void:
 		n.position = h["pos"]
 		n.flip_h = (h["facing"] < 0.0) != bool(n.get_meta("away", false))
 		n.modulate = Color(1, 1, 1) if h["alive"] else Color(0.4, 0.4, 0.45, 0.6)
-		if h["alive"] and h.get("moving", false):
+		if n.animation == &"skill" and n.is_playing():
+			pass   # a champion's signature move plays out
+		elif h["alive"] and h.get("moving", false):
 			if not n.is_playing():
 				n.play()
 		else:
 			n.stop()
 			n.frame = 0
+	if run.beacon.is_empty():
+		if _beacon_node:
+			_beacon_node.queue_free()
+			_beacon_node = null
+	else:
+		if _beacon_node == null:
+			_beacon_node = _Beacon.new()
+			_beacon_node.ghost_frames = _frames_for("sub_champ_" + str(run.beacon["id"]))
+			_world.add_child(_beacon_node)
+		_beacon_node.position = run.beacon["pos"]
+		_beacon_node.progress = float(run.beacon["held"]) / GameData.BEACON_HOLD
 	var seen := {}
 	for f in run.foes:
 		var id: int = f["id"]
@@ -344,7 +372,19 @@ func _play_events() -> void:
 				pass
 			"ability":
 				if str(e.get("name", "")) != "":
-					_pop_text(str(e["name"]), e["pos"] + Vector2(0, -70), Palette.EMBER_BRIGHT)
+					_pop_text(tr(str(e["name"])), e["pos"] + Vector2(0, -70), Palette.EMBER_BRIGHT)
+				var an: AnimatedSprite2D = _hero_nodes.get(str(e.get("hero", "")))
+				if an and an.sprite_frames.has_animation("skill"):
+					an.play("skill")
+					if not an.animation_finished.is_connected(_skill_done.bind(an)):
+						an.animation_finished.connect(_skill_done.bind(an))
+			"beacon":
+				_banner(tr("A lost champion's light!"), Palette.CRYSTALS, tr("Stand in it to free %s") % GameData.champion_full_name(str(e["id"])))
+				AudioManager.cue("relic", tr("[A lost champion calls out]"), Palette.CRYSTALS)
+			"rescue":
+				Fx.burst(_fx, "holy", e["pos"] + Vector2(0, -40), 200.0, Color(0.8, 0.95, 1.0), 16.0)
+				_banner(tr("%s is free!") % GameData.champion_full_name(str(e["id"])), Palette.RANK_S, tr("They join your champions when the run ends"))
+				AudioManager.cue("victory", tr("[A champion is freed]"), Palette.RANK_S)
 			"heal":
 				var hn: Node2D = _hero_nodes.get(e["hero"])
 				if hn:
@@ -393,6 +433,11 @@ func _play_events() -> void:
 				if rn:
 					Fx.burst(_fx, "holy", rn.position + Vector2(0, -24), 90.0, Color(1, 1, 0.85), 18.0)
 	run.events.clear()
+
+
+func _skill_done(n: AnimatedSprite2D) -> void:
+	if is_instance_valid(n) and n.animation == &"skill":
+		n.play("default")
 
 
 func _hero_name(hero_id: String) -> String:
@@ -848,8 +893,10 @@ func _show_results() -> void:
 	var lines := [
 		(tr("Sealed at %d:%02d") if run.won else tr("Survived %d:%02d")) % [t / 60, t % 60] + (tr("  — a new best!") if _summary.get("best", false) else ""),
 		tr("%d kills · %d elites · %d wardens · reached level %d") % [run.kills, run.elites_killed, run.bosses_killed, run.level],
-		tr("+%d gold · +%d essence · +%d XP for every hero") % [_summary["coins"], _summary["crystals"], _summary["xp"]],
+		tr("+%d gold · +%d essence · +%d Echoes") % [_summary["coins"], _summary["crystals"], _summary["echoes"]],
 	]
+	for name in _summary.get("freed", []):
+		lines.append(tr("Freed: %s — they join your champions") % str(name))
 	for name in _summary.get("loot", []):
 		lines.append(tr("Found: %s") % tr(str(name)))
 	for m in _summary.get("milestones", []):
@@ -1057,6 +1104,8 @@ class _Arrows:
 				marks.append([f["pos"], Palette.HAZARD if f["tier"] == "boss" else Palette.ELITE, 16.0 if f["tier"] == "boss" else 11.0])
 		for c in view.run.chests:
 			marks.append([c["pos"], Palette.RANK_S, 11.0])
+		if not view.run.beacon.is_empty():
+			marks.append([view.run.beacon["pos"], Palette.CRYSTALS, 16.0])
 		for m in marks:
 			var sp: Vector2 = m[0] - center + vp * 0.5
 			if Rect2(Vector2.ZERO, vp).has_point(sp):
@@ -1167,3 +1216,42 @@ class _Decals:
 						_px(p.x, p.y, 3, 1, col)
 						_px(p.x + P, p.y - P, 1, 3, col)
 		_pen.flush()
+
+
+## A lost champion's light: a pillar and a ring on the ground with their
+## faint shape inside; the ring fills while the party stands in it.
+class _Beacon:
+	extends Node2D
+	var ghost_frames: SpriteFrames
+	var progress := 0.0
+	var _t := 0.0
+	var _ghost: AnimatedSprite2D
+
+	func _ready() -> void:
+		z_index = -1
+		if ghost_frames and ghost_frames.get_frame_count("default") > 0:
+			_ghost = AnimatedSprite2D.new()
+			_ghost.sprite_frames = ghost_frames
+			_ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var th := float(ghost_frames.get_frame_texture("default", 0).get_height())
+			_ghost.offset = Vector2(0, 4.0 - th * 0.5)
+			_ghost.scale = Vector2.ONE * (64.0 / th if th > 64.0 else 1.0)
+			_ghost.modulate = Color(0.7, 0.9, 1.0, 0.55)
+			_ghost.z_index = 1
+			add_child(_ghost)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if _ghost:
+			_ghost.position.y = -6.0 + sin(_t * 2.0) * 4.0
+		queue_redraw()
+
+	func _draw() -> void:
+		var r: float = GameData.BEACON_R
+		var glow := 0.5 + 0.5 * sin(_t * 3.0)
+		draw_rect(Rect2(-16, -300, 32, 300), Color(0.7, 0.9, 1.0, 0.10 + 0.05 * glow))
+		draw_rect(Rect2(-6, -300, 12, 300), Color(0.85, 0.95, 1.0, 0.18 + 0.08 * glow))
+		draw_circle(Vector2.ZERO, r, Color(0.6, 0.85, 1.0, 0.10 + 0.05 * glow))
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(0.6, 0.85, 1.0, 0.7), 2.0)
+		if progress > 0.0:
+			draw_arc(Vector2.ZERO, r + 7.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(progress, 0.0, 1.0), 48, Palette.RANK_S, 5.0)

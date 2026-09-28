@@ -1,0 +1,98 @@
+{
+ "brannoch": {
+  "look": "old knight in dented bronze plate armor with broken iron chains hanging from his wrists, grey beard, holding a notched greatsword",
+  "skill_anim": "raising a greatsword overhead and planting it into the ground"
+ },
+ "grell": {
+  "look": "stocky bald dwarf brawler with an iron jaw plate, huge spiked gauntlets, leather harness",
+  "skill_anim": "pounding two gauntlets together and roaring"
+ },
+ "mordrake": {
+  "look": "pale knight in blackened plate armor wreathed in cold blue flames, tattered black cape, longsword",
+  "skill_anim": "blue flames flaring up around him as he raises his sword"
+ },
+ "sigrun": {
+  "look": "tall northern shieldmaiden with blonde braids, round painted wooden shield, fur mantle, axe",
+  "skill_anim": "slamming the round shield forward and bracing"
+ },
+ "kael": {
+  "look": "young warrior in a white tabard over chainmail, long spear, red scarf",
+  "skill_anim": "thrusting a spear forward in a wide sweep"
+ },
+ "kaya": {
+  "look": "windswept archer woman with a feathered green hooded cloak and a longbow",
+  "skill_anim": "drawing a longbow and loosing a rapid volley of arrows"
+ },
+ "hesk": {
+  "look": "rugged hunter wearing a grey wolf pelt hood, bone bow, tribal face paint",
+  "skill_anim": "howling with head thrown back"
+ },
+ "lyra": {
+  "look": "elven huntress with long silver hair, bow made of living thorned vines, leaf armor",
+  "skill_anim": "thorned vines erupting from the ground around her feet"
+ },
+ "bram": {
+  "look": "grizzled old trapper with a heavy crossbow, lantern on his belt, fur hat, bushy beard",
+  "skill_anim": "kneeling to set a trap, then springing back"
+ },
+ "ossian": {
+  "look": "hooded marksman in a grey feathered cloak aiming a very long ornate bow",
+  "skill_anim": "slowly drawing a long bow to full and releasing one arrow"
+ },
+ "vesh": {
+  "look": "gaunt mage with ash-grey skin cracked with glowing embers, tattered crimson robes, a broken crown shard floating over one hand",
+  "skill_anim": "raising both hands as fire spirals up around him"
+ },
+ "auriel": {
+  "look": "astronomer mage in a deep blue robe embroidered with stars, brass astrolabe staff, silver hair",
+  "skill_anim": "raising an astrolabe staff to the sky, stars swirling"
+ },
+ "morwen": {
+  "look": "pale ice witch with frost-white hair, icicle crown, flowing pale blue robes, snowflakes around her",
+  "skill_anim": "sweeping both arms out as a wave of frost spreads"
+ },
+ "tamsin": {
+  "look": "small gnome tinkerer mage with goggles, wild orange hair, a staff topped with a crackling copper coil",
+  "skill_anim": "lightning crackling from the coil staff as she spins it"
+ },
+ "ezra": {
+  "look": "gaunt pale scholar in black robes carrying a lantern full of green soul-lights, book chained to his belt",
+  "skill_anim": "holding up a lantern as green spirits stream into it"
+ },
+ "imre": {
+  "look": "drowned priestess in sea-green robes with kelp in her dark hair, holding a lantern with a blue flame",
+  "skill_anim": "raising a blue-flame lantern as water swirls around her"
+ },
+ "odo": {
+  "look": "kindly old man in a patched brown coat carrying a long lamplighter's pole with a warm lantern",
+  "skill_anim": "lifting a lamplighter's pole high as the lantern blazes"
+ },
+ "seraphine": {
+  "look": "radiant priestess in white and gold armor with a sun halo behind her head, holding a flanged mace",
+  "skill_anim": "raising a mace as golden light bursts from her halo"
+ },
+ "hobb": {
+  "look": "jolly round friar in a brown habit with a rope belt, wooden cudgel and a big ale flask",
+  "skill_anim": "raising an ale flask in a hearty toast"
+ },
+ "veyla": {
+  "look": "masked penitent cleric in grey hooded robes swinging a smoking bronze censer",
+  "skill_anim": "swinging a censer in a wide circle, smoke billowing"
+ },
+ "selune": {
+  "look": "pale assassin woman with a silver crescent-moon mask, black leather, two curved daggers",
+  "skill_anim": "crossing two daggers as shadows gather"
+ },
+ "pip": {
+  "look": "small halfling thief with curly hair, green hood, oversized bulging satchel, dagger",
+  "skill_anim": "throwing down a smoke bomb and vanishing into smoke"
+ },
+ "raske": {
+  "look": "scarred pirate duelist in a long red coat and tricorn hat with twin cutlasses",
+  "skill_anim": "spinning in a whirlwind with two cutlasses"
+ },
+ "corvin": {
+  "look": "plague doctor poisoner with a long beaked mask, dark leather coat, vials of green poison on his belt",
+  "skill_anim": "hurling a glass vial that bursts into a green cloud"
+ }
+}

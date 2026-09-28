@@ -510,38 +510,9 @@ static func awakening_bonus_text(pool_id: String) -> String:
 	return ABILITY_AWAKENING_BUCKET_DESC.get(bucket, "")
 
 
-# Recruitment-screen reroll fees. Flat rather than rank-scaled, so a bad
-# opening pull is always cheap to retry (below even the F-rank recruit cost)
-# and a Champion reroll — free and automatic on every rift seal already —
-# just costs a mid-tier hero's worth of Coins to trigger on demand instead.
+# Recruitment-screen reroll fee. Flat rather than rank-scaled, so a bad
+# opening pull is always cheap to retry (below even the F-rank recruit cost).
 const RECRUIT_REROLL_COST := 20
-const CHAMPION_REROLL_COST := 60   # a fresh set of Champion offers
-
-## Champions for hire: CHAMPION_OFFER_COUNT offers (a fresh set every seal),
-## as experienced as your best hero. Hired for their rank's recruit cost x
-## CHAMPION_HIRE_MULT, a Champion is a roster hero who gives the party their
-## role's Boon while standing and has one Champion's Call per rift.
-const CHAMPION_OFFER_COUNT := 3
-const CHAMPION_HIRE_MULT := 3
-
-## Party-wide while the Champion is standing in a run; value x rank mult.
-const CHAMPION_BOONS := {
-	"warrior": {"kind": "hp_pct", "value": 0.08, "name": "Bulwark"},
-	"rogue": {"kind": "first_round_pct", "value": 0.12, "name": "Ambush"},
-	"ranger": {"kind": "speed_pct", "value": 0.06, "name": "Pathfinder"},
-	"mage": {"kind": "ability_power", "value": 0.15, "name": "Arcane Tide"},
-	"cleric": {"kind": "mend_pct", "value": 0.03, "name": "Grace"},
-}
-
-## Once per rift, on the Champion's turn — the same effects as Active
-## Abilities (Combat._resolve_hero_action), about twice as strong.
-const CHAMPION_CALLS := {
-	"warrior": {"name": "Rallying Stand", "effect": "team_shield_burst", "value": 0.30, "desc": "shields every ally for 30% of their max HP"},
-	"rogue": {"name": "Blade Storm", "effect": "cleave_burst", "value": 1.8, "desc": "a storm of blades hits every foe hard"},
-	"ranger": {"name": "Killshot", "effect": "execute_burst", "value": 2.2, "desc": "a huge shot at the weakest foe, stronger the more it's hurt"},
-	"mage": {"name": "Cataclysm", "effect": "cleave_burst", "value": 2.0, "desc": "arcane fire engulfs every foe"},
-	"cleric": {"name": "Sanctuary", "effect": "mend_burst", "value": 0.6, "desc": "heals the whole party for 60% of their max HP"},
-}
 
 
 ## Compact "F 43% · E 26% · ..." odds line for the recruit/Champion rank

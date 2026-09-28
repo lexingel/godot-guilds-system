@@ -41,7 +41,10 @@ var tonics: Dictionary = {}   # tonic id -> count carried (GameData.TONIC_TYPES;
 var recruit_pool: Array[Hero] = []
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
-var champion_offers: Array[Hero] = []   # Champions for hire (refreshed each seal)
+var champion_roll: Array[String] = []   # this guild's champions (GameData.CHAMPION_ROLL of the pool)
+var champions: Dictionary = {}   # freed champion id -> level
+var overseer: String = ""        # the champion overseeing rift runs
+var echoes: int = 0              # Endless Rift currency: champion levels
 var daily_attempt_day: int = -1  # daily_id() of the last Daily Rift started (one a day)
 var daily_clears: int = 0
 var daily_streak: int = 0
@@ -348,7 +351,7 @@ func _run_for_save() -> Dictionary:
 		"rift_rank": run.get("rift_rank", ""), "champion_call_used": run.get("champion_call_used", false),
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
 		"any_ko": run.get("any_ko", false),
-		"champion_calls": run.get("champion_calls", 0), "phoenix_used": run.get("phoenix_used", false),
+		"champion_calls": run.get("champion_calls", 0), "overseer": run.get("overseer", ""), "phoenix_used": run.get("phoenix_used", false),
 		"finale": run.get("finale", 0), "momentum_bonus": run.get("momentum_bonus", 0), "training": run.get("training", false), "biome": run.get("biome", "vale"),
 		"orders_used": run.get("orders_used", 0), "boons": run.get("boons", []), "events_seen": run.get("events_seen", []), "daily": run.get("daily", -1),
 	}
@@ -539,7 +542,7 @@ func save() -> void:
 		"items": items.map(func(it): return it.to_dict()),
 		"tonics": tonics,
 		"upgrades": upgrades, "caps": caps,
-		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
+		"champion_roll": champion_roll, "champions": champions, "overseer": overseer, "echoes": echoes,
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "endless_best": endless_best, "endless_milestones": endless_milestones, "boon_set4_reached": boon_set4_reached,

@@ -124,7 +124,7 @@ func _ambient_path() -> String:
 				"medical": return GameData.MEDICAL_BG
 				"management": return GameData.MANAGEMENT_BG
 				"quests": return GameData.QUEST_BOARD_BG
-				"roster", "recruits": return "res://assets/screens/roster_bg.png"
+				"roster", "recruits", "champions": return "res://assets/screens/roster_bg.png"
 			return GameData.HAMLET_BG
 		"crafting_hall": return GameData.CRAFTING_BG
 		"rift_hall", "party_assembly", "tower": return GameData.RIFTHALL_BG
@@ -558,13 +558,13 @@ func _count_label(key: String, value: int, size: int) -> Label:
 ## than one shows them as sub-tabs underneath.
 ## [label, icon id, [[screen id, sub-tab label, camp building whose attention badge it shares], ...]]
 const NAV_GROUPS := [
-	["Roster", "roster", [["roster", "Heroes"], ["recruits", "Recruits"], ["medical", "Medical Bay"]]],
+	["Roster", "roster", [["roster", "Heroes"], ["recruits", "Recruits"], ["medical", "Medical Bay"], ["champions", "Champions"]]],
 	["Inventory", "inventory", [["inventory", "Items"], ["crafting", "Crafting"]]],
 	["Rift Hall", "rift", [["rift", "Rift Hall"]]],
 	["Guild", "management", [["management", "Management"], ["ledger", "Ledger"], ["quests", "Quests"], ["records", "Records"], ["memorial", "Memorial"]]],
 	["Library", "bestiary", [["bestiary", "Bestiary"], ["compendium", "Codex"]]],
 ]
-const NAV_FEATURE := {"crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}
+const NAV_FEATURE := {"champions": "champions", "crafting": "crafting", "quests": "quests", "management": "management", "inventory": "inventory", "medical": "medical", "bestiary": "bestiary"}
 
 
 func _quick_nav_current() -> String:
@@ -1553,7 +1553,7 @@ func _tower_floor_card(info: Dictionary) -> Control:
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cv.add_child(pr)
 	cv.add_child(_tower_reward_line(info))
-	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Assemble party (up to %d + the Champion)") % cap, func():
+	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Assemble party (up to %d)") % cap, func():
 		pending_party.clear()
 		_pending_tower = true
 		screen = "party_assembly"
@@ -1641,6 +1641,9 @@ func _daily_card_def() -> Array:
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
+	if _pending_endless and _pending_rift_rank == "":
+		_render_endless_assembly(v)
+		return
 	var tower_info := GameState.tower_floor_info(GameState.tower_next_floor()) if _pending_tower else {}
 	if _pending_daily:
 		var dinfo := GameState.daily_info()
@@ -1649,7 +1652,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	elif _pending_tower:
 		v.add_child(_label(tr("Tower of Trials — Floor %d") % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]
-		v.add_child(_wrap_label(tr("Up to %d heroes and the Champion. Everyone fights at full HP and leaves as they came.%s") % [_party_cap(), tr(str((tr(" Rules: ") + ", ".join(rules.map(func(r): return "%s (%s)" % [tr(str(r["name"])), tr(str(r["desc"]))]))) if not rules.is_empty() else ""))], 12, true))
+		v.add_child(_wrap_label(tr("Up to %d heroes. Everyone fights at full HP and leaves as they came.%s") % [_party_cap(), tr(str((tr(" Rules: ") + ", ".join(rules.map(func(r): return "%s (%s)" % [tr(str(r["name"])), tr(str(r["desc"]))]))) if not rules.is_empty() else ""))], 12, true))
 	elif _pending_finale and not GameState.current_act().is_empty():
 		v.add_child(_label(tr("Finale — %s") % tr(str(GameState.current_act()["finale"])), 20))
 		v.add_child(_wrap_label(tr("A harder %s Rift that ends in %s. Up to 4 heroes.") % [tr(str(GameState.current_act()["tier"]).capitalize()), tr(str(GameState.current_act()["boss"]))], 12, true))
@@ -1714,6 +1717,9 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			bench_flow.add_child(_party_card(bh, bh.is_champion, false))
 		v.add_child(bench_flow)
 
+	if not GameState.champions.is_empty():
+		v.add_child(_hsep())
+		v.add_child(_overseer_picker())
 	v.add_child(_hsep())
 	var choice_count := 0 if _pending_tower else GameState.relic_choice_count()
 	if choice_count > 0:
@@ -1742,6 +1748,116 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var launch := _party_launch_bar()
 	v.add_child(launch)
 	v.move_child(launch, 1)
+
+
+## Who oversees this run: a champion's Boon for the whole party and their
+## Call (any hero can spend a turn on it), or none.
+func _overseer_picker() -> Control:
+	var box := _vbox(6)
+	var cur := GameState.overseer
+	box.add_child(_label(tr("Overseer: %s") % (GameData.champion_full_name(cur) if cur != "" else tr("none")), 14))
+	if cur != "":
+		var call := GameState.champion_call_of(cur)
+		box.add_child(_wrap_label(tr("Boon: %s  ·  Call: %s — %s") % [GameState.champion_boon_text(cur), tr(str(call["name"])), tr(str(call["desc"]))], 12, true))
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 6)
+	for id in GameState.champion_roll:
+		if not GameState.champion_unlocked(id):
+			continue
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = id == cur
+		b.text = str(GameData.champion_def(id)["name"])
+		b.tooltip_text = GameState.champion_boon_text(id)
+		b.pressed.connect(func(i=id): GameState.set_overseer(i); render())
+		row.add_child(b)
+	var none := Button.new()
+	none.toggle_mode = true
+	none.button_pressed = cur == ""
+	none.text = tr("None")
+	none.pressed.connect(func(): GameState.set_overseer(""); render())
+	row.add_child(none)
+	box.add_child(row)
+	return box
+
+
+## The Endless Rift's party: your champions (up to 4), the first one steered.
+func _render_endless_assembly(v: VBoxContainer) -> void:
+	var picked: Array = pending_party.filter(func(i): return str(i).begins_with("champ:") and GameState.champion_unlocked(str(i).trim_prefix("champ:")))
+	pending_party.assign(picked)
+	v.add_child(_label("Endless Rift — your champions (up to 4)", 20))
+	_coach(v, "endless_champs", "Champions only", "Only champions go into the Endless Rift. You steer the first one you pick; the others follow and fight on their own, each with their Call as a signature move. Somewhere in the rift, lost champions wait in pillars of light: stand in one to free them. A run costs the guild a day.")
+	var bar := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = Palette.VIOLET_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(8)
+	st.set_content_margin_all(10)
+	bar.add_theme_stylebox_override("panel", st)
+	var brow := HBoxContainer.new()
+	brow.add_theme_constant_override("separation", 12)
+	var info := _vbox(4)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var typed: Array[Hero] = []
+	for i in pending_party:
+		typed.append(GameState.champion_hero(str(i).trim_prefix("champ:")))
+	info.add_child(_label(tr("Party power %d") % Combat.party_power(typed), 13))
+	info.add_child(_endless_region_picker())
+	var lost_left := GameState.lost_champions().filter(func(e): return not GameState.champion_unlocked(str(e[0]))).size()
+	info.add_child(_wrap_label(tr("%d lost champions still wait in the rift.") % lost_left if lost_left > 0 else tr("Every lost champion has been found."), 12, true))
+	brow.add_child(info)
+	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Enter the Rift"), func():
+		if pending_party.is_empty():
+			return
+		var ids: Array[String] = []
+		ids.assign(pending_party)
+		_start_survivors(ids)
+	)
+	enter.disabled = pending_party.is_empty()
+	enter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	brow.add_child(enter)
+	bar.add_child(brow)
+	v.add_child(bar)
+	var grid := HFlowContainer.new()
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	var any := false
+	for id in GameState.champion_roll:
+		if not GameState.champion_unlocked(id):
+			continue
+		any = true
+		var key := "champ:" + id
+		var slot := pending_party.find(key)
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelEmber" if slot >= 0 else &"CardPanel"
+		card.custom_minimum_size.x = 230
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row.add_child(_icon_trimmed(GameData.champion_portrait(id), 64))
+		var col := _vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label(GameData.champion_full_name(id), 13))
+		col.add_child(_label(tr("%s · Level %d") % [tr(str(GameData.champion_def(id)["role"]).capitalize()), GameState.champion_level(id)], 11, true))
+		col.add_child(_wrap_label(tr("Signature: %s") % tr(str(GameState.champion_call_of(id)["name"])), 11, true))
+		if slot == 0:
+			col.add_child(_label("You steer this one", 11))
+		var btn := _button(tr("Remove") if slot >= 0 else tr("Add"), func(k=key):
+			if pending_party.has(k):
+				pending_party.erase(k)
+			elif pending_party.size() < 4:
+				pending_party.append(k)
+			render()
+		)
+		btn.disabled = slot < 0 and pending_party.size() >= 4
+		col.add_child(btn)
+		row.add_child(col)
+		card.add_child(row)
+		grid.add_child(card)
+	if not any:
+		v.add_child(_wrap_label("You have no champions yet. The first is freed at the end of Act I.", 13, true))
+	v.add_child(grid)
 
 
 ## The top of Party Assembly: party power against the recommendation, any
@@ -1883,7 +1999,7 @@ func _endless_region_picker() -> Control:
 func _start_survivors(ids: Array[String]) -> void:
 	var party: Array = []
 	for id in ids:
-		var h := GameState.find_hero(id)
+		var h := GameState.champion_hero(id.trim_prefix("champ:")) if id.begins_with("champ:") else GameState.find_hero(id)
 		if h:
 			party.append(h)
 	if party.is_empty():
@@ -2230,11 +2346,7 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 		top.add_child(icon)
 	var names := _vbox(0)
 	names.mouse_filter = Control.MOUSE_FILTER_PASS
-	names.add_child(_label((tr("Champion: ") if is_champ else "") + h.name.split(" the ")[0], 12))
-	if is_champ:
-		var boon := _wrap_label(GameState.champion_boon_text(h), 12, true)
-		boon.add_theme_color_override("font_color", Palette.RANK_E)
-		names.add_child(boon)
+	names.add_child(_label(h.name.split(" the ")[0], 12))
 	names.add_child(_label(tr("Lv%d %s · %d/%d HP%s") % [h.level, tr(str(GameData.hero_role(h).capitalize())), h.hp, Combat.max_hp(h), tr(str((tr(" · out %d run%s") % [h.down_runs, tr(str(_pl(h.down_runs)))] if h.down_runs > 0 else tr(" · away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]) if downed else ""))], 10, true))
 	if not downed and h.hp < Combat.max_hp(h) * 0.5:
 		var wl := _label(tr("Wounded — %d%% HP") % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)

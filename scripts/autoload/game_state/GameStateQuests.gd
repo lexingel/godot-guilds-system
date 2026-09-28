@@ -165,7 +165,7 @@ func quest_desc(q: Dictionary) -> String:
 		"bounty": return tr("Bounty: defeat %s") % tr(str(q["param"]))
 		"seal_rank": return tr("Seal: seal a Rank %s+ rift") % tr(str(q["param"]))
 		"seal_greater": return tr("Seal: seal a Rank C+ rift")
-		"trial_small": return tr("Trial: seal a rift with 2 heroes or fewer (plus the Champion)")
+		"trial_small": return tr("Trial: seal a rift with 2 heroes or fewer")
 		"trial_flawless": return tr("Trial: seal a rift without any hero going down")
 		"craft": return tr("Supply: craft %d item%s or relic%s") % [t, tr(str(s)), tr(str(s))]
 		"flawless_win": return tr("Trial: win %d fight%s without a hero going down") % [t, tr(str(s))]

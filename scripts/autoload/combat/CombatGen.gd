@@ -54,44 +54,6 @@ func gen_hero(rank_id: String, level_hint: int) -> Hero:
 	return h
 
 
-## A Champion is a one-run guest fighter at full innate strength (no
-## HERO_INNATE_MULT discount, unlike a recruited hero) and no skill tree —
-## it has no `cls_id`, so `hero_skill_total`'s CLASS_SKILLS lookup naturally
-## contributes nothing for it, matching the HTML version's clsId-less champ.
-func generate_champion() -> Hero:
-	var rank_id := weighted_rank()
-	var rank := GameData.find_rank(rank_id)
-	var rank_idx := GameData.rank_index(rank_id)
-	var pool: Array = GameData.CLASS_POOL.filter(func(c): return c["rank"] == rank_id)
-	var cls: Dictionary = pool[randi() % pool.size()]
-	var champ := Hero.new()
-	champ.id = "champ" + str(GameState.next_id)
-	GameState.next_id += 1
-	# A name of their own, not just the class — someone you'd want to keep.
-	var taken := {}
-	for other in GameState.heroes + GameState.champion_offers:
-		taken[other.name.split(" the ")[0]] = true
-	var free: Array = GameData.FIRST_NAMES.filter(func(n): return not taken.has(n))
-	var names: Array = free if not free.is_empty() else GameData.FIRST_NAMES
-	champ.name = "%s the %s" % [names[randi() % names.size()], cls["name"]]
-	champ.is_champion = true
-	champ.pool_id = cls["id"]
-	champ.rank = rank_id
-	champ.type = cls["type"]
-	champ.innate_kind = cls["kind"]
-	champ.innate_value = innate_value_for(cls, rank_idx)
-	champ.flavor = cls["flavor"]
-	champ.level = 1
-	champ.base_hp = int(round(30.0 * float(cls["hp_ratio"]) * float(rank["mult"])))
-	champ.base_dmg = int(round(8.0 * float(cls["dmg_ratio"]) * float(rank["mult"])))
-	var champ_role_cls := GameData.find_role(str(cls["role"]))
-	champ.base_spd = int(round(float(champ_role_cls["base_spd"]) * float(rank["mult"])))
-	champ.formation = str(GameData.ROLE_POSITION.get(str(cls["role"]), {}).get("row", "front"))
-	champ.attrs = GameData.role_attrs(str(cls["role"]))
-	champ.hp = max_hp(champ)
-	return champ
-
-
 ## `type_override` lets Crafting Hall recipes preserve the fed-in relics'
 ## elemental type on the crafted result instead of rolling a fresh random one
 ## — a player feeding in 3 Ember commons reasonably expects an Ember rare
@@ -503,7 +465,7 @@ func _designed_encounter(diff: Dictionary, floor_idx: int) -> Array[Dictionary]:
 		m["dmg"] = maxi(1, int(round(float(m["dmg"]) * float(mem[2]))))
 		m["max_hp"] = m["hp"]
 		m["armor"] = maxf(float(GameData.MONSTER_ARMOR.get(nm, 0.0)), float(diff.get("tower_armor", 0.0)))
-		m["status"] = str(GameData.MONSTER_STATUS.get(nm, ""))
+		m["status"] = str(diff.get("tower_status", GameData.MONSTER_STATUS.get(nm, "")))
 		m["mechanic"] = {}
 		m["ability"] = GameData.MONSTER_ABILITIES.get(nm, {})
 		m["is_main"] = k == 0
@@ -523,7 +485,7 @@ func _make_add(diff: Dictionary, floor_idx: int, hp_mult: float, dmg_mult: float
 		var nm := str(pool[randi() % pool.size()])
 		add["name"] = nm
 		add["armor"] = float(GameData.MONSTER_ARMOR.get(nm, 0.0))
-		add["status"] = str(GameData.MONSTER_STATUS.get(nm, ""))
+		add["status"] = str(diff.get("tower_status", GameData.MONSTER_STATUS.get(nm, "")))
 	add["hp"] = max(1, int(round(add["hp"] * hp_mult)))
 	add["dmg"] = max(1, int(round(add["dmg"] * dmg_mult)))
 	add["max_hp"] = add["hp"]

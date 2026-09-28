@@ -127,6 +127,12 @@ func _complete_act(act_num: int) -> void:
 	if str(act["opens"]) != "":
 		subtitle += tr(" · %s unlocked") % tr(str(act["opens"]))
 	pending_stories.append({"title": tr(str(act["finale"])) + tr(" — sealed"), "subtitle": subtitle, "text": str(act["outro"])})
+	var freed := story_champion(act_num)
+	if freed != "" and not champions.has(freed):
+		unlock_champion(freed)
+		var d := GameData.champion_def(freed)
+		pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(freed),
+			"text": tr("Deep in %s, bound in rift-chains, your guild finds %s. %s\n\nChampions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.") % [tr(str(act["finale"])), GameData.champion_full_name(freed), tr(str(d.get("lore", "")))]})
 	if campaign_done():
 		pending_stories.append({"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")})
 	else:
