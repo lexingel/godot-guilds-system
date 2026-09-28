@@ -37,6 +37,10 @@ func _ready() -> void:
 	# _clear_root() never wipes one mid-fade.
 	var toast_layer := CanvasLayer.new()
 	toast_layer.layer = 50
+	# Main switches itself off while the Endless Rift runs; notices (and the
+	# transition veil below) keep fading out on their own even then, or
+	# they'd freeze on top of the run.
+	toast_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(toast_layer)
 	_toast_box = VBoxContainer.new()
 	_toast_box.add_theme_constant_override("separation", 6)
@@ -46,8 +50,8 @@ func _ready() -> void:
 	_toast_box.anchor_right = 0.5
 	_toast_box.offset_left = -300
 	_toast_box.offset_right = 300
-	_toast_box.offset_top = 146
-	_toast_box.offset_bottom = 546
+	_toast_box.offset_top = 250
+	_toast_box.offset_bottom = 650
 	_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
@@ -59,6 +63,7 @@ func _ready() -> void:
 	_scene_ui = _new_layer(root.get_index())
 	var veil_layer := CanvasLayer.new()
 	veil_layer.layer = 40
+	veil_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(veil_layer)
 	_veil = ColorRect.new()
 	_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -101,7 +106,7 @@ func _play_transition(iris: bool) -> void:
 	_veil.visible = true
 	if _veil_tw != null:
 		_veil_tw.kill()
-	_veil_tw = create_tween()
+	_veil_tw = _veil.create_tween()
 	_veil_tw.set_ignore_time_scale(true)
 	_veil_tw.tween_interval(0.15 if iris else 0.04)
 	_veil_tw.tween_method(func(p: float): mat.set_shader_parameter("progress", p), 0.0, 1.0, 0.75 if iris else 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -941,7 +946,7 @@ func _whats_new_card() -> PanelContainer:
 	var head := _label("What's new in %s" % _version(), 15)
 	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(head)
-	for line in GameData.WHATS_NEW:
+	for line in GameData.WHATS_NEW.slice(0, 4):
 		col.add_child(_wrap_label("• " + str(line), 12))
 	col.add_child(_wrap_label(GameData.WHATS_NEW_TRY, 12, true))
 	if OS.has_feature("web"):
@@ -1141,9 +1146,17 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			msg += "short %d; about %d rift%s at your recent pay (%d each) covers it." % [int(f["short"]), int(f["runs"]), "" if int(f["runs"]) == 1 else "s", int(f["per_run"])]
 		else:
 			msg += "short %d." % int(f["short"])
-		var fl := _on_art(_wrap_label(msg, 13 if wide else 12))
-		fl.add_theme_color_override("font_color", Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD)
-		v.add_child(fl)
+		var pay_col: Color = Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD
+		if wide:
+			# On the hall's stone it needs a dark backing to read.
+			var chip := _rule_chip(msg, "", pay_col)
+			(chip.get_child(0) as Label).add_theme_color_override("font_color", pay_col)
+			chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			v.add_child(chip)
+		else:
+			var fl := _wrap_label(msg, 12)
+			fl.add_theme_color_override("font_color", pay_col)
+			v.add_child(fl)
 	_coach(v, "rift_hall", "Choosing a rift", "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
 	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
 		_ladder_pick = GameState.highest_open_rank()
@@ -1217,6 +1230,8 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 
 ## Height of the Rift Hall's bottom row of cards on a landscape window.
 const RIFT_DOCK_H := 236.0
+## The hall's floor, continued below the art on a tall window.
+const RIFTHALL_FLOOR := Color(0.34, 0.32, 0.26)
 
 
 ## The Rift Hall on a landscape window: the hall fills it (torches flicker,
@@ -1225,9 +1240,30 @@ const RIFT_DOCK_H := 236.0
 func _rift_hall_wide(v: VBoxContainer, gates: Array, best: int, go: Callable) -> void:
 	var native := Vector2(320, 200)
 	var win := get_viewport().get_visible_rect().size
-	var r := _cover_rect(native, Vector2(0.5, 0.3))
-	var s := r.size.x / native.x
+	# Always the hall's full width: the side gates are the way in, so they
+	# must never be cropped. A window taller than the art (a square browser
+	# window) carries the floor on below it, where the cards sit anyway.
+	var s := win.x / native.x
+	var h := roundf(native.y * s)
+	var r := Rect2(Vector2(0.0, minf(0.0, roundf((win.y - h) * 0.3))), Vector2(win.x, h))
 	var at := func(p: Vector2) -> Vector2: return r.position + p * s
+	if r.end.y < win.y:
+		var fg := Gradient.new()
+		fg.colors = PackedColorArray([RIFTHALL_FLOOR, RIFTHALL_FLOOR.darkened(0.6)])
+		var ft := GradientTexture2D.new()
+		ft.gradient = fg
+		ft.fill_from = Vector2(0.5, 0.0)
+		ft.fill_to = Vector2(0.5, 1.0)
+		ft.width = 4
+		ft.height = 64
+		var floor_fill := TextureRect.new()
+		floor_fill.texture = ft
+		floor_fill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		floor_fill.stretch_mode = TextureRect.STRETCH_SCALE
+		floor_fill.position = Vector2(0.0, r.end.y - 2.0)
+		floor_fill.size = Vector2(win.x, win.y - r.end.y + 2.0)
+		floor_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_scene_art.add_child(floor_fill)
 	_art_rect(GameData.RIFTHALL_BG, r, _scene_art)
 	for p in [Vector2(13, 70), Vector2(100, 78), Vector2(219, 77), Vector2(308, 70)]:
 		_glow(_scene_art, at.call(p), 18.0 * s, Color(1.0, 0.6, 0.25, 0.4), "flicker")

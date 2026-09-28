@@ -123,6 +123,14 @@ func run() -> void:
 	GameState.retreat_now()
 	await _show(main, "camp", "camp")
 
+	# Main switches itself off while the Endless Rift runs: a screen
+	# transition caught mid-fade must still clear, not freeze over the run.
+	main._play_transition(false)
+	main.process_mode = Node.PROCESS_MODE_DISABLED
+	await get_tree().create_timer(0.8).timeout
+	check(not main._veil.visible, "a transition clears even while the camp UI is switched off")
+	main.process_mode = Node.PROCESS_MODE_INHERIT
+
 	# The Endless Rift: a level-up, a chest, and the sealed result.
 	var v := SurvivorsView.new()
 	v.setup(party, "ashen")
