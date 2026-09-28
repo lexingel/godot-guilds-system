@@ -1621,6 +1621,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			arena.add_child(ring)
 			_pulse(ring)
 		var rect := _hero_icon(h, int(size))
+		rect.flip_h = GameData.faces_away(GameData.portrait_for_hero(h.cls_id, h.pool_id))
 		var wrapper := _wrap_icon(rect)
 		wrapper.position = Vector2(cx - size * 0.5, feet - size)
 		_add_ground_shadow(arena, wrapper.position, size)
@@ -1663,6 +1664,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		# scale for all keeps every sprite at the heroes' pixel size (and a
 		# small creature small); the boss/elite is drawn a size class up.
 		var m_rect := _sprite_fit(GameData.sprite_for_monster(str(m["name"])), minf(1.0, px + 0.25) if i == big_i else px, m_slot * 1.1)
+		m_rect.flip_h = GameData.faces_away(GameData.sprite_for_monster(str(m["name"])))
 		var msz: Vector2 = m_rect.custom_minimum_size
 		var ring_w: float = minf(msz.x, msz.y * 1.2) * 0.8
 		var cx: float = mz_x + m_slot * (i + 0.5)

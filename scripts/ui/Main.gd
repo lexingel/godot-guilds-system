@@ -340,7 +340,9 @@ func render() -> void:
 	# above) fades the new screen in from transparent instead of just
 	# snapping into place, so moving between hubs reads as one continuous
 	# world instead of a slideshow of unrelated pages.
-	if not GameState.pending_stories.is_empty() and screen not in ["title", "load_game", "credits", "onboard"]:
+	# Not before the guild is founded: the Act I intro waits for the camp, even
+	# when Settings is opened from the naming screen.
+	if not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
 		var card_key := "story:" + str(GameState.pending_stories[0].get("title", ""))
 		if not _sfx_seen.has(card_key):
 			_sfx_seen[card_key] = true

@@ -455,6 +455,20 @@ static func monster_sprite_key(monster_name: String) -> String:
 	return keys[hash_sum % keys.size()]
 
 
+## Art drawn facing the wrong way for its side of a fight (heroes stand on
+## the left facing right, foes on the right facing left), by sprite name; the
+## arena and the Endless Rift mirror it. Front-facing art is left alone.
+const SPRITE_FACES_AWAY := {
+	"carrion_crier": true, "hedge_warden": true, "mire_sniper": true,
+	"cleric": true, "acolyte": true, "herbalist": true,
+}
+
+
+## `key_or_path`: a sprite path, a monster sprite key or an Endless walk key.
+static func faces_away(key_or_path: String) -> bool:
+	return SPRITE_FACES_AWAY.has(key_or_path.get_file().get_basename().trim_prefix("sub_"))
+
+
 static func sprite_for_monster(monster_name: String) -> String:
 	return MONSTER_SPRITE_PATH[monster_sprite_key(monster_name)]
 

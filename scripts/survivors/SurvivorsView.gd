@@ -100,7 +100,9 @@ func _ready() -> void:
 	for h in run.heroes:
 		# The hero's own walk cycle (their subclass look), else their role's.
 		var own := "sub_" + str(h["hero"].pool_id)
-		var n := _make_sprite(own if ResourceLoader.exists(WALK_DIR + own + "_0.png") else str(h["role"]), 1.0)
+		var key := own if ResourceLoader.exists(WALK_DIR + own + "_0.png") else str(h["role"])
+		var n := _make_sprite(key, 1.0)
+		n.set_meta("away", GameData.faces_away(key))
 		n.material = UiKit.look_material(GameState.look_for(h["hero"]))
 		_world.add_child(n)
 		_hero_nodes[h["hero"].id] = n
@@ -261,7 +263,7 @@ func _sync() -> void:
 	for h in run.heroes:
 		var n: AnimatedSprite2D = _hero_nodes[h["hero"].id]
 		n.position = h["pos"]
-		n.flip_h = h["facing"] < 0.0
+		n.flip_h = (h["facing"] < 0.0) != bool(n.get_meta("away", false))
 		n.modulate = Color(1, 1, 1) if h["alive"] else Color(0.4, 0.4, 0.45, 0.6)
 		if h["alive"] and h.get("moving", false):
 			if not n.is_playing():
@@ -276,11 +278,12 @@ func _sync() -> void:
 		var n: AnimatedSprite2D = _foe_nodes.get(id)
 		if n == null:
 			n = _make_sprite(_foe_key(str(f["name"])), TIER_SCALE[f["tier"]])
+			n.set_meta("away", GameData.faces_away(_foe_key(str(f["name"]))))
 			n.frame = randi() % maxi(1, n.sprite_frames.get_frame_count("default"))
 			_world.add_child(n)
 			_foe_nodes[id] = n
 		n.position = f["pos"]
-		n.flip_h = f["facing"] > 0.0
+		n.flip_h = (f["facing"] > 0.0) != bool(n.get_meta("away", false))
 		n.modulate = Color(3, 3, 3) if f["flash"] > 0.0 else Color.WHITE
 	for id in _foe_nodes.keys():
 		if not seen.has(id):
