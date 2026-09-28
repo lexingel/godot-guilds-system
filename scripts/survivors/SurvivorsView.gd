@@ -28,6 +28,10 @@ var _bench_us := 0
 var _bench_steps := 0
 
 var _cam: Camera2D
+var _floor: Sprite2D   # a patch of floor that follows the camera
+var _decals := {}      # chunk -> its _Decals, for the chunks around the party
+var _banner_queue: Array = []   # [text, color, sub] waiting their turn
+var _banner_busy := false
 var _world: Node2D
 var _fx: Node2D
 var _overlay: Node2D
@@ -65,13 +69,13 @@ func _ready() -> void:
 	add_child(_world)
 	var floor_tex: Texture2D = load(FLOOR_PATH % biome) if ResourceLoader.exists(FLOOR_PATH % biome) else null
 	if floor_tex:
-		var fl := Sprite2D.new()
-		fl.texture = floor_tex
-		fl.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		fl.region_enabled = true
-		fl.region_rect = Rect2(-20000, -20000, 40000, 40000)
-		fl.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_world.add_child(fl)
+		_floor = Sprite2D.new()
+		_floor.texture = floor_tex
+		_floor.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		_floor.region_enabled = true
+		_floor.region_rect = Rect2(-4096, -4096, 8192, 8192)
+		_floor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_world.add_child(_floor)
 	_overlay = _Overlay.new()
 	_overlay.view = self
 	_world.add_child(_overlay)
@@ -84,8 +88,6 @@ func _ready() -> void:
 	_fx.z_index = 20
 	_world.add_child(_fx)
 	_cam = Camera2D.new()
-	_cam.position_smoothing_enabled = true
-	_cam.position_smoothing_speed = 8.0
 	add_child(_cam)
 	_cam.make_current()
 	for h in run.heroes:
@@ -212,7 +214,48 @@ func _unhandled_input(event: InputEvent) -> void:
 		_drag_to = event.position
 
 
+## Ground clutter (grass, stones, reeds, cracks...) for the chunks around
+## the camera, each drawn once when it comes near and dropped when far.
+func _refresh_decals() -> void:
+	var cc := Vector2i(floori(_cam.position.x / SurvivorsRun.CHUNK), floori(_cam.position.y / SurvivorsRun.CHUNK))
+	var want := {}
+	for dx in range(-2, 3):
+		for dy in range(-1, 2):
+			want[cc + Vector2i(dx, dy)] = true
+	for c in _decals.keys():
+		if not want.has(c):
+			_decals[c].queue_free()
+			_decals.erase(c)
+	for c in want:
+		if not _decals.has(c):
+			var d := _Decals.new()
+			d.chunk = c
+			d.biome = biome
+			d.run_seed = run._seed
+			_world.add_child(d)
+			_world.move_child(d, _floor.get_index() + 1)
+			_decals[c] = d
+
+
+## Draw order by height on screen, lower in front. Measured from the lead so
+## it stays inside Godot's z range however far the party walks.
+func _depth(y: float) -> int:
+	return clampi(int((y - _cam.position.y) / 10.0), -900, 900) + 1000
+
+
 func _sync() -> void:
+	# Eases after the lead once per physics tick (a fixed step). Godot's own
+	# smoothing scales with frame time and overshoots on a long frame; a few
+	# of those ran the view off to NaN and the whole field went grey.
+	var lead_pos: Vector2 = run.lead()["pos"]
+	var eased := _cam.position.lerp(lead_pos, 0.13)
+	_cam.position = eased if is_finite(eased.x) and is_finite(eased.y) else lead_pos
+	if _floor:
+		# Snapped to whole tiles so the pattern never shifts: the party can
+		# walk as far as it likes and there's always floor under it.
+		var tile := _floor.texture.get_size()
+		_floor.position = (_cam.position / tile).floor() * tile
+		_refresh_decals()
 	for h in run.heroes:
 		var n: AnimatedSprite2D = _hero_nodes[h["hero"].id]
 		n.position = h["pos"]
@@ -224,8 +267,7 @@ func _sync() -> void:
 		else:
 			n.stop()
 			n.frame = 0
-		n.z_index = int(h["pos"].y / 10.0) + 1000
-	_cam.position = run.lead()["pos"]
+		n.z_index = _depth(h["pos"].y)
 	var seen := {}
 	for f in run.foes:
 		var id: int = f["id"]
@@ -239,7 +281,7 @@ func _sync() -> void:
 		n.position = f["pos"]
 		n.flip_h = f["facing"] > 0.0
 		n.modulate = Color(3, 3, 3) if f["flash"] > 0.0 else Color.WHITE
-		n.z_index = int(f["pos"].y / 10.0) + 1000
+		n.z_index = _depth(f["pos"].y)
 	for id in _foe_nodes.keys():
 		if not seen.has(id):
 			_foe_nodes[id].queue_free()
@@ -259,7 +301,7 @@ func _sync() -> void:
 			sp.centered = false
 			sp.offset = Vector2(-sp.texture.get_width() * 0.5, -sp.texture.get_height() + 8.0)
 			sp.position = props[id][0]
-			sp.z_index = int(sp.position.y / 10.0) + 1000
+			sp.z_index = _depth(sp.position.y)
 			_world.add_child(sp)
 			_prop_nodes[id] = sp
 	for id in _prop_nodes.keys():
@@ -372,6 +414,37 @@ func _build_hud() -> void:
 	_hud = CanvasLayer.new()
 	_hud.layer = 10
 	add_child(_hud)
+	# The field darkens toward the screen's edges, so the party in the middle
+	# stands out from the crowd, and a shade under the top readouts keeps the
+	# timer legible over a horde.
+	var vg := Gradient.new()
+	vg.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	vg.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.08), Color(0.02, 0.01, 0.04, 0.6)])
+	var vt := GradientTexture2D.new()
+	vt.gradient = vg
+	vt.fill = GradientTexture2D.FILL_RADIAL
+	vt.fill_from = Vector2(0.5, 0.5)
+	vt.fill_to = Vector2(1.05, 0.5)
+	vt.width = 128
+	vt.height = 128
+	var sg := Gradient.new()
+	sg.colors = PackedColorArray([Color(0.02, 0.01, 0.04, 0.7), Color(0.02, 0.01, 0.04, 0.0)])
+	var st := GradientTexture2D.new()
+	st.gradient = sg
+	st.fill_from = Vector2(0.5, 0.0)
+	st.fill_to = Vector2(0.5, 1.0)
+	st.width = 4
+	st.height = 64
+	for spec in [[vt, Control.PRESET_FULL_RECT, 0.0], [st, Control.PRESET_TOP_WIDE, 118.0]]:
+		var shade := TextureRect.new()
+		shade.texture = spec[0]
+		shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		shade.stretch_mode = TextureRect.STRETCH_SCALE
+		shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_hud.add_child(shade)
+		shade.set_anchors_and_offsets_preset(spec[1])
+		if spec[2] > 0.0:
+			shade.offset_bottom = spec[2]
 	var root := Control.new()
 	root.theme = THEME
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -552,40 +625,55 @@ func _rebuild_tray(tray: Array) -> void:
 		_tray.add_child(slot)
 
 
+## A headline across the top (a wave, a boss, the rift sealed). They queue:
+## one shows at a time, sooner gone when another is waiting.
 func _banner(text: String, color: Color, sub: String = "") -> void:
-	if sub != "":
+	_banner_queue.append([text, color, sub])
+	if not _banner_busy:
+		_next_banner()
+
+
+func _next_banner() -> void:
+	if _banner_queue.is_empty() or not is_inside_tree():
+		_banner_busy = false
+		return
+	_banner_busy = true
+	var b: Array = _banner_queue.pop_front()
+	var box := VBoxContainer.new()
+	box.theme = THEME
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 2)
+	var l := Label.new()
+	l.text = str(b[0])
+	l.add_theme_font_override("font", DISPLAY_FONT)
+	l.add_theme_font_size_override("font_size", 34)
+	l.add_theme_color_override("font_color", b[1])
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	l.add_theme_constant_override("outline_size", 8)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(l)
+	if str(b[2]) != "":
 		var s := Label.new()
-		s.text = sub
-		s.theme = THEME
+		s.text = str(b[2])
 		s.add_theme_font_size_override("font_size", 18)
 		s.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		s.add_theme_constant_override("outline_size", 5)
-		_hud.add_child(s)
-		s.set_anchors_preset(Control.PRESET_CENTER_TOP)
-		s.offset_top = 156
-		s.grow_horizontal = Control.GROW_DIRECTION_BOTH
 		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var tw2 := s.create_tween()
-		tw2.tween_interval(2.2)
-		tw2.tween_property(s, "modulate:a", 0.0, 0.6)
-		tw2.tween_callback(s.queue_free)
-	var l := Label.new()
-	l.text = text
-	l.theme = THEME
-	l.add_theme_font_override("font", DISPLAY_FONT)
-	l.add_theme_font_size_override("font_size", 34)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
-	l.add_theme_constant_override("outline_size", 8)
-	l.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	l.offset_top = 110
-	l.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hud.add_child(l)
-	var tw := l.create_tween()
-	tw.tween_interval(2.2)
-	tw.tween_property(l, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(l.queue_free)
+		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(s)
+	_hud.add_child(box)
+	box.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	box.offset_left = 40
+	box.offset_right = -40
+	box.offset_top = 104
+	box.offset_bottom = 104
+	box.modulate.a = 0.0
+	var tw := box.create_tween()
+	tw.tween_property(box, "modulate:a", 1.0, 0.15)
+	tw.tween_interval(2.2 if _banner_queue.is_empty() else 1.2)
+	tw.tween_property(box, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(box.queue_free)
+	tw.tween_callback(_next_banner)
 
 
 # ---------------- Panels ----------------
@@ -902,3 +990,90 @@ class _Arrows:
 			draw_colored_polygon(tri, col)
 			draw_polyline(tri + PackedVector2Array([tri[0]]), Color(0, 0, 0, 0.9), 2.0)
 
+
+## One chunk's ground clutter, painted once in 2px "pixels" in the region's
+## own colors: tufts, stones and flowers in the vale; reeds, lily pads and
+## mud in the marsh; cracks, embers, bones and ash in the ashen lands. Big
+## faint patches first, so the floor stops reading as one repeated tile.
+class _Decals:
+	extends Node2D
+	var chunk: Vector2i
+	var biome := "vale"
+	var run_seed := 0
+	const P := 2.0
+
+	func _px(x: float, y: float, w: float, h: float, c: Color) -> void:
+		draw_rect(Rect2(Vector2(x, y).snapped(Vector2(P, P)), Vector2(w, h) * P), c)
+
+	func _draw() -> void:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([run_seed, biome, chunk.x, chunk.y, "decals"])
+		var size := SurvivorsRun.CHUNK
+		var o := Vector2(chunk) * size
+		var at := func() -> Vector2: return o + Vector2(rng.randf_range(0.0, size), rng.randf_range(0.0, size))
+		var pal: Dictionary = {
+			"vale": {"patch": [Color(0.3, 0.38, 0.2, 0.22), Color(0.5, 0.46, 0.32, 0.18)], "a": Color(0.27, 0.36, 0.2), "b": Color(0.4, 0.5, 0.26), "stone": Color(0.52, 0.5, 0.44), "dot": [Color(0.86, 0.78, 0.35), Color(0.9, 0.88, 0.82), Color(0.7, 0.5, 0.75)]},
+			"marsh": {"patch": [Color(0.2, 0.26, 0.24, 0.3), Color(0.3, 0.4, 0.3, 0.2)], "a": Color(0.2, 0.3, 0.2), "b": Color(0.47, 0.38, 0.24), "stone": Color(0.42, 0.45, 0.42), "dot": [Color(0.24, 0.38, 0.24), Color(0.8, 0.8, 0.6)]},
+			"ashen": {"patch": [Color(0.16, 0.12, 0.11, 0.3), Color(0.45, 0.42, 0.4, 0.16)], "a": Color(0.16, 0.13, 0.12), "b": Color(0.35, 0.3, 0.28), "stone": Color(0.3, 0.27, 0.26), "dot": [Color(0.95, 0.5, 0.15), Color(0.8, 0.78, 0.72)]},
+		}.get(biome, {})
+		if pal.is_empty():
+			return
+		# Faint patches of other ground, a few overlapping blobs each.
+		for i in 5:
+			var c: Vector2 = at.call()
+			var col: Color = pal["patch"][rng.randi() % 2]
+			for k in 4:
+				draw_circle(c + Vector2(rng.randf_range(-40, 40), rng.randf_range(-24, 24)), rng.randf_range(26, 56), col)
+		for i in 26:
+			var p: Vector2 = at.call()
+			match biome:
+				"vale":
+					# A tuft of blades, two greens.
+					for k in rng.randi_range(3, 5):
+						var hgt := rng.randi_range(2, 4)
+						_px(p.x + k * P, p.y - hgt * P, 1, hgt, pal["a"] if k % 2 == 0 else pal["b"])
+				"marsh":
+					# A reed clump with brown heads.
+					for k in rng.randi_range(2, 4):
+						var hgt := rng.randi_range(4, 7)
+						_px(p.x + k * P * 1.5, p.y - hgt * P, 1, hgt, pal["a"])
+						_px(p.x + k * P * 1.5, p.y - (hgt + 2) * P, 1, 2, pal["b"])
+				"ashen":
+					# A crack in the crust.
+					var pts := PackedVector2Array([p])
+					var dir := Vector2.RIGHT.rotated(rng.randf() * TAU)
+					for k in 4:
+						dir = dir.rotated(rng.randf_range(-0.7, 0.7))
+						pts.append(pts[pts.size() - 1] + dir * rng.randf_range(6, 14))
+					draw_polyline(pts, pal["a"], P)
+		for i in 9:
+			# Stones with a lit top and a shadow.
+			var p: Vector2 = at.call()
+			var w := rng.randi_range(2, 4)
+			var st: Color = pal["stone"]
+			_px(p.x, p.y + P, w, 1, st.darkened(0.45))
+			_px(p.x, p.y - P, w, 2, st)
+			_px(p.x + P, p.y - P, 1, 1, st.lightened(0.3))
+		for i in 10:
+			# Small bright bits: flowers, lily pads, embers or bones.
+			var p: Vector2 = at.call()
+			var dots: Array = pal["dot"]
+			var col: Color = dots[rng.randi() % dots.size()]
+			match biome:
+				"vale":
+					_px(p.x, p.y + P, 1, 1, pal["a"])
+					_px(p.x, p.y, 1, 1, col)
+					_px(p.x + P * 2, p.y + P, 1, 1, col)
+				"marsh":
+					if col == dots[0]:
+						draw_circle(p, 6.0, col)
+						draw_line(p, p + Vector2(6, -2), pal["patch"][0].darkened(0.4), P)
+					else:
+						_px(p.x, p.y, 1, 1, col)
+				"ashen":
+					if col == dots[0]:
+						draw_circle(p, 5.0, Color(col, 0.18))
+						_px(p.x, p.y, 1, 1, col)
+					else:
+						_px(p.x, p.y, 3, 1, col)
+						_px(p.x + P, p.y - P, 1, 3, col)

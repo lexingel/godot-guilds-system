@@ -132,6 +132,16 @@ func run() -> void:
 	while r.time < 130.0 and not r.over:
 		r.step(0.1, r.autopilot_dir())
 		r.settle_picks()
+	# The camera can't be knocked off to NaN (that greyed out the whole field),
+	# banners wait their turn, and the ground around the party gets clutter.
+	v._cam.position = Vector2(NAN, NAN)
+	v._sync()
+	check(is_finite(v._cam.position.x) and is_finite(v._cam.position.y), "a NaN camera snaps back to the party")
+	var shown_before := v._banner_queue.size()
+	v._banner("One", Color.WHITE)
+	v._banner("Two", Color.WHITE, "a line under it")
+	check(v._banner_busy and v._banner_queue.size() >= shown_before + 1, "a second banner waits for the first")
+	check(v._decals.size() == 15, "ground clutter covers the chunks around the party (%d)" % v._decals.size())
 	r.pending_levels = 1
 	await _frames(3)
 	check(v._panel != null, "a level-up shows its picks")

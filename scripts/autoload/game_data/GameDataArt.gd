@@ -106,6 +106,7 @@ const SFX_PATH := {
 ## The tester build: what changed lately and what to try, shown on the title
 ## screen (newest first, a few lines each).
 const WHATS_NEW := [
+	"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.",
 	"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.",
 	"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.",
 	"Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.",
