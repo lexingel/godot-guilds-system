@@ -483,14 +483,22 @@ func save_settings() -> void:
 
 ## Switches every translated line to `language` (the next render redraws).
 func apply_language() -> void:
-	if not _names_added:
+	if _names == null:
 		# Hero, item, relic and warden names, assembled from translated parts.
-		_names_added = true
-		TranslationServer.add_translation(load("res://scripts/autoload/NameTranslation.gd").new("tr"))
+		_names = load("res://scripts/autoload/NameTranslation.gd").new("tr")
+		TranslationServer.add_translation(_names)
 	TranslationServer.set_locale(language)
 
 
-var _names_added := false
+var _names: Translation = null
+
+
+# A script-backed Translation left in the TranslationServer crashes the engine
+# at shutdown (its script is freed first), so take it out on the way out.
+func _exit_tree() -> void:
+	if _names != null:
+		TranslationServer.remove_translation(_names)
+		_names = null
 
 
 func load_settings() -> void:
