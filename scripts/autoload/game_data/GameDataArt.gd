@@ -112,7 +112,7 @@ const WHATS_NEW := [
 	"New music, larger text, and rank rules shown in the rift.",
 ]
 const WHATS_NEW_TRY := "Try: take a party into the Endless Rift and see how far you get, then tell us where it got too hard or too dull."
-const FEEDBACK_ISSUES_URL := "https://github.com/lexingel/godot-guilds-system/issues/new"
+const FEEDBACK_ISSUES_URL := "https://github.com/lexingel/guildhold/issues/new"
 
 ## Looping background music (AudioManager.play_music loops it).
 ## The pools the game picks from: a new camp track each time you come home,

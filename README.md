@@ -1,6 +1,6 @@
 # Guildhold
 
-A guild-management roguelite in Godot 4 (formerly "Guilds System"). Web test build: https://lexingel.github.io/godot-guilds-system/
+A guild-management roguelite in Godot 4 (formerly "Guilds System"). Web test build: https://lexingel.github.io/guildhold/
 
 ## Origins: a Godot port
 
