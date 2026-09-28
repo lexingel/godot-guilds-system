@@ -78,10 +78,12 @@ func _ready() -> void:
 		_world.add_child(_floor)
 	_overlay = _Overlay.new()
 	_overlay.view = self
+	_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_world.add_child(_overlay)
 	# Health bars and cooldowns float above every sprite.
 	_top = _TopOverlay.new()
 	_top.view = self
+	_top.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_top.z_index = 3000
 	_world.add_child(_top)
 	_fx = Node2D.new()
@@ -815,8 +817,10 @@ func _bench_log(delta: float, us: int) -> void:
 	_bench_us += us
 	_bench_steps += 1
 	if _bench_acc >= 5.0:
-		print("[bench] t=%d foes=%d shots=%d gems=%d fps=%d step=%.2fms" % [int(run.time), run.foes.size(), run.shots.size(), run.gems.size(),
-			Engine.get_frames_per_second(), _bench_us / 1000.0 / maxi(1, _bench_steps)])
+		print("[bench] t=%d foes=%d shots=%d gems=%d fps=%d step=%.2fms physics=%.1fms process=%.1fms draws=%d prims=%d" % [int(run.time), run.foes.size(), run.shots.size(), run.gems.size(),
+			Engine.get_frames_per_second(), _bench_us / 1000.0 / maxi(1, _bench_steps),
+			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)])
 		_bench_acc = 0.0
 		_bench_us = 0
 		_bench_steps = 0
@@ -853,71 +857,138 @@ func _show_results() -> void:
 
 
 ## Gems, projectiles and hero health, drawn in one pass.
+# ---------------- Shapes ----------------
+## Every circle, shard, shadow and bar on the field comes out of one small
+## texture: a disc, a diamond and a solid block. Drawn as textured squares
+## from it, the renderer batches them into a few draw calls; drawn with
+## draw_circle and polygons, each was a call of its own (about 1,500 a frame
+## at 6:00, which is what made the Endless Rift crawl in a browser).
+const SHAPE_DISC := Rect2(0, 0, 64, 64)
+const SHAPE_DIAMOND := Rect2(64, 0, 32, 32)
+const SHAPE_SOLID := Rect2(76, 12, 8, 8)
+static var _shape_tex: ImageTexture
+
+
+static func shape_tex() -> ImageTexture:
+	if _shape_tex == null:
+		var img := Image.create(96, 64, false, Image.FORMAT_RGBA8)
+		for y in 64:
+			for x in 64:
+				img.set_pixel(x, y, Color(1, 1, 1, clampf(32.0 - Vector2(x + 0.5 - 32.0, y + 0.5 - 32.0).length(), 0.0, 1.0)))
+		for y in 32:
+			for x in 32:
+				img.set_pixel(64 + x, y, Color(1, 1, 1, clampf(16.0 - absf(x + 0.5 - 16.0) - absf(y + 0.5 - 16.0), 0.0, 1.0)))
+		_shape_tex = ImageTexture.create_from_image(img)
+	return _shape_tex
+
+
+## Draws shapes from the shape texture onto one canvas item and gathers its
+## lines, drawn together by flush() (call it last, inside that _draw).
+class _Pen:
+	var ci: CanvasItem
+	var tex: Texture2D
+	var width := 2.5
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+
+	func _init(p_ci: CanvasItem, p_width: float = 2.5) -> void:
+		ci = p_ci
+		tex = SurvivorsView.shape_tex()
+		width = p_width
+
+	## A filled circle; `squash` flattens it into a ground ellipse.
+	func disc(c: Vector2, r: float, col: Color, squash: float = 1.0) -> void:
+		var half := Vector2(r, r * squash)
+		ci.draw_texture_rect_region(tex, Rect2(c - half, half * 2.0), SurvivorsView.SHAPE_DISC, col)
+
+	func diamond(c: Vector2, half: Vector2, col: Color) -> void:
+		ci.draw_texture_rect_region(tex, Rect2(c - half, half * 2.0), SurvivorsView.SHAPE_DIAMOND, col)
+
+	func box(r: Rect2, col: Color) -> void:
+		ci.draw_texture_rect_region(tex, r, SurvivorsView.SHAPE_SOLID, col)
+
+	func line(a: Vector2, b: Vector2, col: Color) -> void:
+		pts.append(a)
+		pts.append(b)
+		cols.append(col)
+
+	func arc(c: Vector2, r: float, a0: float, a1: float, n: int, col: Color, squash: float = 1.0) -> void:
+		var prev := c + Vector2(cos(a0) * r, sin(a0) * r * squash)
+		for k in range(1, n + 1):
+			var a := lerpf(a0, a1, float(k) / n)
+			var p := c + Vector2(cos(a) * r, sin(a) * r * squash)
+			line(prev, p, col)
+			prev = p
+
+	func flush() -> void:
+		if not pts.is_empty():
+			ci.draw_multiline_colors(pts, cols, width)
+
+
 class _Overlay:
 	extends Node2D
 	var view: SurvivorsView
 
 	func _draw() -> void:
 		var run: SurvivorsRun = view.run
+		var pen := SurvivorsView._Pen.new(self)
 		for f in run.terrain:
 			var p: Vector2 = f["pos"]
 			var r: float = f["r"]
 			match str(f["kind"]):
 				"pool":
-					draw_circle(p, r + 3.0, Color(0.3, 0.36, 0.3, 0.8))
-					draw_circle(p, r, Color(0.24, 0.33, 0.36, 0.85))
-					draw_arc(p + Vector2(-r * 0.2, -r * 0.2), r * 0.5, PI * 1.1, PI * 1.5, 10, Color(0.55, 0.66, 0.68, 0.45), 2.0)
+					pen.disc(p, r + 3.0, Color(0.3, 0.36, 0.3, 0.8))
+					pen.disc(p, r, Color(0.24, 0.33, 0.36, 0.85))
+					pen.arc(p + Vector2(-r * 0.2, -r * 0.2), r * 0.5, PI * 1.1, PI * 1.5, 10, Color(0.55, 0.66, 0.68, 0.45))
 				"lava":
 					# A crust of dark rock split by glowing cracks.
-					draw_circle(p, r + 4.0, Color(0.14, 0.1, 0.09, 0.9))
-					draw_circle(p, r, Color(0.24, 0.13, 0.1, 0.95))
+					pen.disc(p, r + 4.0, Color(0.14, 0.1, 0.09, 0.9))
+					pen.disc(p, r, Color(0.24, 0.13, 0.1, 0.95))
 					var glow := 0.55 + 0.25 * sin(run.time * 3.0 + p.x)
-					draw_circle(p, r * 0.35, Color(0.8, 0.3, 0.08, glow))
+					pen.disc(p, r * 0.35, Color(0.8, 0.3, 0.08, glow))
 					for k in 6:
 						var a := TAU * k / 6.0 + p.y
 						var mid := p + Vector2.RIGHT.rotated(a + 0.25) * r * 0.6
-						draw_polyline(PackedVector2Array([p + Vector2.RIGHT.rotated(a) * r * 0.25, mid, p + Vector2.RIGHT.rotated(a - 0.1) * r * 0.95]), Color(1.0, 0.55, 0.15, glow), 2.0)
+						pen.line(p + Vector2.RIGHT.rotated(a) * r * 0.25, mid, Color(1.0, 0.55, 0.15, glow))
+						pen.line(mid, p + Vector2.RIGHT.rotated(a - 0.1) * r * 0.95, Color(1.0, 0.55, 0.15, glow))
 		# Slam warnings fill up until the blow lands.
-		for s in run.slams:
-			var fill := 1.0 - clampf(float(s["t"]) / SurvivorsRun.SLAM_WARN, 0.0, 1.0)
-			draw_circle(s["pos"], s["r"], Color(0.9, 0.15, 0.1, 0.18))
-			draw_circle(s["pos"], s["r"] * fill, Color(0.9, 0.2, 0.1, 0.28))
-			draw_arc(s["pos"], s["r"], 0.0, TAU, 40, Color(1.0, 0.35, 0.2, 0.9), 2.0)
+		for sl in run.slams:
+			var fill := 1.0 - clampf(float(sl["t"]) / SurvivorsRun.SLAM_WARN, 0.0, 1.0)
+			pen.disc(sl["pos"], sl["r"], Color(0.9, 0.15, 0.1, 0.18))
+			pen.disc(sl["pos"], sl["r"] * fill, Color(0.9, 0.2, 0.1, 0.28))
+			pen.arc(sl["pos"], sl["r"], 0.0, TAU, 40, Color(1.0, 0.35, 0.2, 0.9))
 		# A shadow under every foe splits the crowd into bodies; elites and
 		# wardens stand on a colored ring.
 		for f in run.foes:
 			var r: float = f["r"]
-			draw_set_transform(f["pos"] + Vector2(0, 2), 0.0, Vector2(1.0, 0.38))
-			draw_circle(Vector2.ZERO, r * 1.05, Color(0, 0, 0, 0.35))
+			pen.disc(f["pos"] + Vector2(0, 2), r * 1.05, Color(0, 0, 0, 0.35), 0.38)
 			if f["tier"] != "combat":
-				draw_arc(Vector2.ZERO, r * 1.25, 0.0, TAU, 32, Palette.ELITE if f["tier"] == "elite" else Palette.HAZARD, 3.0)
+				pen.arc(f["pos"] + Vector2(0, 2), r * 1.25, 0.0, TAU, 32, Palette.ELITE if f["tier"] == "elite" else Palette.HAZARD, 0.38)
 		for h in run.heroes:
 			if h["alive"]:
-				draw_set_transform(h["pos"] + Vector2(0, 2), 0.0, Vector2(1.0, 0.38))
-				draw_circle(Vector2.ZERO, 16.0, Color(0, 0, 0, 0.35))
-		draw_set_transform(Vector2.ZERO)
+				pen.disc(h["pos"] + Vector2(0, 2), 16.0, Color(0, 0, 0, 0.35), 0.38)
 		# Shards: a dark edge and a bright core so they read on any floor.
 		for g in run.gems:
 			var c := Palette.CRYSTALS if int(g["xp"]) <= 1 else (Palette.TOKENS if int(g["xp"]) < 50 else Palette.RANK_S)
 			var p: Vector2 = g["pos"]
-			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -8), p + Vector2(6, 0), p + Vector2(0, 8), p + Vector2(-6, 0)]), Color(0.05, 0.05, 0.1, 0.9))
-			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -6), p + Vector2(4, 0), p + Vector2(0, 6), p + Vector2(-4, 0)]), c)
-			draw_rect(Rect2(p + Vector2(-1, -3), Vector2(2, 2)), Color(1, 1, 1, 0.9))
-		for s in run.shots:
-			if s["kind"] == "shot":
-				var dir: Vector2 = s["vel"].normalized()
-				draw_line(s["pos"] - dir * 14.0, s["pos"], Color(1, 0.95, 0.8), 3.0)
+			pen.diamond(p, Vector2(6, 8), Color(0.05, 0.05, 0.1, 0.9))
+			pen.diamond(p, Vector2(4, 6), c)
+			pen.box(Rect2(p + Vector2(-1, -3), Vector2(2, 2)), Color(1, 1, 1, 0.9))
+		for sh in run.shots:
+			if sh["kind"] == "shot":
+				var dir: Vector2 = sh["vel"].normalized()
+				pen.line(sh["pos"] - dir * 14.0, sh["pos"], Color(1, 0.95, 0.8))
 			else:
-				draw_circle(s["pos"], 7.0, Color(0.75, 0.55, 1.0))
-				draw_circle(s["pos"], 4.0, Color(1, 1, 1))
+				pen.disc(sh["pos"], 7.0, Color(0.75, 0.55, 1.0))
+				pen.disc(sh["pos"], 4.0, Color(1, 1, 1))
 		for h in run.heroes:
 			if not h["alive"]:
 				continue
 			var p: Vector2 = h["pos"] + Vector2(-18, 8)
-			draw_rect(Rect2(p, Vector2(36, 4)), Color(0, 0, 0, 0.7))
-			draw_rect(Rect2(p, Vector2(36.0 * h["hp"] / h["max_hp"], 4)), Palette.good() if h["hp"] > h["max_hp"] * 0.35 else Palette.HAZARD)
-		var lp: Vector2 = run.lead()["pos"]
-		draw_arc(lp + Vector2(0, 2), 18.0, 0.0, TAU, 24, Color(1, 0.8, 0.4, 0.5), 2.0)
+			pen.box(Rect2(p, Vector2(36, 4)), Color(0, 0, 0, 0.7))
+			pen.box(Rect2(p, Vector2(36.0 * h["hp"] / h["max_hp"], 4)), Palette.good() if h["hp"] > h["max_hp"] * 0.35 else Palette.HAZARD)
+		pen.arc(run.lead()["pos"] + Vector2(0, 2), 18.0, 0.0, TAU, 24, Color(1, 0.8, 0.4, 0.5))
+		pen.flush()
 
 
 ## Above every sprite: elite and warden health bars.
@@ -927,19 +998,12 @@ class _TopOverlay:
 
 	func _draw() -> void:
 		var run: SurvivorsRun = view.run
-		for pk in run.pickups:
-			var bob2 := sin(run.time * 5.0 + pk["pos"].x) * 2.0
-			draw_circle(pk["pos"] + Vector2(0, -8 + bob2), 13.0, Color(0, 0, 0, 0.55))
-			draw_texture_rect(SurvivorsView.PICKUP_ICON[pk["kind"]], Rect2(pk["pos"] + Vector2(-10, -18 + bob2), Vector2(20, 20)), false)
-		# Chests bob gently where they lie.
-		for c in run.chests:
-			var bob := sin(run.time * 4.0) * 3.0
-			draw_texture_rect(SurvivorsView.CHEST_TEX, Rect2(c["pos"] + Vector2(-17, -30 + bob), Vector2(34, 34)), false)
+		var pen := SurvivorsView._Pen.new(self)
 		# Foe bolts: a dark rim and a red core.
-		for b in run.foe_shots:
-			draw_circle(b["pos"], 7.0, Color(0.1, 0.02, 0.02, 0.9))
-			draw_circle(b["pos"], 5.0, Palette.HAZARD)
-			draw_circle(b["pos"], 2.0, Color(1, 0.85, 0.7))
+		for bo in run.foe_shots:
+			pen.disc(bo["pos"], 7.0, Color(0.1, 0.02, 0.02, 0.9))
+			pen.disc(bo["pos"], 5.0, Palette.HAZARD)
+			pen.disc(bo["pos"], 2.0, Color(1, 0.85, 0.7))
 		# Each hero's Ability: a ring above their head that fills as it recharges.
 		for h in run.heroes:
 			if not h["alive"] or not h["has_ability"]:
@@ -947,15 +1011,26 @@ class _TopOverlay:
 			var at: Vector2 = h["pos"] + Vector2(0, -70)
 			var full: float = run.ability_cd_max(h)
 			var ready := clampf(1.0 - float(h["ab_cd"]) / full, 0.0, 1.0)
-			draw_circle(at, 6.0, Color(0, 0, 0, 0.6))
-			draw_arc(at, 6.0, -PI * 0.5, -PI * 0.5 + TAU * ready, 20, Palette.EMBER_BRIGHT if ready >= 0.97 else Palette.MUTED, 2.5)
+			pen.disc(at, 6.0, Color(0, 0, 0, 0.6))
+			pen.arc(at, 6.0, -PI * 0.5, -PI * 0.5 + TAU * ready, 20, Palette.EMBER_BRIGHT if ready >= 0.97 else Palette.MUTED)
 		for f in run.foes:
 			if f["tier"] != "elite":
 				continue
 			var w := 52.0
 			var p: Vector2 = f["pos"] + Vector2(-w * 0.5, -60.0 * SurvivorsView.TIER_SCALE["elite"] - 4.0)
-			draw_rect(Rect2(p - Vector2(1, 1), Vector2(w + 2, 7)), Color(0, 0, 0, 0.8))
-			draw_rect(Rect2(p, Vector2(w * clampf(f["hp"] / f["max_hp"], 0.0, 1.0), 5)), Palette.ELITE)
+			pen.box(Rect2(p - Vector2(1, 1), Vector2(w + 2, 7)), Color(0, 0, 0, 0.8))
+			pen.box(Rect2(p, Vector2(w * clampf(f["hp"] / f["max_hp"], 0.0, 1.0), 5)), Palette.ELITE)
+		for pk in run.pickups:
+			pen.disc(pk["pos"] + Vector2(0, -8 + sin(run.time * 5.0 + pk["pos"].x) * 2.0), 13.0, Color(0, 0, 0, 0.55))
+		pen.flush()
+		# Icons last (their own textures), so the shapes above stay one batch.
+		for pk in run.pickups:
+			var bob2 := sin(run.time * 5.0 + pk["pos"].x) * 2.0
+			draw_texture_rect(SurvivorsView.PICKUP_ICON[pk["kind"]], Rect2(pk["pos"] + Vector2(-10, -18 + bob2), Vector2(20, 20)), false)
+		# Chests bob gently where they lie.
+		for c in run.chests:
+			var bob := sin(run.time * 4.0) * 3.0
+			draw_texture_rect(SurvivorsView.CHEST_TEX, Rect2(c["pos"] + Vector2(-17, -30 + bob), Vector2(34, 34)), false)
 
 
 ## HUD edge arrows toward elites and wardens that are off screen.
@@ -1003,10 +1078,13 @@ class _Decals:
 	var run_seed := 0
 	const P := 2.0
 
+	var _pen: SurvivorsView._Pen
+
 	func _px(x: float, y: float, w: float, h: float, c: Color) -> void:
-		draw_rect(Rect2(Vector2(x, y).snapped(Vector2(P, P)), Vector2(w, h) * P), c)
+		_pen.box(Rect2(Vector2(x, y).snapped(Vector2(P, P)), Vector2(w, h) * P), c)
 
 	func _draw() -> void:
+		_pen = SurvivorsView._Pen.new(self, P)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([run_seed, biome, chunk.x, chunk.y, "decals"])
 		var size := SurvivorsRun.CHUNK
@@ -1024,7 +1102,7 @@ class _Decals:
 			var c: Vector2 = at.call()
 			var col: Color = pal["patch"][rng.randi() % 2]
 			for k in 4:
-				draw_circle(c + Vector2(rng.randf_range(-40, 40), rng.randf_range(-24, 24)), rng.randf_range(26, 56), col)
+				_pen.disc(c + Vector2(rng.randf_range(-40, 40), rng.randf_range(-24, 24)), rng.randf_range(26, 56), col)
 		for i in 26:
 			var p: Vector2 = at.call()
 			match biome:
@@ -1046,7 +1124,8 @@ class _Decals:
 					for k in 4:
 						dir = dir.rotated(rng.randf_range(-0.7, 0.7))
 						pts.append(pts[pts.size() - 1] + dir * rng.randf_range(6, 14))
-					draw_polyline(pts, pal["a"], P)
+					for k in pts.size() - 1:
+						_pen.line(pts[k], pts[k + 1], pal["a"])
 		for i in 9:
 			# Stones with a lit top and a shadow.
 			var p: Vector2 = at.call()
@@ -1067,14 +1146,15 @@ class _Decals:
 					_px(p.x + P * 2, p.y + P, 1, 1, col)
 				"marsh":
 					if col == dots[0]:
-						draw_circle(p, 6.0, col)
-						draw_line(p, p + Vector2(6, -2), pal["patch"][0].darkened(0.4), P)
+						_pen.disc(p, 6.0, col)
+						_pen.line(p, p + Vector2(6, -2), pal["patch"][0].darkened(0.4))
 					else:
 						_px(p.x, p.y, 1, 1, col)
 				"ashen":
 					if col == dots[0]:
-						draw_circle(p, 5.0, Color(col, 0.18))
+						_pen.disc(p, 5.0, Color(col, 0.18))
 						_px(p.x, p.y, 1, 1, col)
 					else:
 						_px(p.x, p.y, 3, 1, col)
 						_px(p.x + P, p.y - P, 1, 3, col)
+		_pen.flush()
