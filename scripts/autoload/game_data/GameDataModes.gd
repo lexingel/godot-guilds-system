@@ -100,6 +100,15 @@ const TOWER_BOSSES := {
 }
 
 ## Guild titles for reaching a floor (the highest shows beside the guild name).
+## The Endless Rift pays once for each of these, the first time the guild
+## survives that long (any region); "sealed" means beating the Rift Warden.
+const ENDLESS_MILESTONES := [
+	{"at": 300, "name": "Five minutes in the rift", "coins": 150, "crystals": 30},
+	{"at": 600, "name": "Ten minutes in the rift", "coins": 250, "crystals": 50, "relic": "e_warden_shard"},
+	{"at": 900, "name": "Fifteen minutes in the rift", "coins": 400, "crystals": 80, "title": "Riftwalkers"},
+	{"at": 1200, "name": "The rift sealed", "coins": 0, "crystals": 120, "relic": "e_rift_heart", "title": "Rift Sealers", "sealed": true},
+]
+
 const TOWER_TITLES := [[10, "Tower Initiate"], [25, "Trial Climber"], [50, "Spire Walker"], [75, "Stormbreaker"], [100, "Summit Keeper"]]
 
 # Lesser and Greater Rift are the two selectable DIFFICULTIES tiers (the

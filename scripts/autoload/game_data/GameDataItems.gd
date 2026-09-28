@@ -164,10 +164,18 @@ static func relic_icon(r) -> String:
 
 
 static func find_unique_relic(unique_id: String) -> Dictionary:
-	for u in UNIQUE_RELICS + TOWER_RELICS.values():
+	for u in UNIQUE_RELICS + TOWER_RELICS.values() + ENDLESS_RELICS.values():
 		if u["id"] == unique_id:
 			return u
 	return {}
+
+## Relics only the Endless Rift gives (its milestones, see ENDLESS_MILESTONES).
+const ENDLESS_RELICS := {
+	"e_warden_shard": {"id": "e_warden_shard", "name": "Warden's Shard", "type": "Arcane", "trigger": {"trigger": "on_kill", "effect": "mend_party", "value": 0.06},
+		"desc": "Every kill mends the party 6%."},
+	"e_rift_heart": {"id": "e_rift_heart", "name": "Heart of the Rift", "type": "Umbral", "trigger": {"trigger": "round_third", "effect": "nova", "value": 0.4},
+		"desc": "Every third round, a nova hits every foe for 40% of your damage."},
+}
 
 ## Relics only the Tower's guardians give (first clear of that floor). Same
 ## schema as UNIQUE_RELICS; only special_kind/trigger, no bespoke effects.

@@ -12,6 +12,10 @@ const FLOOR_PATH := "res://assets/survivors/floor_%s.png"
 const THEME := preload("res://theme/guild_theme.tres")
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const TIER_SCALE := {"combat": 1.0, "elite": 2.0, "boss": 3.0}   # whole multiples keep pixels square
+const CHEST_TEX := preload("res://assets/dungeon/chest_icon.png")
+const PILLAR_TEX := preload("res://assets/survivors/pillar.png")
+const BRAZIER_TEX := preload("res://assets/survivors/brazier.png")
+const PICKUP_ICON := {"heal": preload("res://assets/skills/potion_red.png"), "magnet": preload("res://assets/skills/gem_blue_big.png"), "bomb": preload("res://assets/skills/star.png")}
 
 var run: SurvivorsRun
 var party: Array = []
@@ -36,10 +40,14 @@ var _hud_level: Label
 var _xp_bar: ProgressBar
 var _boss_bar: ProgressBar
 var _boss_label: Label
+var _timeline: Label
+var _tray: HFlowContainer
+var _tray_sig := ""
 var _hero_bars := {}
 var _panel: Control          # level-up / pause / results overlay, or null
 var _hero_nodes := {}
 var _foe_nodes := {}
+var _prop_nodes := {}   # pillar / brazier id -> Sprite2D
 var _frames_cache := {}
 var _drag_from := Vector2.INF
 var _drag_to := Vector2.INF
@@ -141,8 +149,13 @@ func _physics_process(delta: float) -> void:
 		while run.pending_levels > 0:
 			var o := run.offer()
 			run.pick(o[0] if not o.is_empty() else "")
+		while run.pending_chests > 0:
+			var c := run.chest_offer()
+			run.take_relic(c[0] if not c.is_empty() else "")
 	if run.pending_levels > 0:
 		_show_level_up()
+	elif run.pending_chests > 0:
+		_show_chest()
 	elif run.over:
 		_show_results()
 
@@ -177,13 +190,13 @@ func _input_dir() -> Vector2:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START and not run.over and run.pending_levels == 0:
+	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START and not run.over and run.pending_levels == 0 and run.pending_chests == 0:
 		_toggle_pause()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode in [KEY_ESCAPE, KEY_P] and not run.over and run.pending_levels == 0:
+		if event.physical_keycode in [KEY_ESCAPE, KEY_P] and not run.over and run.pending_levels == 0 and run.pending_chests == 0:
 			_toggle_pause()
-		elif _panel != null and run.pending_levels > 0 and event.physical_keycode in [KEY_1, KEY_2, KEY_3]:
+		elif _panel != null and (run.pending_levels > 0 or run.pending_chests > 0) and event.physical_keycode in [KEY_1, KEY_2, KEY_3]:
 			var btns := _panel.find_children("*", "Button", true, false)
 			var k: int = event.physical_keycode - KEY_1
 			if k < btns.size():
@@ -231,6 +244,28 @@ func _sync() -> void:
 		if not seen.has(id):
 			_foe_nodes[id].queue_free()
 			_foe_nodes.erase(id)
+	# Pillars and braziers are sprites so they sort with the crowd.
+	var props := {}
+	for f in run.terrain:
+		if f["kind"] == "pillar":
+			props[f["id"]] = [f["pos"], PILLAR_TEX]
+	for b in run.braziers:
+		props[b["id"]] = [b["pos"], BRAZIER_TEX]
+	for id in props:
+		if not _prop_nodes.has(id):
+			var sp := Sprite2D.new()
+			sp.texture = props[id][1]
+			sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sp.centered = false
+			sp.offset = Vector2(-sp.texture.get_width() * 0.5, -sp.texture.get_height() + 8.0)
+			sp.position = props[id][0]
+			sp.z_index = int(sp.position.y / 10.0) + 1000
+			_world.add_child(sp)
+			_prop_nodes[id] = sp
+	for id in _prop_nodes.keys():
+		if not props.has(id):
+			_prop_nodes[id].queue_free()
+			_prop_nodes.erase(id)
 	_overlay.queue_redraw()
 	_top.queue_redraw()
 	_arrows.queue_redraw()
@@ -271,10 +306,37 @@ func _play_events() -> void:
 				if hn:
 					Fx.sparkles(_fx, hn.position + Vector2(0, -20), Palette.RANK_E, 10, 30.0)
 			"level":
-				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
+				AudioManager.play_sfx(GameData.SFX_PATH["level_up"])
 			"boss":
-				_banner("%s emerges!" % str(e["name"]), Palette.EMBER_BRIGHT)
+				if e.get("final", false):
+					_banner("The Rift Warden: %s!" % str(e["name"]), Palette.HAZARD, "Bring it down to seal the rift")
+				else:
+					_banner("%s emerges!" % str(e["name"]), Palette.EMBER_BRIGHT)
 				AudioManager.play_sfx(GameData.SFX_PATH["boss"])
+			"wave":
+				if run.time > 1.0 and str(e["wave"]) != "horde":
+					_banner(str(e["name"]), Palette.TEXT, str(e["hint"]))
+			"chest":
+				AudioManager.play_sfx(GameData.SFX_PATH["relic"])
+			"lightning":
+				Fx.line(_fx, e["pos"] + Vector2(randf_range(-30, 30), -260), e["pos"], Color(0.8, 0.9, 1.0), 0.25)
+				Fx.burst(_fx, "explosion", e["pos"], 60.0, Color(0.7, 0.85, 1.0), 26.0)
+			"brazier":
+				Fx.burst(_fx, "explosion", e["pos"] + Vector2(0, -20), 70.0, Color(1.0, 0.7, 0.3), 24.0)
+			"pickup":
+				var what: String = {"heal": "Healed!", "magnet": "Shards come to you", "bomb": "Boom!"}[e["kind"]]
+				_pop_text(what, e["pos"] + Vector2(0, -70), Palette.RANK_S)
+				if e["kind"] == "bomb":
+					Fx.ring(_fx, e["pos"], 700.0, Color(1, 0.8, 0.4), 0.5)
+					AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy"])
+				else:
+					AudioManager.play_sfx(GameData.SFX_PATH["heal" if e["kind"] == "heal" else "coin"])
+			"slam":
+				Fx.ring(_fx, e["pos"], e["r"], Color(1, 0.5, 0.3), 0.35)
+				AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy"])
+			"won":
+				_banner("The rift is sealed!", Palette.RANK_S)
+				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 			"phase":
 				_banner("%s calls the horde!" % str(e["name"]), Palette.HAZARD)
 			"down":
@@ -344,6 +406,9 @@ func _build_hud() -> void:
 	pause.focus_mode = Control.FOCUS_NONE
 	pause.pressed.connect(_toggle_pause)
 	row.add_child(pause)
+	_timeline = _hud_label(top, 14)
+	_timeline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_timeline.modulate = Color(1, 1, 1, 0.85)
 	_boss_label = _hud_label(top, 16)
 	_boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss_bar = _bar(Palette.HAZARD, 12)
@@ -374,6 +439,17 @@ func _build_hud() -> void:
 	_arrows.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_arrows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_arrows)
+	_tray = HFlowContainer.new()
+	_tray.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_tray.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_tray.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_tray.offset_right = -16
+	_tray.offset_bottom = -34
+	_tray.custom_minimum_size.x = 330
+	_tray.alignment = FlowContainer.ALIGNMENT_END
+	_tray.add_theme_constant_override("h_separation", 4)
+	_tray.add_theme_constant_override("v_separation", 4)
+	root.add_child(_tray)
 	var hint := _hud_label(root, 13)
 	hint.text = "Move: WASD / arrows, or drag  ·  Pause: Esc"
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 14)
@@ -413,6 +489,13 @@ func _update_hud() -> void:
 	_hud_time.text = "%d:%02d" % [t / 60, t % 60]
 	_hud_kills.text = "%d kills" % run.kills
 	_hud_level.text = "Level %d" % run.level
+	var up: Array = run.upcoming()
+	_timeline.text = "  ·  ".join(up.map(func(u): return "%s %d:%02d" % [u["label"], int(u["in"]) / 60, int(u["in"]) % 60]))
+	var tray: Array = run.tray()
+	var sig := str(tray.map(func(t): return [t["name"], t["count"]]))
+	if sig != _tray_sig:
+		_tray_sig = sig
+		_rebuild_tray(tray)
 	_xp_bar.max_value = run.xp_next()
 	_xp_bar.value = run.xp
 	var boss := {}
@@ -434,7 +517,58 @@ func _update_hud() -> void:
 		bar.modulate.a = 1.0 if h["alive"] else 0.4
 
 
-func _banner(text: String, color: Color) -> void:
+## Your picks as icons, with stack counts; hover for the name.
+func _rebuild_tray(tray: Array) -> void:
+	for c in _tray.get_children():
+		c.queue_free()
+	for t in tray:
+		var slot := PanelContainer.new()
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0, 0, 0, 0.55)
+		sb.set_border_width_all(1)
+		sb.border_color = Palette.RANK_S if t["special"] else Palette.LINE
+		sb.set_corner_radius_all(3)
+		slot.add_theme_stylebox_override("panel", sb)
+		slot.tooltip_text = str(t["name"])
+		slot.mouse_filter = Control.MOUSE_FILTER_PASS
+		var ic := TextureRect.new()
+		ic.texture = load(str(t["icon"]))
+		ic.custom_minimum_size = Vector2(26, 26)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(ic)
+		if int(t["count"]) > 1:
+			var n := Label.new()
+			n.text = str(t["count"])
+			n.add_theme_font_size_override("font_size", 11)
+			n.add_theme_color_override("font_outline_color", Color.BLACK)
+			n.add_theme_constant_override("outline_size", 4)
+			n.size_flags_horizontal = Control.SIZE_SHRINK_END
+			n.size_flags_vertical = Control.SIZE_SHRINK_END
+			n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			slot.add_child(n)
+		_tray.add_child(slot)
+
+
+func _banner(text: String, color: Color, sub: String = "") -> void:
+	if sub != "":
+		var s := Label.new()
+		s.text = sub
+		s.theme = THEME
+		s.add_theme_font_size_override("font_size", 18)
+		s.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		s.add_theme_constant_override("outline_size", 5)
+		_hud.add_child(s)
+		s.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		s.offset_top = 156
+		s.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var tw2 := s.create_tween()
+		tw2.tween_interval(2.2)
+		tw2.tween_property(s, "modulate:a", 0.0, 0.6)
+		tw2.tween_callback(s.queue_free)
 	var l := Label.new()
 	l.text = text
 	l.theme = THEME
@@ -492,11 +626,24 @@ func _close_panel() -> void:
 
 
 func _show_level_up() -> void:
-	var v := _modal("Level %d" % run.level)
+	_pick_cards(_modal("Level %d" % run.level), run.offer(), run.pick, "Everything is maxed — carry on")
+
+
+## A chest: one rift relic of three, for the rest of the run.
+func _show_chest() -> void:
+	var v := _modal("A rift chest")
+	var sub := Label.new()
+	sub.text = "Take one relic for the rest of this run"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(sub)
+	var offer: Array = run.chest_offer().map(func(id): return "relic:" + str(id))
+	_pick_cards(v, offer, func(id: String): run.take_relic(id.trim_prefix("relic:")), "Every relic found: take 60 gold")
+
+
+func _pick_cards(v: VBoxContainer, offer: Array, choose: Callable, empty_text: String) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	v.add_child(row)
-	var offer := run.offer()
 	for i in offer.size():
 		var id: String = offer[i]
 		var u: Dictionary = run.upgrade_info(id)
@@ -519,7 +666,7 @@ func _show_level_up() -> void:
 		var have := int(u["have"])
 		nm.text = "%d. %s%s" % [i + 1, u["name"], "  (%d/%d)" % [have + 1, u["max"]] if have > 0 else ""]
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		nm.add_theme_color_override("font_color", Palette.RANK_S if u.get("special", false) else Palette.EMBER_BRIGHT)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(nm)
 		var d := Label.new()
@@ -531,16 +678,16 @@ func _show_level_up() -> void:
 		col.add_child(d)
 		b.add_child(col)
 		b.pressed.connect(func():
-			run.pick(id)
+			choose.call(id)
 			_close_panel())
 		row.add_child(b)
 		if i == 0 and b.focus_mode == Control.FOCUS_ALL:
 			b.grab_focus.call_deferred()
 	if offer.is_empty():
 		var ok := Button.new()
-		ok.text = "Everything is maxed — carry on"
+		ok.text = empty_text
 		ok.pressed.connect(func():
-			run.pick("")
+			choose.call("")
 			_close_panel())
 		v.add_child(ok)
 
@@ -595,14 +742,16 @@ func _show_results() -> void:
 		return
 	_summary = GameState.finish_survivors(run)
 	var t := int(run.time)
-	var v := _modal("The rift closes")
+	var v := _modal("The rift is sealed!" if run.won else "The rift closes")
 	var lines := [
-		"Survived %d:%02d%s" % [t / 60, t % 60, "  — a new best!" if _summary.get("best", false) else ""],
+		("Sealed at %d:%02d" if run.won else "Survived %d:%02d") % [t / 60, t % 60] + ("  — a new best!" if _summary.get("best", false) else ""),
 		"%d kills · %d elites · %d wardens · reached level %d" % [run.kills, run.elites_killed, run.bosses_killed, run.level],
 		"+%d gold · +%d essence · +%d XP for every hero" % [_summary["coins"], _summary["crystals"], _summary["xp"]],
 	]
 	for name in _summary.get("loot", []):
 		lines.append("Found: %s" % name)
+	for m in _summary.get("milestones", []):
+		lines.append("Milestone! " + str(m))
 	for s in lines:
 		var l := Label.new()
 		l.text = s
@@ -621,6 +770,30 @@ class _Overlay:
 
 	func _draw() -> void:
 		var run: SurvivorsRun = view.run
+		for f in run.terrain:
+			var p: Vector2 = f["pos"]
+			var r: float = f["r"]
+			match str(f["kind"]):
+				"pool":
+					draw_circle(p, r + 3.0, Color(0.3, 0.36, 0.3, 0.8))
+					draw_circle(p, r, Color(0.24, 0.33, 0.36, 0.85))
+					draw_arc(p + Vector2(-r * 0.2, -r * 0.2), r * 0.5, PI * 1.1, PI * 1.5, 10, Color(0.55, 0.66, 0.68, 0.45), 2.0)
+				"lava":
+					# A crust of dark rock split by glowing cracks.
+					draw_circle(p, r + 4.0, Color(0.14, 0.1, 0.09, 0.9))
+					draw_circle(p, r, Color(0.24, 0.13, 0.1, 0.95))
+					var glow := 0.55 + 0.25 * sin(run.time * 3.0 + p.x)
+					draw_circle(p, r * 0.35, Color(0.8, 0.3, 0.08, glow))
+					for k in 6:
+						var a := TAU * k / 6.0 + p.y
+						var mid := p + Vector2.RIGHT.rotated(a + 0.25) * r * 0.6
+						draw_polyline(PackedVector2Array([p + Vector2.RIGHT.rotated(a) * r * 0.25, mid, p + Vector2.RIGHT.rotated(a - 0.1) * r * 0.95]), Color(1.0, 0.55, 0.15, glow), 2.0)
+		# Slam warnings fill up until the blow lands.
+		for s in run.slams:
+			var fill := 1.0 - clampf(float(s["t"]) / SurvivorsRun.SLAM_WARN, 0.0, 1.0)
+			draw_circle(s["pos"], s["r"], Color(0.9, 0.15, 0.1, 0.18))
+			draw_circle(s["pos"], s["r"] * fill, Color(0.9, 0.2, 0.1, 0.28))
+			draw_arc(s["pos"], s["r"], 0.0, TAU, 40, Color(1.0, 0.35, 0.2, 0.9), 2.0)
 		# A shadow under every foe splits the crowd into bodies; elites and
 		# wardens stand on a colored ring.
 		for f in run.foes:
@@ -664,7 +837,30 @@ class _TopOverlay:
 	var view: SurvivorsView
 
 	func _draw() -> void:
-		for f in view.run.foes:
+		var run: SurvivorsRun = view.run
+		for pk in run.pickups:
+			var bob2 := sin(run.time * 5.0 + pk["pos"].x) * 2.0
+			draw_circle(pk["pos"] + Vector2(0, -8 + bob2), 13.0, Color(0, 0, 0, 0.55))
+			draw_texture_rect(SurvivorsView.PICKUP_ICON[pk["kind"]], Rect2(pk["pos"] + Vector2(-10, -18 + bob2), Vector2(20, 20)), false)
+		# Chests bob gently where they lie.
+		for c in run.chests:
+			var bob := sin(run.time * 4.0) * 3.0
+			draw_texture_rect(SurvivorsView.CHEST_TEX, Rect2(c["pos"] + Vector2(-17, -30 + bob), Vector2(34, 34)), false)
+		# Foe bolts: a dark rim and a red core.
+		for b in run.foe_shots:
+			draw_circle(b["pos"], 7.0, Color(0.1, 0.02, 0.02, 0.9))
+			draw_circle(b["pos"], 5.0, Palette.HAZARD)
+			draw_circle(b["pos"], 2.0, Color(1, 0.85, 0.7))
+		# Each hero's Ability: a ring above their head that fills as it recharges.
+		for h in run.heroes:
+			if not h["alive"] or not h["has_ability"]:
+				continue
+			var at: Vector2 = h["pos"] + Vector2(0, -70)
+			var full: float = run.ability_cd_max(h)
+			var ready := clampf(1.0 - float(h["ab_cd"]) / full, 0.0, 1.0)
+			draw_circle(at, 6.0, Color(0, 0, 0, 0.6))
+			draw_arc(at, 6.0, -PI * 0.5, -PI * 0.5 + TAU * ready, 20, Palette.EMBER_BRIGHT if ready >= 0.97 else Palette.MUTED, 2.5)
+		for f in run.foes:
 			if f["tier"] != "elite":
 				continue
 			var w := 52.0
@@ -681,11 +877,15 @@ class _Arrows:
 	func _draw() -> void:
 		var vp := get_viewport_rect().size
 		var center: Vector2 = view._cam.get_screen_center_position()
-		var inner := Rect2(Vector2(28, 130), vp - Vector2(56, 170))   # below the boss bar
+		var inner := Rect2(Vector2(28, 145), vp - Vector2(56, 185))   # below the boss bar
+		var marks: Array = []
 		for f in view.run.foes:
-			if f["tier"] == "combat":
-				continue
-			var sp: Vector2 = f["pos"] - center + vp * 0.5
+			if f["tier"] != "combat":
+				marks.append([f["pos"], Palette.HAZARD if f["tier"] == "boss" else Palette.ELITE, 16.0 if f["tier"] == "boss" else 11.0])
+		for c in view.run.chests:
+			marks.append([c["pos"], Palette.RANK_S, 11.0])
+		for m in marks:
+			var sp: Vector2 = m[0] - center + vp * 0.5
 			if Rect2(Vector2.ZERO, vp).has_point(sp):
 				continue
 			var dir := (sp - vp * 0.5).normalized()
@@ -696,8 +896,8 @@ class _Arrows:
 					var edge: float = (inner.end[axis] if dir[axis] > 0.0 else inner.position[axis]) - vp[axis] * 0.5
 					t = minf(t, edge / dir[axis])
 			var at := vp * 0.5 + dir * t
-			var col: Color = Palette.HAZARD if f["tier"] == "boss" else Palette.ELITE
-			var sz := 16.0 if f["tier"] == "boss" else 11.0
+			var col: Color = m[1]
+			var sz: float = m[2]
 			var tri := PackedVector2Array([at + dir * sz, at + dir.rotated(2.4) * sz, at + dir.rotated(-2.4) * sz])
 			draw_colored_polygon(tri, col)
 			draw_polyline(tri + PackedVector2Array([tri[0]]), Color(0, 0, 0, 0.9), 2.0)

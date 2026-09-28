@@ -819,17 +819,44 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 	for name in r.kill_counts:
 		monster_kill_counts[name] = int(monster_kill_counts.get(name, 0)) + int(r.kill_counts[name])
 	var t := int(r.time)
-	var best := t > best_endless_time
+	var best := t > int(endless_best.get(r.biome, 0))
 	best_endless_time = maxi(best_endless_time, t)
+	endless_best[r.biome] = maxi(int(endless_best.get(r.biome, 0)), t)
 	endless_runs += 1
+	# First-time milestones: gold, Essence, an Endless relic, a guild title.
+	var got: Array = []
+	for m in GameData.ENDLESS_MILESTONES:
+		if endless_milestones.has(int(m["at"])) or t < int(m["at"]) or (m.get("sealed", false) and not r.won):
+			continue
+		endless_milestones.append(int(m["at"]))
+		coins += int(m["coins"])
+		crystals += int(m["crystals"])
+		var line := "%s: %s+%d essence" % [m["name"], "+%d gold, " % int(m["coins"]) if int(m["coins"]) > 0 else "", int(m["crystals"])]
+		if m.has("relic"):
+			var rl := Combat.relic_from_unique(GameData.ENDLESS_RELICS[m["relic"]])
+			rl.equipped = Combat.equipped_relics().size() < relic_slot_cap()
+			relics.append(rl)
+			line += ", the relic %s" % rl.name
+		if m.has("title"):
+			line += ", the title \"%s\"" % m["title"]
+		got.append(line)
 	runs_finished += 1
-	run_history.push_front({"day": day, "kind": "Endless Rift", "result": "Survived", "floor": "", "time": t, "kills": r.kills,
+	run_history.push_front({"day": day, "kind": "Endless Rift", "result": "Sealed" if r.won else "Survived", "floor": "", "time": t, "kills": r.kills,
 		"heroes": names, "boons": [], "coins": int(pay["coins"]), "crystals": int(pay["crystals"])})
 	if run_history.size() > GameData.RUN_HISTORY_MAX:
 		run_history.resize(GameData.RUN_HISTORY_MAX)
 	save()
 	state_changed.emit()
-	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "xp": int(pay["xp"]), "loot": loot_names, "best": best}
+	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "xp": int(pay["xp"]), "loot": loot_names, "best": best, "milestones": got}
+
+
+## The guild's Endless Rift title (the last milestone title earned), or "".
+func endless_title() -> String:
+	var t := ""
+	for m in GameData.ENDLESS_MILESTONES:
+		if m.has("title") and endless_milestones.has(int(m["at"])):
+			t = str(m["title"])
+	return t
 
 
 # ---------------- Downed mid-rift ----------------

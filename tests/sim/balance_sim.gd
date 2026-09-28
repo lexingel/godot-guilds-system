@@ -71,7 +71,7 @@ const SURV_RUNS := 12
 func _best_pick(o: Array) -> String:
 	if o.is_empty():
 		return ""
-	for pref in ["ability:", "might", "vigor", "skill:", "haste", "area"]:
+	for pref in ["evolve:", "ability:", "might", "vigor", "twist:", "skill:", "haste", "area"]:
 		for id in o:
 			if str(id).begins_with(pref) and not (pref == "skill:" and str(id).split(":")[2] in ["heal", "sanctuary", "taunt", "smoke_bomb"]):
 				return str(id)
@@ -82,21 +82,21 @@ func _survivors(name: String, p: Array) -> void:
 	var times: Array = []
 	var kills := 0
 	var levels := 0
+	var wins := 0
 	for i in SURV_RUNS:
 		var party: Array = _build_party(p)
 		var r := SurvivorsRun.new(party, ["vale", "marsh", "ashen"][i % 3], 1000 + i)
-		while not r.over and r.time < 1200.0:
+		while not r.over and r.time < 1500.0:
 			r.step(0.2, r.autopilot_dir())
 			r.events.clear()
-			while r.pending_levels > 0:
-				var o := r.offer()
-				r.pick(_best_pick(o))
+			r.settle_picks(_best_pick)
 		times.append(int(r.time))
 		kills += r.kills
 		levels += r.level
+		wins += 1 if r.won else 0
 	times.sort()
-	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d" % [name, times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
-		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / SURV_RUNS, levels / SURV_RUNS])
+	print("%-24s survivors: median %d:%02d (min %d:%02d, max %d:%02d) · %d kills · level %d · sealed %d/%d" % [name, times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
+		times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, kills / SURV_RUNS, levels / SURV_RUNS, wins, SURV_RUNS])
 
 
 ## Tower of Trials: how high each profile climbs (3 tries a floor, full HP
@@ -242,9 +242,7 @@ func _calibrate() -> void:
 			while not r.over and r.time < 900.0:
 				r.step(0.25, r.autopilot_dir())
 				r.events.clear()
-				while r.pending_levels > 0:
-					var o := r.offer()
-					r.pick(_best_pick(o))
+				r.settle_picks(_best_pick)
 			times.append(int(r.time))
 		times.sort()
 		print("power %4d  tower median floor %3d (rec there %d)  endless median %d:%02d" % [power, tops[3], GameState.tower_recommended_power(maxi(1, tops[3])), times[1] / 60, times[1] % 60])

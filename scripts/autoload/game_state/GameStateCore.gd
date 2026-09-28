@@ -50,6 +50,8 @@ var fallen: Array = []           # memorial: heroes lost for good
 var heroes_lost_total: int = 0
 var best_endless_time: int = 0   # seconds survived in the Endless Rift (survivors mode)
 var endless_runs: int = 0
+var endless_best := {}             # region id -> best seconds there
+var endless_milestones: Array = []   # ENDLESS_MILESTONES "at" values already paid
 var boon_set4_reached: bool = false
 var tower_best: int = 0          # highest Tower of Trials floor ever cleared
 var tower_week: int = 0          # tower_week_id() the weekly ladder progress belongs to
@@ -511,7 +513,7 @@ func save() -> void:
 		"champion_offers": champion_offers.map(func(c): return c.to_dict()),
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
-		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "boon_set4_reached": boon_set4_reached,
+		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "endless_best": endless_best, "endless_milestones": endless_milestones, "boon_set4_reached": boon_set4_reached,
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "guild_news": guild_news,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,

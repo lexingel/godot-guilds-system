@@ -643,11 +643,12 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
 	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(name_lbl)
-	if GameState.tower_title() != "" and not _narrow():
-		var title_lbl := _label(GameState.tower_title(), 12)
+	var titles: Array = [GameState.tower_title(), GameState.endless_title()].filter(func(x): return x != "")
+	if not titles.is_empty() and not _narrow():
+		var title_lbl := _label(" · ".join(titles), 12)
 		title_lbl.add_theme_color_override("font_color", Palette.RANK_S)
 		title_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		title_lbl.tooltip_text = "Guild title — Tower of Trials, best floor %d" % GameState.tower_best
+		title_lbl.tooltip_text = "Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d)" % [GameState.tower_best, GameState.best_endless_time / 60, GameState.best_endless_time % 60]
 		title_lbl.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.add_child(title_lbl)
 	if breadcrumb != "" and not _narrow():
@@ -1327,10 +1328,12 @@ func _party_launch_bar() -> Control:
 		var hl := _wrap_label("Wounded: %s — they start the rift hurt." % ", ".join(hurt.map(func(h): return "%s (%d/%d)" % [h.name.split(" the ")[0], h.hp, Combat.max_hp(h)])), 12)
 		hl.add_theme_color_override("font_color", Palette.HAZARD)
 		info.add_child(hl)
+	if _pending_endless and _pending_rift_rank == "":
+		info.add_child(_endless_region_picker())
 	if _pending_endless and not pending_party.is_empty():
 		var lead := GameState.find_hero(pending_party[0])
 		if lead:
-			info.add_child(_wrap_label("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive as long as you can." % lead.name.split(" the ")[0], 12, true))
+			info.add_child(_wrap_label("Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift." % lead.name.split(" the ")[0], 12, true))
 	row.add_child(info)
 	var enter := _icon_domain_button("violet", GameData.CAMP_HUB_ICON_PATH["rift"], "Begin the trial" if _pending_tower else "Enter the Rift", func():
 		if pending_party.is_empty():
@@ -1383,12 +1386,49 @@ func _start_bench() -> void:
 	while view.run.time < 360.0 and not view.run.over:
 		view.run.step(0.1, view.run.autopilot_dir())
 		view.run.events.clear()
-		while view.run.pending_levels > 0:
-			view.run.pick(view.run.offer()[0])
+		view.run.settle_picks()
 	print("[bench] fast-forward to 6:00 took %d ms" % (Time.get_ticks_msec() - t0))
 	visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	get_tree().root.add_child(view)
+
+
+## The Endless Rift's region, with the guild's best time in each and the
+## next milestone.
+func _endless_region_picker() -> Control:
+	var box := _vbox(4)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.add_child(_label("Region:", 12, true))
+	if _endless_biome == "":
+		_endless_biome = "vale"
+	for b in ["vale", "marsh", "ashen"]:
+		var best := int(GameState.endless_best.get(b, 0))
+		var btn := Button.new()
+		btn.text = "%s  %s" % [str(GameData.BIOMES[b]["name"]).trim_prefix("The "), "%d:%02d" % [best / 60, best % 60] if best > 0 else "—"]
+		btn.toggle_mode = true
+		btn.button_pressed = b == _endless_biome
+		btn.tooltip_text = "Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s)." % [GameData.BIOMES[b]["name"], SurvivorsRun.FINAL_WARDEN[b]]
+		btn.pressed.connect(func(): _endless_biome = b; render())
+		row.add_child(btn)
+	box.add_child(row)
+	var next: Dictionary = {}
+	for m in GameData.ENDLESS_MILESTONES:
+		if not GameState.endless_milestones.has(int(m["at"])):
+			next = m
+			break
+	if not next.is_empty():
+		var bits: Array = []
+		if int(next["coins"]) > 0:
+			bits.append("%d gold" % int(next["coins"]))
+		bits.append("%d essence" % int(next["crystals"]))
+		if next.has("relic"):
+			bits.append("the relic %s" % GameData.ENDLESS_RELICS[next["relic"]]["name"])
+		if next.has("title"):
+			bits.append("the title \"%s\"" % next["title"])
+		var goal := "Beat the Rift Warden at 20:00" if next.get("sealed", false) else "Survive %d:00" % (int(next["at"]) / 60)
+		box.add_child(_wrap_label("Next milestone: %s for %s." % [goal, ", ".join(bits)], 12, true))
+	return box
 
 
 ## The Endless Rift is a real-time survivors run in its own node; Main steps
@@ -1402,7 +1442,7 @@ func _start_survivors(ids: Array[String]) -> void:
 	if party.is_empty():
 		return
 	var view := SurvivorsView.new()
-	view.setup(party, GameState.pick_biome())
+	view.setup(party, _endless_biome if _endless_biome != "" else GameState.pick_biome())
 	visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	get_tree().root.add_child(view)

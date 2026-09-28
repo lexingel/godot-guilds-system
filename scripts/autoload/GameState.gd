@@ -29,6 +29,8 @@ func reset() -> void:
 	heroes_lost_total = 0
 	best_endless_time = 0
 	endless_runs = 0
+	endless_best = {}
+	endless_milestones = []
 	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
@@ -167,6 +169,8 @@ func load_save() -> bool:
 	heroes_lost_total = int(data.get("heroes_lost_total", 0))
 	best_endless_time = int(data.get("best_endless_time", 0))
 	endless_runs = int(data.get("endless_runs", 0))
+	endless_best = (data.get("endless_best", {}) as Dictionary).duplicate()
+	endless_milestones = (data.get("endless_milestones", []) as Array).map(func(x): return int(x))
 	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))
 	tower_week_cleared = int(data.get("tower_week_cleared", 0))
