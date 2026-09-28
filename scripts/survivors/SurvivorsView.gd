@@ -94,6 +94,7 @@ func _ready() -> void:
 		# The hero's own walk cycle (their subclass look), else their role's.
 		var own := "sub_" + str(h["hero"].pool_id)
 		var n := _make_sprite(own if ResourceLoader.exists(WALK_DIR + own + "_0.png") else str(h["role"]), 1.0)
+		n.material = UiKit.look_material(GameState.look_for(h["hero"]))
 		_world.add_child(n)
 		_hero_nodes[h["hero"].id] = n
 	_build_hud()

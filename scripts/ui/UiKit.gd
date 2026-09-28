@@ -400,7 +400,37 @@ func _hp_bar(current: int, max_val: int, width: float) -> ProgressBar:
 ## hero's portrait always reads the same way wherever it appears. Returns an
 ## empty sized box if this class/pool has no portrait art (never happens for
 ## the 5 real classes today, but keeps callers from needing their own guard).
-func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
+static var _look_mats := {}
+
+
+## A hero's colour variant as a material (null for look 0, the art as drawn).
+static func look_material(look: int) -> ShaderMaterial:
+	if look <= 0:
+		return null
+	var hues: Array = GameData.HERO_LOOK_HUES
+	var idx := 1 + (look - 1) % (hues.size() - 1)
+	if not _look_mats.has(idx):
+		var m := ShaderMaterial.new()
+		m.shader = preload("res://theme/hero_look.gdshader")
+		m.set_shader_parameter("hue_shift", float(hues[idx]))
+		_look_mats[idx] = m
+	return _look_mats[idx]
+
+
+## `node` wearing hero `h`'s colour variant.
+func _hero_look(node: CanvasItem, h: Hero) -> CanvasItem:
+	node.material = look_material(GameState.look_for(h))
+	return node
+
+
+## A hero's portrait, trimmed and in their colour variant.
+func _hero_icon(h: Hero, size: int) -> TextureRect:
+	var t := _icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), size)
+	_hero_look(t, h)
+	return t
+
+
+func _framed_portrait(cls_id: String, pool_id: String, size: float, look: int = 0) -> Control:
 	var frame_wrap := Control.new()
 	frame_wrap.custom_minimum_size = Vector2(size, size)
 	frame_wrap.size = Vector2(size, size)
@@ -408,6 +438,7 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float) -> Control:
 	if portrait_path == "":
 		return frame_wrap
 	var pf_icon := _icon_trimmed(portrait_path, int(size * 0.82))
+	pf_icon.material = look_material(look)
 	pf_icon.position = Vector2(size * 0.09, size * 0.09)
 	frame_wrap.add_child(pf_icon)
 	var pf_frame := _icon(GameData.PORTRAIT_FRAME_PATH, int(size))

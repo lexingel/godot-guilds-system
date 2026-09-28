@@ -441,6 +441,8 @@ func _turn_order_strip(state: Dictionary) -> Control:
 		tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var sz := 44 if is_current else 34
 		var icon := _icon_trimmed(icon_path, sz) if is_hero else _icon(icon_path, sz)
+		if is_hero:
+			_hero_look(icon, _hero_by_id(party, str(entry["id"])))
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if i < turn_idx:
 			tile.modulate = Color(1, 1, 1, 0.35)
@@ -1615,7 +1617,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			var ring := _ground_ring(cx, feet, ring_w, Palette.EMBER_BRIGHT)
 			arena.add_child(ring)
 			_pulse(ring)
-		var rect := _icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), int(size))
+		var rect := _hero_icon(h, int(size))
 		var wrapper := _wrap_icon(rect)
 		wrapper.position = Vector2(cx - size * 0.5, feet - size)
 		_add_ground_shadow(arena, wrapper.position, size)
@@ -2123,7 +2125,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var who := HBoxContainer.new()
 		who.add_theme_constant_override("separation", 8)
 		who.custom_minimum_size.x = 200
-		who.add_child(_icon_trimmed(GameData.portrait_for_hero(current_hero.cls_id, current_hero.pool_id), 56))
+		who.add_child(_hero_icon(current_hero, 56))
 		var info := _vbox(2)
 		info.alignment = BoxContainer.ALIGNMENT_CENTER
 		var nm := _label("%s's turn" % current_hero.name.split(" the ")[0], 15)

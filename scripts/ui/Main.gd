@@ -214,6 +214,7 @@ func render() -> void:
 	Engine.time_scale = minf(GameState.combat_speed, 3.0) if screen == "rift_run" else 1.0
 	GameState.resolve_recovery()
 	GameState.resolve_guild_board()
+	GameState.refresh_looks()
 	if GameState.guild_name != "":
 		if not GameState.check_feature_unlocks().is_empty():
 			AudioManager.play_sfx(GameData.SFX_PATH["unlock"])
@@ -2132,6 +2133,7 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 		icon.texture = tex
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.custom_minimum_size = Vector2(44, 44)
+		_hero_look(icon, h)
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		if not downed:

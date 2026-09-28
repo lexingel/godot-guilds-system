@@ -539,7 +539,7 @@ func _request_card() -> PanelContainer:
 	for id in req["ids"]:
 		var h := GameState.find_hero(str(id))
 		if h:
-			row.add_child(_icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), 64))
+			row.add_child(_hero_icon(h, 64))
 	var col := _vbox(6)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var t := _label(GameState.request_title(), 16)
@@ -658,7 +658,7 @@ func _render_ledger(v: VBoxContainer) -> void:
 		row.add_theme_constant_override("separation", 12)
 		var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 		if portrait != "":
-			row.add_child(_icon_trimmed(portrait, 40))
+			row.add_child(_hero_icon(h, 40))
 		var col := _vbox(2)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		col.add_child(_label("%s — Rank %s, Lv%d · wage %d Gold/week" % [h.name.split(" the ")[0], h.rank, h.level, GameState.wage_of(h)], 14))
@@ -857,7 +857,7 @@ func _champion_card(c: Hero, offer_idx: int) -> PanelContainer:
 	card.custom_minimum_size.x = 270
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 56.0))
+	row.add_child(_framed_portrait(c.cls_id, c.pool_id, 56.0, GameState.look_for(c)))
 	var col := _vbox(3)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var nm := _label(c.name, 14)
@@ -930,7 +930,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		card.add_theme_stylebox_override("panel", style)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
-		row.add_child(_framed_portrait(h.cls_id, h.pool_id, 56.0))
+		row.add_child(_framed_portrait(h.cls_id, h.pool_id, 56.0, GameState.look_for(h)))
 		var mid := _vbox(2)
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))

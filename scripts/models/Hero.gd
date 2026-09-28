@@ -48,6 +48,8 @@ var ability_awakened: bool = false  # GameState.awaken_ability() — a bucketed 
 var morale: int = 60           # 0-100, see GameData.MORALE_TIERS
 var unpaid_weeks: int = 0       # paydays missed in a row
 var last_rift_day: int = 0      # day this hero last went on a rift (idle heroes grow restless)
+var look: int = 0               # colour variant (0 = the art as drawn), see GameState.refresh_looks
+var look_of: String = ""        # the portrait `look` was picked for; a new one (an evolution) picks again
 var history: Dictionary = {}              # lifetime counters: kills/boss_kills/elite_kills/knockouts/rifts_cleared — feeds earned quirks (GameData.QUIRKS)
 
 
@@ -72,7 +74,7 @@ func to_dict() -> Dictionary:
 		"down_runs": down_runs, "bedded": bedded, "busy_runs": busy_runs, "battered": battered, "attrs": attrs, "attr_points": attr_points, "attr_trained": attr_trained, "hp": hp, "is_champion": is_champion, "oath": oath,
 		"formation": formation, "prior_pool_id": prior_pool_id,
 		"prior_innate_kind": prior_innate_kind, "prior_innate_value": prior_innate_value,
-"ability_awakened": ability_awakened,
+"ability_awakened": ability_awakened, "look": look, "look_of": look_of,
 		"history": history, "morale": morale, "unpaid_weeks": unpaid_weeks, "last_rift_day": last_rift_day,
 	}
 
@@ -91,6 +93,8 @@ static func from_dict(d: Dictionary) -> Hero:
 	h.level = d.get("level", 1)
 	h.xp = d.get("xp", 0)
 	h.skill_points = d.get("skill_points", 0)
+	h.look = int(d.get("look", 0))
+	h.look_of = str(d.get("look_of", ""))
 	if d.has("prior_pool_id"):
 		h.prior_pool_id = d.get("prior_pool_id", "")
 		h.prior_innate_kind = d.get("prior_innate_kind", "")

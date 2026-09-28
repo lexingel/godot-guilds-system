@@ -106,6 +106,7 @@ const SFX_PATH := {
 ## The tester build: what changed lately and what to try, shown on the title
 ## screen (newest first, a few lines each).
 const WHATS_NEW := [
+	"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",
 	"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.",
 	"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.",
 	"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.",
@@ -201,6 +202,9 @@ const STATUS_PLATE_PATH := "res://assets/ui/status_plate.png"
 const PORTRAIT_FRAME_PATH := "res://assets/ui/portrait_frame.png"
 const ABILITY_BAR_STRIP_PATH := "res://assets/ui/ability_bar_strip.png"
 const HERO_DETAIL_BG := "res://assets/screens/hero_detail_bg.png"
+## Hue turns for hero colour variants (look 0 keeps the art as drawn); the
+## most different first. A 6th hero sharing one portrait wraps round to 1.
+const HERO_LOOK_HUES := [0.0, 0.5, 0.3, 0.7, 0.15]
 const HERO_PORTRAIT_PATH := {
 	"warrior": "res://assets/heroes/warrior.png",
 	"ranger": "res://assets/heroes/ranger.png",

@@ -62,6 +62,41 @@ func quirk_treat_cost() -> int:
 	return int(round(GameData.QUIRK_TREAT_COST * (1.0 - respec_fee_reduction())))
 
 
+## Heroes who'd look identical (the same portrait: the same subclass, or
+## Champions of one role) get different colour variants. The earliest in the
+## roster keeps the art as drawn, the next the first free variant, and so on;
+## a hero keeps theirs until an evolution changes their portrait.
+func refresh_looks() -> void:
+	var taken := {}   # portrait -> {look: true}
+	for h in heroes:
+		var art := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		var t: Dictionary = taken.get(art, {})
+		if h.look_of != art or t.has(h.look):
+			h.look = _free_look(t)
+			h.look_of = art
+		t[h.look] = true
+		taken[art] = t
+
+
+## The variant a hero would wear on joining (a recruit offer's preview).
+func look_for(h: Hero) -> int:
+	if heroes.has(h):
+		return h.look
+	var art := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	var t := {}
+	for o in heroes:
+		if o.look_of == art:
+			t[o.look] = true
+	return _free_look(t)
+
+
+func _free_look(taken: Dictionary) -> int:
+	var k := 0
+	while taken.has(k):
+		k += 1
+	return k
+
+
 func find_hero(hero_id: String) -> Hero:
 	for h in heroes:
 		if h.id == hero_id:

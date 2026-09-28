@@ -286,7 +286,7 @@ func _run_bar(in_combat: bool) -> Control:
 			hrow.add_theme_constant_override("separation", 4)
 			var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 			if portrait != "":
-				var pic := _icon_trimmed(portrait, 28)
+				var pic := _hero_icon(h, 28)
 				if h.hp <= 0 or h.is_downed():
 					pic.modulate = Color(1, 1, 1, 0.35)
 				hrow.add_child(pic)
@@ -556,7 +556,7 @@ func _injury_panel() -> Control:
 		var sev := str(e["severity"])
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
-		row.add_child(_icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), 44))
+		row.add_child(_hero_icon(h, 44))
 		var who := _vbox(2)
 		who.custom_minimum_size.x = 150
 		who.add_child(_label(h.name.split(" the ")[0], 14))

@@ -253,7 +253,7 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var cc := CenterContainer.new()
 	var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 	if portrait != "":
-		cc.add_child(_icon_trimmed(portrait, 190))
+		cc.add_child(_hero_icon(h, 190))
 	stage.add_child(cc)
 	mid.add_child(stage)
 	var pw := _label("Power %d" % Combat.power_of(h), 15)
@@ -733,7 +733,7 @@ func _roster_row(h: Hero) -> Control:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var portrait_path := GameData.portrait_for_hero(h.cls_id, h.pool_id)
 	if portrait_path != "":
-		var pi := _icon_trimmed(portrait_path, 48)
+		var pi := _hero_icon(h, 48)
 		pi.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		if not h.is_available():
 			pi.modulate = Color(0.5, 0.5, 0.5, 0.8)
