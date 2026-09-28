@@ -336,7 +336,7 @@ func _play_events() -> void:
 			"kill":
 				if e["tier"] != "combat":
 					Fx.burst(_fx, "explosion", e["pos"], 120.0 if e["tier"] == "elite" else 220.0, Color(0.8, 0.75, 0.9), 18.0)
-					AudioManager.play_sfx(GameData.SFX_PATH["victory" if e["tier"] == "boss" else "hit_heavy"])
+					AudioManager.cue("victory" if e["tier"] == "boss" else "hit_heavy", "[The warden falls]" if e["tier"] == "boss" else "[An elite falls]")
 			"hurt", "dodge":
 				pass
 			"ability":
@@ -353,12 +353,12 @@ func _play_events() -> void:
 					_banner("The Rift Warden: %s!" % str(e["name"]), Palette.HAZARD, "Bring it down to seal the rift")
 				else:
 					_banner("%s emerges!" % str(e["name"]), Palette.EMBER_BRIGHT)
-				AudioManager.play_sfx(GameData.SFX_PATH["boss"])
+				AudioManager.cue("boss", "[%s roars]" % str(e["name"]).split(",")[0], Palette.HAZARD)
 			"wave":
 				if run.time > 1.0 and str(e["wave"]) != "horde":
 					_banner(str(e["name"]), Palette.TEXT, str(e["hint"]))
 			"chest":
-				AudioManager.play_sfx(GameData.SFX_PATH["relic"])
+				AudioManager.cue("relic", "[A chest drops]")
 			"lightning":
 				Fx.line(_fx, e["pos"] + Vector2(randf_range(-30, 30), -260), e["pos"], Color(0.8, 0.9, 1.0), 0.25)
 				Fx.burst(_fx, "explosion", e["pos"], 60.0, Color(0.7, 0.85, 1.0), 26.0)
@@ -374,19 +374,29 @@ func _play_events() -> void:
 					AudioManager.play_sfx(GameData.SFX_PATH["heal" if e["kind"] == "heal" else "coin"])
 			"slam":
 				Fx.ring(_fx, e["pos"], e["r"], Color(1, 0.5, 0.3), 0.35)
-				AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy"])
+				if e.get("hit", false):
+					AudioManager.cue("hit_heavy", "[A slam hits the party]", Palette.HAZARD)
+				else:
+					AudioManager.cue("hit_heavy", "[Ground slam]")
 			"won":
 				_banner("The rift is sealed!", Palette.RANK_S)
 				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 			"phase":
 				_banner("%s calls the horde!" % str(e["name"]), Palette.HAZARD)
 			"down":
-				AudioManager.play_sfx(GameData.SFX_PATH["knockout"])
+				AudioManager.cue("knockout", "[%s is down]" % _hero_name(str(e["hero"])), Palette.HAZARD)
 			"revive":
 				var rn: Node2D = _hero_nodes.get(e["hero"])
 				if rn:
 					Fx.burst(_fx, "holy", rn.position + Vector2(0, -24), 90.0, Color(1, 1, 0.85), 18.0)
 	run.events.clear()
+
+
+func _hero_name(hero_id: String) -> String:
+	for h in run.heroes:
+		if h["hero"].id == hero_id:
+			return str(h["hero"].name).split(" the ")[0]
+	return "A hero"
 
 
 ## A short name floating up over the field (an Ability going off).

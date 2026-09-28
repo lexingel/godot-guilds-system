@@ -630,7 +630,10 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 			if dmg2 > 0 and hero_wrappers.has(h.id):
 				var hwv: Control = hero_wrappers[h.id]
 				var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
-				AudioManager.play_sfx(GameData.SFX_PATH["hit_heavy" if heavy2 else "hit"])
+				if heavy2:
+					AudioManager.cue("hit_heavy", "[Heavy blow on %s]" % h.name.split(" the ")[0], Palette.HAZARD)
+				else:
+					AudioManager.play_sfx(GameData.SFX_PATH["hit"])
 				Fx.burst(arena, "claw", _center(hwv), hwv.custom_minimum_size.y * (0.75 if heavy2 else 0.55), Color.WHITE, 24.0, 0.0, true)
 				_spawn_impact_particles(hwv, hwv.custom_minimum_size * 0.5, retaliation_color, heavy2)
 				_knockback(hwv, -1.0, heavy2)
@@ -647,7 +650,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 					await _tween_hurt(hwv)
 				await _spawn_damage_number(hwv, "-%d" % dmg2, Palette.HAZARD, heavy2)
 				if before > 0 and h.hp <= 0:
-					AudioManager.play_sfx(GameData.SFX_PATH["knockout"])
+					AudioManager.cue("knockout", "[%s is down]" % h.name.split(" the ")[0], Palette.HAZARD)
 					await _tween_collapse(hwv)
 		if dashed and is_instance_valid(mw):
 			_dash(mw, start_x, 0.2)
@@ -2312,7 +2315,8 @@ func _turn_sfx(lines: Array) -> void:
 			["strikes every foe", "relic"], ["Phoenix", "relic"], ["uses ", "ability"], ["shield", "shield"],
 			["mends", "heal"], ["Tonic", "heal"]]:
 		if text.contains(pair[0]):
-			AudioManager.play_sfx(GameData.SFX_PATH[pair[1]])
+			# A wind-up is the one to hear: it lands next round unless met.
+			AudioManager.cue(pair[1], "[A foe gathers its strength]" if pair[1] == "windup" else "")
 			return
 
 
@@ -2321,12 +2325,12 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 	if state.has("_phase_banner"):
 		var pb: Array = state["_phase_banner"]
 		state.erase("_phase_banner")
-		AudioManager.play_sfx(GameData.SFX_PATH["boss"])
+		AudioManager.cue("boss", "[%s roars: a second phase]" % str(pb[0]).split(",")[0], Palette.HAZARD)
 		_title_card(arena, W, H, str(pb[1]), "%s enters its second phase" % str(pb[0]).split(",")[0], Palette.HAZARD)
 		return
 	if (state.get("is_boss", false) or state.get("is_elite", false)) and not is_same(_boss_intro_for, state):
 		_boss_intro_for = state
-		AudioManager.play_sfx(GameData.SFX_PATH["boss"])
+		AudioManager.cue("boss", "[A boss roars]" if state.get("is_boss", false) else "[An elite snarls]", Palette.VIOLET)
 		_banner_state = state
 		_banner_round = round_num
 		var boss: Dictionary = state["monsters"][0]

@@ -106,6 +106,7 @@ const SFX_PATH := {
 ## The tester build: what changed lately and what to try, shown on the title
 ## screen (newest first, a few lines each).
 const WHATS_NEW := [
+	"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.",
 	"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",
 	"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.",
 	"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.",

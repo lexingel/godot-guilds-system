@@ -1177,10 +1177,12 @@ func _tick_slams(dt: float) -> void:
 		s["t"] = float(s["t"]) - dt
 		if s["t"] > 0.0:
 			continue
-		events.append({"type": "slam", "pos": s["pos"], "r": s["r"]})
+		var hit := false
 		for h in heroes:
 			if h["alive"] and h["pos"].distance_squared_to(s["pos"]) <= float(s["r"]) * float(s["r"]):
 				_hurt_hero(h, float(s["dmg"]))
+				hit = true
+		events.append({"type": "slam", "pos": s["pos"], "r": s["r"], "hit": hit})
 		slams.remove_at(k)
 
 

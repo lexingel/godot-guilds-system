@@ -2009,6 +2009,12 @@ func _render_settings(v: VBoxContainer) -> void:
 		render())
 	cb.tooltip_text = "Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item"
 	acc_row.add_child(cb)
+	var ha := _button("Hearing aid: %s" % ("on" if GameState.hearing_aid else "off"), func():
+		GameState.hearing_aid = not GameState.hearing_aid
+		GameState.save_settings()
+		render())
+	ha.tooltip_text = "Sounds that tell you something also show as captions at the bottom of the screen (a boss arriving, a heavy blow, a hero going down, a wind-up, a chest dropping), and the biggest ones pulse the screen's edges"
+	acc_row.add_child(ha)
 	v.add_child(acc_row)
 
 	v.add_child(_hsep())
