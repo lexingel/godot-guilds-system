@@ -67,7 +67,7 @@ func _path_node_marker(kind: String, is_current: bool, cb: Callable) -> Control:
 		for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
 			btn.add_theme_stylebox_override(style_name, clear_style)
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.tooltip_text = desc + "\n(click to take this path)"
+		btn.tooltip_text = desc + tr("\n(click to take this path)")
 		btn.pressed.connect(cb)
 		wrap.add_child(btn)
 
@@ -226,7 +226,7 @@ func _run_bar(in_combat: bool) -> Control:
 	top.add_theme_constant_override("separation", 10)
 	var cycle_label := ""
 	if GameState.run.has("tower"):
-		cycle_label = " — Floor %d" % int(GameState.run["tower"])
+		cycle_label = tr(" — Floor %d") % int(GameState.run["tower"])
 	top.add_child(_label("%s%s" % [diff["name"], cycle_label], 16))
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 3)
@@ -241,7 +241,7 @@ func _run_bar(in_combat: bool) -> Control:
 	var tags: Array[String] = []
 	var rank: String = str(GameState.run.get("rift_rank", ""))
 	if int(GameState.run.get("shield", 0)) > 0:
-		tags.append("Relic ward %d" % int(GameState.run["shield"]))
+		tags.append(tr("Relic ward %d") % int(GameState.run["shield"]))
 	if not tags.is_empty():
 		top.add_child(_label(" · ".join(tags), 12, true))
 	# Retreat lives up here, out of the way, and asks once before ending the
@@ -272,7 +272,7 @@ func _run_bar(in_combat: bool) -> Control:
 		chips.add_theme_constant_override("h_separation", 6)
 		chips.add_theme_constant_override("v_separation", 4)
 		var rk := str(GameState.run["rift_rank"])
-		chips.add_child(_rule_chip("Rank %s" % rk, "This rift is on the rift ladder at Rank %s. Its rules:" % rk, Palette.RANK_S))
+		chips.add_child(_rule_chip(tr("Rank %s") % rk, tr("This rift is on the rift ladder at Rank %s. Its rules:") % rk, Palette.RANK_S))
 		for rr in rank_rules:
 			chips.add_child(_rule_chip(str(rr[1]), str(rr[2]), Palette.HAZARD if str(rr[0]) != "foes" else Palette.LINE))
 		col.add_child(chips)
@@ -321,10 +321,10 @@ func _orders_bar() -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	var left := GameState.orders_left()
-	var head := _label("Guild Orders  %d/%d" % [left, GameState.orders_per_rift()], 13)
+	var head := _label(tr("Guild Orders  %d/%d") % [left, GameState.orders_per_rift()], 13)
 	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if left > 0 else Palette.MUTED)
 	head.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.tooltip_text = "Orders from your Guild Management upgrades. You get %d per rift (more at Renowned and Legendary guild tier)." % GameState.orders_per_rift()
+	head.tooltip_text = tr("Orders from your Guild Management upgrades. You get %d per rift (more at Renowned and Legendary guild tier).") % GameState.orders_per_rift()
 	head.mouse_filter = Control.MOUSE_FILTER_STOP
 	row.add_child(head)
 	for id in GameState.orders_unlocked():
@@ -360,12 +360,12 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(bl)
 	if GameState.run.has("daily"):
 		var drule: Dictionary = GameState.daily_info(int(GameState.run["daily"]))["rule"]
-		var dl := _wrap_label("Daily Rift · Rule · %s — %s" % [drule["name"], drule["desc"]], 12)
+		var dl := _wrap_label(tr("Daily Rift · Rule · %s — %s") % [drule["name"], drule["desc"]], 12)
 		dl.add_theme_color_override("font_color", Palette.RANK_S)
 		v.add_child(dl)
 	if GameState.run.has("tower"):
 		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
-			var rl := _wrap_label("Rule · %s — %s" % [r["name"], r["desc"]], 12)
+			var rl := _wrap_label(tr("Rule · %s — %s") % [r["name"], r["desc"]], 12)
 			rl.add_theme_color_override("font_color", Palette.HAZARD)
 			v.add_child(rl)
 	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
@@ -402,15 +402,15 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		var sealed_dict: Dictionary = sealed
 		var sealed_row := HBoxContainer.new()
 		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 28))
-		sealed_row.add_child(_label("Rift Sealed! +%d Essence%s%s" % [
+		sealed_row.add_child(_label(tr("Rift Sealed! +%d Essence%s%s") % [
 			int(sealed_dict["essence"]),
-			" (+%d%% Wardstones)" % (GameState.lvl("infra.wardstones") * 10) if GameState.lvl("infra.wardstones") > 0 else "",
-			" · Rift Cache found: +%d Gold!" % int(sealed_dict.get("cache", 0)) if int(sealed_dict.get("cache", 0)) > 0 else "",
+			tr(" (+%d%% Wardstones)") % (GameState.lvl("infra.wardstones") * 10) if GameState.lvl("infra.wardstones") > 0 else "",
+			tr(" · Rift Cache found: +%d Gold!") % int(sealed_dict.get("cache", 0)) if int(sealed_dict.get("cache", 0)) > 0 else "",
 		]))
 		v.add_child(sealed_row)
 		var dbonus: Dictionary = sealed_dict.get("daily", {})
 		if not dbonus.is_empty():
-			var dl := _label("Daily Rift sealed! +%d Essence · streak %d" % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
+			var dl := _label(tr("Daily Rift sealed! +%d Essence · streak %d") % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
 			dl.add_theme_color_override("font_color", Palette.RANK_S)
 			v.add_child(dl)
 		if str(sealed_dict.get("flavor", "")) != "":
@@ -454,14 +454,14 @@ func _render_shop_node(v: VBoxContainer) -> void:
 	head.add_theme_constant_override("separation", 12)
 	head.add_child(_label("Rift Hallway Shop", 18))
 	if GameState.merchant_price_reduction() > 0.0:
-		var tl := _label("Trade Network: -%d%% prices" % int(round(GameState.merchant_price_reduction() * 100)), 12, true)
+		var tl := _label(tr("Trade Network: -%d%% prices") % int(round(GameState.merchant_price_reduction() * 100)), 12, true)
 		tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		head.add_child(tl)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
 	var cost := GameState.shop_reroll_cost()
-	var reroll := _icon_button(GameData.BUTTON_ICON_PATH["dice"], "Reroll offers (%d Gold)" % cost, func():
+	var reroll := _icon_button(GameData.BUTTON_ICON_PATH["dice"], tr("Reroll offers (%d Gold)") % cost, func():
 		GameState.reroll_shop()
 		render()
 	)
@@ -503,7 +503,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		if bought:
 			cv.add_child(_label("Bought", 12, true))
 		else:
-			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Buy — %d Gold" % int(off["price"]), func(idx=i):
+			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], tr("Buy — %d Gold") % int(off["price"]), func(idx=i):
 				GameState.buy_shop_offer(idx)
 				render()
 			)
@@ -582,11 +582,11 @@ func _injury_panel() -> Control:
 			func(): return GameState.injury_carry(h.id))
 		var need := int(GameData.INJURY_REINFORCEMENTS[sev])
 		var sent: Array = idle.slice(0, need).map(func(x): return x.name.split(" the ")[0])
-		act.call("Send %d from camp" % need,
-			("%s fetch them — away %d run%s." % [" & ".join(sent), int(GameData.INJURY_BUSY_RUNS[sev]), "" if int(GameData.INJURY_BUSY_RUNS[sev]) == 1 else "s"]) if idle.size() >= need else "Needs %d idle hero%s at camp (not in this rift, not recovering)." % [need, "" if need == 1 else "es"],
+		act.call(tr("Send %d from camp") % need,
+			(tr("%s fetch them — away %d run%s.") % [" & ".join(sent), int(GameData.INJURY_BUSY_RUNS[sev]), _pl(int(GameData.INJURY_BUSY_RUNS[sev]))]) if idle.size() >= need else tr("Needs %d idle hero%s at camp (not in this rift, not recovering).") % [need, _pl(need, "es")],
 			idle.size() < need, func(): return GameState.injury_reinforce(h.id))
-		act.call("Heal (%s)" % healer if healer != "" else "Heal",
-			"Back up at %d%% HP, %d%% less max HP until the rift ends. Once per rift." % [int(GameData.FIELD_HEAL_HP_PCT * 100), int(GameData.BATTERED_HP_PCT * 100)] if healer != "" else "Needs a Rank %s+ Cleric in the party, a Cleric Champion, or Field Triage (Medical) — once per rift." % GameData.FIELD_HEALER_MIN_RANK,
+		act.call(tr("Heal (%s)") % healer if healer != "" else "Heal",
+			tr("Back up at %d%% HP, %d%% less max HP until the rift ends. Once per rift.") % [int(GameData.FIELD_HEAL_HP_PCT * 100), int(GameData.BATTERED_HP_PCT * 100)] if healer != "" else tr("Needs a Rank %s+ Cleric in the party, a Cleric Champion, or Field Triage (Medical) — once per rift.") % GameData.FIELD_HEALER_MIN_RANK,
 			healer == "", func(): return GameState.injury_heal(h.id))
 		act.call("Leave them", "They stay in the rift. Seal it and they're found alive; retreat or fall and they're lost for good." if GameState.rifts_sealed >= 3 else "A new guild can't leave anyone behind (seal 3 rifts first).",
 			GameState.rifts_sealed < 3, func(): return GameState.injury_leave(h.id))
@@ -625,10 +625,10 @@ func _render_campfire_node(v: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.add_child(_hazard_option("res://assets/skills/heart.png", "Rest",
-		["Every hero heals %d%% HP" % int(GameData.CAMPFIRE_HEAL_PCT * 100), "%d of %d hurt right now" % [hurt.size(), party.size()]], [],
+		[tr("Every hero heals %d%% HP") % int(GameData.CAMPFIRE_HEAL_PCT * 100), tr("%d of %d hurt right now") % [hurt.size(), party.size()]], [],
 		func(): GameState.campfire_choose("rest"); render()))
 	row.add_child(_hazard_option("res://assets/skills/star.png", "Train",
-		["Every hero gains %d XP" % GameData.CAMPFIRE_TRAIN_XP], [],
+		[tr("Every hero gains %d XP") % GameData.CAMPFIRE_TRAIN_XP], [],
 		func(): GameState.campfire_choose("train"); render()))
 	row.add_child(_hazard_option("res://assets/skills/sword_silver.png", "Sharpen",
 		["The next fight starts with +4 Momentum"], [],
@@ -657,7 +657,7 @@ func _render_event_node(v: VBoxContainer) -> void:
 		var lines: Array = [str(c["desc"])]
 		if c.has("check"):
 			var info := GameState.event_check(c["check"])
-			lines.append("%d%% — %s has %s %d (needs %d)" % [int(round(float(info["chance"]) * 100)), info["hero"], GameData.ATTR_LABEL[c["check"]["attr"]], int(info["value"]), int(info["target"])])
+			lines.append(tr("%d%% — %s has %s %d (needs %d)") % [int(round(float(info["chance"]) * 100)), info["hero"], GameData.ATTR_LABEL[c["check"]["attr"]], int(info["value"]), int(info["target"])])
 		if not afford:
 			lines.append("You can't afford this")
 		row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"] if c.has("gamble") else GameData.BUTTON_ICON_PATH["confirm"], str(c["label"]),
@@ -713,9 +713,9 @@ func _hazard_damage_text(pv: Dictionary) -> String:
 		return "Your Anchor Artifact blocks it — no damage"
 	if int(pv["total"]) <= 0:
 		return "No damage (fully warded)"
-	var t := "%d damage, about %d per hero" % [int(pv["total"]), int(pv["per_hero"])]
+	var t := tr("%d damage, about %d per hero") % [int(pv["total"]), int(pv["per_hero"])]
 	if int(pv["absorbed"]) > 0:
-		t += " (wards absorb %d)" % int(pv["absorbed"])
+		t += tr(" (wards absorb %d)") % int(pv["absorbed"])
 	return t
 
 
@@ -732,7 +732,7 @@ func _hazard_option(icon_path: String, title: String, lines: Array, downs: Array
 	for line in lines:
 		cv.add_child(_wrap_label(str(line), 12, disabled))
 	if not downs.is_empty():
-		var w := _wrap_label("Knocks out: %s" % ", ".join(downs), 12)
+		var w := _wrap_label(tr("Knocks out: %s") % ", ".join(downs), 12)
 		w.add_theme_color_override("font_color", Palette.HAZARD)
 		cv.add_child(w)
 	card.add_child(cv)
@@ -782,7 +782,7 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 		v = _node_split(v, bg_path)
 	var hz_rank := str(GameState.run.get("rift_rank", ""))
 	if hz_rank != "" and GameData.find_rift_rank(hz_rank).get("hazard_severity_up", 0):
-		var hn := _wrap_label("Rank %s: harsher hazards. %s" % [hz_rank, GameData.RIFT_RANK_RULE_TIP["hazard_severity_up"]], 12)
+		var hn := _wrap_label(tr("Rank %s: harsher hazards. %s") % [hz_rank, GameData.RIFT_RANK_RULE_TIP["hazard_severity_up"]], 12)
 		hn.add_theme_color_override("font_color", Palette.HAZARD)
 		v.add_child(hn)
 
@@ -805,13 +805,13 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 		var choice_row := HBoxContainer.new()
 		choice_row.add_theme_constant_override("separation", 10)
 		choice_row.add_child(_hazard_option("res://assets/skills/boots.png", "Push Through",
-			[_hazard_damage_text(push), "%d%% chance of 2-6 %s" % [bonus_pct, bonus_kind]], push["downs"],
+			[_hazard_damage_text(push), tr("%d%% chance of 2-6 %s") % [bonus_pct, bonus_kind]], push["downs"],
 			func(): GameState.push_through_hazard(); render()))
 		choice_row.add_child(_hazard_option(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass",
-			["No damage, no reward", "Costs %d Essence (you have %d)" % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
+			["No damage, no reward", tr("Costs %d Essence (you have %d)") % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
 			func(): GameState.bypass_hazard(); render(), not GameState.can_afford_hazard_bypass()))
 		choice_row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot",
-			[_hazard_damage_text(risk), "Guaranteed 2-6 %s" % bonus_kind], risk["downs"],
+			[_hazard_damage_text(risk), tr("Guaranteed 2-6 %s") % bonus_kind], risk["downs"],
 			func(): GameState.risk_hazard(); render()))
 		v.add_child(choice_row)
 	else:

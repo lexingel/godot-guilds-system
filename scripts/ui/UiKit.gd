@@ -127,6 +127,14 @@ func _flush_render() -> void:
 	render()
 
 
+## An English plural ending for `n` things ("s", or "es" for hero), none in
+## Turkish, where a noun after a number stays singular ("3 gün").
+## ponytail: suffix-only plurals; switch these call sites to tr_n() when a
+## language with real plural forms (German, Russian...) is added.
+func _pl(n: int, suffix: String = "s") -> String:
+	return "" if n == 1 or not TranslationServer.get_locale().begins_with("en") else suffix
+
+
 func _clear_root() -> void:
 	for c in root.get_children():
 		c.queue_free()
@@ -332,8 +340,8 @@ func _rank_rules(rank_id: String) -> Array:
 	var r := GameData.find_rift_rank(rank_id)
 	var out: Array = []
 	if float(r["hp"]) != 1.0 or float(r["dmg"]) != 1.0:
-		out.append(["foes", "Foes ×%s HP · ×%s damage" % [str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1))],
-			"Rank %s foes have %s× the HP and %s× the damage of a base %s Rift." % [rank_id, str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1)), str(r["base"]).capitalize()]])
+		out.append(["foes", tr("Foes ×%s HP · ×%s damage") % [str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1))],
+			tr("Rank %s foes have %s× the HP and %s× the damage of a base %s Rift.") % [rank_id, str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1)), str(r["base"]).capitalize()]])
 	for flag in GameData.RIFT_RANK_RULE_TEXT:
 		if r.get(flag, false):
 			var t := str(GameData.RIFT_RANK_RULE_TEXT[flag])
@@ -803,11 +811,11 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 	var out := line.replace("[", "[lb]")
 	for h in party:
 		if h.name != "":
-			out = out.replace(h.name, "[color=#%s]%s[/color]" % [Palette.VIOLET.to_html(false), h.name])
+			out = out.replace(h.name, tr("[color=#%s]%s[/color]") % [Palette.VIOLET.to_html(false), h.name])
 	for m in monsters:
 		var mname: String = str(m.get("name", ""))
 		if mname != "":
-			out = out.replace(mname, "[color=#%s]%s[/color]" % [Palette.HAZARD.to_html(false), mname])
+			out = out.replace(mname, tr("[color=#%s]%s[/color]") % [Palette.HAZARD.to_html(false), mname])
 	return out
 
 
@@ -832,7 +840,7 @@ func _loot_desc(obj, is_relic: bool) -> String:
 		if it.kind != "":
 			utext = "%s · %s" % [Combat.describe_skill(it.kind, it.value), utext]
 		if it.item_rank != "":
-			utext = "Rank %s · %s" % [it.item_rank, utext]
+			utext = tr("Rank %s · %s") % [it.item_rank, utext]
 		return utext
 	var parts: Array[String] = [Combat.describe_skill(it.kind, it.value)]
 	if it.secondary_kind != "":
@@ -843,11 +851,11 @@ func _loot_desc(obj, is_relic: bool) -> String:
 		parts.append("%s [%s]" % [Combat.describe_effect(e), GameData.ARCHETYPES.get(str(e.get("arch", "")), "")])
 	var text := ", ".join(parts)
 	if it.implicit_kind != "":
-		text = "Base: %s · %s" % [Combat.describe_skill(it.implicit_kind, it.implicit_value), text]
+		text = tr("Base: %s · %s") % [Combat.describe_skill(it.implicit_kind, it.implicit_value), text]
 	if it.attr != "":
-		text = "+%d %s%s · %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr], (" (needs %d)" % it.attr_req) if it.attr_req > 0 else "", text]
+		text = "+%d %s%s · %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr], (tr(" (needs %d)") % it.attr_req) if it.attr_req > 0 else "", text]
 	if it.item_rank != "":
-		text = "Rank %s · %s" % [it.item_rank, text]
+		text = tr("Rank %s · %s") % [it.item_rank, text]
 	return text
 
 
@@ -858,11 +866,11 @@ func _position_text(h: Hero) -> String:
 	if pos.is_empty():
 		return ""
 	if h.formation != pos["row"]:
-		return "Out of position — suits the %s row (%s)" % [pos["row"], pos["name"]]
+		return tr("Out of position — suits the %s row (%s)") % [pos["row"], pos["name"]]
 	var parts: Array[String] = []
 	for e in pos["effects"]:
 		parts.append(Combat.describe_effect(e))
-	return "%s row · %s: %s" % [str(pos["row"]).capitalize(), pos["name"], "; ".join(parts)]
+	return tr("%s row · %s: %s") % [tr(str(pos["row"]).capitalize()), tr(str(pos["name"])), "; ".join(parts)]
 
 
 ## A subclass passive as BBCode — "Killer's Eye: +14% damage vs foes below
@@ -943,7 +951,7 @@ func _kw_hints(bbcode: String) -> String:
 				continue
 			# Quoted: an apostrophe in an unquoted hint value breaks the parse and
 			# the whole line then renders as raw BBCode.
-			var wrapped := "[hint=\"%s — %s\"][u]%s[/u][/hint]" % [k[0], k[1], m.get_string()]
+			var wrapped := tr("[hint=\"%s — %s\"][u]%s[/u][/hint]") % [k[0], k[1], m.get_string()]
 			out = out.substr(0, m.get_start()) + wrapped + out.substr(m.get_end())
 			break
 	return out
@@ -958,7 +966,7 @@ func _kw_footer(text: String) -> String:
 			lines.append("[b]%s[/b] — %s" % [k[0], k[1]])
 	if lines.is_empty():
 		return ""
-	return "\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]" % [Palette.MUTED2.to_html(false), Palette.MUTED.to_html(false), "\n".join(lines)]
+	return tr("\n\n[color=#%s]Keywords[/color]\n[color=#%s]%s[/color]") % [Palette.MUTED2.to_html(false), Palette.MUTED.to_html(false), "\n".join(lines)]
 
 
 ## History, earned quirks, the nearest quirk still to earn, and grown bonds —
@@ -971,29 +979,29 @@ func _history_lines(h: Hero) -> Array[String]:
 		if n > 0:
 			hist.append("%d %s" % [n, GameData.HISTORY_LABEL[stat]])
 	if not hist.is_empty():
-		lines.append("History: " + " · ".join(hist))
+		lines.append(tr("History: ") + " · ".join(hist))
 	var next_best := {}
 	var next_frac := -1.0
 	for q in GameData.quirks_from("earned"):
 		var t := GameData.quirk(q)
 		if h.quirks.has(q):
-			lines.append("Earned: [b]%s[/b] — %s  %s" % [q, GameState.quirk_text(q).replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
+			lines.append(tr("Earned: [b]%s[/b] — %s  %s") % [q, GameState.quirk_text(q).replace("[", "[lb]"), _arch_chip(str(t["arch"]))])
 		else:
 			var frac := float(h.history.get(t["stat"], 0)) / float(t["need"])
 			if frac > next_frac:
 				next_frac = frac
 				next_best = t.merged({"name": q})
 	if not next_best.is_empty():
-		lines.append("Next quirk: %s (%d/%d %s)" % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
+		lines.append(tr("Next quirk: %s (%d/%d %s)") % [next_best["name"], int(h.history.get(next_best["stat"], 0)), int(next_best["need"]), GameData.HISTORY_LABEL[next_best["stat"]]])
 	var bond_parts: Array[String] = []
 	for other in GameState.heroes:
 		if other == h:
 			continue
 		var together := GameState.bond_rifts(h.id, other.id)
 		if together > 0:
-			bond_parts.append("%s Lv%d (%d rifts)" % [other.name.split(" the ")[0], GameData.bond_level(together), together])
+			bond_parts.append(tr("%s Lv%d (%d rifts)") % [other.name.split(" the ")[0], GameData.bond_level(together), together])
 	if not bond_parts.is_empty():
-		lines.append("Bonds: " + " · ".join(bond_parts))
+		lines.append(tr("Bonds: ") + " · ".join(bond_parts))
 	return lines
 
 
@@ -1003,7 +1011,7 @@ const ARCH_COLOR := {"opener": Palette.CRYSTALS, "attrition": Palette.EMBER, "gu
 
 
 func _bb(c: Color, text: String) -> String:
-	return "[color=#%s]%s[/color]" % [c.to_html(false), text.replace("[", "[lb]")]
+	return tr("[color=#%s]%s[/color]") % [c.to_html(false), text.replace("[", "[lb]")]
 
 
 func _arch_chip(arch: String) -> String:
@@ -1020,16 +1028,16 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 	lines.append("[b]%s[/b]" % _bb(rc, it.name))
 	var sub := "%s %s" % [it.rarity.capitalize(), GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category)]
 	if it.item_rank != "":
-		sub += " · Rank %s" % it.item_rank
+		sub += tr(" · Rank %s") % it.item_rank
 	lines.append(_bb(Palette.MUTED, sub))
 	if it.attr != "":
 		lines.append(_bb(Palette.EMBER_BRIGHT, "+%d %s" % [it.attr_bonus, GameData.ATTR_LABEL[it.attr]]))
 		if it.attr_req > 0:
 			var met := compare_for == null or GameState.attr_req_met(it, compare_for)
-			var have := ("  (%s has %d)" % [compare_for.name.split(" the ")[0], Combat.hero_attr(compare_for, it.attr)]) if compare_for != null else ""
-			lines.append(_bb(Palette.MUTED if met else Palette.HAZARD, "Requires %d %s%s" % [it.attr_req, GameData.ATTR_LABEL[it.attr], have]))
+			var have := (tr("  (%s has %d)") % [compare_for.name.split(" the ")[0], Combat.hero_attr(compare_for, it.attr)]) if compare_for != null else ""
+			lines.append(_bb(Palette.MUTED if met else Palette.HAZARD, tr("Requires %d %s%s") % [it.attr_req, GameData.ATTR_LABEL[it.attr], have]))
 	if it.implicit_kind != "":
-		lines.append(_bb(Palette.MUTED, "Base: " + Combat.describe_skill(it.implicit_kind, it.implicit_value)))
+		lines.append(_bb(Palette.MUTED, tr("Base: ") + Combat.describe_skill(it.implicit_kind, it.implicit_value)))
 	for pair in [[it.kind, it.value], [it.secondary_kind, it.secondary_value], [it.tertiary_kind, it.tertiary_value]]:
 		if str(pair[0]) != "":
 			lines.append(Combat.describe_skill(str(pair[0]), float(pair[1])))
@@ -1038,20 +1046,20 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		for e in udef.get("effects", []):
 			lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(udef.get("arch", "")))])
 		if it.drawback_kind != "":
-			lines.append(_bb(Palette.HAZARD, "Drawback: " + Combat.describe_skill(it.drawback_kind, it.drawback_value)))
+			lines.append(_bb(Palette.HAZARD, tr("Drawback: ") + Combat.describe_skill(it.drawback_kind, it.drawback_value)))
 		if it.locked_role != "":
-			lines.append(_bb(Palette.MUTED, "%s only" % it.locked_role.capitalize()))
+			lines.append(_bb(Palette.MUTED, tr("%s only") % it.locked_role.capitalize()))
 	for e in it.effects:
 		lines.append("[i]%s[/i]  %s" % [Combat.describe_effect(e).replace("[", "[lb]"), _arch_chip(str(e.get("arch", "")))])
 	if it.attune_level > 0 or it.attune_wins > 0:
-		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else " · %d/%d wins to next" % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
-		lines.append(_bb(Palette.RANK_E, "Attuned %d/%d (+%d%% stats)%s" % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), nxt]))
+		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else tr(" · %d/%d wins to next") % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
+		lines.append(_bb(Palette.RANK_E, tr("Attuned %d/%d (+%d%% stats)%s") % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), nxt]))
 	if compare_for != null and it.equipped_to != compare_for.id:
 		if slot == -2:
 			slot = _best_swap_slot(compare_for, it.slot_type())
 		var current: Item = _find_equipped_at(compare_for.id, it.slot_type(), slot) if slot >= 0 else null
 		lines.append("")
-		lines.append(_bb(Palette.MUTED, "If equipped on %s%s:" % [compare_for.name.split(" the ")[0], (" (replacing %s)" % current.name) if current else ""]))
+		lines.append(_bb(Palette.MUTED, tr("If equipped on %s%s:") % [compare_for.name.split(" the ")[0], (tr(" (replacing %s)") % current.name) if current else ""]))
 		var a := _item_stat_map(it)
 		var b := _item_stat_map(current)
 		var any := false
@@ -1070,7 +1078,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		if current:
 			var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
 			for e in lost:
-				lines.append(_bb(Palette.HAZARD, "▼ loses: " + Combat.describe_effect(e)))
+				lines.append(_bb(Palette.HAZARD, tr("▼ loses: ") + Combat.describe_effect(e)))
 				any = true
 		if not any:
 			lines.append(_bb(Palette.MUTED, "No stat change"))
@@ -1086,7 +1094,7 @@ func _power_readout(power: int, rec: int, prefix: String = "Party power") -> Lab
 	var ratio := float(power) / float(max(1, rec))
 	var verdict := "Deadly" if ratio < 0.8 else ("Risky" if ratio < 0.95 else ("Even fight" if ratio < 1.2 else "Favored"))
 	var color: Color = Palette.HAZARD if ratio < 0.95 else (Palette.COINS if ratio < 1.2 else Palette.good())
-	var l := _label("%s %d / Recommended %d — %s" % [prefix, power, rec, verdict], 13)
+	var l := _label(tr("%s %d / Recommended %d — %s") % [tr(prefix), power, rec, tr(verdict)], 13)
 	l.add_theme_color_override("font_color", color)
 	l.tooltip_text = "Power = damage ×2 + effective health ÷3.
 Damage counts ability power and ramp; health counts dodge, mending and relic wards.
@@ -1208,11 +1216,11 @@ func _item_compare_text(it: Item, h: Hero, slot: int = -2) -> String:
 			lines.append(Combat.describe_skill(kind, d))
 	var gained: Array = GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects
 	for e in gained:
-		lines.append("gains: " + Combat.describe_effect(e))
+		lines.append(tr("gains: ") + Combat.describe_effect(e))
 	if current:
 		var lost: Array = GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects
 		for e in lost:
-			lines.append("loses: " + Combat.describe_effect(e))
+			lines.append(tr("loses: ") + Combat.describe_effect(e))
 	if lines.is_empty():
 		return ""
 	return "%s:\n%s" % ["vs " + current.name if current else "Into an empty slot", "\n".join(lines)]
@@ -1225,18 +1233,18 @@ func _loot_fit_note(obj, is_relic: bool, party: Array) -> Array:
 	if is_relic:
 		var used := Combat.equipped_relics().size()
 		var cap := GameState.relic_slot_cap()
-		return ["Relic slots %d/%d — %s" % [used, cap, "equips right away" if used < cap else "goes to your Inventory"], Palette.MUTED, null]
+		return [tr("Relic slots %d/%d — %s") % [used, cap, "equips right away" if used < cap else "goes to your Inventory"], Palette.MUTED, null]
 	var fits: Array = party.filter(func(h): return GameState.item_fits_hero(obj, h))
 	if fits.is_empty():
 		return ["No one in this party can use it", Palette.HAZARD, null]
 	var able: Array = fits.filter(func(h): return GameState.attr_req_met(obj, h))
 	if able.is_empty():
-		return ["Needs %d %s — no one here has that yet" % [obj.attr_req, GameData.ATTR_LABEL.get(obj.attr, "")], Palette.HAZARD, fits[0]]
+		return [tr("Needs %d %s — no one here has that yet") % [obj.attr_req, GameData.ATTR_LABEL.get(obj.attr, "")], Palette.HAZARD, fits[0]]
 	fits = able
 	var free: Array = fits.filter(func(h): return _first_free_slot(h, obj.slot_type()) >= 0)
 	if not free.is_empty():
-		return ["Fills an empty slot on %s" % free[0].name.split(" the ")[0], Palette.RANK_E, free[0]]
-	return ["For %s — hover to compare" % ", ".join(fits.map(func(h): return h.name.split(" the ")[0])), Palette.MUTED, fits[0]]
+		return [tr("Fills an empty slot on %s") % free[0].name.split(" the ")[0], Palette.RANK_E, free[0]]
+	return [tr("For %s — hover to compare") % ", ".join(fits.map(func(h): return h.name.split(" the ")[0])), Palette.MUTED, fits[0]]
 
 
 func _loot_display_name(obj) -> String:
@@ -1524,7 +1532,7 @@ func _locked_feature(v: VBoxContainer, id: String) -> void:
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"CardPanelViolet"
 	var col := _vbox(6)
-	col.add_child(_label("%s — locked" % def.get("name", id.capitalize()), 18))
+	col.add_child(_label(tr("%s — locked") % def.get("name", id.capitalize()), 18))
 	col.add_child(_wrap_label("%s." % def.get("hint", "Not open yet"), 13, true))
 	panel.add_child(col)
 	v.add_child(panel)
@@ -1815,7 +1823,7 @@ func _sort_cycle_button(current: String, options: Array, on_change: Callable) ->
 	for i in options.size():
 		if options[i]["id"] == current:
 			idx = i
-	return _icon_button(GameData.BUTTON_ICON_PATH["sort"], "Sort: %s" % str(options[idx]["label"]), func():
+	return _icon_button(GameData.BUTTON_ICON_PATH["sort"], tr("Sort: %s") % str(options[idx]["label"]), func():
 		var next_idx: int = (idx + 1) % options.size()
 		on_change.call(options[next_idx]["id"])
 		render()
@@ -1830,7 +1838,7 @@ func _node_effect_text(n: Dictionary) -> String:
 		parts.append(Combat.describe_effect(e))
 	if str(n["kind"]) != "":
 		var flat := Combat.describe_skill(str(n["kind"]), float(n["value"]))
-		parts.append(("Drawback: " + flat) if float(n["value"]) < 0.0 else flat)
+		parts.append((tr("Drawback: ") + flat) if float(n["value"]) < 0.0 else flat)
 	if n.has("arch"):
 		parts.append("[%s]" % GameData.ARCHETYPES.get(str(n["arch"]), ""))
 	return "\n".join(parts)

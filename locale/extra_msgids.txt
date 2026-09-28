@@ -1,0 +1,7 @@
+# Lines the code builds at runtime rather than writing out, so the extractor
+# can't find them as literals. One per line.
+Front
+Back
+front
+back
+all

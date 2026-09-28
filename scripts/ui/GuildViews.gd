@@ -122,9 +122,9 @@ func _render_camp(v: VBoxContainer) -> void:
 		if b["id"] == "campfire":
 			_start_ember_loop(scene, Vector2(anchor.x * sc.x, (anchor.y - 16.0) * sc.y))
 			continue
-		var tip := str(b["name"]) + (" — the %s" % b["building"] if b.has("building") else "")
+		var tip := str(b["name"]) + (tr(" — the %s") % b["building"] if b.has("building") else "")
 		if str(b.get("tier", "")) == "node":
-			tip += " — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5)" % [GameState.hamlet_tier(b), str(GameData.find_branch_node(str(b["node"]))["name"]), GameState.lvl(str(b["node"]))]
+			tip += tr(" — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5)") % [GameState.hamlet_tier(b), str(GameData.find_branch_node(str(b["node"]))["name"]), GameState.lvl(str(b["node"]))]
 		elif b["tier"] == "guild":
 			tip += " — grows with your guild tier"
 		elif b["tier"] == "act":
@@ -234,9 +234,9 @@ func _guild_tier_banner() -> PanelContainer:
 	var t := _label(str(tier["name"]), 14)
 	t.add_theme_color_override("font_color", Palette.RANK_S)
 	col.add_child(t)
-	var sub := "%d levels" % int(tier["total"])
+	var sub := tr("%d levels") % int(tier["total"])
 	if not (tier["next"] as Dictionary).is_empty():
-		sub += " · %d to %s" % [int(tier["next"]["min"]) - int(tier["total"]), str(tier["next"]["name"]).replace(" Guild", "")]
+		sub += tr(" · %d to %s") % [int(tier["next"]["min"]) - int(tier["total"]), str(tier["next"]["name"]).replace(" Guild", "")]
 	if GameState.tower_title() != "":
 		sub += " · " + GameState.tower_title()
 	col.add_child(_label(sub, 11, true))
@@ -292,7 +292,7 @@ func _guild_status_board() -> PanelContainer:
 func _week_strip() -> Control:
 	var f := GameState.payday_forecast()
 	var box := _vbox(1)
-	var top := _label("This week · payday in %d day%s" % [int(f["days"]), "" if int(f["days"]) == 1 else "s"], 12)
+	var top := _label(tr("This week · payday in %d day%s") % [int(f["days"]), _pl(int(f["days"]))], 12)
 	top.add_theme_color_override("font_color", Palette.MUTED)
 	box.add_child(top)
 	var bar := ProgressBar.new()
@@ -307,14 +307,14 @@ func _week_strip() -> Control:
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", back)
 	box.add_child(bar)
-	var bill := "Bill %d (wages %d + upkeep %d) · %s" % [int(f["bill"]), int(f["wages"]), int(f["upkeep"]), "covered" if int(f["short"]) == 0 else "short %d" % int(f["short"])]
+	var bill := tr("Bill %d (wages %d + upkeep %d) · %s") % [int(f["bill"]), int(f["wages"]), int(f["upkeep"]), "covered" if int(f["short"]) == 0 else tr("short %d") % int(f["short"])]
 	var bl := _label(bill, 12)
 	bl.add_theme_color_override("font_color", Palette.COINS if int(f["short"]) == 0 else Palette.HAZARD)
 	box.add_child(bl)
 	var since := int(f["since"])
-	box.add_child(_label("Since last payday: %s%d Gold" % ["+" if since >= 0 else "", since], 11, true))
+	box.add_child(_label(tr("Since last payday: %s%d Gold") % ["+" if since >= 0 else "", since], 11, true))
 	box.mouse_filter = Control.MOUSE_FILTER_STOP
-	box.tooltip_text = "Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger." % GameData.PAYDAY_DAYS
+	box.tooltip_text = tr("Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger.") % GameData.PAYDAY_DAYS
 	box.gui_input.connect(func(e):
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			term_tab = "ledger"
@@ -332,38 +332,38 @@ func _guild_status_lines() -> Array:
 	var act := GameState.current_act()
 	if not act.is_empty():
 		if GameState.finale_ready():
-			out.append(["Finale open: %s" % act["finale"], Palette.EMBER_BRIGHT, go_screen.call("rift_hall")])
+			out.append([tr("Finale open: %s") % act["finale"], Palette.EMBER_BRIGHT, go_screen.call("rift_hall")])
 		else:
 			for o in act["objectives"]:
 				if not GameState.campaign_objective_met(o):
 					var prog := "" if str(o["type"]) == "map_rank" else " (%d/%d)" % [mini(GameState.campaign_objective_progress(o), int(o["target"])), int(o["target"])]
-					out.append(["Act %s: %s%s" % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
+					out.append([tr("Act %s: %s%s") % [GameState._roman(int(act["act"])), o["label"], prog], Palette.TEXT, go_screen.call("rift_hall")])
 					break
 	if not GameState.heroes.is_empty():
 		if not GameState.hero_request.is_empty():
-			out.append([GameState.request_title() + " — answer before payday", Palette.EMBER_BRIGHT, go_term.call("ledger")])
+			out.append([GameState.request_title() + tr(" — answer before payday"), Palette.EMBER_BRIGHT, go_term.call("ledger")])
 		var low := GameState.heroes.filter(func(h): return h.morale < 40)
 		if not low.is_empty():
-			out.append(["%d hero%s with low morale" % [low.size(), "" if low.size() == 1 else "es"], Palette.HAZARD, go_term.call("ledger")])
+			out.append([tr("%d hero%s with low morale") % [low.size(), _pl(low.size(), "es")], Palette.HAZARD, go_term.call("ledger")])
 		var due_soon := GameState.guild_board.filter(func(q): return str(q["status"]) == "active" and GameState.quest_progress(q) < int(q["target"]) and int(q.get("due", 1 << 30)) - GameState.day <= 2)
 		if not due_soon.is_empty():
-			out.append(["%d contract%s due within 2 days" % [due_soon.size(), "" if due_soon.size() == 1 else "s"], Palette.HAZARD, go_term.call("quests")])
+			out.append([tr("%d contract%s due within 2 days") % [due_soon.size(), _pl(due_soon.size())], Palette.HAZARD, go_term.call("quests")])
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty() and GameState.feature_unlocked("quests"):
-		out.append(["%d quest%s ready to claim" % [claimable.size(), "" if claimable.size() == 1 else "s"], Palette.RANK_E, go_term.call("quests")])
+		out.append([tr("%d quest%s ready to claim") % [claimable.size(), _pl(claimable.size())], Palette.RANK_E, go_term.call("quests")])
 	var down := GameState.heroes.filter(func(h): return h.is_downed())
 	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.is_downed())
 	if not down.is_empty() or not hurt.is_empty():
 		var bits: Array[String] = []
 		if not down.is_empty():
-			bits.append("%d recovering" % down.size())
+			bits.append(tr("%d recovering") % down.size())
 		if not hurt.is_empty():
-			bits.append("%d wounded" % hurt.size())
+			bits.append(tr("%d wounded") % hurt.size())
 		var free := GameState.medical_bed_cap() - GameState.occupied_beds()
-		out.append(["%s · %d bed%s free" % [", ".join(bits), free, "" if free == 1 else "s"], Palette.HAZARD if not down.is_empty() else Palette.MUTED, go_term.call("medical")])
+		out.append([tr("%s · %d bed%s free") % [", ".join(bits), free, _pl(free)], Palette.HAZARD if not down.is_empty() else Palette.MUTED, go_term.call("medical")])
 	var sp := GameState.heroes.filter(func(h): return h.skill_points > 0 or h.attr_points > 0)
 	if not sp.is_empty():
-		out.append(["%d hero%s with points to spend" % [sp.size(), "" if sp.size() == 1 else "es"], Palette.TEXT, go_term.call("roster")])
+		out.append([tr("%d hero%s with points to spend") % [sp.size(), _pl(sp.size(), "es")], Palette.TEXT, go_term.call("roster")])
 	if GameState.feature_unlocked("management"):
 		var best := ""
 		var best_cost := 1 << 30
@@ -375,13 +375,13 @@ func _guild_status_lines() -> Array:
 					var c: int = int(n["cost_base"]) + int(n["cost_step"]) * lv
 					if c < best_cost:
 						best_cost = c
-						best = "%s Lv%d" % [n["name"], lv + 1]
+						best = tr("%s Lv%d") % [n["name"], lv + 1]
 		if best != "" and GameState.crystals >= best_cost:
-			out.append(["Upgrade ready: %s (%d Essence)" % [best, best_cost], Palette.CRYSTALS, go_term.call("management")])
+			out.append([tr("Upgrade ready: %s (%d Essence)") % [best, best_cost], Palette.CRYSTALS, go_term.call("management")])
 	if GameState.feature_unlocked("tower"):
 		var f := GameState.tower_next_floor()
 		if f > 0:
-			out.append(["Tower of Trials: floor %d next" % f, Palette.MUTED, go_screen.call("tower")])
+			out.append([tr("Tower of Trials: floor %d next") % f, Palette.MUTED, go_screen.call("tower")])
 	return out
 
 
@@ -392,7 +392,7 @@ func _render_records(v: VBoxContainer) -> void:
 	var done := GameData.MILESTONES.filter(func(m): return GameState.milestones_claimed.has(str(m["id"]))).size()
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 6)
-	for t in [["achievements", "Achievements %d/%d" % [done, GameData.MILESTONES.size()]], ["stats", "Statistics"], ["history", "Run history"]]:
+	for t in [["achievements", tr("Achievements %d/%d") % [done, GameData.MILESTONES.size()]], ["stats", "Statistics"], ["history", "Run history"]]:
 		var b := _button(str(t[1]), func(id=t[0]):
 			records_tab = id
 			render()
@@ -447,7 +447,7 @@ func _render_stats(v: VBoxContainer) -> void:
 	for h in GameState.heroes:
 		if Combat.power_of(h) > best_p:
 			best_p = Combat.power_of(h)
-			best_hero = "%s (power %d)" % [h.name.split(" the ")[0], best_p]
+			best_hero = tr("%s (power %d)") % [h.name.split(" the ")[0], best_p]
 	var rows := [
 		["Days passed", str(GameState.day)],
 		["Runs finished", str(GameState.runs_finished)],
@@ -455,10 +455,10 @@ func _render_stats(v: VBoxContainer) -> void:
 		["Monsters defeated", str(kills)],
 		["Elites / Bosses defeated", "%d / %d" % [GameState.elites_won, GameState.bosses_won]],
 		["Flawless fights", str(GameState.flawless_wins)],
-		["Campaign", "complete" if GameState.campaign_done() else "Act %s" % GameState._roman(GameState.campaign_act)],
+		["Campaign", "complete" if GameState.campaign_done() else tr("Act %s") % GameState._roman(GameState.campaign_act)],
 		["Tower of Trials, best floor", str(GameState.tower_best)],
 		["Endless Rift, best time", "%d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60]],
-		["Daily Rifts cleared", "%d (streak %d)" % [GameState.daily_clears, GameState.daily_streak]],
+		["Daily Rifts cleared", tr("%d (streak %d)") % [GameState.daily_clears, GameState.daily_streak]],
 		["Items and relics crafted", str(GameState.crafts_performed)],
 		["Renown", str(GameState.reputation)],
 		["Heroes lost", str(GameState.heroes_lost_total)],
@@ -477,7 +477,7 @@ func _render_stats(v: VBoxContainer) -> void:
 
 func _render_history(v: VBoxContainer) -> void:
 	if GameState.run_history.is_empty():
-		v.add_child(_label("No runs yet. Your last %d runs will be listed here." % GameData.RUN_HISTORY_MAX, 13, true))
+		v.add_child(_label(tr("No runs yet. Your last %d runs will be listed here.") % GameData.RUN_HISTORY_MAX, 13, true))
 		return
 	for e in GameState.run_history:
 		var row := HBoxContainer.new()
@@ -487,16 +487,16 @@ func _render_history(v: VBoxContainer) -> void:
 		rl.custom_minimum_size.x = 80
 		rl.add_theme_color_override("font_color", Palette.good() if res == "Sealed" else (Palette.HAZARD if res == "Defeated" else Palette.MUTED))
 		row.add_child(rl)
-		var what := "Day %d · %s · floor %s" % [int(e["day"]), e["kind"], e["floor"]]
+		var what := tr("Day %d · %s · floor %s") % [int(e["day"]), e["kind"], e["floor"]]
 		if e.has("time"):
-			what = "Day %d · %s · %d:%02d · %d kills" % [int(e["day"]), e["kind"], int(e["time"]) / 60, int(e["time"]) % 60, int(e.get("kills", 0))]
+			what = tr("Day %d · %s · %d:%02d · %d kills") % [int(e["day"]), e["kind"], int(e["time"]) / 60, int(e["time"]) % 60, int(e.get("kills", 0))]
 		var wl := _label(what, 13)
 		wl.custom_minimum_size.x = 300
 		row.add_child(wl)
-		row.add_child(_label("%+d Gold  %+d Essence" % [int(e["coins"]), int(e["crystals"])], 12, true))
-		var tip := "Party: " + ", ".join(e["heroes"])
+		row.add_child(_label(tr("%+d Gold  %+d Essence") % [int(e["coins"]), int(e["crystals"])], 12, true))
+		var tip := tr("Party: ") + ", ".join(e["heroes"])
 		if not (e.get("boons", []) as Array).is_empty():
-			tip += "\nBoons: " + ", ".join((e["boons"] as Array).map(func(b): return str(GameData.find_boon(str(b)).get("name", b))))
+			tip += tr("\nBoons: ") + ", ".join((e["boons"] as Array).map(func(b): return str(GameData.find_boon(str(b)).get("name", b))))
 		row.tooltip_text = tip
 		row.mouse_filter = Control.MOUSE_FILTER_STOP
 		v.add_child(row)
@@ -517,8 +517,8 @@ func _render_memorial(v: VBoxContainer) -> void:
 			ic.modulate = Color(0.55, 0.55, 0.6)
 			row.add_child(ic)
 		var col := _vbox(2)
-		col.add_child(_label("%s — Rank %s, Level %d" % [f["name"], f["rank"], int(f["level"])], 14))
-		col.add_child(_wrap_label("%s, on day %d. %d rift%s sealed, %d foe%s felled." % [f["cause"], int(f["day"]), int(f["rifts"]), "" if int(f["rifts"]) == 1 else "s", int(f["kills"]), "" if int(f["kills"]) == 1 else "s"], 12, true))
+		col.add_child(_label(tr("%s — Rank %s, Level %d") % [f["name"], f["rank"], int(f["level"])], 14))
+		col.add_child(_wrap_label(tr("%s, on day %d. %d rift%s sealed, %d foe%s felled.") % [f["cause"], int(f["day"]), int(f["rifts"]), _pl(int(f["rifts"])), int(f["kills"]), _pl(int(f["kills"]))], 12, true))
 		row.add_child(col)
 		v.add_child(row)
 
@@ -580,20 +580,20 @@ func _render_ledger(v: VBoxContainer) -> void:
 	var pay := PanelContainer.new()
 	pay.theme_type_variation = &"CardPanelEmber"
 	var pv := _vbox(6)
-	var pl := _label("Payday in %d day%s · wages %d + upkeep %d Gold · you have %d" % [dtp, "" if dtp == 1 else "s", GameState.weekly_wages(), GameState.upkeep(), GameState.coins], 16)
+	var pl := _label(tr("Payday in %d day%s · wages %d + upkeep %d Gold · you have %d") % [dtp, _pl(dtp), GameState.weekly_wages(), GameState.upkeep(), GameState.coins], 16)
 	pl.add_theme_color_override("font_color", Palette.HAZARD if short else Palette.EMBER_BRIGHT)
 	pv.add_child(pl)
-	pv.add_child(_wrap_label("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out." % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID], 12, true))
+	pv.add_child(_wrap_label(tr("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out.") % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID], 12, true))
 	var rep: Dictionary = GameState.payday_report
 	if not rep.is_empty():
-		var bits: Array[String] = ["%d Gold paid" % int(rep.get("paid", 0))]
+		var bits: Array[String] = [tr("%d Gold paid") % int(rep.get("paid", 0))]
 		if not (rep.get("unpaid", []) as Array).is_empty():
-			bits.append("unpaid: %s" % ", ".join(rep["unpaid"]))
+			bits.append(tr("unpaid: %s") % ", ".join(rep["unpaid"]))
 		if not (rep.get("left", []) as Array).is_empty():
-			bits.append("walked out: %s" % ", ".join(rep["left"]))
-		pv.add_child(_wrap_label("Last payday (day %d): %s." % [int(rep.get("day", 0)), "; ".join(bits)], 12, true))
-	pv.add_child(_wrap_label("Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown. Training Yard: %d of %d trainings left this week." % [GameData.UPKEEP_PER_LEVEL, GameData.UPKEEP_UNPAID_RENOWN, GameState.training_left(), GameState.training_slots()], 12, true))
-	var feast := _button("Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first" % [GameState.feast_cost(), GameData.FEAST_MORALE, GameState.feast_seats()], func():
+			bits.append(tr("walked out: %s") % ", ".join(rep["left"]))
+		pv.add_child(_wrap_label(tr("Last payday (day %d): %s.") % [int(rep.get("day", 0)), "; ".join(bits)], 12, true))
+	pv.add_child(_wrap_label(tr("Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown. Training Yard: %d of %d trainings left this week.") % [GameData.UPKEEP_PER_LEVEL, GameData.UPKEEP_UNPAID_RENOWN, GameState.training_left(), GameState.training_slots()], 12, true))
+	var feast := _button(tr("Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first") % [GameState.feast_cost(), GameData.FEAST_MORALE, GameState.feast_seats()], func():
 		var err := GameState.hold_feast()
 		if err != "":
 			_flavor_toast = err
@@ -615,16 +615,16 @@ func _render_ledger(v: VBoxContainer) -> void:
 	rhead.add_child(_icon(str(rlead["crest"]), 40))
 	rhead.add_child(_icon_trimmed(str(rlead["portrait"]), 64))
 	var rnames := _vbox(0)
-	rnames.add_child(_label("Rival: %s" % GameState.rival_name, 16))
-	rnames.add_child(_label("Led by %s" % rlead["leader"], 12, true))
+	rnames.add_child(_label(tr("Rival: %s") % GameState.rival_name, 16))
+	rnames.add_child(_label(tr("Led by %s") % rlead["leader"], 12, true))
 	rhead.add_child(rnames)
 	rv.add_child(rhead)
 	var lead := GameState.reputation - GameState.rival_renown
-	var rl := _label("Renown — you %d · them %d (%s)" % [GameState.reputation, GameState.rival_renown, "you lead by %d" % lead if lead > 0 else ("they lead by %d" % -lead if lead < 0 else "level")], 14)
+	var rl := _label(tr("Renown — you %d · them %d (%s)") % [GameState.reputation, GameState.rival_renown, tr("you lead by %d") % lead if lead > 0 else (tr("they lead by %d") % -lead if lead < 0 else "level")], 14)
 	rl.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
 	rv.add_child(rl)
 	var cs := GameState.contest_status()
-	var cl := _label("This month's contest: rifts sealed — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown." % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), "" if int(cs["days_left"]) == 1 else "s", GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
+	var cl := _label(tr("This month's contest: rifts sealed — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.") % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), _pl(int(cs["days_left"])), GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
 	cl.add_theme_color_override("font_color", Palette.good() if int(cs["ours"]) > int(cs["theirs"]) else (Palette.HAZARD if int(cs["ours"]) < int(cs["theirs"]) else Palette.TEXT))
 	rv.add_child(cl)
 	rv.add_child(_wrap_label("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.", 12, true))
@@ -661,11 +661,11 @@ func _render_ledger(v: VBoxContainer) -> void:
 			row.add_child(_hero_icon(h, 40))
 		var col := _vbox(2)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_child(_label("%s — Rank %s, Lv%d · wage %d Gold/week" % [h.name.split(" the ")[0], h.rank, h.level, GameState.wage_of(h)], 14))
+		col.add_child(_label(tr("%s — Rank %s, Lv%d · wage %d Gold/week") % [h.name.split(" the ")[0], h.rank, h.level, GameState.wage_of(h)], 14))
 		var tier: Array = GameData.morale_tier(h.morale)
-		var ml := _label("Morale %d · %s%s%s" % [h.morale, tier[1], (" (%+d%% damage)" % int(round(float(tier[2]) * 100))) if float(tier[2]) != 0.0 else "", " · unpaid %d week%s" % [h.unpaid_weeks, "" if h.unpaid_weeks == 1 else "s"] if h.unpaid_weeks > 0 else ""], 12)
+		var ml := _label(tr("Morale %d · %s%s%s") % [h.morale, tier[1], (tr(" (%+d%% damage)") % int(round(float(tier[2]) * 100))) if float(tier[2]) != 0.0 else "", tr(" · unpaid %d week%s") % [h.unpaid_weeks, _pl(h.unpaid_weeks)] if h.unpaid_weeks > 0 else ""], 12)
 		ml.add_theme_color_override("font_color", Palette.good() if h.morale >= 80 else (Palette.MUTED if h.morale >= 40 else Palette.HAZARD))
-		ml.tooltip_text = "Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d" % [GameData.MORALE_SEAL, GameData.MORALE_DEFEAT, GameData.MORALE_KNOCKOUT, GameData.MORALE_UNPAID, GameData.MORALE_IDLE_WEEK, GameData.MORALE_QUEST_FAILED, GameData.FEAST_MORALE]
+		ml.tooltip_text = tr("Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d") % [GameData.MORALE_SEAL, GameData.MORALE_DEFEAT, GameData.MORALE_KNOCKOUT, GameData.MORALE_UNPAID, GameData.MORALE_IDLE_WEEK, GameData.MORALE_QUEST_FAILED, GameData.FEAST_MORALE]
 		ml.mouse_filter = Control.MOUSE_FILTER_STOP
 		col.add_child(ml)
 		row.add_child(col)
@@ -713,7 +713,7 @@ func _render_getting_started(v: VBoxContainer) -> void:
 	panel.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
 	var head := HBoxContainer.new()
-	head.add_child(_label("Getting started — %d/%d" % [done, steps.size()], 15))
+	head.add_child(_label(tr("Getting started — %d/%d") % [done, steps.size()], 15))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
@@ -747,7 +747,7 @@ func _camp_badges() -> Dictionary:
 	for h in GameState.heroes:
 		var reasons: Array[String] = []
 		if h.skill_points > 0:
-			reasons.append("%d SP" % h.skill_points)
+			reasons.append(tr("%d SP") % h.skill_points)
 		if h.level >= 10:
 			var choices := GameData.evolution_choices(GameData.find_class(h.pool_id))
 			if not choices.is_empty():
@@ -756,7 +756,7 @@ func _camp_badges() -> Dictionary:
 					reasons.append("can evolve")
 		for st in ["weapon", "gear"]:
 			if _first_free_slot(h, st) >= 0 and GameState.items.any(func(it): return it.equipped_to == "" and it.slot_type() == st and GameState.item_fits_hero(it, h)):
-				reasons.append("empty %s slot" % st)
+				reasons.append(tr("empty %s slot") % st)
 				break
 		if not reasons.is_empty():
 			needy.append("%s: %s" % [h.name.split(" the ")[0], ", ".join(reasons)])
@@ -764,11 +764,11 @@ func _camp_badges() -> Dictionary:
 		out["roster"] = [str(needy.size()), "\n".join(needy)]
 	var hurt := GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded)
 	if not hurt.is_empty():
-		out["medical"] = [str(hurt.size()), "%d hero(es) wounded or downed" % hurt.size()]
+		out["medical"] = [str(hurt.size()), tr("%d hero(es) wounded or downed") % hurt.size()]
 	if GameState.heroes.size() < GameState.hero_slot_cap():
 		var affordable := GameState.recruit_pool.filter(func(h): return GameState.coins >= int(GameData.find_rank(h.rank)["cost"]))
 		if not affordable.is_empty():
-			out["recruits"] = [str(affordable.size()), "%d recruit(s) you can afford" % affordable.size()]
+			out["recruits"] = [str(affordable.size()), tr("%d recruit(s) you can afford") % affordable.size()]
 	var craftable := 0
 	var groups := {}
 	for it in GameState.items:
@@ -782,14 +782,14 @@ func _camp_badges() -> Dictionary:
 	for k in groups:
 		craftable += int(groups[k]) / 3
 	if craftable > 0:
-		out["crafting"] = [str(craftable), "%d craft(s) ready in Crafting" % craftable]
+		out["crafting"] = [str(craftable), tr("%d craft(s) ready in Crafting") % craftable]
 	var free_relic_slots := GameState.relic_slot_cap() - Combat.equipped_relics().size()
 	var spare_relics := GameState.relics.filter(func(r): return not r.equipped).size()
 	if free_relic_slots > 0 and spare_relics > 0:
-		out["inventory"] = [str(min(free_relic_slots, spare_relics)), "%d relic slot(s) empty — equip a relic under Items > Relics" % free_relic_slots]
+		out["inventory"] = [str(min(free_relic_slots, spare_relics)), tr("%d relic slot(s) empty — equip a relic under Items > Relics") % free_relic_slots]
 	var claimable := GameState.guild_board.filter(func(q): return GameState.quest_progress(q) >= int(q["target"]))
 	if not claimable.is_empty():
-		out["quests"] = [str(claimable.size()), "%d quest(s) ready to claim" % claimable.size()]
+		out["quests"] = [str(claimable.size()), tr("%d quest(s) ready to claim") % claimable.size()]
 	return out
 
 
@@ -841,7 +841,7 @@ func _render_hub_cluster(v: VBoxContainer) -> void:
 	for entry in entries:
 		var fid: String = entry_feature.get(str(entry[1]), "")
 		if fid != "" and not GameState.feature_unlocked(fid):
-			var card := _hub_card(entry[0], "%s (locked)" % entry[1], func(): pass)
+			var card := _hub_card(entry[0], tr("%s (locked)") % entry[1], func(): pass)
 			card.modulate = Color(1, 1, 1, 0.45)
 			card.tooltip_text = GameData.FEATURE_UNLOCKS[fid]["hint"]
 			row.add_child(card)
@@ -863,14 +863,14 @@ func _champion_card(c: Hero, offer_idx: int) -> PanelContainer:
 	var nm := _label(c.name, 14)
 	nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(nm)
-	col.add_child(_label("Rank %s · Lv%d %s · Power %d" % [c.rank, c.level, GameState.champion_role(c).capitalize(), Combat.power_of(c)], 12, true))
-	var boon := _wrap_label("Boon: " + GameState.champion_boon_text(c), 12)
+	col.add_child(_label(tr("Rank %s · Lv%d %s · Power %d") % [c.rank, c.level, GameState.champion_role(c).capitalize(), Combat.power_of(c)], 12, true))
+	var boon := _wrap_label(tr("Boon: ") + GameState.champion_boon_text(c), 12)
 	boon.add_theme_color_override("font_color", Palette.good())
 	col.add_child(boon)
 	var call := GameState.champion_call(c)
-	col.add_child(_wrap_label("Call: %s — %s (once per rift)" % [call["name"], call["desc"]], 12))
+	col.add_child(_wrap_label(tr("Call: %s — %s (once per rift)") % [call["name"], call["desc"]], 12))
 	var cost := GameState.champion_hire_cost(c)
-	var hire := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], "Hire — %d Gold" % cost, func(i=offer_idx):
+	var hire := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], tr("Hire — %d Gold") % cost, func(i=offer_idx):
 		var err := GameState.hire_champion(i)
 		if err != "":
 			push_warning(err)
@@ -896,7 +896,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 	if GameState.champion_offers.is_empty():
 		offers.add_child(_label("All hired — new Champions arrive when you seal a rift.", 12, true))
 	v.add_child(offers)
-	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "New offers (%d Gold)" % GameData.CHAMPION_REROLL_COST, func():
+	var reroll := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], tr("New offers (%d Gold)") % GameData.CHAMPION_REROLL_COST, func():
 		var err := GameState.reroll_champion()
 		if err != "":
 			push_warning(err)
@@ -905,10 +905,10 @@ func _render_recruits(v: VBoxContainer) -> void:
 	reroll.disabled = GameState.coins < GameData.CHAMPION_REROLL_COST
 	reroll.tooltip_text = "A free set of offers also arrives every time you seal a rift."
 	v.add_child(reroll)
-	v.add_child(_wrap_label("Rank odds: %s%s" % [GameData.rank_odds_text(), "  ·  Scouts' Lodge: a C+ recruit is assured each refresh" if GameState.headhunter_guarantee() else ""], 11, true))
+	v.add_child(_wrap_label(tr("Rank odds: %s%s") % [GameData.rank_odds_text(), "  ·  Scouts' Lodge: a C+ recruit is assured each refresh" if GameState.headhunter_guarantee() else ""], 11, true))
 	v.add_child(_hsep())
 
-	v.add_child(_label("Hero Recruits — %d/%d roster slots" % [GameState.heroes.size(), GameState.hero_slot_cap()]))
+	v.add_child(_label(tr("Hero Recruits — %d/%d roster slots") % [GameState.heroes.size(), GameState.hero_slot_cap()]))
 	for h in GameState.recruit_pool:
 		var rank := GameData.find_rank(h.rank)
 		var card := PanelContainer.new()
@@ -934,10 +934,10 @@ func _render_recruits(v: VBoxContainer) -> void:
 		var mid := _vbox(2)
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
-		mid.add_child(_label("Rank %s %s · %d Gold" % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
-		mid.add_child(_rich_line("Passive — " + _passive_bb(h.pool_id), 10, true))
+		mid.add_child(_label(tr("Rank %s %s · %d Gold") % [h.rank, h.cls_id.capitalize(), int(rank["cost"])], 11, true))
+		mid.add_child(_rich_line(tr("Passive — ") + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
-		row.add_child(_button("Reroll (%d Gold)" % GameState.recruit_reroll_cost(), func(id=h.id):
+		row.add_child(_button(tr("Reroll (%d Gold)") % GameState.recruit_reroll_cost(), func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)
 			if err != "":
 				push_warning(err)
@@ -954,7 +954,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 
 
 func _render_medical_bay(v: VBoxContainer) -> void:
-	v.add_child(_label("Medical Bay — %d/%d beds occupied" % [GameState.occupied_beds(), GameState.medical_bed_cap()], 16))
+	v.add_child(_label(tr("Medical Bay — %d/%d beds occupied") % [GameState.occupied_beds(), GameState.medical_bed_cap()], 16))
 	if GameState.field_triage_available():
 		v.add_child(_wrap_label("Field Triage: once per rift, get a downed hero back up mid-rift.", 12, true))
 
@@ -1014,11 +1014,11 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 		if waiting.is_empty():
 			picker.add_child(_label("No wounded heroes waiting for a bed.", 12, true))
 		else:
-			picker.add_child(_label("Assign to bed %d:" % (medical_picker_bed + 1), 12, true))
+			picker.add_child(_label(tr("Assign to bed %d:") % (medical_picker_bed + 1), 12, true))
 			for h in waiting:
 				var status := "downed" if h.is_downed() else "wounded"
 				var row := HBoxContainer.new()
-				row.add_child(_label("%s — %d/%d HP (%s)" % [h.name, h.hp, Combat.max_hp(h), status]))
+				row.add_child(_label(tr("%s — %d/%d HP (%s)") % [h.name, h.hp, Combat.max_hp(h), status]))
 				row.add_child(_icon_domain_button("ember", "res://assets/skills/heart.png", "Assign", func(id=h.id):
 					GameState.assign_to_bed(id)
 					medical_picker_bed = -1
@@ -1030,7 +1030,7 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	if medical_picker_bed == -1 and not waiting.is_empty():
 		v.add_child(_label("Recovering without a bed (slower) — click an empty bed to assign one:", 12, true))
 		for h in waiting:
-			v.add_child(_label("%s — %d/%d HP · %s" % [h.name, h.hp, Combat.max_hp(h), _recovery_text(h, false)], 12))
+			v.add_child(_label(tr("%s — %d/%d HP · %s") % [h.name, h.hp, Combat.max_hp(h), _recovery_text(h, false)], 12))
 
 	# Time only passes when a run ends — resting passes it without one.
 	v.add_child(_hsep())
@@ -1041,16 +1041,16 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	rest.tooltip_text = "Heroes recover as if a run had ended."
 	rest.disabled = not GameState.run.is_empty()
 	v.add_child(rest)
-	v.add_child(_wrap_label("Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed)." % [GameState.recovery_runs(), int(GameData.WOUND_HEAL_PER_RUN * 100)], 12, true))
+	v.add_child(_wrap_label(tr("Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed).") % [GameState.recovery_runs(), int(GameData.WOUND_HEAL_PER_RUN * 100)], 12, true))
 
 
 ## "back in 2 runs" / "full after next run" — recovery in runs, not seconds.
 func _recovery_text(h: Hero, bedded: bool) -> String:
 	if h.is_downed():
-		return "back in %d run%s" % [h.down_runs, "" if h.down_runs == 1 else "s"]
+		return tr("back in %d run%s") % [h.down_runs, _pl(h.down_runs)]
 	if bedded:
 		return "full after next run"
-	return "+%d%% HP per run" % int(GameData.WOUND_HEAL_PER_RUN * 100)
+	return tr("+%d%% HP per run") % int(GameData.WOUND_HEAL_PER_RUN * 100)
 
 
 ## Plays a short "pop into existence" reveal on a freshly-appended icon
@@ -1077,8 +1077,8 @@ func _play_craft_flourish(v: VBoxContainer, icon_path: String) -> void:
 ## "2/3 — need 1 more" until a craft is possible, then how many crafts.
 func _craft_count(count: int) -> String:
 	if count < 3:
-		return "%d/3 — need %d more" % [count, 3 - count]
-	return "%d owned — ready to craft%s" % [count, " (x%d)" % (count / 3) if count >= 6 else ""]
+		return tr("%d/3 — need %d more") % [count, 3 - count]
+	return tr("%d owned — ready to craft%s") % [count, " (x%d)" % (count / 3) if count >= 6 else ""]
 
 
 func _render_crafting_hall(v: VBoxContainer) -> void:
@@ -1106,7 +1106,7 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 		var rarity: String = parts[1]
 		var count: int = item_groups[key]
 		var next_rarity: String = str(GameState.CRAFT_RARITY_UP[rarity])
-		var craft_btn := _icon_button(craft_icon, "Craft → %s" % GameData.find_rarity(next_rarity)["name"], func(c=category, r=rarity):
+		var craft_btn := _icon_button(craft_icon, tr("Craft → %s") % GameData.find_rarity(next_rarity)["name"], func(c=category, r=rarity):
 			if _crafting_animating:
 				return
 			_crafting_animating = true
@@ -1138,7 +1138,7 @@ func _render_crafting_hall(v: VBoxContainer) -> void:
 		var rrarity: String = rparts[1]
 		var rcount: int = relic_groups[rkey]
 		var rnext_rarity: String = str(GameState.CRAFT_RARITY_UP[rrarity])
-		var rcraft_btn := _icon_button(craft_icon, "Craft → %s" % GameData.find_rarity(rnext_rarity)["name"], func(t=rtype, r2=rrarity):
+		var rcraft_btn := _icon_button(craft_icon, tr("Craft → %s") % GameData.find_rarity(rnext_rarity)["name"], func(t=rtype, r2=rrarity):
 			if _crafting_animating:
 				return
 			_crafting_animating = true
@@ -1184,7 +1184,7 @@ func _render_bestiary(v: VBoxContainer) -> void:
 	for g in groups:
 		var names: Array = g[1]
 		var seen_n: int = names.filter(func(n): return GameState.monsters_seen.has(n)).size()
-		v.add_child(_label("%s — %d/%d met" % [g[0], seen_n, names.size()], 15))
+		v.add_child(_label(tr("%s — %d/%d met") % [g[0], seen_n, names.size()], 15))
 		var flow := HFlowContainer.new()
 		flow.add_theme_constant_override("h_separation", 8)
 		flow.add_theme_constant_override("v_separation", 8)
@@ -1193,7 +1193,7 @@ func _render_bestiary(v: VBoxContainer) -> void:
 		v.add_child(flow)
 		v.add_child(_hsep())
 
-	v.add_child(_label("Hazards — %d/%d met" % [GameData.HAZARD_TYPES.filter(func(h): return GameState.hazards_seen.has(str(h["id"]))).size(), GameData.HAZARD_TYPES.size()], 15))
+	v.add_child(_label(tr("Hazards — %d/%d met") % [GameData.HAZARD_TYPES.filter(func(h): return GameState.hazards_seen.has(str(h["id"]))).size(), GameData.HAZARD_TYPES.size()], 15))
 	var hflow := HFlowContainer.new()
 	hflow.add_theme_constant_override("h_separation", 8)
 	hflow.add_theme_constant_override("v_separation", 8)
@@ -1209,7 +1209,7 @@ func _render_bestiary(v: VBoxContainer) -> void:
 		cv.add_child(_label(str(hz["name"]) if seen else "???", 13))
 		if seen:
 			var mult := float(hz["dmg_mult"])
-			var sev := _label("%s · finds %s" % [_hazard_severity_label(mult), "Gold" if str(hz["bonus_type"]) == "coins" else "Essence"], 12)
+			var sev := _label(tr("%s · finds %s") % [_hazard_severity_label(mult), "Gold" if str(hz["bonus_type"]) == "coins" else "Essence"], 12)
 			sev.add_theme_color_override("font_color", _hazard_severity_color(mult))
 			cv.add_child(sev)
 		card.add_child(cv)
@@ -1240,10 +1240,10 @@ func _bestiary_card(mname: String, tier: String) -> PanelContainer:
 			cv.add_child(_wrap_label("%s — %s" % [str(ability["name"]), MONSTER_ABILITY_DESC.get(str(ability["kind"]), "")], 12, true))
 		var kit: Array = Combat.monster_kit({"name": mname, "tier": {"Monster": "combat", "Elite": "elite", "Boss": "boss"}.get(tier, "combat"), "ability": ability})
 		if not kit.is_empty():
-			cv.add_child(_wrap_label("Telegraphs: %s" % ", ".join(kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))), 12, true))
+			cv.add_child(_wrap_label(tr("Telegraphs: %s") % ", ".join(kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))), 12, true))
 		elif tier == "Boss":
 			var beaten: bool = GameState.bosses_defeated.has(mname)
-			cv.add_child(_wrap_label("Brings a random warden mechanic each fight. %s" % ("Defeated." if beaten else "Not yet defeated."), 12, true))
+			cv.add_child(_wrap_label(tr("Brings a random warden mechanic each fight. %s") % ("Defeated." if beaten else "Not yet defeated."), 12, true))
 	card.add_child(cv)
 	return card
 
@@ -1295,7 +1295,7 @@ func _render_compendium_relics(v: VBoxContainer) -> void:
 		head.add_theme_constant_override("separation", 8)
 		head.add_child(_icon(str(GameData.RELIC_TYPE_ICON_PATH.get(rtype, "")), 28))
 		var domain := str(GameData.TYPE_DOMAIN.get(rtype, ""))
-		head.add_child(_label("%s — %s domain" % [rtype, domain.capitalize()], 15))
+		head.add_child(_label(tr("%s — %s domain") % [rtype, domain.capitalize()], 15))
 		v.add_child(head)
 
 
@@ -1390,7 +1390,7 @@ func _render_quests(v: VBoxContainer) -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	head.add_child(title)
 	var days_left: int = max(0, GameState.board_refresh_day - GameState.day)
-	var sub := _label("Day %d  ·  Taken %d/%d  ·  new postings in %d day%s" % [GameState.day, taken.size(), GameData.QUEST_ACTIVE_MAX, days_left, "" if days_left == 1 else "s"], 13)
+	var sub := _label(tr("Day %d  ·  Taken %d/%d  ·  new postings in %d day%s") % [GameState.day, taken.size(), GameData.QUEST_ACTIVE_MAX, days_left, _pl(days_left)], 13)
 	sub.add_theme_color_override("font_color", Color("e0cfa8"))
 	sub.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	sub.add_theme_constant_override("shadow_offset_y", 1)
@@ -1407,7 +1407,7 @@ func _render_quests(v: VBoxContainer) -> void:
 		note.rotation = deg_to_rad(float((jitter / 81) % 7) * 0.7 - 2.1)
 		board.add_child(note)
 	if notes.is_empty():
-		var empty := _label("Nothing posted — new postings in %d day%s." % [days_left, "" if days_left == 1 else "s"], 14)
+		var empty := _label(tr("Nothing posted — new postings in %d day%s.") % [days_left, _pl(days_left)], 14)
 		empty.add_theme_color_override("font_color", Color("e0cfa8"))
 		empty.position = Vector2(pad_x, pad_top + 20)
 		board.add_child(empty)
@@ -1472,12 +1472,12 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	col.add_child(dl)
 	if status == "active" and not done and q.has("due"):
 		var left := int(q["due"]) - GameState.day
-		var due := _label("Due in %d day%s" % [left, "" if left == 1 else "s"] if left > 0 else "Due today", 12)
+		var due := _label(tr("Due in %d day%s") % [left, _pl(left)] if left > 0 else "Due today", 12)
 		due.add_theme_color_override("font_color", Color("b3261e") if left <= 2 else INK)
 		due.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(due)
 	elif status == "posted":
-		var takes := _label("%d days once taken" % int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6)), 11)
+		var takes := _label(tr("%d days once taken") % int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6)), 11)
 		takes.add_theme_color_override("font_color", INK)
 		takes.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(takes)
@@ -1487,7 +1487,7 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	stars.tooltip_text = "Difficulty"
 	stars.mouse_filter = Control.MOUSE_FILTER_STOP
 	col.add_child(stars)
-	var rl := _wrap_label("Reward: " + GameState.quest_reward_desc(q["reward"]), 12)
+	var rl := _wrap_label(tr("Reward: ") + GameState.quest_reward_desc(q["reward"]), 12)
 	rl.add_theme_color_override("font_color", INK_SOFT)
 	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(rl)
@@ -1504,7 +1504,7 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 				render()
 			)
 			take.disabled = full
-			take.tooltip_text = "You already have %d quests — finish or abandon one first" % GameData.QUEST_ACTIVE_MAX if full else "Only progress made after taking it counts"
+			take.tooltip_text = tr("You already have %d quests — finish or abandon one first") % GameData.QUEST_ACTIVE_MAX if full else "Only progress made after taking it counts"
 			take.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			col.add_child(take)
 		"active":
@@ -1675,7 +1675,7 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var nm := _label(str(n["name"]), 15)
 	nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(nm)
-	header.add_child(_label("Lv %d/%d" % [cur, node_max], 12, true))
+	header.add_child(_label(tr("Lv %d/%d") % [cur, node_max], 12, true))
 	cv.add_child(header)
 
 	var bar := ProgressBar.new()
@@ -1697,32 +1697,32 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var now := _wrap_label(Combat.describe_node_effect(n["id"], cur), 13)
 	now.add_theme_color_override("font_color", Palette.TEXT if cur > 0 else Palette.MUTED)
 	cv.add_child(now)
-	cv.add_child(_wrap_label("Each level: %s · upkeep +%d Gold a week" % [n["every"], GameData.UPKEEP_PER_LEVEL], 11, true))
+	cv.add_child(_wrap_label(tr("Each level: %s · upkeep +%d Gold a week") % [n["every"], GameData.UPKEEP_PER_LEVEL], 11, true))
 	var perks: Dictionary = n["perks"]
 	for pl in perks:
 		var got := cur >= int(pl)
 		var is_order := str(perks[pl]).begins_with("Order:")
-		var pr := _wrap_label("%s Lv%d — %s" % ["✓" if got else ("⚑" if is_order else "★"), int(pl), perks[pl]], 12)
+		var pr := _wrap_label(tr("%s Lv%d — %s") % ["✓" if got else ("⚑" if is_order else "★"), int(pl), perks[pl]], 12)
 		pr.add_theme_color_override("font_color", Palette.RANK_E if got else (Palette.EMBER_BRIGHT if is_order else Palette.RANK_S))
 		cv.add_child(pr)
 
 	var building: Array = GameData.HAMLET_BUILDINGS.filter(func(hb): return str(hb.get("node", "")) == key)
 	if not building.is_empty():
-		cv.add_child(_wrap_label("⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3)" % [building[0]["name"], GameState.hamlet_tier(building[0])], 11, true))
+		cv.add_child(_wrap_label(tr("⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3)") % [building[0]["name"], GameState.hamlet_tier(building[0])], 11, true))
 	else:
 		cv.add_child(_wrap_label("⌂ Camp: every level grows the Guild Hall (guild tier)", 11, true))
 
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
 		var next_perk := str(perks.get(cur + 1, ""))
-		var ub := _icon_button(icon_path, "Upgrade to Lv%d — %d Essence" % [cur + 1, cost], func(k=key):
+		var ub := _icon_button(icon_path, tr("Upgrade to Lv%d — %d Essence") % [cur + 1, cost], func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
 			render()
 		)
 		ub.disabled = GameState.crystals < cost
-		ub.tooltip_text = "Next: %s%s" % [Combat.describe_node_effect(n["id"], cur + 1), ("\nUnlocks: " + next_perk) if next_perk != "" else ""]
+		ub.tooltip_text = tr("Next: %s%s") % [Combat.describe_node_effect(n["id"], cur + 1), (tr("\nUnlocks: ") + next_perk) if next_perk != "" else ""]
 		cv.add_child(ub)
 	else:
 		var ml := _label("Fully upgraded", 12)

@@ -631,7 +631,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 				var hwv: Control = hero_wrappers[h.id]
 				var heavy2: bool = float(dmg2) >= Combat.max_hp(h) * 0.25
 				if heavy2:
-					AudioManager.cue("hit_heavy", "[Heavy blow on %s]" % h.name.split(" the ")[0], Palette.HAZARD)
+					AudioManager.cue("hit_heavy", tr("[Heavy blow on %s]") % h.name.split(" the ")[0], Palette.HAZARD)
 				else:
 					AudioManager.play_sfx(GameData.SFX_PATH["hit"])
 				Fx.burst(arena, "claw", _center(hwv), hwv.custom_minimum_size.y * (0.75 if heavy2 else 0.55), Color.WHITE, 24.0, 0.0, true)
@@ -650,7 +650,7 @@ func _play_turn(state: Dictionary, hero_wrappers: Dictionary, hero_rects: Dictio
 					await _tween_hurt(hwv)
 				await _spawn_damage_number(hwv, "-%d" % dmg2, Palette.HAZARD, heavy2)
 				if before > 0 and h.hp <= 0:
-					AudioManager.cue("knockout", "[%s is down]" % h.name.split(" the ")[0], Palette.HAZARD)
+					AudioManager.cue("knockout", tr("[%s is down]") % h.name.split(" the ")[0], Palette.HAZARD)
 					await _tween_collapse(hwv)
 		if dashed and is_instance_valid(mw):
 			_dash(mw, start_x, 0.2)
@@ -935,16 +935,16 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var bw := _battle_width()
 		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, roundf(clampf(bw * 0.36, 280.0, 420.0))))
 		var kind_label := "Boss" if is_boss else ("Elite" if kind == "elite" else "Combat")
-		v.add_child(_label("A %s encounter awaits." % kind_label, 16))
+		v.add_child(_label(tr("A %s encounter awaits.") % kind_label, 16))
 		var guild_bits: Array[String] = []
 		if GameState.lvl("ops.drill") > 0:
-			guild_bits.append("+%d%% damage and HP" % (GameState.lvl("ops.drill") * 4))
+			guild_bits.append(tr("+%d%% damage and HP") % (GameState.lvl("ops.drill") * 4))
 		if GameState.vanguard():
 			guild_bits.append("Vanguard first strike")
 		if GameState.abilities_ready_each_fight():
 			guild_bits.append("+3 starting Momentum")
 		if not guild_bits.is_empty():
-			var gl := _label("Drill Yard: " + ", ".join(guild_bits), 12, true)
+			var gl := _label(tr("Drill Yard: ") + ", ".join(guild_bits), 12, true)
 			gl.add_theme_color_override("font_color", Palette.RANK_E)
 			v.add_child(gl)
 		if kind == "combat":
@@ -981,7 +981,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var log_row := HBoxContainer.new()
 	log_row.add_theme_constant_override("separation", 8)
 	log_row.add_child(_icon(GameData.sprite_for_monster(str(result["monster_name"])), 28))
-	log_row.add_child(_label("%s · %d round%s" % [str(result["monster_name"]), int(result.get("rounds", 0)), "" if int(result.get("rounds", 0)) == 1 else "s"], 14))
+	log_row.add_child(_label(tr("%s · %d round%s") % [str(result["monster_name"]), int(result.get("rounds", 0)), _pl(int(result.get("rounds", 0)))], 14))
 	log_row.add_child(_tool_button("res://assets/skills/eye_gem.png", "Hide log" if _combat_log_open else "Fight log", "Show or hide the full fight log", func():
 		_combat_log_open = not _combat_log_open
 		render()
@@ -1022,22 +1022,22 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		gains_row.add_child(_icon(GameData.CURRENCY_ICON_PATH["crystals"], 18))
 		var crystal_text := "+%d" % int(result["crystal"])
 		if int(result.get("guild_crystal", 0)) > 0:
-			crystal_text += " (%d from Amplifiers)" % int(result["guild_crystal"])
+			crystal_text += tr(" (%d from Amplifiers)") % int(result["guild_crystal"])
 		if int(result.get("crystal_cache", 0)) > 0:
-			crystal_text += "  +%d Essence cache (Resonance)" % int(result["crystal_cache"])
+			crystal_text += tr("  +%d Essence cache (Resonance)") % int(result["crystal_cache"])
 			bonus_crystal -= int(result["crystal_cache"])
 		if bonus_crystal > 0:
-			crystal_text += "  +%d extracted" % bonus_crystal
+			crystal_text += tr("  +%d extracted") % bonus_crystal
 		gains_row.add_child(_label(crystal_text, 14))
 		victory_col.add_child(gains_row)
 		if result.has("heroes"):
 			victory_col.add_child(_victory_party(result))
 		if int(result.get("hand_bonus", 0)) > 0:
-			var hb := _label("Flawless, by hand: +%d Gold (no one went down and you played every turn)." % int(result["hand_bonus"]), 12)
+			var hb := _label(tr("Flawless, by hand: +%d Gold (no one went down and you played every turn).") % int(result["hand_bonus"]), 12)
 			hb.add_theme_color_override("font_color", Palette.RANK_S)
 			victory_col.add_child(hb)
 		if str(result.get("escort_saved", "")) != "":
-			victory_col.add_child(_label("%s made it through safely — +2 Renown, +1 Token." % str(result["escort_saved"]), 12, true))
+			victory_col.add_child(_label(tr("%s made it through safely — +2 Renown, +1 Token.") % str(result["escort_saved"]), 12, true))
 		if kind == "boss" or kind == "elite":
 			victory_col.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
@@ -1175,13 +1175,13 @@ func _boon_offer_row(result: Dictionary) -> Control:
 		nm.add_theme_color_override("font_color", fam["color"])
 		top.add_child(nm)
 		cv.add_child(top)
-		cv.add_child(_label("%s · you have %d" % [fam["name"], have], 11, true))
+		cv.add_child(_label(tr("%s · you have %d") % [fam["name"], have], 11, true))
 		var d := _wrap_label(str(b["desc"]), 12)
 		d.custom_minimum_size.x = 180
 		cv.add_child(d)
 		for step in GameData.BOON_SETS[b["family"]]:
 			if have + 1 == int(step[0]):
-				var sl := _wrap_label("Completes %s: %s" % [step[1]["name"], step[1]["desc"]], 11)
+				var sl := _wrap_label(tr("Completes %s: %s") % [step[1]["name"], step[1]["desc"]], 11)
 				sl.add_theme_color_override("font_color", Palette.RANK_S)
 				sl.custom_minimum_size.x = 180
 				cv.add_child(sl)
@@ -1227,7 +1227,7 @@ func _boon_chips() -> Control:
 				lines.append("%s — %s" % [b["name"], b["desc"]])
 		for step in GameData.BOON_SETS[fam_id]:
 			var got := int(counts[fam_id]) >= int(step[0])
-			lines.append("%s %d-piece %s — %s" % ["✓" if got else "○", int(step[0]), step[1]["name"], step[1]["desc"]])
+			lines.append(tr("%s %d-piece %s — %s") % ["✓" if got else "○", int(step[0]), step[1]["name"], step[1]["desc"]])
 		chip.tooltip_text = "\n".join(lines)
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.add_child(chip)
@@ -1241,7 +1241,7 @@ func _tower_victory(result: Dictionary) -> Control:
 	frame.theme_type_variation = &"CardPanelViolet"
 	var col := _vbox(8)
 	frame.add_child(col)
-	var head := _label("Floor %d cleared!" % int(t["floor"]), 28)
+	var head := _label(tr("Floor %d cleared!") % int(t["floor"]), 28)
 	head.add_theme_color_override("font_color", Palette.RANK_S)
 	col.add_child(head)
 	var gains := HBoxContainer.new()
@@ -1254,18 +1254,18 @@ func _tower_victory(result: Dictionary) -> Control:
 	if not bool(t["first"]):
 		col.add_child(_label("A weekly re-clear pays half.", 12, true))
 	if str(t["relic"]) != "":
-		var rl := _label("Guardian's relic: %s" % t["relic"], 16)
+		var rl := _label(tr("Guardian's relic: %s") % t["relic"], 16)
 		rl.add_theme_color_override("font_color", Palette.RANK_S)
 		col.add_child(rl)
-		col.add_child(_wrap_label(str(GameData.TOWER_RELICS[int(t["floor"])]["desc"]) + " It's on the Relic Altar.", 12, true))
+		col.add_child(_wrap_label(str(GameData.TOWER_RELICS[int(t["floor"])]["desc"]) + tr(" It's on the Relic Altar."), 12, true))
 	if str(t["title"]) != "":
-		var tl := _label("New guild title: %s" % t["title"], 16)
+		var tl := _label(tr("New guild title: %s") % t["title"], 16)
 		tl.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		col.add_child(tl)
 	if result.has("heroes"):
 		col.add_child(_victory_party(result))
 	var next := GameState.tower_next_floor()
-	col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Back to the Tower" + (" — floor %d next" % next if next > 0 else ""), func():
+	col.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], tr("Back to the Tower") + (tr(" — floor %d next") % next if next > 0 else ""), func():
 		GameState.finish_run()
 		screen = "tower"
 		render()
@@ -1282,13 +1282,13 @@ func _run_summary_lines() -> Array[String]:
 	var lines: Array[String] = []
 	var layers: Array = GameState.run.get("layers", [])
 	if not layers.is_empty():
-		lines.append("Floor %d/%d reached" % [int(GameState.run.get("pos", 0)) + 1, layers.size()])
+		lines.append(tr("Floor %d/%d reached") % [int(GameState.run.get("pos", 0)) + 1, layers.size()])
 	var coin_delta := GameState.coins - int(GameState.run.get("start_coins", GameState.coins))
 	var crystal_delta := GameState.crystals - int(GameState.run.get("start_crystals", GameState.crystals))
-	lines.append("%+d Gold, %+d Essence this run" % [coin_delta, crystal_delta])
+	lines.append(tr("%+d Gold, %+d Essence this run") % [coin_delta, crystal_delta])
 	var lost := int(GameState.run.get("heroes_lost", 0))
 	if lost > 0:
-		lines.append("%d hero%s lost" % [lost, "es" if lost > 1 else ""])
+		lines.append(tr("%d hero%s lost") % [lost, _pl(lost, "es")])
 	return lines
 
 
@@ -1353,7 +1353,7 @@ func _unit_plate(name_text: String, hp: int, max_val: int, width: float, shield:
 	if shield > 0.0:
 		var sb := _flat_bar(max_val, int(min(shield, max_val)), width, 3, Palette.CRYSTALS)
 		sb.position = Vector2(0, 26)
-		sb.tooltip_text = "Shield: absorbs the next %d damage" % int(round(shield))
+		sb.tooltip_text = tr("Shield: absorbs the next %d damage") % int(round(shield))
 		wrap.add_child(sb)
 
 	var icons := HBoxContainer.new()
@@ -1445,36 +1445,36 @@ func _hero_statuses(state: Dictionary, h: Hero) -> Array:
 		out.append({"icon": "res://assets/skills/shield_basic.png", "tip": "Defending — takes reduced damage this round", "color": Palette.VIOLET_BRIGHT})
 	var sh := float(state.get("hero_shields", {}).get(h.id, 0.0))
 	if sh > 0.0:
-		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Shield — absorbs the next %d damage" % int(round(sh)), "color": Palette.CRYSTALS})
+		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": tr("Shield — absorbs the next %d damage") % int(round(sh)), "color": Palette.CRYSTALS})
 	var burn: Dictionary = state.get("hero_burn", {})
 	if burn.has(h.id):
-		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out." % [int(round(float(burn[h.id]["value"]) * Combat.max_hp(h))), int(burn[h.id]["rounds"])], "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": tr("Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out.") % [int(round(float(burn[h.id]["value"]) * Combat.max_hp(h))), int(burn[h.id]["rounds"])], "color": Palette.HAZARD})
 	if state.get("_chilled", {}).has(h.id):
 		out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Chilled — acts late next round", "color": Palette.CRYSTALS})
 	if state.get("_stunned", {}).has(h.id):
 		out.append({"icon": "res://assets/relics/u_stopped_clock.png", "tip": "Stunned — loses their next turn", "color": Palette.HAZARD})
 	var poison: Dictionary = state.get("hero_poison", {})
 	if poison.has(h.id):
-		out.append({"icon": "res://assets/skills/shard_green.png", "tip": "Poisoned — %d damage a round for %d more round(s)" % [int(round(float(poison[h.id]["value"]) * Combat.max_hp(h))), int(poison[h.id]["rounds"])], "color": Palette.RANK_E})
+		out.append({"icon": "res://assets/skills/shard_green.png", "tip": tr("Poisoned — %d damage a round for %d more round(s)") % [int(round(float(poison[h.id]["value"]) * Combat.max_hp(h))), int(poison[h.id]["rounds"])], "color": Palette.RANK_E})
 	var guarding: Dictionary = state.get("_guarding", {})
 	if guarding.has(h.id):
 		var g := _hero_by_id(state["party"], str(guarding[h.id]))
 		if g:
-			out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Guarded by %s this round" % g.name, "color": Palette.VIOLET_BRIGHT})
+			out.append({"icon": "res://assets/skills/shield_blue.png", "tip": tr("Guarded by %s this round") % g.name, "color": Palette.VIOLET_BRIGHT})
 	if guarding.values().has(h.id):
 		out.append({"icon": "res://assets/skills/shield_split.png", "tip": "Guarding an ally this round (takes their hits, 25% weaker)", "color": Palette.VIOLET_BRIGHT})
 	if state.get("_weakened", {}).has(h.id):
-		out.append({"icon": "res://assets/skills/face_hood.png", "tip": "Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it." % [int(GameData.CURSE_WEAKEN * 100), int(state["_weakened"][h.id])], "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/skills/face_hood.png", "tip": tr("Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it.") % [int(GameData.CURSE_WEAKEN * 100), int(state["_weakened"][h.id])], "color": Palette.HAZARD})
 	if state.get("_riposte", {}).has(h.id):
-		out.append({"icon": "res://assets/skills/sword_silver.png", "tip": "Riposte — answers the next %d hit(s) with a counter-strike" % int(state["_riposte"][h.id]["left"]), "color": Palette.EMBER_BRIGHT})
+		out.append({"icon": "res://assets/skills/sword_silver.png", "tip": tr("Riposte — answers the next %d hit(s) with a counter-strike") % int(state["_riposte"][h.id]["left"]), "color": Palette.EMBER_BRIGHT})
 	if state.get("_undying", {}).has(h.id):
 		out.append({"icon": "res://assets/skills/heart.png", "tip": "Undying — half damage and can't fall this round", "color": Palette.EMBER_BRIGHT})
 	if state.get("_evade_next", {}).has(h.id):
 		out.append({"icon": "res://assets/skills/cloak_a.png", "tip": "Will dodge the next hit aimed at them", "color": Palette.CRYSTALS})
 	if state.get("_branded", {}).has(h.id):
-		out.append({"icon": "res://assets/skills/gem_red.png", "tip": "Branded — takes %d%% more damage for %d more round(s). Guard them." % [int(GameData.BRAND_TAKEN * 100), int(state["_branded"][h.id])], "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/skills/gem_red.png", "tip": tr("Branded — takes %d%% more damage for %d more round(s). Guard them.") % [int(GameData.BRAND_TAKEN * 100), int(state["_branded"][h.id])], "color": Palette.HAZARD})
 	if str(state.get("_taunt", "")) == h.id:
-		out.append({"icon": "res://assets/skills/helm.png", "tip": "Taunting — every foe's attacks come here this round, %d%% weaker" % int(float(state.get("_taunt_cut", 0.0)) * 100), "color": Palette.VIOLET_BRIGHT})
+		out.append({"icon": "res://assets/skills/helm.png", "tip": tr("Taunting — every foe's attacks come here this round, %d%% weaker") % int(float(state.get("_taunt_cut", 0.0)) * 100), "color": Palette.VIOLET_BRIGHT})
 	if Combat.qualifies_for_ability(h) and Combat.action_block(state, h, "ability") == "":
 		out.append({"icon": GameData.ability_icon(h.pool_id), "tip": "Enough Momentum for their Ability", "color": Palette.EMBER_BRIGHT})
 	return out
@@ -1503,26 +1503,26 @@ func _monster_statuses(state: Dictionary, i: int) -> Array:
 			out.append({"icon": a_icon, "tip": str(ability["name"]), "color": Palette.ELITE})
 	var armor := float(m.get("armor", 0.0))
 	if armor > 0.0:
-		out.append({"icon": "res://assets/skills/armor_chest.png", "tip": "Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor." % int(round(armor * 100)), "color": Palette.LINE})
+		out.append({"icon": "res://assets/skills/armor_chest.png", "tip": tr("Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor.") % int(round(armor * 100)), "color": Palette.LINE})
 	match str(m.get("status", "")):
 		"burn": out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Its hits can set a hero ablaze (damage over time)", "color": Palette.HAZARD})
 		"chill": out.append({"icon": GameData.RELIC_TYPE_ICON_PATH["Frost"], "tip": "Its hits can chill a hero (acts late next round)", "color": Palette.CRYSTALS})
 	if m.get("_charged", false) or m.get("_winding", false):
 		out.append({"icon": "res://assets/skills/sword_big.png", "tip": "Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.", "color": Palette.HAZARD})
 	if state.get("_m_stunned", {}).has(i):
-		out.append({"icon": "res://assets/skills/star.png", "tip": "Stunned — loses its next %s" % ("action" if int(state["_m_stunned"][i]) <= 1 else "%d actions" % int(state["_m_stunned"][i])), "color": Palette.EMBER_BRIGHT})
+		out.append({"icon": "res://assets/skills/star.png", "tip": tr("Stunned — loses its next %s") % ("action" if int(state["_m_stunned"][i]) <= 1 else tr("%d actions") % int(state["_m_stunned"][i])), "color": Palette.EMBER_BRIGHT})
 	var mb: Dictionary = state.get("_m_burn", {}).get(i, {})
 	if not mb.is_empty():
-		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": "Burning — %d damage a round for %d more round(s)" % [int(round(float(mb["dmg"]))), int(mb["rounds"])], "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/relics/escalate_pct.png", "tip": tr("Burning — %d damage a round for %d more round(s)") % [int(round(float(mb["dmg"]))), int(mb["rounds"])], "color": Palette.HAZARD})
 	if float(m.get("_marked", 0.0)) > 0.0:
-		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": "Marked — takes %d%% more damage from heroes" % int(round(float(m["_marked"]) * 100)), "color": Palette.HAZARD})
+		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": tr("Marked — takes %d%% more damage from heroes") % int(round(float(m["_marked"]) * 100)), "color": Palette.HAZARD})
 	var kit: Array = m.get("kit", [])
 	if not kit.is_empty():
 		var moves: Array = kit.map(func(k): return str(GameData.INTENT_INFO[k]["name"]))
-		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": "Can also: %s (telegraphed a round ahead)" % ", ".join(moves), "color": Palette.LINE})
+		out.append({"icon": "res://assets/skills/eye_gem.png", "tip": tr("Can also: %s (telegraphed a round ahead)") % ", ".join(moves), "color": Palette.LINE})
 	var ward := float(state.get("monster_shields", {}).get(i, 0.0))
 	if ward > 0.0:
-		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": "Ward — absorbs the next %d damage" % int(round(ward)), "color": Palette.CRYSTALS})
+		out.append({"icon": "res://assets/skills/shield_blue.png", "tip": tr("Ward — absorbs the next %d damage") % int(round(ward)), "color": Palette.CRYSTALS})
 	return out
 
 
@@ -1641,7 +1641,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		_hero_plates[h.id] = plate
 		if incoming.has(h.id):
 			var e: Dictionary = incoming[h.id]
-			var chip := _intent_chip("-%d" % int(e["dmg"]) if int(e["dmg"]) > 0 else "Next round!", bool(e["heavy"]), "Incoming this round: %s" % ", ".join(e["from"]))
+			var chip := _intent_chip("-%d" % int(e["dmg"]) if int(e["dmg"]) > 0 else "Next round!", bool(e["heavy"]), tr("Incoming this round: %s") % ", ".join(e["from"]))
 			chip.position = plate.position + Vector2(pw - 38.0, -20.0)
 			arena.add_child(chip)
 
@@ -1713,13 +1713,13 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 				var tip := str(info["desc"]) % int(GameData.SWEEP_MULT * 100) if ikind == "sweep" else str(info["desc"]).replace("%%", "%")
 				chip = _intent_chip(label, ikind in ["sweep", "snipe", "roar", "harvest", "drown", "immolate", "sunder", "brand"], "%s — %s" % [info["name"], tip], str(info["icon"]))
 			elif intent.get("charging", false):
-				chip = _intent_chip("Winding up", true, "Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row." % str(GameData.HEAVY_BLOW_MULT))
+				chip = _intent_chip("Winding up", true, tr("Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row.") % str(GameData.HEAVY_BLOW_MULT))
 			elif intent.get("heavy_blow", false):
 				chip = _intent_chip("⚠ %d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], true,
-					"HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it." % [t.name, int(intent["dmg"])])
+					tr("HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it.") % [t.name, int(intent["dmg"])])
 			else:
 				chip = _intent_chip("%d → %s" % [int(intent["dmg"]), t.name.split(" the ")[0]], bool(intent["heavy"]),
-					"Attacks %s this round for about %d%s" % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""])
+					tr("Attacks %s this round for about %d%s") % [t.name, int(intent["dmg"]), " — a heavy hit, consider Defending" if intent["heavy"] else ""])
 			chip.position = plate.position + Vector2(0, -22.0)
 			var ring: Control = target_rings.get(t.id) if t != null else null
 			if ring:
@@ -1729,7 +1729,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 
 	# Round chip + frame.
 	var enc_name := str(monsters[0].get("encounter", {}).get("name", "")) if not monsters.is_empty() else ""
-	var round_chip := _label("Round %d%s" % [next_round, (" · " + enc_name) if enc_name != "" else ""], 16)
+	var round_chip := _label(tr("Round %d%s") % [next_round, (" · " + enc_name) if enc_name != "" else ""], 16)
 	if enc_name != "":
 		round_chip.tooltip_text = str(monsters[0]["encounter"]["hint"])
 		round_chip.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1742,7 +1742,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 	if fight_rank != "":
 		var rbox := HBoxContainer.new()
 		rbox.add_theme_constant_override("separation", 6)
-		rbox.add_child(_rule_chip("Rank %s" % fight_rank, "This rift is Rank %s on the rift ladder." % fight_rank, Palette.RANK_S))
+		rbox.add_child(_rule_chip(tr("Rank %s") % fight_rank, tr("This rift is Rank %s on the rift ladder.") % fight_rank, Palette.RANK_S))
 		for rr in _rank_rules(fight_rank):
 			if str(rr[0]) == "foes" or (str(rr[0]) == "boss_double_mechanic" and GameState.current_node_kind() == "boss"):
 				rbox.add_child(_rule_chip(str(rr[1]), str(rr[2]), Palette.HAZARD))
@@ -1776,7 +1776,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			hit.position = w.position
 			hit.size = w.size
 			hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			hit.tooltip_text = "Attack %s" % str(monsters[i]["name"])
+			hit.tooltip_text = tr("Attack %s") % str(monsters[i]["name"])
 			hit.mouse_entered.connect(func(): if is_instance_valid(w): w.modulate = Color(1.35, 1.2, 1.2))
 			hit.mouse_exited.connect(func(): if is_instance_valid(w): w.modulate = Color.WHITE)
 			hit.pressed.connect(attack_cb.bind(i))
@@ -1843,14 +1843,14 @@ func _tutorial_step(state: Dictionary, h: Hero) -> Dictionary:
 				var t: Hero = it.get("target") if not it.is_empty() else null
 				var tname := t.name.split(" the ")[0] if t else "a hero"
 				var own := t == h
-				return {"step": 3, "key": "5" if own else "6", "text": "Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s" % [str(monsters[i]["name"]), tname,
-					"Press Defend (5) — %s takes half and earns Momentum." % who if own else "Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker." % [tname, who]]}
+				return {"step": 3, "key": "5" if own else "6", "text": tr("Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s") % [str(monsters[i]["name"]), tname,
+					tr("Press Defend (5) — %s takes half and earns Momentum.") % who if own else tr("Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker.") % [tname, who]]}
 	if not seen.has("tut_attack"):
-		return {"step": 1, "key": "1", "text": "Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name." % [who, who]}
+		return {"step": 1, "key": "1", "text": tr("Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name.") % [who, who]}
 	if not seen.has("tut_skill"):
 		for sk in GameData.hero_role_skills(h):
 			if Combat.action_block(state, h, "skill:" + str(sk["id"])) == "":
-				return {"step": 2, "key": "2", "text": "Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it." % [int(state.get("momentum", 0)), who, sk["name"], int(sk["cost"])]}
+				return {"step": 2, "key": "2", "text": tr("Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it.") % [int(state.get("momentum", 0)), who, sk["name"], int(sk["cost"])]}
 		return {"step": 2, "key": "", "text": "Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it."}
 	return {}
 
@@ -1860,7 +1860,7 @@ func _tutorial_panel(tut: Dictionary) -> Control:
 	p.theme_type_variation = &"CardPanelEmber"
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
-	var tag := _label("Step %d of 3" % int(tut["step"]) if int(tut["step"]) <= 3 else "Well fought", 15)
+	var tag := _label(tr("Step %d of 3") % int(tut["step"]) if int(tut["step"]) <= 3 else "Well fought", 15)
 	tag.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	tag.custom_minimum_size.x = 110
 	row.add_child(tag)
@@ -1967,7 +1967,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 func _momentum_meter(n: int) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 2)
-	row.tooltip_text = "Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it." % [n, GameData.MOMENTUM_MAX]
+	row.tooltip_text = tr("Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it.") % [n, GameData.MOMENTUM_MAX]
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	var l := _label("Momentum", 11)
 	l.add_theme_color_override("font_color", Palette.MUTED)
@@ -2043,7 +2043,7 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 					_ally_pick = ""
 					run_turns.call(func(): GameState.set_hero_action(hid_k, "tonic:" + tid))
 			var tb := _button("%s ×%d" % [def["name"], have], choose)
-			tb.tooltip_text = "%s (key %d)" % [def["desc"], nk]
+			tb.tooltip_text = tr("%s (key %d)") % [def["desc"], nk]
 			tb.disabled = have <= 0
 			tb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(tb)
@@ -2055,7 +2055,7 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 		row.add_child(_button("Cancel", cancel_k))
 		_combat_hotkeys["Escape"] = cancel_k
 		return
-	var ask := _label("Guard whom?" if action == "guard" else "%s for whom?" % GameData.find_tonic(_tonic_kind).get("name", "Tonic"), 15)
+	var ask := _label("Guard whom?" if action == "guard" else tr("%s for whom?") % GameData.find_tonic(_tonic_kind).get("name", "Tonic"), 15)
 	ask.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	ask.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(ask)
@@ -2077,10 +2077,10 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 			run_turns.call(func(): GameState.set_hero_action(hid, action if action == "guard" else "tonic:" + _tonic_kind, 0, aid))
 		var text := "%s  %d/%d" % [a.name.split(" the ")[0], a.hp, Combat.max_hp(a)]
 		if incoming.has(a.id):
-			text += "  (%d dmg incoming)" % int(incoming[a.id])
+			text += tr("  (%d dmg incoming)") % int(incoming[a.id])
 		var b := _button(text, pick)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		b.tooltip_text = "Key %d" % n
+		b.tooltip_text = tr("Key %d") % n
 		row.add_child(b)
 		# A tonic on a hero at full HP would heal nothing.
 		if action == "tonic" and _tonic_kind == "healing" and a.hp >= Combat.max_hp(a):
@@ -2131,10 +2131,10 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		who.add_child(_hero_icon(current_hero, 56))
 		var info := _vbox(2)
 		info.alignment = BoxContainer.ALIGNMENT_CENTER
-		var nm := _label("%s's turn" % current_hero.name.split(" the ")[0], 15)
+		var nm := _label(tr("%s's turn") % current_hero.name.split(" the ")[0], 15)
 		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		info.add_child(nm)
-		info.add_child(_label("Lv%d %s · %d/%d HP" % [current_hero.level, GameData.find_class(current_hero.pool_id).get("name", ""), current_hero.hp, Combat.max_hp(current_hero)], 12, true))
+		info.add_child(_label(tr("Lv%d %s · %d/%d HP") % [current_hero.level, GameData.find_class(current_hero.pool_id).get("name", ""), current_hero.hp, Combat.max_hp(current_hero)], 12, true))
 		info.add_child(_momentum_meter(int(state.get("momentum", 0))))
 		who.add_child(info)
 		row.add_child(who)
@@ -2148,9 +2148,9 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var weak_reach: bool = current_hero.formation == "back" and GameData.MELEE_ROLES.has(current_hero.cls_id)
 		# A likely kill earns +1 more (the preview and the tip both say so).
 		var atk_kills := tgt >= 0 and Combat.attack_would_kill(state, current_hero, tgt)
-		var atk_tip := "Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle." % [tgt_name, 2 if atk_kills else 1, " (+1 for the kill: this hit should finish it)" if atk_kills else ""]
+		var atk_tip := tr("Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle.") % [tgt_name, 2 if atk_kills else 1, " (+1 for the kill: this hit should finish it)" if atk_kills else ""]
 		if weak_reach:
-			atk_tip += "\nFrom the back row a %s hits at half strength." % current_hero.cls_id
+			atk_tip += tr("\nFrom the back row a %s hits at half strength.") % current_hero.cls_id
 		var mom := int(state.get("momentum", 0))
 		var ab_atk := _cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack")
 		_momentum_hover(ab_atk, mom, 2 if atk_kills else 1)
@@ -2162,10 +2162,10 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var skill_defs: Array = []
 		for sk in GameData.hero_role_skills(current_hero):
 			var tw_arch := Combat.hero_main_arch(current_hero)
-			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), str(sk["name"]), "%s%s%s" % [str(sk["desc"]), "" if str(sk["row"]) == "any" else "\n%s row." % str(sk["row"]).capitalize(), ("\n%s twist: %s." % [GameData.ARCHETYPES[tw_arch], GameData.ARCH_TWIST[tw_arch]]) if tw_arch != "" else ""], int(sk["cost"])])
+			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), tr(str(sk["name"])), "%s%s%s" % [tr(str(sk["desc"])), "" if str(sk["row"]) == "any" else tr("\n%s row.") % tr(str(sk["row"]).capitalize()), (tr("\n%s twist: %s.") % [tr(GameData.ARCHETYPES[tw_arch]), tr(GameData.ARCH_TWIST[tw_arch])]) if tw_arch != "" else ""], int(sk["cost"])])
 		while skill_defs.size() < 2 and GameData.ROLE_SKILLS.has(current_hero.cls_id) and skill_defs.size() < (GameData.ROLE_SKILLS[current_hero.cls_id] as Array).size():
 			var locked_sk: Dictionary = GameData.ROLE_SKILLS[current_hero.cls_id][skill_defs.size()]
-			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), "%s\nLearned at level %d." % [locked_sk["desc"], int(locked_sk["level"])], int(locked_sk["cost"])])
+			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), tr("%s\nLearned at level %d.") % [locked_sk["desc"], int(locked_sk["level"])], int(locked_sk["cost"])])
 		if Combat.qualifies_for_ability(current_hero):
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(current_hero.pool_id, {})
 			skill_defs.append(["ability", GameData.ability_icon(current_hero.pool_id), str(ab.get("name", "Ability")), str(ab.get("desc", "")), GameData.ABILITY_MOMENTUM_COST])
@@ -2177,7 +2177,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var block := Combat.action_block(state, current_hero, act_id)
 			var sk_target: bool = act_id == "ability" or str(GameData.find_role_skill(act_id.substr(6)).get("target", "")) == "foe"
 			var do_skill := func(): run_turns.call(func(): GameState.set_hero_action(hid, act_id, tgt if sk_target else 0))
-			var tip := "%s (%s) — %d Momentum. %s%s" % [d[2], key, int(d[4]), d[3], ("\n" + block) if block != "" else ""]
+			var tip := tr("%s (%s) — %d Momentum. %s%s") % [d[2], key, int(d[4]), d[3], ("\n" + block) if block != "" else ""]
 			var sb := _cmd_button(str(d[1]), str(d[2]), key, do_skill, tip, last_action == act_id, block, int(d[4]))
 			sb.custom_minimum_size.x = 104
 			_momentum_hover(sb, mom, -int(d[4]) if block == "" else 0)
@@ -2195,7 +2195,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		# keys 6-9 work either way); the guided fight opens it when it points there.
 		var call_ready := GameState.champion_call_ready(current_hero)
 		var show_more: bool = _more_open or _tut_key in ["6", "7", "8", "9"] or last_action == "guard"
-		var more_tip := "More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s" % (", Champion's Call (9)" if call_ready else "")
+		var more_tip := tr("More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s") % (", Champion's Call (9)" if call_ready else "")
 		var toggle_more := func():
 			_more_open = not show_more
 			render()
@@ -2219,13 +2219,13 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if GameState.champion_call_ready(current_hero):
 			var call := GameState.champion_call(current_hero)
 			var do_call := func(): run_turns.call(func(): GameState.set_hero_action(hid, "call"))
-			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, "Champion's Call (9) — %s. Once per rift." % call["desc"], false)
+			var cb := _cmd_button("res://assets/skills/icon_boss_skull.png", str(call["name"]), "9", do_call, tr("Champion's Call (9) — %s. Once per rift.") % call["desc"], false)
 			cb.modulate = Color(1.15, 1.0, 0.7)
 			more_row.add_child(cb)
 			_combat_hotkeys["9"] = do_call
 		var to_row := "back" if current_hero.formation != "back" else "front"
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
-		more_row.add_child(_cmd_button("res://assets/skills/wing.png", "To %s" % to_row, "7", do_swap, "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row." % to_row, false))
+		more_row.add_child(_cmd_button("res://assets/skills/wing.png", tr("To %s") % tr(to_row), "7", do_swap, tr("Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row.") % tr(to_row), false))
 		_combat_hotkeys["7"] = do_swap
 		if GameState.tonic_count() > 0:
 			var start_tonic := func():
@@ -2233,7 +2233,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_ally_pick = "tonic_kind"
 				render()
-			more_row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", "Tonics ×%d" % GameState.tonic_count(), "8", start_tonic, "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.", false))
+			more_row.add_child(_cmd_button("res://assets/ui/icon_tonic.png", tr("Tonics ×%d") % GameState.tonic_count(), "8", start_tonic, "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.", false))
 			_combat_hotkeys["8"] = start_tonic
 		if more_row != row:
 			more_row.queue_free()
@@ -2249,7 +2249,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_combat_target = living_idx[(living_idx.find(_combat_target) + 1) % living_idx.size()]
 				render()
-		var hint := _label("Target: %s\nSpace repeats your last action" % tgt_name, 12, true)
+		var hint := _label(tr("Target: %s\nSpace repeats your last action") % tgt_name, 12, true)
 		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(hint)
 		if _ally_pick != "":
@@ -2273,7 +2273,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", "Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold." % int(GameData.HAND_BONUS * 100), func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold.") % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()
@@ -2325,8 +2325,8 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 	if state.has("_phase_banner"):
 		var pb: Array = state["_phase_banner"]
 		state.erase("_phase_banner")
-		AudioManager.cue("boss", "[%s roars: a second phase]" % str(pb[0]).split(",")[0], Palette.HAZARD)
-		_title_card(arena, W, H, str(pb[1]), "%s enters its second phase" % str(pb[0]).split(",")[0], Palette.HAZARD)
+		AudioManager.cue("boss", tr("[%s roars: a second phase]") % str(pb[0]).split(",")[0], Palette.HAZARD)
+		_title_card(arena, W, H, str(pb[1]), tr("%s enters its second phase") % str(pb[0]).split(",")[0], Palette.HAZARD)
 		return
 	if (state.get("is_boss", false) or state.get("is_elite", false)) and not is_same(_boss_intro_for, state):
 		_boss_intro_for = state
@@ -2350,7 +2350,7 @@ func _play_round_banner(arena: Control, state: Dictionary, W: float, H: float) -
 		return
 	_banner_state = state
 	_banner_round = round_num
-	var l := _label("Round %d" % round_num, 34)
+	var l := _label(tr("Round %d") % round_num, 34)
 	l.add_theme_color_override("font_color", Palette.TEXT)
 	_shadow(l)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2426,7 +2426,7 @@ func _victory_party(result: Dictionary) -> Control:
 		if mvp < 0 or int(heroes[i]["dealt"]) > int(heroes[mvp]["dealt"]):
 			mvp = i
 	var box := _vbox(6)
-	box.add_child(_label("+%d XP each" % int(result.get("xp_gain", 0)), 13, true))
+	box.add_child(_label(tr("+%d XP each") % int(result.get("xp_gain", 0)), 13, true))
 	for i in heroes.size():
 		var e: Dictionary = heroes[i]
 		var row := HBoxContainer.new()
@@ -2439,7 +2439,7 @@ func _victory_party(result: Dictionary) -> Control:
 		mid.custom_minimum_size.x = 260
 		var top := HBoxContainer.new()
 		top.add_theme_constant_override("separation", 8)
-		top.add_child(_label("%s  Lv%d" % [str(e["name"]).split(" the ")[0], int(e["lv1"])], 13))
+		top.add_child(_label(tr("%s  Lv%d") % [str(e["name"]).split(" the ")[0], int(e["lv1"])], 13))
 		var leveled := int(e["lv1"]) > int(e["lv0"])
 		if leveled:
 			var up := _label("LEVEL UP!", 12)
@@ -2461,12 +2461,12 @@ func _victory_party(result: Dictionary) -> Control:
 		var end_v := 100.0 if at_cap else 100.0 * float(e["xp1"]) / float(max(1, int(e["next1"])))
 		var start_v := 0.0 if leveled else 100.0 * float(e["xp0"]) / float(max(1, int(e["next0"])))
 		bar.value = start_v if animate else end_v
-		bar.tooltip_text = "Max level" if at_cap else "%d / %d XP to Lv%d" % [int(e["xp1"]), int(e["next1"]), int(e["lv1"]) + 1]
+		bar.tooltip_text = "Max level" if at_cap else tr("%d / %d XP to Lv%d") % [int(e["xp1"]), int(e["next1"]), int(e["lv1"]) + 1]
 		if animate:
 			bar.create_tween().tween_property(bar, "value", end_v, 0.8).set_delay(0.25 + 0.12 * i).set_ease(Tween.EASE_OUT)
 		mid.add_child(bar)
 		row.add_child(mid)
-		row.add_child(_label("%d dmg · %d kill%s" % [int(e["dealt"]), int(e["kills"]), "" if int(e["kills"]) == 1 else "s"], 12, true))
+		row.add_child(_label(tr("%d dmg · %d kill%s") % [int(e["dealt"]), int(e["kills"]), _pl(int(e["kills"]))], 12, true))
 		box.add_child(row)
 	var bark: Dictionary = result.get("bark", {})
 	if not bark.is_empty():

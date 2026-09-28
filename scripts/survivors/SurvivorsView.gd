@@ -350,10 +350,10 @@ func _play_events() -> void:
 				AudioManager.play_sfx(GameData.SFX_PATH["level_up"])
 			"boss":
 				if e.get("final", false):
-					_banner("The Rift Warden: %s!" % str(e["name"]), Palette.HAZARD, "Bring it down to seal the rift")
+					_banner(tr("The Rift Warden: %s!") % str(e["name"]), Palette.HAZARD, "Bring it down to seal the rift")
 				else:
-					_banner("%s emerges!" % str(e["name"]), Palette.EMBER_BRIGHT)
-				AudioManager.cue("boss", "[%s roars]" % str(e["name"]).split(",")[0], Palette.HAZARD)
+					_banner(tr("%s emerges!") % str(e["name"]), Palette.EMBER_BRIGHT)
+				AudioManager.cue("boss", tr("[%s roars]") % str(e["name"]).split(",")[0], Palette.HAZARD)
 			"wave":
 				if run.time > 1.0 and str(e["wave"]) != "horde":
 					_banner(str(e["name"]), Palette.TEXT, str(e["hint"]))
@@ -382,9 +382,9 @@ func _play_events() -> void:
 				_banner("The rift is sealed!", Palette.RANK_S)
 				AudioManager.play_sfx(GameData.SFX_PATH["victory"])
 			"phase":
-				_banner("%s calls the horde!" % str(e["name"]), Palette.HAZARD)
+				_banner(tr("%s calls the horde!") % str(e["name"]), Palette.HAZARD)
 			"down":
-				AudioManager.cue("knockout", "[%s is down]" % _hero_name(str(e["hero"])), Palette.HAZARD)
+				AudioManager.cue("knockout", tr("[%s is down]") % _hero_name(str(e["hero"])), Palette.HAZARD)
 			"revive":
 				var rn: Node2D = _hero_nodes.get(e["hero"])
 				if rn:
@@ -569,8 +569,8 @@ func _hud_label(parent: Control, size: int) -> Label:
 func _update_hud() -> void:
 	var t := int(run.time)
 	_hud_time.text = "%d:%02d" % [t / 60, t % 60]
-	_hud_kills.text = "%d kills" % run.kills
-	_hud_level.text = "Level %d" % run.level
+	_hud_kills.text = tr("%d kills") % run.kills
+	_hud_level.text = tr("Level %d") % run.level
 	var up: Array = run.upcoming()
 	_timeline.text = "  ·  ".join(up.map(func(u): return "%s %d:%02d" % [u["label"], int(u["in"]) / 60, int(u["in"]) % 60]))
 	var tray: Array = run.tray()
@@ -723,7 +723,7 @@ func _close_panel() -> void:
 
 
 func _show_level_up() -> void:
-	_pick_cards(_modal("Level %d" % run.level), run.offer(), run.pick, "Everything is maxed — carry on")
+	_pick_cards(_modal(tr("Level %d") % run.level), run.offer(), run.pick, "Everything is maxed — carry on")
 
 
 ## A chest: one rift relic of three, for the rest of the run.
@@ -799,7 +799,7 @@ func _toggle_pause() -> void:
 	var v := _modal("Paused")
 	var owned: Array = run.owned_lines()
 	var l := Label.new()
-	l.text = "Upgrades: " + (", ".join(owned) if not owned.is_empty() else "none yet")
+	l.text = tr("Upgrades: ") + (", ".join(owned) if not owned.is_empty() else "none yet")
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = 420
 	v.add_child(l)
@@ -844,13 +844,13 @@ func _show_results() -> void:
 	var v := _modal("The rift is sealed!" if run.won else "The rift closes")
 	var lines := [
 		("Sealed at %d:%02d" if run.won else "Survived %d:%02d") % [t / 60, t % 60] + ("  — a new best!" if _summary.get("best", false) else ""),
-		"%d kills · %d elites · %d wardens · reached level %d" % [run.kills, run.elites_killed, run.bosses_killed, run.level],
-		"+%d gold · +%d essence · +%d XP for every hero" % [_summary["coins"], _summary["crystals"], _summary["xp"]],
+		tr("%d kills · %d elites · %d wardens · reached level %d") % [run.kills, run.elites_killed, run.bosses_killed, run.level],
+		tr("+%d gold · +%d essence · +%d XP for every hero") % [_summary["coins"], _summary["crystals"], _summary["xp"]],
 	]
 	for name in _summary.get("loot", []):
-		lines.append("Found: %s" % name)
+		lines.append(tr("Found: %s") % name)
 	for m in _summary.get("milestones", []):
-		lines.append("Milestone! " + str(m))
+		lines.append(tr("Milestone! ") + str(m))
 	for s in lines:
 		var l := Label.new()
 		l.text = s

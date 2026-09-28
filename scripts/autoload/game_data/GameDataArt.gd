@@ -105,7 +105,11 @@ const SFX_PATH := {
 
 ## The tester build: what changed lately and what to try, shown on the title
 ## screen (newest first, a few lines each).
+## The languages the game speaks: [locale, its own name for itself].
+const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
+
 const WHATS_NEW := [
+	"Türkçe (beta): Settings or the title screen. Menus, tabs, fights and tips are in Turkish; names and descriptions are next.",
 	"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.",
 	"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",
 	"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.",

@@ -24,6 +24,7 @@ var music_volume: float = 1.0
 var combat_speed: float = 1.0
 var reduce_motion := false   # no shakes, sways, zooms or flashes in fights (settings.json)
 var colorblind := false      # blue instead of green against red, rarity letters on items (settings.json)
+var language := "en"         # a GameData.LANGUAGES locale (settings.json)
 var hearing_aid := false     # captions for meaningful sounds + an edge pulse on big hits (settings.json; see AudioManager.cue)
 var ui_scale: float = 1.0   # whole-UI scale (Window.content_scale_factor), a settings.json preference   # animation time scale inside a rift (x1/x2/x3), a settings.json preference
 var sfx_volume: float = 1.0
@@ -476,8 +477,13 @@ func save_settings() -> void:
 	if f:
 		f.store_string(JSON.stringify({
 			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx, "combat_speed": combat_speed, "ui_scale": ui_scale,
-			"reduce_motion": reduce_motion, "colorblind": colorblind, "hearing_aid": hearing_aid,
+			"reduce_motion": reduce_motion, "colorblind": colorblind, "hearing_aid": hearing_aid, "language": language,
 		}))
+
+
+## Switches every translated line to `language` (the next render redraws).
+func apply_language() -> void:
+	TranslationServer.set_locale(language)
 
 
 func load_settings() -> void:
@@ -495,6 +501,7 @@ func load_settings() -> void:
 		reduce_motion = bool(parsed.get("reduce_motion", false))
 		colorblind = bool(parsed.get("colorblind", false))
 		hearing_aid = bool(parsed.get("hearing_aid", false))
+		language = str(parsed.get("language", "en"))
 		sfx_volume = parsed.get("sfx_volume", 1.0)
 		resolution_idx = parsed.get("resolution_idx", 0)
 
