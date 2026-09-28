@@ -188,6 +188,8 @@ outside boss fights,boss dövüşleri dışında,scripts/autoload/combat/CombatE
 in the %s row,%s sırada,scripts/autoload/combat/CombatEffects.gd:407
 vs foes below %s HP,canı %s altındaki düşmanlara karşı,scripts/autoload/combat/CombatEffects.gd:408
 while an ally is below %s HP,bir müttefikin canı %s altındayken,scripts/autoload/combat/CombatEffects.gd:409
+when acting first in the round,turda ilk davrandığında,scripts/autoload/combat/CombatEffects.gd:410
+when acting last in the round,turda son davrandığında,scripts/autoload/combat/CombatEffects.gd:411
 Mends %s HP/round,Tur başına %s can iyileştirir,scripts/autoload/combat/CombatGen.gd:137
 +%s dodge chance,+%s kaçınma şansı,scripts/autoload/combat/CombatGen.gd:138
 +%s dmg/round (stacking),Tur başına +%s hasar (birikir),scripts/autoload/combat/CombatGen.gd:139
@@ -455,7 +457,7 @@ Extra turn,Ek sıra,scripts/autoload/game_data/GameDataHeroes.gd:283
 shields?,kalkan\\w*,scripts/autoload/game_data/GameDataHeroes.gd:284
 Shield,Kalkan,scripts/autoload/game_data/GameDataHeroes.gd:284
 absorbs incoming damage before HP is lost,can kaybedilmeden önce gelen hasarı emer,scripts/autoload/game_data/GameDataHeroes.gd:284
-acting first|acting last,,scripts/autoload/game_data/GameDataHeroes.gd:285
+acting first|acting last,[iİ]lk davran\\w*|son davran\\w*|önce davran\\w*,scripts/autoload/game_data/GameDataHeroes.gd:285
 Turn order,Sıra,scripts/autoload/game_data/GameDataHeroes.gd:285
 everyone acts in Speed order each round; first/last means this round's order,her tur herkes Hız sırasıyla davranır; ilk/son bu turun sırası demektir,scripts/autoload/game_data/GameDataHeroes.gd:285
 turn speed|speed,sıra hızı\\w*|hız|hızı|hızın\\w*,scripts/autoload/game_data/GameDataHeroes.gd:286

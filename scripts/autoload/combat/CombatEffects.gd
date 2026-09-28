@@ -407,8 +407,8 @@ func describe_effect(e: Dictionary) -> String:
 			"formation": conds.append(tr("in the %s row") % tr(str(c)))
 			"target_below": conds.append(tr("vs foes below %s HP") % tr(str(pct.call(c))))
 			"ally_below": conds.append(tr("while an ally is below %s HP") % tr(str(pct.call(c))))
-			"acting_first": conds.append("when acting first in the round")
-			"acting_last": conds.append("when acting last in the round")
+			"acting_first": conds.append(tr("when acting first in the round"))
+			"acting_last": conds.append(tr("when acting last in the round"))
 	if not conds.is_empty():
 		text += " " + ", ".join(conds)
 	return text

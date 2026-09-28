@@ -763,6 +763,14 @@ msgstr "canı %s altındaki düşmanlara karşı"
 msgid "while an ally is below %s HP"
 msgstr "bir müttefikin canı %s altındayken"
 
+#: scripts/autoload/combat/CombatEffects.gd:410
+msgid "when acting first in the round"
+msgstr "turda ilk davrandığında"
+
+#: scripts/autoload/combat/CombatEffects.gd:411
+msgid "when acting last in the round"
+msgstr "turda son davrandığında"
+
 #: scripts/autoload/combat/CombatGen.gd:137
 msgid "Mends %s HP/round"
 msgstr "Tur başına %s can iyileştirir"
@@ -1833,7 +1841,7 @@ msgstr "can kaybedilmeden önce gelen hasarı emer"
 
 #: scripts/autoload/game_data/GameDataHeroes.gd:285
 msgid "acting first|acting last"
-msgstr ""
+msgstr "[iİ]lk davran\\w*|son davran\\w*|önce davran\\w*"
 
 #: scripts/autoload/game_data/GameDataHeroes.gd:285 scripts/ui/BattleView.gd:407
 msgid "Turn order"
