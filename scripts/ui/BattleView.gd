@@ -1732,6 +1732,17 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 	_shadow(round_chip)
 	round_chip.position = Vector2(14, 8)
 	arena.add_child(round_chip)
+	# The rank's rules that bite in this fight, top-right of the arena.
+	var fight_rank := str(GameState.run.get("rift_rank", ""))
+	if fight_rank != "":
+		var rbox := HBoxContainer.new()
+		rbox.add_theme_constant_override("separation", 6)
+		rbox.add_child(_rule_chip("Rank %s" % fight_rank, "This rift is Rank %s on the rift ladder." % fight_rank, Palette.RANK_S))
+		for rr in _rank_rules(fight_rank):
+			if str(rr[0]) == "foes" or (str(rr[0]) == "boss_double_mechanic" and GameState.current_node_kind() == "boss"):
+				rbox.add_child(_rule_chip(str(rr[1]), str(rr[2]), Palette.HAZARD))
+		rbox.position = Vector2(W - rbox.get_combined_minimum_size().x - 14.0, 10.0)
+		arena.add_child(rbox)
 	var frame := Panel.new()
 	var fst := StyleBoxFlat.new()
 	fst.bg_color = Color(0, 0, 0, 0)
@@ -2086,7 +2097,7 @@ func _tool_button(icon_path: String, text: String, tip: String, cb: Callable) ->
 	b.expand_icon = false
 	b.tooltip_text = tip
 	b.custom_minimum_size = Vector2(44, 40)
-	b.add_theme_font_size_override("font_size", 12)
+	b.add_theme_font_size_override("font_size", 14)
 	return b
 
 

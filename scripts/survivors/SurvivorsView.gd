@@ -406,7 +406,7 @@ func _build_hud() -> void:
 	pause.focus_mode = Control.FOCUS_NONE
 	pause.pressed.connect(_toggle_pause)
 	row.add_child(pause)
-	_timeline = _hud_label(top, 14)
+	_timeline = _hud_label(top, 15)
 	_timeline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_timeline.modulate = Color(1, 1, 1, 0.85)
 	_boss_label = _hud_label(top, 16)
@@ -450,7 +450,7 @@ func _build_hud() -> void:
 	_tray.add_theme_constant_override("h_separation", 4)
 	_tray.add_theme_constant_override("v_separation", 4)
 	root.add_child(_tray)
-	var hint := _hud_label(root, 13)
+	var hint := _hud_label(root, 14)
 	hint.text = "Move: WASD / arrows, or drag  ·  Pause: Esc"
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 14)
 	hint.modulate = Color(1, 1, 1, 0.6)

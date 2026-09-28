@@ -220,6 +220,7 @@ func _run_bar(in_combat: bool) -> Control:
 	var col := _vbox(6)
 	var diff := GameState._diff()
 	var pos: int = int(GameState.run["pos"])
+	var rank_rules: Array = _rank_rules(str(GameState.run.get("rift_rank", "")))
 	var total_layers: int = (GameState.run["layers"] as Array).size()
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
@@ -239,8 +240,6 @@ func _run_bar(in_combat: bool) -> Control:
 	top.add_child(pip_wrap)
 	var tags: Array[String] = []
 	var rank: String = str(GameState.run.get("rift_rank", ""))
-	if rank != "":
-		tags.append("Rank %s" % rank)
 	if int(GameState.run.get("shield", 0)) > 0:
 		tags.append("Relic ward %d" % int(GameState.run["shield"]))
 	if not tags.is_empty():
@@ -268,6 +267,15 @@ func _run_bar(in_combat: bool) -> Control:
 			rb.tooltip_text = "Leave the rift now — keep your loot, no sealing reward"
 			top.add_child(rb)
 	col.add_child(top)
+	if not rank_rules.is_empty():
+		var chips := HFlowContainer.new()
+		chips.add_theme_constant_override("h_separation", 6)
+		chips.add_theme_constant_override("v_separation", 4)
+		var rk := str(GameState.run["rift_rank"])
+		chips.add_child(_rule_chip("Rank %s" % rk, "This rift is on the rift ladder at Rank %s. Its rules:" % rk, Palette.RANK_S))
+		for rr in rank_rules:
+			chips.add_child(_rule_chip(str(rr[1]), str(rr[2]), Palette.HAZARD if str(rr[0]) != "foes" else Palette.LINE))
+		col.add_child(chips)
 
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 10)
@@ -772,6 +780,11 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 	var bg_path: String = GameData.HAZARD_BG.get(str(hz["id"]), "")
 	if bg_path != "":
 		v = _node_split(v, bg_path)
+	var hz_rank := str(GameState.run.get("rift_rank", ""))
+	if hz_rank != "" and GameData.find_rift_rank(hz_rank).get("hazard_severity_up", 0):
+		var hn := _wrap_label("Rank %s: harsher hazards. %s" % [hz_rank, GameData.RIFT_RANK_RULE_TIP["hazard_severity_up"]], 12)
+		hn.add_theme_color_override("font_color", Palette.HAZARD)
+		v.add_child(hn)
 
 	var dmg_mult: float = float(hz["dmg_mult"])
 	var name_row := HBoxContainer.new()

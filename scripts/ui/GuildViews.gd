@@ -212,7 +212,7 @@ func _guild_status_board() -> PanelContainer:
 		b.flat = true
 		b.text = "›  " + str(ln[0])
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_size_override("font_size", 13)
+		b.add_theme_font_size_override("font_size", 14)
 		b.add_theme_color_override("font_color", ln[1])
 		b.add_theme_color_override("font_hover_color", Palette.EMBER_BRIGHT)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -1470,7 +1470,7 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 					render()
 				)
 				ab.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-				ab.add_theme_font_size_override("font_size", 12)
+				ab.add_theme_font_size_override("font_size", 14)
 				col.add_child(ab)
 		"failed":
 			var rm := _button("Take it down", func(id=str(q["id"])):

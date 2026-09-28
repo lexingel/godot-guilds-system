@@ -150,8 +150,15 @@ func _vbox(gap: int = 10) -> VBoxContainer:
 ## descriptions) instead sits in a VBoxContainer stretched to the fixed-width
 ## content column, so it wraps at a sane width via _wrap_label() below instead
 ## — or via _info_row() when the wrapping text needs to share its row with buttons.
+## Body text is set a notch above what screens ask for, so it reads at a
+## desktop distance: 13 and under become 14 (the floor), 14 and 15 go up one.
+## Headings (16+) stay as asked.
+static func ui_size(size: int) -> int:
+	return 14 if size <= 13 else (size + 1 if size <= 15 else size)
+
+
 func _label(text: String, size: int = 14, muted: bool = false) -> Label:
-	size = max(size, 12)   # type floor: nothing on screen below 12px
+	size = ui_size(size)
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
@@ -159,6 +166,42 @@ func _label(text: String, size: int = 14, muted: bool = false) -> Label:
 	if muted:
 		l.add_theme_color_override("font_color", Palette.MUTED)
 	return l
+
+
+## A rift rank's rules as [id, short text, tooltip]: the foes' HP and damage
+## against the base rift, then each extra rule. Empty for an unranked rift.
+func _rank_rules(rank_id: String) -> Array:
+	if rank_id == "":
+		return []
+	var r := GameData.find_rift_rank(rank_id)
+	var out: Array = []
+	if float(r["hp"]) != 1.0 or float(r["dmg"]) != 1.0:
+		out.append(["foes", "Foes ×%s HP · ×%s damage" % [str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1))],
+			"Rank %s foes have %s× the HP and %s× the damage of a base %s Rift." % [rank_id, str(snappedf(float(r["hp"]), 0.1)), str(snappedf(float(r["dmg"]), 0.1)), str(r["base"]).capitalize()]])
+	for flag in GameData.RIFT_RANK_RULE_TEXT:
+		if r.get(flag, false):
+			var t := str(GameData.RIFT_RANK_RULE_TEXT[flag])
+			out.append([flag, t[0].to_upper() + t.substr(1), str(GameData.RIFT_RANK_RULE_TIP.get(flag, ""))])
+	return out
+
+
+## A small rounded chip with a tooltip (rank rules and similar tags).
+func _rule_chip(text: String, tip: String, border: Color = Palette.LINE) -> PanelContainer:
+	var p := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(Palette.INK, 0.75)
+	st.border_color = border
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(4)
+	st.content_margin_left = 6
+	st.content_margin_right = 6
+	st.content_margin_top = 1
+	st.content_margin_bottom = 1
+	p.add_theme_stylebox_override("panel", st)
+	p.add_child(_label(text, 12))
+	p.tooltip_text = tip
+	p.mouse_filter = Control.MOUSE_FILTER_STOP
+	return p
 
 
 ## Green above half HP, gold at low-but-not-critical, red once it's dire —
@@ -1025,7 +1068,7 @@ func _log_richtext(lines: Array, party: Array[Hero], monsters: Array, height: fl
 	rt.size = Vector2(0, height)
 	rt.scroll_active = true
 	rt.scroll_following = true
-	rt.add_theme_font_size_override("normal_font_size", 12)
+	rt.add_theme_font_size_override("normal_font_size", 14)
 	var body := ""
 	for line in lines:
 		body += _colorize_log_line(str(line), party, monsters) + "\n"

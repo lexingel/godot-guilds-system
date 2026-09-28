@@ -276,7 +276,7 @@ expand_margin_bottom = 2.0
 
 [resource]
 default_font = ExtResource("8")
-default_font_size = 14
+default_font_size = 15
 Button/colors/font_color = Color(0.914, 0.886, 0.961, 1)
 Button/constants/icon_max_width = 24
 Button/colors/font_disabled_color = Color(0.478, 0.427, 0.6, 0.7)

@@ -318,6 +318,16 @@ const RIFT_RANK_RULE_TEXT := {
 }
 
 
+## What each rule does, for its tooltip.
+const RIFT_RANK_RULE_TIP := {
+	"elite_chance_up": "Forks offer elite fights more often.",
+	"hazard_severity_up": "The mildest hazards are skipped: every hazard is at least Moderate (at least Severe at SSS).",
+	"shop_chance_down": "Forks offer a shop less often.",
+	"relic_rarity_floor_down": "The starting relic can be any rarity, even Common.",
+	"boss_double_mechanic": "The boss uses two of its mechanics at once.",
+}
+
+
 static func find_rift_rank(rank_id: String) -> Dictionary:
 	for r in RIFT_RANKS:
 		if r["id"] == rank_id:

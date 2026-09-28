@@ -27,9 +27,9 @@ static func card(bbcode: String) -> Control:
 	rt.scroll_active = false
 	rt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rt.custom_minimum_size = Vector2(280, 0)
-	rt.add_theme_font_size_override("normal_font_size", 12)
+	rt.add_theme_font_size_override("normal_font_size", 14)
 	rt.add_theme_font_size_override("bold_font_size", 14)
-	rt.add_theme_font_size_override("italics_font_size", 12)
+	rt.add_theme_font_size_override("italics_font_size", 14)
 	rt.add_theme_color_override("default_color", Palette.TEXT)
 	rt.text = bbcode
 	panel.add_child(rt)
