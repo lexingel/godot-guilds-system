@@ -871,7 +871,7 @@ func _position_text(h: Hero) -> String:
 	var parts: Array[String] = []
 	for e in pos["effects"]:
 		parts.append(Combat.describe_effect(e))
-	return tr("%s row · %s: %s") % [tr(str(pos["row"]).capitalize()), tr(str(pos["name"])), tr(str("; ".join(parts)))]
+	return tr("%s row · %s: %s") % [tr(str(pos["row"])).capitalize(), tr(str(pos["name"])), tr(str("; ".join(parts)))]
 
 
 ## A subclass passive as BBCode — "Killer's Eye: +14% damage vs foes below
@@ -1806,7 +1806,7 @@ var _crafting_animating: bool = false
 const _KIND_LABEL := {
 	"dmg_pct": "Damage", "hp_pct": "HP", "first_round_pct": "First-Strike Damage",
 	"escalate_pct": "Escalating Damage", "mend_pct": "Mend (HP over time)",
-	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance", "ability_power": "Ability Power",
+	"hazard_guard_pct": "Hazard Guard", "dodge_pct": "Dodge Chance", "speed_pct": "Turn Speed", "ability_power": "Ability Power",
 	"wipe_guard": "Wipe Guard (survive a wipe)", "boss_alpha_strike": "Boss Alpha Strike",
 	"loot_rarity_pct": "Loot Rarity", "counter_pct": "Counter-Attack Chance",
 	"momentum_pct": "Momentum on Evade", "kill_shield_pct": "On-Kill Shield",

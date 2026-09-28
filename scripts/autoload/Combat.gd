@@ -165,7 +165,7 @@ func action_block(state: Dictionary, h: Hero, action: String) -> String:
 		return tr("Not learned yet")
 	var c := action_cost(action)
 	if str(c[1]) != "any" and (str(c[1]) == "back") != (h.formation == "back"):
-		return tr("%s row only") % tr(str(c[1]).capitalize())
+		return tr("%s row only") % tr(str(c[1])).capitalize()
 	if int(state.get("momentum", 0)) < int(c[0]):
 		return tr("Needs %d Momentum") % int(c[0])
 	return ""

@@ -1729,7 +1729,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 
 	# Round chip + frame.
 	var enc_name := str(monsters[0].get("encounter", {}).get("name", "")) if not monsters.is_empty() else ""
-	var round_chip := _label(tr("Round %d%s") % [next_round, tr(str((" · " + enc_name) if enc_name != "" else ""))], 16)
+	var round_chip := _label(tr("Round %d%s") % [next_round, (" · " + tr(enc_name)) if enc_name != "" else ""], 16)
 	if enc_name != "":
 		round_chip.tooltip_text = str(monsters[0]["encounter"]["hint"])
 		round_chip.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -2162,7 +2162,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		var skill_defs: Array = []
 		for sk in GameData.hero_role_skills(current_hero):
 			var tw_arch := Combat.hero_main_arch(current_hero)
-			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), tr(str(sk["name"])), "%s%s%s" % [tr(str(sk["desc"])), "" if str(sk["row"]) == "any" else tr("\n%s row.") % tr(str(sk["row"]).capitalize()), (tr("\n%s twist: %s.") % [tr(GameData.ARCHETYPES[tw_arch]), tr(GameData.ARCH_TWIST[tw_arch])]) if tw_arch != "" else ""], int(sk["cost"])])
+			skill_defs.append(["skill:" + str(sk["id"]), str(sk["icon"]), tr(str(sk["name"])), "%s%s%s" % [tr(str(sk["desc"])), "" if str(sk["row"]) == "any" else tr("\n%s row.") % tr(str(sk["row"])).capitalize(), (tr("\n%s twist: %s.") % [tr(GameData.ARCHETYPES[tw_arch]), tr(GameData.ARCH_TWIST[tw_arch])]) if tw_arch != "" else ""], int(sk["cost"])])
 		while skill_defs.size() < 2 and GameData.ROLE_SKILLS.has(current_hero.cls_id) and skill_defs.size() < (GameData.ROLE_SKILLS[current_hero.cls_id] as Array).size():
 			var locked_sk: Dictionary = GameData.ROLE_SKILLS[current_hero.cls_id][skill_defs.size()]
 			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), tr("%s\nLearned at level %d.") % [tr(str(locked_sk["desc"])), int(locked_sk["level"])], int(locked_sk["cost"])])
@@ -2225,7 +2225,8 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			_combat_hotkeys["9"] = do_call
 		var to_row := "back" if current_hero.formation != "back" else "front"
 		var do_swap := func(): run_turns.call(func(): GameState.set_hero_action(hid, "swap"))
-		more_row.add_child(_cmd_button("res://assets/skills/wing.png", tr("To %s") % tr(to_row), "7", do_swap, tr("Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row.") % tr(to_row), false))
+		var move_label := tr("To %s") % tr(to_row)   # Turkish puts the row first: "arka sıraya"
+		more_row.add_child(_cmd_button("res://assets/skills/wing.png", move_label[0].to_upper() + move_label.substr(1), "7", do_swap, tr("Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row.") % tr(to_row), false))
 		_combat_hotkeys["7"] = do_swap
 		if GameState.tonic_count() > 0:
 			var start_tonic := func():

@@ -1165,7 +1165,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		var f := GameState.payday_forecast()
 		var msg := tr("Payday in %d day%s: %d Gold due, you have %d — ") % [int(f["days"]), tr(str(_pl(int(f["days"])))), int(f["bill"]), int(f["have"])]
 		if int(f["short"]) == 0:
-			msg += "covered."
+			msg += tr("covered.")
 		elif int(f["runs"]) > 0:
 			msg += tr("short %d; about %d rift%s at your recent pay (%d each) covers it.") % [int(f["short"]), int(f["runs"]), tr(str(_pl(int(f["runs"])))), int(f["per_run"])]
 		else:
@@ -1476,7 +1476,7 @@ func _ladder_card(best: int, go: Callable) -> Control:
 func _render_tower(v: VBoxContainer) -> void:
 	v.add_child(_label("Tower of Trials", 20))
 	var title := GameState.tower_title()
-	v.add_child(_label(tr("Best floor %d / %d%s") % [GameState.tower_best, GameData.TOWER_FLOORS, tr(str(("  ·  " + title) if title != "" else ""))], 13, true))
+	v.add_child(_label(tr("Best floor %d / %d%s") % [GameState.tower_best, GameData.TOWER_FLOORS, ("  ·  " + tr(title)) if title != "" else ""], 13, true))
 	_coach(v, "tower", "The Tower", "Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic.")
 	var f := GameState.tower_next_floor()
 	if f == 0:
@@ -1686,7 +1686,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		var zv := _vbox(6)
 		zv.mouse_filter = Control.MOUSE_FILTER_PASS
 		var in_row: Array = lineup.filter(func(x): return x.formation == row_id)
-		zv.add_child(_label(tr("%s row (%d) — %s") % [tr(row_id.capitalize()), in_row.size(),
+		zv.add_child(_label(tr("%s row (%d) — %s") % [tr(row_id).capitalize(), in_row.size(),
 			tr("takes most of the enemy's attacks") if row_id == "front" else tr("attacked far less often")], 13))
 		var cards := HFlowContainer.new()
 		cards.add_theme_constant_override("h_separation", 8)

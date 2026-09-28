@@ -3033,7 +3033,7 @@ msgstr "Kaçınma +%6 ve ekip hasarı +%6."
 
 #: scripts/autoload/game_data/GameDataModes.gd:37 scripts/autoload/game_data/GameDataSkills.gd:533
 msgid "Grace"
-msgstr "Lütuf"
+msgstr "İnayet"
 
 #: scripts/autoload/game_data/GameDataModes.gd:37
 msgid "Mends 3% HP every round."
@@ -6861,7 +6861,7 @@ msgstr "Yeterli Altın yok."
 
 #: scripts/autoload/game_state/GameStateHeroes.gd:254
 msgid "%s — party %s"
-msgstr "%s — ekip %s"
+msgstr "%s — tüm ekip: %s"
 
 #: scripts/autoload/game_state/GameStateHeroes.gd:294
 msgid "Champion hired"
@@ -8601,7 +8601,7 @@ msgstr "%d seviye"
 
 #: scripts/ui/GuildViews.gd:239
 msgid " · %d to %s"
-msgstr " · %d → %s"
+msgstr " · %d seviye daha: %s"
 
 #: scripts/ui/GuildViews.gd:239
 msgid " Guild"
@@ -9797,7 +9797,7 @@ msgstr "Kule"
 
 #: locale/extra_msgids.txt scripts/ui/Main.gd:1037 scripts/ui/Main.gd:1052
 msgid "Back"
-msgstr "Arka"
+msgstr "Geri"
 
 #: scripts/ui/Main.gd:761
 msgid "Back to %s"
@@ -9966,6 +9966,10 @@ msgstr "Önce yukarıdaki tüm hedefleri tamamla"
 #: scripts/ui/Main.gd:1166
 msgid "Payday in %d day%s: %d Gold due, you have %d — "
 msgstr "Maaş gününe %d gün%s: %d Altın ödenecek, sende %d var — "
+
+#: locale/extra_msgids.txt scripts/ui/Main.gd:1168
+msgid "covered."
+msgstr "karşılanıyor."
 
 #: scripts/ui/Main.gd:1170
 msgid "short %d; about %d rift%s at your recent pay (%d each) covers it."
@@ -11612,6 +11616,10 @@ msgid "Dodge Chance"
 msgstr "Kaçınma Şansı"
 
 #: scripts/ui/UiKit.gd:1809
+msgid "Turn Speed"
+msgstr "Sıra Hızı"
+
+#: scripts/ui/UiKit.gd:1809
 msgid "Ability Power"
 msgstr "Yetenek Gücü"
 
@@ -11806,4 +11814,44 @@ msgstr "dayanıklılık\\w*"
 #: locale/extra_msgids.txt
 msgid "executioner"
 msgstr "cellat\\w*"
+
+#: locale/extra_msgids.txt
+msgid " (Awakened)"
+msgstr " (Uyanmış)"
+
+#: locale/extra_msgids.txt
+msgid "passed"
+msgstr "başarılı"
+
+#: locale/extra_msgids.txt
+msgid "failed"
+msgstr "başarısız"
+
+#: locale/extra_msgids.txt
+msgid "action"
+msgstr "hamlesini"
+
+#: locale/extra_msgids.txt
+msgid "covered"
+msgstr "karşılanıyor"
+
+#: locale/extra_msgids.txt
+msgid "never"
+msgstr "hiç yapılmadı"
+
+#: locale/extra_msgids.txt
+msgid "weapons"
+msgstr "silah"
+
+#: locale/extra_msgids.txt
+msgid "Established"
+msgstr "Yerleşik"
+
+#: locale/extra_msgids.txt
+msgid "Renowned"
+msgstr "Ünlü"
+
+#: locale/extra_msgids.txt
+msgid "Founding"
+msgstr "Kurucu"
 

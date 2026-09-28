@@ -92,7 +92,7 @@ func _render_roster(v: VBoxContainer) -> void:
 	var tab_row := HBoxContainer.new()
 	tab_row.add_theme_constant_override("separation", 4)
 	for td in tab_defs:
-		var tb := _button(str(td[1]) + ("  •" if td[2] else ""), func(t=str(td[0])):
+		var tb := _button(tr(str(td[1])) + ("  •" if td[2] else ""), func(t=str(td[0])):
 			roster_tab = t
 			if t == "skills" and expanded_skill_tree_kind == "":
 				expanded_skill_tree_kind = h.innate_kind
@@ -1363,7 +1363,7 @@ func _relic_modal(r: Relic) -> void:
 		for row_def in rows:
 			var er := HBoxContainer.new()
 			er.add_theme_constant_override("separation", 8)
-			var el := _wrap_label(("⚡ " if int(row_def[1]) < 0 else "• ") + str(row_def[0]), 13)
+			var el := _wrap_label(("⚡ " if int(row_def[1]) < 0 else "• ") + tr(str(row_def[0])), 13)
 			el.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			er.add_child(el)
 			var rb := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], "Reroll", func(id=r.id, idx=int(row_def[1])):

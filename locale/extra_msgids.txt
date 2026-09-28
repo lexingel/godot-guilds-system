@@ -57,3 +57,16 @@ guardian
 evasion
 sustain
 executioner
+# single words picked inside tr(str(... if ... else ...))
+ (Awakened)
+passed
+failed
+action
+covered
+covered.
+never
+weapons
+# guild tiers without "Guild" (the renown panel)
+Established
+Renowned
+Founding

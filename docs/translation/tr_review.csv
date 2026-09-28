@@ -755,7 +755,7 @@ Ambush,Pusu,scripts/autoload/game_data/GameDataModes.gd:35
 +40% opening volley against bosses.,Bosslara karşı açılış yaylımı +%40.,scripts/autoload/game_data/GameDataModes.gd:35
 Veil,Peçe,scripts/autoload/game_data/GameDataModes.gd:36
 +6% dodge and +6% party damage.,Kaçınma +%6 ve ekip hasarı +%6.,scripts/autoload/game_data/GameDataModes.gd:36
-Grace,Lütuf,scripts/autoload/game_data/GameDataModes.gd:37
+Grace,İnayet,scripts/autoload/game_data/GameDataModes.gd:37
 Mends 3% HP every round.,Her tur %3 can iyileştirir.,scripts/autoload/game_data/GameDataModes.gd:37
 Aegis,Egis,scripts/autoload/game_data/GameDataModes.gd:38
 Each kill shields the weakest ally for 12% of max HP.,Her öldürme en zayıf müttefike en yüksek canın %12'si kadar kalkan verir.,scripts/autoload/game_data/GameDataModes.gd:38
@@ -1712,7 +1712,7 @@ Build the Arcane Lab first,Önce Gizem Laboratuvarı'nı kur,scripts/autoload/ga
 Need %d Gold,%d Altın gerekir,scripts/autoload/game_state/GameStateHeroes.gd:52
 Roster is full.,Kadro dolu.,scripts/autoload/game_state/GameStateHeroes.gd:145
 Not enough Gold.,Yeterli Altın yok.,scripts/autoload/game_state/GameStateHeroes.gd:149
-%s — party %s,%s — ekip %s,scripts/autoload/game_state/GameStateHeroes.gd:254
+%s — party %s,%s — tüm ekip: %s,scripts/autoload/game_state/GameStateHeroes.gd:254
 Champion hired,Şampiyon işe alındı,scripts/autoload/game_state/GameStateHeroes.gd:294
 %s joins your roster,%s kadrona katıldı,scripts/autoload/game_state/GameStateHeroes.gd:294
 Must be Level 10 to evolve,Evrimleşmek için 10. seviye olmalı,scripts/autoload/game_state/GameStateHeroes.gd:320
@@ -2157,7 +2157,7 @@ Back at camp,Kampa dönüş,scripts/ui/GuildViews.gd:21
  — grows with your guild tier, — lonca kademenle büyür,scripts/ui/GuildViews.gd:129
  — grows with the campaign, — hikâyeyle büyür,scripts/ui/GuildViews.gd:131
 %d levels,%d seviye,scripts/ui/GuildViews.gd:237
- · %d to %s, · %d → %s,scripts/ui/GuildViews.gd:239
+ · %d to %s, · %d seviye daha: %s,scripts/ui/GuildViews.gd:239
  Guild, Lonca,scripts/ui/GuildViews.gd:239
 Guild tier grows with Guild Management levels; the Guild Hall grows with it.,Lonca kademesi Lonca Yönetimi seviyeleriyle yükselir; Lonca Salonu da onunla büyür.,scripts/ui/GuildViews.gd:245
 Guild status,Lonca durumu,scripts/ui/GuildViews.gd:260
@@ -2460,7 +2460,7 @@ Roster,Kadro,scripts/ui/Main.gd:559
 Library,Kütüphane,scripts/ui/Main.gd:563
 %s  (key %s),%s  (tuş %s),scripts/ui/Main.gd:631
 Tower,Kule,scripts/ui/Main.gd:714
-Back,Arka,locale/extra_msgids.txt
+Back,Geri,locale/extra_msgids.txt
 Back to %s,Geri: %s,scripts/ui/Main.gd:761
 Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d),Lonca unvanları — Sınav Kulesi (en iyi kat %d) ve Sonsuz Yarık (en iyi %d:%02d),scripts/ui/Main.gd:774
 Guildhold,Guildhold,scripts/ui/Main.gd:1045
@@ -2517,6 +2517,7 @@ Face the finale: %s,Finalle yüzleş: %s,scripts/ui/Main.gd:1143
 Recommended power %d,Önerilen güç %d,scripts/ui/Main.gd:1153
 Complete every objective above first,Önce yukarıdaki tüm hedefleri tamamla,scripts/ui/Main.gd:1153
 "Payday in %d day%s: %d Gold due, you have %d — ","Maaş gününe %d gün%s: %d Altın ödenecek, sende %d var — ",scripts/ui/Main.gd:1166
+covered.,karşılanıyor.,locale/extra_msgids.txt
 short %d; about %d rift%s at your recent pay (%d each) covers it.,%d eksik; yaklaşık %d yarık%s son kazancınla (her biri %d) bunu karşılar.,scripts/ui/Main.gd:1170
 short %d.,%d eksik.,scripts/ui/Main.gd:1172
 Choosing a rift,Yarık seçmek,scripts/ui/Main.gd:1184
@@ -2952,6 +2953,7 @@ Escalating Damage,Artan Hasar,scripts/ui/UiKit.gd:1808
 Mend (HP over time),İyileşme (zamanla can),scripts/ui/UiKit.gd:1808
 Hazard Guard,Tehlike Koruması,scripts/ui/UiKit.gd:1809
 Dodge Chance,Kaçınma Şansı,scripts/ui/UiKit.gd:1809
+Turn Speed,Sıra Hızı,scripts/ui/UiKit.gd:1809
 Ability Power,Yetenek Gücü,scripts/ui/UiKit.gd:1809
 Wipe Guard (survive a wipe),Yok Olma Koruması (tüm ekip düşerken hayatta kal),scripts/ui/UiKit.gd:1810
 Boss Alpha Strike,Boss'a İlk Vuruş,scripts/ui/UiKit.gd:1810
@@ -3001,3 +3003,13 @@ guardian,muhafız\\w*,locale/extra_msgids.txt
 evasion,sıyrılma\\w*,locale/extra_msgids.txt
 sustain,dayanıklılık\\w*,locale/extra_msgids.txt
 executioner,cellat\\w*,locale/extra_msgids.txt
+ (Awakened), (Uyanmış),locale/extra_msgids.txt
+passed,başarılı,locale/extra_msgids.txt
+failed,başarısız,locale/extra_msgids.txt
+action,hamlesini,locale/extra_msgids.txt
+covered,karşılanıyor,locale/extra_msgids.txt
+never,hiç yapılmadı,locale/extra_msgids.txt
+weapons,silah,locale/extra_msgids.txt
+Established,Yerleşik,locale/extra_msgids.txt
+Renowned,Ünlü,locale/extra_msgids.txt
+Founding,Kurucu,locale/extra_msgids.txt
