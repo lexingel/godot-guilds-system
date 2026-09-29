@@ -590,7 +590,19 @@ const QUEST_DUE_DAYS := {1: 6, 2: 8, 3: 10}
 ## The rival guild competing for the same contracts and recruits.
 const RIVAL_NAMES := ["The Iron Chorus", "The Ashen Wolves", "The Gilded Lance", "The Last Lantern", "The Hollow Crown Company"]
 const RIVAL_DAILY_RENOWN := {1: [0, 1], 2: [1, 2], 3: [1, 3]}   # [min, max] per day by campaign act (3 = Act III and after)
-const RIVAL_SNATCH_CHANCE := 0.25   # a day's chance it takes one posted contract
+## The rival's weekly move: on RIVAL_MOVE_DAY of the week, with this chance,
+## it courts a hero, dares you to a challenge or goes for a posted contract,
+## and you answer before payday (no answer: the "no" side).
+const RIVAL_MOVE_DAY := 5
+const RIVAL_MOVE_CHANCE := 0.7
+const POACH_MIN_ROSTER := 4          # it never courts a hero from a guild smaller than this
+const POACH_COUNTER_WEEKS := 2       # a counter-offer costs this many weeks of the hero's wage
+const POACH_COUNTER_MORALE := 10
+const POACH_STAY_MORALE := 50        # left to choose, a hero stays at this morale or above
+const CHALLENGE_WIN_RENOWN := 6      # you gain this, and the rival loses CHALLENGE_WIN_TAKE
+const CHALLENGE_WIN_TAKE := 4
+const CHALLENGE_FAIL_RENOWN := 6     # the rival gains this if you fail an accepted dare
+const CHALLENGE_DECLINE_RENOWN := 3  # ... or this if you decline
 ## Each rival guild's leader: a name, a portrait (a subclass id) and a crest.
 const RIVAL_LEADERS := {
 	"The Iron Chorus": {"leader": "Marshal Orla Venn", "portrait": "iron-guard", "crest": 1},

@@ -377,6 +377,8 @@ func render() -> void:
 			_sfx_seen[card_key] = true
 			AudioManager.play_sfx(GameData.SFX_PATH["story"])
 		_story_overlay(GameState.pending_stories[0])
+	elif screen in ["camp", "rift_hall"] and GameState.guild_name != "" and _unseen_matter() != "":
+		_matter_overlay(_unseen_matter())
 	# A new screen (or a switch to or from a full-window scene) uncovers
 	# from dark, stepping into a rift opens like one; a new tab within a
 	# screen just fades its panels in.
@@ -431,6 +433,24 @@ func _story_overlay(card_data: Dictionary) -> void:
 	cv.add_child(cont)
 	_combat_hotkeys = {"Space": cont.pressed.emit, "Escape": cont.pressed.emit}
 	card.add_child(cv)
+	center.add_child(card)
+	root.add_child(overlay)
+
+
+## A hero's request or the rival's move, popped up over the camp the first
+## time you're home after it arrives.
+func _matter_overlay(kind: String) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.7)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var card := _matter_card(kind, true)
+	card.custom_minimum_size.x = minf(600.0, get_viewport().get_visible_rect().size.x - 40.0)
 	center.add_child(card)
 	root.add_child(overlay)
 

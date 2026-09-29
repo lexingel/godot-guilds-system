@@ -765,6 +765,7 @@ func seal_rift() -> void:
 	if mapped_rank != "":
 		best_rift_rank_sealed = max(best_rift_rank_sealed, GameData.rift_rank_index(mapped_rank))
 		_on_rift_sealed(GameData.rift_rank_index(mapped_rank))
+		_check_challenge(GameData.rift_rank_index(mapped_rank))
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
 	add_reputation(GameData.SEAL_RENOWN_BASE + (GameData.rift_rank_index(mapped_rank) / 3 if mapped_rank != "" else 0))

@@ -40,6 +40,7 @@ func reset() -> void:
 	damaged = {}
 	wage_raise = {}
 	contest_start = {}
+	rival_event = {}
 	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
@@ -192,6 +193,7 @@ func load_save() -> bool:
 	damaged = (data.get("damaged", {}) as Dictionary).duplicate()
 	wage_raise = (data.get("wage_raise", {}) as Dictionary).duplicate()
 	contest_start = (data.get("contest_start", {}) as Dictionary).duplicate()
+	rival_event = (data.get("rival_event", {}) as Dictionary).duplicate(true)
 	endless_milestones = (data.get("endless_milestones", []) as Array).map(func(x): return int(x))
 	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))

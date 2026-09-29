@@ -310,8 +310,7 @@ func maybe_hero_request() -> void:
 	var t: String = types[randi() % types.size()]
 	var ids: Array = [pool[0].id] if t != "feud" else [pool[0].id, pool[1].id]
 	hero_request = {"type": t, "ids": ids, "day": day}
-	_news(request_title() + ".")
-	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A request"), "text": request_title() + tr(". Answer it in the Ledger before payday.")})
+	_news(request_title() + ".")   # it pops up at camp (Main._matter_overlay)
 
 
 func _request_names() -> Array:
@@ -396,6 +395,7 @@ func run_payday() -> void:
 	if not hero_request.is_empty():
 		_news(tr("%s — no answer by payday, taken as a no.") % tr(str(request_title())))
 		answer_request(false)
+	_close_rival_event()
 	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
 	var paid := 0
 	var unpaid: Array[String] = []
@@ -497,17 +497,12 @@ func hold_feast() -> String:
 	return ""
 
 
-## The rival's day: it gains Renown (more each act) and now and then takes a
-## posted contract off the board before you can.
+## The rival's day: it gains Renown (more each act), and once a week it may
+## make a move you have to answer (maybe_rival_move).
 func rival_day() -> void:
 	var span: Array = GameData.RIVAL_DAILY_RENOWN[mini(3, campaign_act)]
 	rival_renown += int(span[0]) + randi() % (int(span[1]) - int(span[0]) + 1)
-	if randf() < GameData.RIVAL_SNATCH_CHANCE:
-		var posted: Array = guild_board.filter(func(q): return str(q["status"]) == "posted")
-		if not posted.is_empty():
-			var q: Dictionary = posted[randi() % posted.size()]
-			guild_board.erase(q)
-			_news(tr("%s took the contract: %s.") % [tr(str(rival_name)), tr(str(quest_desc(q)))])
+	maybe_rival_move()
 	if randf() < GameData.RIVAL_TAUNT_CHANCE:
 		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), tr(str(str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name))])
 	# This month's contest.
@@ -515,6 +510,185 @@ func rival_day() -> void:
 		contest_start = {"ours": reputation, "theirs": rival_renown}
 	if day % GameData.CONTEST_DAYS == 0:
 		_end_contest()
+
+
+# ---------------- The rival's moves ----------------
+
+## On RIVAL_MOVE_DAY the rival may make a move (one at a time): court your
+## strongest hero, dare you to seal a rift by payday, or go for a posted
+## contract. Each waits in rival_event for an answer.
+func maybe_rival_move() -> void:
+	if not rival_event.is_empty() or day % GameData.PAYDAY_DAYS != GameData.RIVAL_MOVE_DAY or randf() >= GameData.RIVAL_MOVE_CHANCE:
+		return
+	var moves: Array = []
+	var target := _poach_target()
+	if target:
+		moves.append({"type": "poach", "hero": target.id})
+	if rifts_sealed >= 1:
+		moves.append({"type": "challenge", "rank": str(GameData.RIFT_RANKS[clampi(best_rift_rank_sealed, 0, GameData.RIFT_RANKS.size() - 1)]["id"])})
+	var posted: Array = guild_board.filter(func(q): return str(q["status"]) == "posted")
+	if not posted.is_empty():
+		moves.append({"type": "snatch", "quest": str(posted[randi() % posted.size()]["id"])})
+	if moves.is_empty():
+		return
+	rival_event = moves[randi() % moves.size()]
+	rival_event["day"] = day
+	_news(rival_event_title() + ".")
+
+
+## The hero the rival courts: your strongest who isn't on a rift, and only
+## once the guild is big enough to lose one.
+func _poach_target() -> Hero:
+	var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
+	var pool: Array = heroes.filter(func(h): return not h.is_champion and not in_rift.has(h.id))
+	if heroes.size() < GameData.POACH_MIN_ROSTER or pool.is_empty():
+		return null
+	pool.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+	return pool[0]
+
+
+func _rival_quest() -> Dictionary:
+	for q in guild_board:
+		if str(q["id"]) == str(rival_event.get("quest", "")):
+			return q
+	return {}
+
+
+## What a counter-offer to keep a courted hero costs.
+func poach_counter_cost(h: Hero) -> int:
+	return wage_of(h) * GameData.POACH_COUNTER_WEEKS
+
+
+func rival_event_title() -> String:
+	var rn := tr(str(rival_name))
+	match str(rival_event.get("type", "")):
+		"poach":
+			var h := find_hero(str(rival_event["hero"]))
+			return tr("%s is courting %s") % [rn, tr(str(h.name.split(" the ")[0])) if h else tr("a hero")]
+		"challenge":
+			return tr("%s dares you to seal a Rank %s rift by payday") % [rn, tr(str(rival_event["rank"]))]
+		"snatch":
+			return tr("%s is after one of your posted contracts") % rn
+	return ""
+
+
+func rival_event_text() -> String:
+	var who := tr("%s of %s") % [tr(str(rival_leader()["leader"])), tr(str(rival_name))]
+	match str(rival_event.get("type", "")):
+		"poach":
+			var h := find_hero(str(rival_event["hero"]))
+			var n := tr(str(h.name.split(" the ")[0])) if h else tr("a hero")
+			return tr("%s has offered %s a place, and better pay. Match it, or let %s choose: a hero stays at morale %d or above (now %d).") % [who, n, n, GameData.POACH_STAY_MORALE, h.morale if h else 0]
+		"challenge":
+			if rival_event.get("accepted", false):
+				return tr("You took the dare. Seal a Rank %s rift (or higher) before payday: +%d Renown and they lose %d. Miss it and they gain %d.") % [tr(str(rival_event["rank"])), GameData.CHALLENGE_WIN_RENOWN, GameData.CHALLENGE_WIN_TAKE, GameData.CHALLENGE_FAIL_RENOWN]
+			return tr("%s says your guild can't seal a Rank %s rift before payday, and says it in every tavern.") % [who, tr(str(rival_event["rank"]))]
+		"snatch":
+			var q := _rival_quest()
+			return tr("%s means to take the contract \"%s\" off the board. Take it on now, or let it go.") % [who, tr(str(quest_desc(q))) if not q.is_empty() else "?"]
+	return ""
+
+
+## The two answers: [[yes text, why it can't be done or ""], [no text, ""]],
+## or [] once there's nothing left to choose (an accepted dare).
+func rival_event_options() -> Array:
+	match str(rival_event.get("type", "")):
+		"poach":
+			var h := find_hero(str(rival_event["hero"]))
+			if h == null:
+				return []
+			var cost := poach_counter_cost(h)
+			var stays := h.morale >= GameData.POACH_STAY_MORALE
+			return [[tr("Counter-offer: %d Gold, +%d morale") % [cost, GameData.POACH_COUNTER_MORALE], tr("Not enough Gold.") if coins < cost else ""],
+				[tr("Let them choose (they'd %s)") % (tr("stay") if stays else tr("leave")), ""]]
+		"challenge":
+			if rival_event.get("accepted", false):
+				return []
+			return [[tr("Accept: +%d Renown if you do it, they gain %d if not") % [GameData.CHALLENGE_WIN_RENOWN, GameData.CHALLENGE_FAIL_RENOWN], ""],
+				[tr("Decline: they gain %d Renown") % GameData.CHALLENGE_DECLINE_RENOWN, ""]]
+		"snatch":
+			var q := _rival_quest()
+			var full := active_quests().size() >= GameData.QUEST_ACTIVE_MAX
+			return [[tr("Take it on now (due in %d days)") % int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6)), (tr("You already have %d contracts.") % GameData.QUEST_ACTIVE_MAX) if full else ""],
+				[tr("Let them have it"), ""]]
+	return []
+
+
+## Answers the rival's move. Returns "" or why it can't be done.
+func answer_rival(yes: bool) -> String:
+	if rival_event.is_empty():
+		return tr("Nothing to answer.")
+	var rn := tr(str(rival_name))
+	match str(rival_event["type"]):
+		"poach":
+			var h := find_hero(str(rival_event["hero"]))
+			if h:
+				if yes:
+					var cost := poach_counter_cost(h)
+					if coins < cost:
+						return tr("Not enough Gold.")
+					coins -= cost
+					change_morale(h, GameData.POACH_COUNTER_MORALE)
+					_news(tr("You matched %s's offer; %s stays.") % [rn, tr(str(h.name.split(" the ")[0]))])
+				else:
+					var in_rift: Array = run.get("hero_ids", []) if not run.is_empty() else []
+					if h.morale >= GameData.POACH_STAY_MORALE or in_rift.has(h.id) or heroes.size() <= 1:
+						_news(tr("%s turned down %s and stays with the guild.") % [tr(str(h.name.split(" the ")[0])), rn])
+					else:
+						_release(h)
+						_news(tr("%s left to join %s.") % [tr(str(h.name.split(" the ")[0])), rn])
+						pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A hero left"), "text": tr("%s joined %s.") % [tr(str(h.name.split(" the ")[0])), rn]})
+		"challenge":
+			if yes:
+				rival_event["accepted"] = true
+				rival_event["seen"] = true
+				_news(tr("You took %s's dare: a Rank %s rift by payday.") % [rn, tr(str(rival_event["rank"]))])
+				save()
+				state_changed.emit()
+				return ""
+			rival_renown += GameData.CHALLENGE_DECLINE_RENOWN
+			_news(tr("You turned down %s's dare; they crow about it (+%d Renown to them).") % [rn, GameData.CHALLENGE_DECLINE_RENOWN])
+		"snatch":
+			var q := _rival_quest()
+			if not q.is_empty():
+				if yes:
+					var err := accept_quest(str(q["id"]))
+					if err != "":
+						return err
+				else:
+					guild_board.erase(q)
+					_news(tr("%s took the contract: %s.") % [rn, tr(str(quest_desc(q)))])
+	rival_event = {}
+	save()
+	state_changed.emit()
+	return ""
+
+
+## A rift sealed at `rank_idx`: an accepted dare at that rank or below is won.
+func _check_challenge(rank_idx: int) -> void:
+	if str(rival_event.get("type", "")) != "challenge" or not rival_event.get("accepted", false) or rank_idx < GameData.rift_rank_index(str(rival_event["rank"])):
+		return
+	add_reputation(GameData.CHALLENGE_WIN_RENOWN)
+	rival_renown = maxi(0, rival_renown - GameData.CHALLENGE_WIN_TAKE)
+	_news(tr("Dare won: a Rank %s rift sealed. +%d Renown, and %s loses %d.") % [tr(str(rival_event["rank"])), GameData.CHALLENGE_WIN_RENOWN, tr(str(rival_name)), GameData.CHALLENGE_WIN_TAKE])
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Dare won"), "text": tr("+%d Renown; %s loses %d.") % [GameData.CHALLENGE_WIN_RENOWN, tr(str(rival_name)), GameData.CHALLENGE_WIN_TAKE]})
+	rival_event = {}
+
+
+## Payday closes the rival's move: an unanswered one goes the "no" way, and
+## an accepted dare not yet won is lost.
+func _close_rival_event() -> void:
+	if rival_event.is_empty():
+		return
+	if str(rival_event["type"]) == "challenge" and rival_event.get("accepted", false):
+		rival_renown += GameData.CHALLENGE_FAIL_RENOWN
+		_news(tr("Dare lost: no Rank %s rift by payday. %s gains %d Renown.") % [tr(str(rival_event["rank"])), tr(str(rival_name)), GameData.CHALLENGE_FAIL_RENOWN])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Dare lost"), "text": tr("%s gains %d Renown.") % [tr(str(rival_name)), GameData.CHALLENGE_FAIL_RENOWN]})
+		rival_event = {}
+		return
+	_news(tr("%s — no answer by payday.") % rival_event_title())
+	if answer_rival(false) != "":
+		rival_event = {}
 
 
 ## The rival's leader: {leader, portrait (path), crest (path)}.

@@ -350,6 +350,8 @@ func _guild_status_lines() -> Array:
 	if not GameState.heroes.is_empty():
 		if not GameState.hero_request.is_empty():
 			out.append([GameState.request_title() + tr(" — answer before payday"), Palette.EMBER_BRIGHT, go_term.call("ledger")])
+		if not GameState.rival_event.is_empty():
+			out.append([GameState.rival_event_title() + (tr(" — by payday") if GameState.rival_event.get("accepted", false) else tr(" — answer before payday")), Palette.RANK_S, go_term.call("ledger")])
 		var low := GameState.heroes.filter(func(h): return h.morale < 40)
 		if not low.is_empty():
 			out.append([tr("%d hero%s with low morale") % [low.size(), tr(str(_pl(low.size(), "es")))], Palette.HAZARD, go_term.call("ledger")])
@@ -534,54 +536,163 @@ func _render_memorial(v: VBoxContainer) -> void:
 var _dismiss_confirm: String = ""   # hero id awaiting a second click on Dismiss
 
 
-## The Ledger: payday and wages, the weekly feast, every hero's wage and
-## morale (and Dismiss), the rival guild, and recent guild news.
-## This week's hero request: who asks, what, and the two answers.
-func _request_card() -> PanelContainer:
-	var req: Dictionary = GameState.hero_request
-	var def: Dictionary = GameData.HERO_REQUESTS[req["type"]]
+## A matter waiting for your answer: a hero's request ("request") or the
+## rival's move ("rival"), with faces, the story, and the two answers. In the
+## camp pop-up (`popup`) it also offers Decide later.
+func _matter_card(kind: String, popup: bool = false) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.theme_type_variation = &"CardPanelEmber"
+	p.theme_type_variation = &"CardPanelEmber" if kind == "request" else &"CardPanelViolet"
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
-	for id in req["ids"]:
-		var h := GameState.find_hero(str(id))
-		if h:
-			row.add_child(_hero_icon(h, 64))
+	var faces := _vbox(6)
+	var title := ""
+	var body := ""
+	var opts: Array = []   # [[text, why disabled or ""], ...]
+	var foot := ""
+	var answer: Callable
+	if kind == "request":
+		var req: Dictionary = GameState.hero_request
+		var def: Dictionary = GameData.HERO_REQUESTS[req["type"]]
+		for id in req["ids"]:
+			var h := GameState.find_hero(str(id))
+			if h:
+				faces.add_child(_hero_icon(h, 64))
+		title = GameState.request_title()
+		var first := GameState.find_hero(str(req["ids"][0]))
+		body = tr(str(def["text"]))
+		if body.contains("%s") and first:
+			body = body % tr(str(first.name.split(" the ")[0]))
+		var ro: Array = GameState.request_options()
+		var gear_short: bool = req["type"] == "gear" and GameState.coins < GameData.REQUEST_GEAR_COST
+		opts = [[ro[0], tr("Not enough Gold.") if gear_short else ""], [ro[1], ""]]
+		foot = "No answer by payday counts as a no."
+		answer = GameState.answer_request
+	else:
+		var ev: Dictionary = GameState.rival_event
+		var lead := GameState.rival_leader()
+		faces.add_child(_icon_trimmed(str(lead["portrait"]), 64))
+		if str(ev["type"]) == "poach":
+			var h := GameState.find_hero(str(ev["hero"]))
+			if h:
+				faces.add_child(_hero_icon(h, 48))
+		title = GameState.rival_event_title()
+		body = GameState.rival_event_text()
+		opts = GameState.rival_event_options()
+		foot = {"poach": "No answer by payday: they choose for themselves.", "challenge": "No answer by payday counts as declining.",
+			"snatch": "No answer by payday: they take it."}.get(str(ev["type"]), "")
+		if ev.get("accepted", false):
+			foot = tr("%d day%s to payday.") % [GameState.days_to_payday(), tr(str(_pl(GameState.days_to_payday())))]
+		answer = GameState.answer_rival
+	row.add_child(faces)
 	var col := _vbox(6)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var t := _label(GameState.request_title(), 16)
-	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	var t := _wrap_label(title, 16)
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if kind == "request" else Palette.RANK_S)
 	col.add_child(t)
-	var first := GameState.find_hero(str(req["ids"][0]))
-	var body := str(def["text"])
-	col.add_child(_wrap_label(body % first.name.split(" the ")[0] if body.contains("%s") and first else body, 13))
-	var opts: Array = GameState.request_options()
-	var btns := HBoxContainer.new()
-	btns.add_theme_constant_override("separation", 8)
-	for k in 2:
+	col.add_child(_wrap_label(body, 13))
+	var btns := HFlowContainer.new()
+	btns.add_theme_constant_override("h_separation", 8)
+	btns.add_theme_constant_override("v_separation", 6)
+	for k in opts.size():
 		var yes := k == 0
-		var b := _button(str(opts[k]), func():
-			var err := GameState.answer_request(yes)
+		var b := _button(str(opts[k][0]), func():
+			var err: String = answer.call(yes)
 			if err != "":
 				_flavor_toast = err
 			render())
-		if yes and req["type"] == "gear" and GameState.coins < GameData.REQUEST_GEAR_COST:
+		if str(opts[k][1]) != "":
 			b.disabled = true
-			b.tooltip_text = "Not enough Gold."
+			b.tooltip_text = str(opts[k][1])
 		btns.add_child(b)
+	if popup:
+		btns.add_child(_button("Decide later", func():
+			if kind == "request":
+				GameState.hero_request["seen"] = true
+			else:
+				GameState.rival_event["seen"] = true
+			GameState.save()
+			render()))
 	col.add_child(btns)
-	col.add_child(_label("No answer by payday counts as a no.", 11, true))
+	if foot != "":
+		col.add_child(_label(foot + (tr(" Answer in Guild > Ledger.") if popup else ""), 11, true))
 	row.add_child(col)
 	p.add_child(row)
 	return p
 
 
+## The matter the camp should pop up now: "request", "rival" or "" (each
+## once, until it's answered or put off with Decide later).
+func _unseen_matter() -> String:
+	if not GameState.hero_request.is_empty() and not GameState.hero_request.get("seen", false):
+		return "request"
+	if not GameState.rival_event.is_empty() and not GameState.rival_event.get("seen", false):
+		return "rival"
+	return ""
+
+
+## The week at a glance: a tile per day from today to payday (a day is a rift run
+## or a rest), each with what falls on it.
+func _week_board() -> Control:
+	var today := GameState.day
+	var payday := today + GameState.days_to_payday()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var f := GameState.payday_forecast()
+	for d in range(today, payday + 1):
+		var events: Array = []   # [short text, colour, full text]
+		if d == payday:
+			events.append([tr("Payday · %d Gold") % int(f["bill"]), Palette.HAZARD if int(f["short"]) > 0 else Palette.COINS,
+				tr("Wages %d + upkeep %d Gold; you have %d.") % [GameState.weekly_wages(), GameState.upkeep(), GameState.coins]])
+			if not GameState.hero_request.is_empty():
+				events.append([tr("Request closes"), Palette.EMBER_BRIGHT, GameState.request_title()])
+			if not GameState.rival_event.is_empty():
+				events.append([tr("Dare due") if GameState.rival_event.get("accepted", false) else tr("Rival waits"), Palette.RANK_S, GameState.rival_event_title()])
+		for q in GameState.active_quests():
+			if int(q.get("due", -1)) == d:
+				events.append([tr("Contract due"), Palette.HAZARD, GameState.quest_desc(q)])
+		if GameState.breach_active() and not GameState.breach_broken() and int(GameState.breach.get("breaks_on", -1)) == d:
+			events.append([tr("Rift breaks"), Palette.HAZARD, tr("A Rank %s rift breaks near %s.") % [tr(GameState.breach_rank_id()), GameState.breach_place()]])
+		if d > 0 and d % GameData.CONTEST_DAYS == 0:
+			events.append([tr("Contest ends"), Palette.RANK_S, tr("The month's Renown contest with %s ends.") % tr(str(GameState.rival_name))])
+		var tile := PanelContainer.new()
+		tile.theme_type_variation = &"CardPanelEmber" if d == today else &"CardPanel"
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tile.custom_minimum_size = Vector2(84, 92)
+		var tv := _vbox(2)
+		var head := _label(tr("Today") if d == today else tr("Day %d") % d, 13)
+		head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if d == today else Palette.MUTED)
+		tv.add_child(head)
+		var tips: Array[String] = []
+		for e in events:
+			var l := _label(str(e[0]), 12)
+			l.add_theme_color_override("font_color", e[1])
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			tv.add_child(l)
+			tips.append(str(e[2]))
+		if events.is_empty() and d > today:
+			tv.add_child(_label(tr("in %d day%s") % [d - today, tr(str(_pl(d - today)))], 11, true))
+		tile.add_child(tv)
+		tile.tooltip_text = "\n".join(tips)
+		row.add_child(tile)
+	var box := _vbox(4)
+	box.add_child(row)
+	box.add_child(_label("A day passes with every rift run or rest.", 11, true))
+	return box
+
+
+## The Ledger: the week board, what waits for an answer, payday and wages,
+## the weekly feast, the rival, every hero's wage and morale (and Dismiss),
+## and recent guild news.
+
+
 func _render_ledger(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Ledger", 20))
 	_coach(v, "ledger", "Paying the guild", tr("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep.") % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID, GameData.UPKEEP_PER_LEVEL])
+	v.add_child(_week_board())
 	if not GameState.hero_request.is_empty():
-		v.add_child(_request_card())
+		v.add_child(_matter_card("request"))
+	if not GameState.rival_event.is_empty():
+		v.add_child(_matter_card("rival"))
 	var wages := GameState.weekly_wages() + GameState.upkeep()
 	var dtp := GameState.days_to_payday()
 	var short := wages > GameState.coins
@@ -1401,7 +1512,7 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Champions", "Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Essence levels them up (to 5)."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Quests & Milestones", "The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
-		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, poaches posted contracts and taunts you in the news; at payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize."],
+		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, and once a week it may make a move you answer before payday: court one of your heroes (match their offer, or they choose, staying only at morale 50 or above), dare you to seal a rift by payday (Renown rides on it), or go for a posted contract (take it on or lose it). Requests and the rival's moves pop up at camp and wait in the Ledger, whose week board shows each day to payday. At payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize."],
 		["Hero requests", "Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no."],
 	]
 	for entry in entries:
