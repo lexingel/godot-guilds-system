@@ -66,9 +66,10 @@ func run() -> void:
 	GameState.coins = 1000
 	GameState.crystals = 500
 	GameState.breach = {"rank": 3, "region": "marsh", "started": GameState.day, "breaks_on": GameState.day, "broken": true}
+	var bill := int(GameState.payday_forecast()["bill"])
 	var lost := GameState.resolve_breach({"held": false, "integrity": 0.0, "fallen": [h.id]})
 	check(h.down_runs > 0 and (lost["wounded"] as Array).has(h.name), "a lost defense: the defenders who fell come back wounded")
-	check(int(lost["lost_coins"]) == 200 and int(lost["lost_crystals"]) == 100, "losing costs %d%% of Gold and Essence" % int(GameData.BREACH_LOSS_SHARE * 100))
+	check(int(lost["lost_coins"]) == int((1000 - bill) * GameData.BREACH_LOSS_SHARE) and int(lost["lost_crystals"]) == 100, "losing costs %d%% of Essence and of the Gold above payday's bill" % int(GameData.BREACH_LOSS_SHARE * 100))
 	check(lost["damaged"] == ["Drill Yard"] and GameState.lvl("ops.drill") == 2 and int(GameState.upgrades["ops.drill"]) == 3, "a building is damaged: it works a level lower")
 	GameState.save()
 	GameState.load_save()
@@ -88,7 +89,7 @@ func run() -> void:
 	# builds on its built level, not the damaged one.
 	GameState.coins = 1000
 	var e0 := GameState.crystals
-	check(GameState.upgrade_node("def.armory") == "" and GameState.coins == 1000 - 60 and GameState.crystals == e0, "Defenses research costs Gold")
+	check(GameState.upgrade_node("def.armory") == "" and GameState.coins == 1000 - 80 and GameState.crystals == e0, "Defenses research costs Gold")
 	check((GameState.defense_opts()["towers"] as Array).has("frost"), "Armory Lv1 opens the Frost Totem")
 	GameState.upgrades["ops.barracks"] = 3
 	GameState.damaged["ops.barracks"] = 1

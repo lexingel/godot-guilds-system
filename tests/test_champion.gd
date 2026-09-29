@@ -42,6 +42,11 @@ func run() -> void:
 			bad.append(id + ": mods")
 	check(bad.is_empty(), "every champion has a portrait, walk, signature move, Boon, Call and two mods %s" % [bad])
 	check(GameData.CHAMPIONS.size() >= 20, "a pool of %d" % GameData.CHAMPIONS.size())
+	var mod_count := {}
+	for id in GameData.CHAMPIONS:
+		for m in GameData.CHAMPIONS[id]["mods"]:
+			mod_count[m] = int(mod_count.get(m, 0)) + 1
+	check(mod_count.size() == SurvivorsRun.SIG_MODS.size() and mod_count.values().max() - mod_count.values().min() <= 1, "every mod is spread evenly over the pool %s" % [mod_count])
 
 	var ids: Array[String] = []
 	for r in ["D", "C"]:

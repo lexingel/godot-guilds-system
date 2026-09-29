@@ -2076,7 +2076,7 @@ func _render_defense_setup(v: VBoxContainer) -> void:
 	info.add_child(_wrap_label(tr("%d waves · integrity %d · %d starting supplies") % [waves, GameData.DEFENSE_INTEGRITY + int(opts["integrity"]), GameData.DEFENSE_SUPPLIES + int(opts["supplies"])], 13))
 	info.add_child(_wrap_label(tr("Towers: %s · up to tier %d") % [", ".join(names), int(opts["max_tier"])], 13))
 	var dmg_n := 2 if region == "camp" else 1
-	info.add_child(_wrap_label(tr("Holding pays Gold and Essence. If it falls, you lose %d%% of your Gold and Essence, %d building%s is damaged, and posted heroes who fell come back wounded.") % [int(GameData.BREACH_LOSS_SHARE * 100), dmg_n, tr(str(_pl(dmg_n)))], 12, true))
+	info.add_child(_wrap_label(tr("Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded.") % [int(GameData.BREACH_LOSS_SHARE * 100), dmg_n, tr(str(_pl(dmg_n)))], 12, true))
 	v.add_child(info)
 	v.add_child(_label(tr("Posts (%d/%d)") % [_defense_posted.size(), posts], 15))
 	if cands.is_empty():

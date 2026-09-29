@@ -139,7 +139,8 @@ func resolve_breach(result: Dictionary) -> Dictionary:
 		crystals += int(out["crystals"])
 		_news(tr("The guild held against a Rank %s Riftbreak.") % tr(breach_rank_id()))
 	else:
-		out["lost_coins"] = int(coins * GameData.BREACH_LOSS_SHARE)
+		# Never the coming payday's wages: the loss comes out of what's above the bill.
+		out["lost_coins"] = int(maxi(0, coins - int(payday_forecast()["bill"])) * GameData.BREACH_LOSS_SHARE)
 		out["lost_crystals"] = int(crystals * GameData.BREACH_LOSS_SHARE)
 		coins -= int(out["lost_coins"])
 		crystals -= int(out["lost_crystals"])

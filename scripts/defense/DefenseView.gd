@@ -10,12 +10,12 @@ signal finished(summary: Dictionary)
 const THEME := preload("res://theme/guild_theme.tres")
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 const FLOOR_PATH := "res://assets/survivors/floor_%s.png"
+const ROAD_ART := "res://assets/defense/road_%s.png"   # a road strip, tiled along each path
+const ROAD_W := 62.0
 const TOWER_ART := "res://assets/defense/%s_%d.png"   # tower sprites by tier (0-2); the icon stands in until then
 const TIER_SCALE := {"combat": 1.0, "elite": 2.0, "boss": 3.0}
 const HUD_H := 56.0
 const PAD_R := 26.0
-const ROAD := {"vale": [Color(0.42, 0.34, 0.22), Color(0.26, 0.2, 0.13)], "marsh": [Color(0.44, 0.42, 0.3), Color(0.2, 0.22, 0.15)],
-	"ashen": [Color(0.36, 0.26, 0.22), Color(0.2, 0.13, 0.11)], "camp": [Color(0.46, 0.38, 0.26), Color(0.28, 0.22, 0.14)]}
 
 var run: DefenseRun
 var paused := false
@@ -67,6 +67,19 @@ func _ready() -> void:
 		fl.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		fl.z_index = -3
 		_world.add_child(fl)
+	for path in run.map["paths"]:
+		var road := Line2D.new()
+		road.points = PackedVector2Array(path)
+		road.width = ROAD_W
+		road.texture = load(ROAD_ART % run.region)
+		road.texture_mode = Line2D.LINE_TEXTURE_TILE
+		road.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		road.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		road.joint_mode = Line2D.LINE_JOINT_ROUND
+		road.begin_cap_mode = Line2D.LINE_CAP_ROUND
+		road.end_cap_mode = Line2D.LINE_CAP_ROUND
+		road.z_index = -2
+		_world.add_child(road)
 	_board = _Board.new()
 	_board.view = self
 	_board.z_index = -2
@@ -605,21 +618,13 @@ func _show_results() -> void:
 
 # ---------------- Drawing ----------------
 
-## Roads, pads, posts and the reach of the selected tower, under the sprites.
+## Pads, posts and the reach of the selected tower, over the roads and under the sprites.
 class _Board:
 	extends Node2D
 	var view: DefenseView
 
 	func _draw() -> void:
 		var run := view.run
-		var cols: Array = ROAD.get(run.region, ROAD["vale"])
-		for path in run.map["paths"]:
-			var pts := PackedVector2Array(path)
-			draw_polyline(pts, cols[1], 58.0, true)
-		for path in run.map["paths"]:
-			draw_polyline(PackedVector2Array(path), cols[0], 46.0, true)
-			for p in path:
-				draw_circle(p, 23.0, cols[0])
 		for i in run.pads.size():
 			var pad: Dictionary = run.pads[i]
 			var p: Vector2 = pad["pos"]

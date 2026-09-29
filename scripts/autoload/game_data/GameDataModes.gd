@@ -371,13 +371,13 @@ const BRANCHES := [
 			"perks": {2: "Order: Scout Ahead — reroll the next fork's paths", 3: "Headhunter: every recruit refresh has a Rank C+ hero", 5: "Recruit rerolls cost half"}},
 	]},
 	{"id": "def", "name": "Defenses Branch", "sub": "Riftbreaks (paid in Gold)", "nodes": [
-		{"id": "armory", "name": "Armory", "max": 5, "cost_base": 60, "cost_step": 60, "currency": "gold", "every": "+6% tower damage",
+		{"id": "armory", "name": "Armory", "max": 5, "cost_base": 80, "cost_step": 80, "currency": "gold", "every": "+6% tower damage",
 			"perks": {1: "Towers: Frost Totem", 2: "Towers: Ward Stone", 3: "Towers: Wayside Chapel"}},
-		{"id": "engineering", "name": "Engineering", "max": 5, "cost_base": 60, "cost_step": 60, "currency": "gold", "every": "-6% tower costs",
+		{"id": "engineering", "name": "Engineering", "max": 5, "cost_base": 80, "cost_step": 80, "currency": "gold", "every": "-6% tower costs",
 			"perks": {3: "Towers can reach tier 3", 5: "Selling a tower refunds all of it"}},
-		{"id": "palisade", "name": "Palisade", "max": 5, "cost_base": 60, "cost_step": 60, "currency": "gold", "every": "+2 integrity and +20 starting supplies",
+		{"id": "palisade", "name": "Palisade", "max": 5, "cost_base": 80, "cost_step": 80, "currency": "gold", "every": "+2 integrity and +20 starting supplies",
 			"perks": {}},
-		{"id": "watch", "name": "Watchtower", "max": 5, "cost_base": 60, "cost_step": 60, "currency": "gold", "every": "posted heroes +6% max HP",
+		{"id": "watch", "name": "Watchtower", "max": 5, "cost_base": 80, "cost_step": 80, "currency": "gold", "every": "posted heroes +6% max HP",
 			"perks": {1: "+1 day of warning before a rift breaks", 3: "+1 more day of warning"}},
 	]},
 	{"id": "res", "name": "Research Branch", "sub": "Relics & Theory", "nodes": [

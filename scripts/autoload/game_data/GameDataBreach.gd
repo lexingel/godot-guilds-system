@@ -17,7 +17,7 @@ const BREACH_RANK_SCALE := 0.35
 const BREACH_PREVENT_ESSENCE := 15
 const BREACH_HELD_GOLD := 80
 const BREACH_HELD_ESSENCE := 30
-const BREACH_LOSS_SHARE := 0.2     # of stored Gold and Essence, when a defense is lost
+const BREACH_LOSS_SHARE := 0.2     # of stored Essence, and Gold above the coming payday's bill, when a defense is lost
 const BREACH_REPAIR_BASE := 40     # Gold to repair a damaged building: base + step x its level
 const BREACH_REPAIR_STEP := 30
 
