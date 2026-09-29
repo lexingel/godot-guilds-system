@@ -110,6 +110,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.",
 	"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.",
 	"Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead.",
 	"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.",
@@ -428,6 +429,12 @@ const MONSTER_SPRITE_PATH := {
 	"slag_golem": "res://assets/monsters/slag_golem.png",
 	"ember_oracle": "res://assets/monsters/ember_oracle.png",
 	"ash_harrier": "res://assets/monsters/ash_harrier.png",
+	"blight_hound": "res://assets/monsters/blight_hound.png",
+	"lantern_wight": "res://assets/monsters/lantern_wight.png",
+	"tide_caller": "res://assets/monsters/tide_caller.png",
+	"mudscale_brute": "res://assets/monsters/mudscale_brute.png",
+	"cinder_hound": "res://assets/monsters/cinder_hound.png",
+	"obsidian_sentinel": "res://assets/monsters/obsidian_sentinel.png",
 }
 const MONSTER_NAME_SPRITE := {
 	"Gloom Stalker": "gloom_stalker", "Rift Wisp": "rift_wisp", "Husk Brute": "husk_brute",
@@ -445,6 +452,8 @@ const MONSTER_NAME_SPRITE := {
 	"Hedge Warden": "hedge_warden", "Carrion Crier": "carrion_crier", "Rootbound Thrall": "rootbound_thrall",
 	"Leech Priest": "leech_priest", "Mire Sniper": "mire_sniper", "Drowned Bellringer": "drowned_bellringer",
 	"Slag Golem": "slag_golem", "Ember Oracle": "ember_oracle", "Ash Harrier": "ash_harrier",
+	"Blight Hound": "blight_hound", "Lantern Wight": "lantern_wight", "Tide Caller": "tide_caller",
+	"Mudscale Brute": "mudscale_brute", "Cinder Hound": "cinder_hound", "Obsidian Sentinel": "obsidian_sentinel",
 	# Tower of Trials guardians reuse elite/boss art.
 	"The Gatekeeper": "iron_revenant", "Mirelord Oskan": "deep_anchorite", "Cindermaw": "ashen_broodlord",
 	"The Hollow Choir": "hollow_reaver", "Tidewarden Selk": "blightfang_elite", "The Ember Regent": "drevok",
@@ -474,6 +483,7 @@ static func monster_sprite_key(monster_name: String) -> String:
 ## arena and the Endless Rift mirror it. Front-facing art is left alone.
 const SPRITE_FACES_AWAY := {
 	"carrion_crier": true, "hedge_warden": true, "mire_sniper": true,
+	"lantern_wight": true, "tide_caller": true, "cinder_hound": true,
 	"cleric": true, "acolyte": true, "herbalist": true,
 }
 

@@ -56,6 +56,12 @@ const MONSTER_ABILITIES := {
 	"Ember Oracle": {"kind": "shielded", "name": "Ash Veil", "value": 0.2},
 	"Ash Harrier": {"kind": "frenzy", "name": "Cornered Fury", "value": 0.4},
 	"Rootbound Thrall": {"kind": "drain", "name": "Root Grasp", "value": 0.25},
+	# Content pass (0.18): two more per region.
+	"Blight Hound": {"kind": "poison", "name": "Festering Bite", "value": 0.06},
+	"Lantern Wight": {"kind": "healer", "name": "Grave Light", "value": 0.10},
+	"Mudscale Brute": {"kind": "drain", "name": "Mire Grip", "value": 0.3},
+	"Cinder Hound": {"kind": "frenzy", "name": "Pack Fury", "value": 0.4},
+	"Obsidian Sentinel": {"kind": "reflect", "name": "Glass Facets", "value": 0.25},
 }
 
 ## Badge icons for MONSTER_ABILITIES — reuses BOSS_MECHANIC_ICON's picks where
@@ -89,7 +95,8 @@ const HAZARD_BG := {
 }
 const FIRST_NAMES := ["Aldric", "Bryn", "Coren", "Dessa", "Elowen", "Fenwick", "Gara", "Hollis", "Ianthe", "Joric", "Kestrel", "Liora", "Maren", "Nyx", "Oren", "Petra", "Quill", "Roth", "Sable", "Tavin", "Ysolde", "Zeph"]
 const MONSTER_NAMES := ["Gloom Stalker", "Rift Wisp", "Husk Brute", "Sable Fang", "Ember Whelp", "Marrow Crawler", "Hollow Reaver", "Cinder Moth", "Bog Wretch", "Silt Crawler", "Glass Wisp", "Mirror Fiend", "Frost Stalker", "Ashclad Ghoul", "Deep Anchorite", "Voidling Sprite",
-	"Hedge Warden", "Carrion Crier", "Rootbound Thrall", "Leech Priest", "Mire Sniper", "Drowned Bellringer", "Slag Golem", "Ember Oracle", "Ash Harrier"]
+	"Hedge Warden", "Carrion Crier", "Rootbound Thrall", "Leech Priest", "Mire Sniper", "Drowned Bellringer", "Slag Golem", "Ember Oracle", "Ash Harrier",
+	"Blight Hound", "Lantern Wight", "Tide Caller", "Mudscale Brute", "Cinder Hound", "Obsidian Sentinel"]
 const ELITE_NAMES := ["Warbound Elite", "Blightfang Elite", "Rift-Touched Colossus", "Iron Revenant", "Storm-Called Elite", "Ashen Broodlord"]
 const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 
@@ -97,11 +104,11 @@ const BOSS_NAMES := ["Vaelith", "Korrath", "Nyxara", "Drevok", "Sythrane"]
 ## BATTLE_BACKGROUNDS). A finale fights in its act's biome; other rifts pick
 ## from the biomes the campaign has reached (GameState.pick_biome).
 const BIOMES := {
-	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver", "Hedge Warden", "Carrion Crier", "Rootbound Thrall"],
+	"vale": {"name": "The Shattered Vale", "monsters": ["Gloom Stalker", "Sable Fang", "Husk Brute", "Rift Wisp", "Marrow Crawler", "Hollow Reaver", "Hedge Warden", "Carrion Crier", "Rootbound Thrall", "Blight Hound", "Lantern Wight"],
 		"elites": ["Warbound Elite", "Iron Revenant"], "retinue": ["Hedge Warden", "Carrion Crier", "Rift Wisp"], "backgrounds": [1, 3, 0]},
-	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite", "Leech Priest", "Mire Sniper", "Drowned Bellringer"],
+	"marsh": {"name": "The Drowned Marches", "monsters": ["Bog Wretch", "Silt Crawler", "Frost Stalker", "Glass Wisp", "Mirror Fiend", "Deep Anchorite", "Leech Priest", "Mire Sniper", "Drowned Bellringer", "Tide Caller", "Mudscale Brute"],
 		"elites": ["Blightfang Elite", "Storm-Called Elite"], "retinue": ["Leech Priest", "Mire Sniper", "Drowned Bellringer"], "backgrounds": [5, 6, 2]},
-	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend", "Slag Golem", "Ember Oracle", "Ash Harrier"],
+	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend", "Slag Golem", "Ember Oracle", "Ash Harrier", "Cinder Hound", "Obsidian Sentinel"],
 		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "retinue": ["Ember Oracle", "Ash Harrier", "Cinder Moth"], "backgrounds": [4, 8, 7, 9]},
 }
 const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
@@ -110,20 +117,22 @@ const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
 ## that lands chips it by ARMOR_SUNDER; abilities, relic strikes and counters
 ## ignore it.
 const MONSTER_ARMOR := {"Hedge Warden": 0.3, "Slag Golem": 0.4, "Husk Brute": 0.35, "Hollow Reaver": 0.3, "Deep Anchorite": 0.35, "Iron Revenant": 0.4,
-	"Warbound Elite": 0.3, "Rift-Touched Colossus": 0.35, "Korrath": 0.3, "Drevok": 0.25}
+	"Warbound Elite": 0.3, "Rift-Touched Colossus": 0.35, "Korrath": 0.3, "Drevok": 0.25,
+	"Mudscale Brute": 0.35, "Obsidian Sentinel": 0.45}
 const ARMOR_SUNDER := 0.05
 
 ## Statuses foes inflict on a hit (chance per hit): burn deals `value` of max
 ## HP per round for `rounds`; chill makes the hero act late next round. A
 ## heavy blow stuns (the hero loses their next turn) unless they Defended.
 const MONSTER_STATUS := {"Ember Oracle": "burn", "Slag Golem": "burn", "Ash Harrier": "burn", "Drowned Bellringer": "chill", "Ember Whelp": "burn", "Cinder Moth": "burn", "Ashclad Ghoul": "burn", "Ashen Broodlord": "burn",
-	"Frost Stalker": "chill", "Glass Wisp": "chill", "Storm-Called Elite": "chill", "Nyxara": "chill", "Sythrane": "burn"}
+	"Frost Stalker": "chill", "Glass Wisp": "chill", "Storm-Called Elite": "chill", "Nyxara": "chill", "Sythrane": "burn",
+	"Tide Caller": "chill", "Cinder Hound": "burn"}
 const STATUS_INFO := {"burn": {"chance": 0.5, "rounds": 3, "value": 0.05}, "chill": {"chance": 0.5, "rounds": 1}}
 
 ## Wind-ups: some foes spend a turn gathering strength, then land a heavy
 ## blow (HEAVY_BLOW_MULT damage + stun). The intent tag warns a turn ahead.
 const WINDUP_CHANCE := {"boss": 0.35, "elite": 0.3, "brute": 0.25}
-const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver", "Rootbound Thrall", "Slag Golem"]
+const WINDUP_BRUTES := ["Husk Brute", "Deep Anchorite", "Hollow Reaver", "Rootbound Thrall", "Slag Golem", "Mudscale Brute", "Obsidian Sentinel"]
 const HEAVY_BLOW_MULT := 3.0
 
 ## ---------------- Hero voices ----------------
@@ -202,7 +211,7 @@ const ELITE_AFFIXES := {
 
 # ---------------- Enemy intents ----------------
 ## Foes whose names read as ranged (they snipe the back row).
-const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir", "Sniper", "Crier", "Harrier", "Bellringer", "Priest"]
+const RANGED_FOE_WORDS := ["Wisp", "Moth", "Sprite", "Oracle", "Choir", "Sniper", "Crier", "Harrier", "Bellringer", "Priest", "Wight", "Caller"]
 ## Besides attacking, a foe can telegraph one of its kit's moves a round
 ## ahead (Combat.monster_kit / monster_intent). Numbers used by Combat.
 const INTENT_SPECIAL_CHANCE := 0.3
@@ -235,6 +244,8 @@ const MONSTER_KIT := {
 	"Hedge Warden": ["ward"], "Carrion Crier": ["curse", "roar"], "Rootbound Thrall": ["sweep"],
 	"Leech Priest": ["mend"], "Mire Sniper": ["snipe"], "Drowned Bellringer": ["curse"],
 	"Slag Golem": ["sweep"], "Ember Oracle": ["ward", "curse"], "Ash Harrier": ["snipe"],
+	"Blight Hound": ["snipe"], "Lantern Wight": ["ward", "mend"], "Tide Caller": ["sweep"],
+	"Mudscale Brute": ["sweep"], "Cinder Hound": ["roar"], "Obsidian Sentinel": ["ward"],
 }
 
 ## Hand-designed fights per region: a named group whose members play off each
@@ -254,6 +265,10 @@ const ENCOUNTERS := {
 			"members": [["Hollow Reaver", 0.45, 0.45], ["Marrow Crawler", 0.25, 0.25], ["Carrion Crier", 0.3, 0.3]]},
 		{"name": "Stalker Pack", "min_floor": 0, "hint": "Poison stacks fast. A Healing Tonic or Sanctuary washes it out.",
 			"members": [["Gloom Stalker", 0.34, 0.34], ["Gloom Stalker", 0.33, 0.33], ["Gloom Stalker", 0.33, 0.33]]},
+		{"name": "The Hunt", "min_floor": 0, "hint": "The Hounds go for your most-hurt back-row hero and their bites fester, while the Crier curses. Guard the back row.",
+			"members": [["Blight Hound", 0.35, 0.35], ["Blight Hound", 0.35, 0.35], ["Carrion Crier", 0.3, 0.3]]},
+		{"name": "Lantern Wake", "min_floor": 1, "hint": "The Wight wards and mends the Reaver from the back. Snuff the lantern first, or the Reaver never falls.",
+			"members": [["Hollow Reaver", 0.45, 0.45], ["Blight Hound", 0.3, 0.35], ["Lantern Wight", 0.25, 0.2]]},
 	],
 	"marsh": [
 		{"name": "The Leech Mass", "min_floor": 0, "hint": "The Priest keeps the Wretches fed. Kill it first.",
@@ -266,6 +281,10 @@ const ENCOUNTERS := {
 			"members": [["Silt Crawler", 0.34, 0.34], ["Silt Crawler", 0.33, 0.33], ["Silt Crawler", 0.33, 0.33]]},
 		{"name": "Frozen Watch", "min_floor": 2, "hint": "Chills slow your turns and the Priest mends. Burst the Priest down.",
 			"members": [["Frost Stalker", 0.35, 0.4], ["Frost Stalker", 0.35, 0.4], ["Leech Priest", 0.3, 0.2]]},
+		{"name": "Rising Tide", "min_floor": 1, "hint": "The Caller's waves chill the whole party while the Brute winds up. Stun the wind-up, then drown the Caller.",
+			"members": [["Mudscale Brute", 0.45, 0.4], ["Tide Caller", 0.3, 0.35], ["Bog Wretch", 0.25, 0.25]]},
+		{"name": "Mudslide", "min_floor": 2, "hint": "Two armored drainers and a Priest to feed them. Break the armor, and kill the Priest before it mends.",
+			"members": [["Mudscale Brute", 0.38, 0.4], ["Mudscale Brute", 0.38, 0.4], ["Leech Priest", 0.24, 0.2]]},
 	],
 	"ashen": [
 		{"name": "Forge Guard", "min_floor": 1, "hint": "The Oracle wards the Golem, and the Golem's sweeps burn. Take the Oracle first.",
@@ -278,6 +297,10 @@ const ENCOUNTERS := {
 			"members": [["Hollow Reaver", 0.5, 0.4], ["Voidling Sprite", 0.25, 0.3], ["Voidling Sprite", 0.25, 0.3]]},
 		{"name": "Molten Wall", "min_floor": 2, "hint": "Two armored brutes. Armor breakers and stuns shine here.",
 			"members": [["Slag Golem", 0.5, 0.5], ["Slag Golem", 0.5, 0.5]]},
+		{"name": "Cinder Kennels", "min_floor": 0, "hint": "The Hounds roar each other on and grow wild when hurt. Stun the roar and finish each Hound quickly.",
+			"members": [["Cinder Hound", 0.35, 0.35], ["Cinder Hound", 0.35, 0.35], ["Ember Oracle", 0.3, 0.3]]},
+		{"name": "Glass Bastion", "min_floor": 2, "hint": "The Sentinel reflects basic hits and wards the Harriers. Skills go around the glass; drop the Harriers first.",
+			"members": [["Obsidian Sentinel", 0.5, 0.3], ["Ash Harrier", 0.25, 0.35], ["Ash Harrier", 0.25, 0.35]]},
 	],
 }
 const ENCOUNTER_CHANCE := 0.6

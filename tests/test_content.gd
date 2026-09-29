@@ -16,12 +16,16 @@ func run() -> void:
 			if (GameData.BIOMES[b]["monsters"] as Array).has(n):
 				in_region = true
 		check(in_region, "%s lives in a region" % n)
-	check(GameData.MONSTER_NAMES.size() >= 25, "at least 25 regular monsters")
+	check(GameData.MONSTER_NAMES.size() >= 31, "at least 31 regular monsters")
+	for b in GameData.BIOMES:
+		check((GameData.BIOMES[b]["monsters"] as Array).size() >= 11, "%s has 11+ regular monsters" % b)
+	for n in ["Blight Hound", "Lantern Wight", "Tide Caller", "Mudscale Brute", "Cinder Hound", "Obsidian Sentinel"]:
+		check(GameData.monster_anim_frames(n, "attack").size() == 5 and GameData.monster_anim_frames(n, "hurt").size() == 5, "%s is animated" % n)
 
 	# Encounters: known members, shares about 1, every region has several.
 	for b in GameData.BIOMES:
 		var encs: Array = GameData.ENCOUNTERS.get(b, [])
-		check(encs.size() >= 5, "%s has 5+ designed encounters" % b)
+		check(encs.size() >= 7, "%s has 7+ designed encounters" % b)
 		for e in encs:
 			var hp := 0.0
 			var dmg := 0.0

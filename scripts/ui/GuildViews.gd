@@ -1034,6 +1034,8 @@ func _champion_card(id: String) -> PanelContainer:
 			if err != "":
 				push_warning(err)
 			render()
+			if err == "":
+				_payoff(tr("%s reaches level %d") % [GameData.champion_full_name(i), GameState.champion_level(i)], tr("Boon and Call grow stronger"), Palette.CRYSTALS, "level_up")
 		)
 		up.disabled = GameState.crystals < cost
 		up.tooltip_text = tr("Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift.") % [int(GameData.CHAMPION_LEVEL_POWER * 100), int(GameData.CHAMPION_LEVEL_STATS * 100), GameData.CHAMPION_EXTRA_CALL_LEVEL]
@@ -1111,11 +1113,13 @@ func _render_recruits(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
-		var hire := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
+		var hire := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id, nm=h.name, rk=h.rank):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
 			render()
+			if err == "":
+				_payoff(tr("%s joins the guild!") % tr(str(nm.split(" the ")[0])), tr("Rank %s") % tr(str(rk)), Palette.rank_color(str(rk)), "level_up")
 		)
 		var why := tr("Roster is full.") if GameState.heroes.size() >= GameState.hero_slot_cap() else (tr("Not enough Gold.") if GameState.coins < int(rank["cost"]) else "")
 		hire.disabled = why != ""
@@ -1887,9 +1891,10 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 		var dmg := _wrap_label(tr("Damaged in a Riftbreak: works at Lv %d until repaired.") % GameState.lvl(key), 12)
 		dmg.add_theme_color_override("font_color", Palette.HAZARD)
 		cv.add_child(dmg)
-		var rb := _button(tr("Repair a level — %d Gold") % GameState.repair_cost(key), func(k=key):
+		var rb := _button(tr("Repair a level — %d Gold") % GameState.repair_cost(key), func(k=key, nm=str(n["name"])):
 			GameState.repair_building(k)
-			render())
+			render()
+			_payoff(tr("%s repaired") % tr(nm), tr("Works at Lv %d") % GameState.lvl(k), Palette.COINS, "craft"))
 		rb.disabled = GameState.coins < GameState.repair_cost(key)
 		cv.add_child(rb)
 	cv.add_child(_wrap_label(tr("Each level: %s · upkeep +%d Gold a week") % [tr(str(n["every"])), GameData.UPKEEP_PER_LEVEL], 11, true))
@@ -1910,11 +1915,14 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
 		var next_perk := str(perks.get(cur + 1, ""))
-		var ub := _icon_button(icon_path, (tr("Upgrade to Lv%d — %d Gold") if gold else tr("Upgrade to Lv%d — %d Essence")) % [cur + 1, cost], func(k=key):
+		var ub := _icon_button(icon_path, (tr("Upgrade to Lv%d — %d Gold") if gold else tr("Upgrade to Lv%d — %d Essence")) % [cur + 1, cost], func(k=key, nm=str(n["name"]), nid=str(n["id"]), perk=next_perk):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
 			render()
+			if err == "":
+				var lv := int(GameState.upgrades.get(k, 0))
+				_payoff(tr("%s — Lv%d") % [tr(nm), lv], tr(perk) if perk != "" else tr(str(Combat.describe_node_effect(nid, lv))), Palette.EMBER_BRIGHT, "unlock")
 		)
 		ub.disabled = (GameState.coins if gold else GameState.crystals) < cost
 		ub.tooltip_text = tr("Next: %s%s") % [tr(str(Combat.describe_node_effect(n["id"], cur + 1))), tr(str((tr("\nUnlocks: ") + next_perk) if next_perk != "" else ""))]

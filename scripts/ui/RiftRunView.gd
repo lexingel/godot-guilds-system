@@ -524,9 +524,10 @@ func _render_shop_node(v: VBoxContainer) -> void:
 		if bought:
 			cv.add_child(_label("Bought", 12, true))
 		else:
-			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], tr("Buy — %d Gold") % int(off["price"]), func(idx=i):
+			var buy := _icon_domain_button("ember", GameData.CURRENCY_ICON_PATH["coins"], tr("Buy — %d Gold") % int(off["price"]), func(idx=i, nm=_loot_display_name(obj), rc=ITEM_RARITY_COLOR.get(str(obj.rarity), Palette.TEXT)):
 				GameState.buy_shop_offer(idx)
 				render()
+				_payoff(tr("Bought: %s") % nm, "", rc, "coin")
 			)
 			buy.disabled = GameState.coins < int(off["price"])
 			cv.add_child(buy)

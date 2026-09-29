@@ -1407,6 +1407,60 @@ func _title_strip(text: String) -> PanelContainer:
 	return p
 
 
+## A purchase lands: a banner with what you got, a burst of sparks and a
+## sound. Call right after render(), like _play_rift_entry_flash; the next
+## render clears it. Reduce Motion keeps the banner and drops the sparks.
+func _payoff(title: String, sub: String = "", col: Color = Palette.EMBER_BRIGHT, sfx: String = "unlock") -> void:
+	AudioManager.play_sfx(GameData.SFX_PATH[sfx])
+	var vp := get_viewport().get_visible_rect().size
+	var layer := Control.new()
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(layer)
+	var banner := PanelContainer.new()
+	banner.theme_type_variation = &"CardPanelEmber"
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bv := _vbox(2)
+	var t := _label(title, 22)
+	t.add_theme_color_override("font_color", col)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bv.add_child(t)
+	if sub != "":
+		var s := _label(sub, 14, true)
+		s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bv.add_child(s)
+	banner.add_child(bv)
+	layer.add_child(banner)
+	banner.reset_size()
+	banner.position = Vector2(roundf((vp.x - banner.size.x) * 0.5), roundf(vp.y * 0.28))
+	banner.pivot_offset = banner.size * 0.5
+	if not GameState.reduce_motion:
+		var p := CPUParticles2D.new()
+		p.one_shot = true
+		p.explosiveness = 1.0
+		p.amount = 48
+		p.lifetime = 1.0
+		p.spread = 180.0
+		p.initial_velocity_min = 140.0
+		p.initial_velocity_max = 320.0
+		p.gravity = Vector2(0, 420)
+		p.scale_amount_min = 4.0
+		p.scale_amount_max = 7.0
+		p.color = col
+		p.position = banner.position + banner.size * 0.5
+		layer.add_child(p)
+		layer.move_child(p, 0)   # behind the banner
+		p.emitting = true
+		banner.scale = Vector2(0.6, 0.6)
+	banner.modulate.a = 0.0
+	var tw := layer.create_tween()
+	tw.tween_property(banner, "modulate:a", 1.0, 0.15)
+	tw.parallel().tween_property(banner, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.2)
+	tw.tween_property(banner, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(layer.queue_free)
+
+
 ## A brief violet flash over the whole screen the instant a rift run begins —
 ## echoes the Rift Hall's own portal color, so "stepping through" reads as
 ## one deliberate beat instead of the screen just quietly changing under you.

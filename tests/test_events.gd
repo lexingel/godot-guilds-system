@@ -1,5 +1,5 @@
 extends "res://tests/base_test.gd"
-## Rift events: all 24 are well-formed, every choice resolves, attribute
+## Rift events: all are well-formed, every choice resolves, attribute
 ## checks scale with the party, and a run doesn't repeat an event.
 
 const KEYS := ["coins", "crystals", "reputation", "xp_all", "heal_pct", "hurt_pct", "ready", "loot", "item", "relic", "tonic", "shield"]
@@ -13,7 +13,7 @@ func run() -> void:
 	GameState.active_slot = 9
 	GameState.reset()
 	GameState.guild_name = "T"
-	check(GameData.RIFT_EVENTS.size() == 24, "24 events (%d)" % GameData.RIFT_EVENTS.size())
+	check(GameData.RIFT_EVENTS.size() >= 45, "45+ events (%d)" % GameData.RIFT_EVENTS.size())
 	var ids := {}
 	for ev in GameData.RIFT_EVENTS:
 		ids[ev["id"]] = true
@@ -26,7 +26,9 @@ func run() -> void:
 			else:
 				ok = _keys_ok(c.get("effect", {}))
 			check(ok, "%s / %s uses known effects" % [ev["id"], c["label"]])
-	check(ids.size() == 24, "event ids are unique")
+	check(ids.size() == GameData.RIFT_EVENTS.size(), "event ids are unique")
+	for ev in GameData.RIFT_EVENTS:
+		check(str(ev.get("biome", "vale")) in GameData.BIOMES, "%s: a known region" % ev["id"])
 
 	var hids: Array[String] = []
 	for i in 3:

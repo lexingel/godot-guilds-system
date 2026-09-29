@@ -381,9 +381,11 @@ func ensure_event() -> void:
 		return
 	ns["type"] = "event"
 	var seen: Array = run.get("events_seen", [])
-	var fresh: Array = GameData.RIFT_EVENTS.filter(func(e): return not seen.has(e["id"]))
+	# Region events ("biome") only happen in their region.
+	var here: Array = GameData.RIFT_EVENTS.filter(func(e): return str(e.get("biome", run_biome())) == run_biome())
+	var fresh: Array = here.filter(func(e): return not seen.has(e["id"]))
 	if fresh.is_empty():
-		fresh = GameData.RIFT_EVENTS
+		fresh = here
 	ns["event"] = fresh[randi() % fresh.size()]
 	seen.append(str(ns["event"]["id"]))
 	run["events_seen"] = seen

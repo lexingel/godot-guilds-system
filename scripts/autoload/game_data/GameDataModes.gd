@@ -281,6 +281,113 @@ const RIFT_EVENTS := [
 			{"label": "Raise it", "desc": "+3 Renown · a 20-point shield against the next hazard", "effect": {"reputation": 3, "shield": 20}},
 			{"label": "Salvage it", "desc": "+10 Gold", "effect": {"coins": 10}},
 		]},
+	# Content pass (0.18): more events; "biome" keeps one to its region.
+	{"id": "deserter", "name": "A Deserter", "text": "A rival guild's hireling crouches in a side passage, clutching a stolen purse.",
+		"choices": [
+			{"label": "Turn them in", "desc": "+10 Gold · +3 Renown", "effect": {"coins": 10, "reputation": 3}},
+			{"label": "Split the purse", "desc": "+20-30 Gold · -2 Renown", "effect": {"coins": [20, 30], "reputation": -2}},
+		]},
+	{"id": "well", "name": "Whispering Well", "text": "Coins glint at the bottom of a dry well, and something down there whispers your name.",
+		"choices": [
+			{"label": "Climb down", "desc": "Agility check · pass: 25-40 Gold · fail: everyone loses 10% HP", "check": {"attr": "agility", "target": 9, "win": {"coins": [25, 40]}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Toss a coin in", "desc": "Costs 5 Gold · every hero heals 15% HP", "cost": {"coins": 5}, "effect": {"heal_pct": 0.15}},
+		]},
+	{"id": "forge", "name": "Cold Forge", "text": "An abandoned rift-forge, its coals still faintly warm.",
+		"choices": [
+			{"label": "Stoke it with Essence", "desc": "Costs 10 Essence · a Rare-or-better item", "cost": {"crystals": 10}, "effect": {"item": "rare"}},
+			{"label": "Scavenge the scraps", "desc": "+12 Gold", "effect": {"coins": 12}},
+		]},
+	{"id": "sparring", "name": "Old Sparring Ring", "text": "Chalk lines and battered practice dummies. Someone trained here once, and the rift kept it.",
+		"choices": [
+			{"label": "Spar", "desc": "Everyone loses 10% HP · every hero gains 35 XP", "effect": {"hurt_pct": 0.10, "xp_all": 35}},
+			{"label": "Rest in the ring", "desc": "Every hero heals 10% HP", "effect": {"heal_pct": 0.10}},
+		]},
+	{"id": "hermit", "name": "Rift Hermit", "text": "An old man lives here, somehow. He offers tea and a story.",
+		"choices": [
+			{"label": "Drink the tea", "desc": "Every hero heals 25% HP", "effect": {"heal_pct": 0.25}},
+			{"label": "Buy his charm", "desc": "Costs 20 Gold · a 25-point shield against the next hazard", "cost": {"coins": 20}, "effect": {"shield": 25}},
+		]},
+	{"id": "bones", "name": "Pile of Bones", "text": "Adventurers' bones, their packs still strapped on.",
+		"choices": [
+			{"label": "Search the packs", "desc": "60%: a Rare-or-better find · 40%: a trap hits everyone for 10% HP", "gamble": {"chance": 0.6, "win": {"loot": "rare"}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Bury them", "desc": "+2 Renown · every hero gains 10 XP", "effect": {"reputation": 2, "xp_all": 10}},
+		]},
+	{"id": "tollkeeper", "name": "The Tollkeeper", "text": "A masked figure blocks the path with a spear. \"Toll.\"",
+		"choices": [
+			{"label": "Pay the toll", "desc": "Costs 25 Gold · he points out a shortcut: +3 Momentum next fight", "cost": {"coins": 25}, "effect": {"ready": true}},
+			{"label": "Push past", "desc": "Might check · pass: +30 Gold from his strongbox · fail: everyone loses 15% HP", "check": {"attr": "might", "target": 10, "win": {"coins": 30}, "lose": {"hurt_pct": 0.15}}},
+		]},
+	{"id": "starlight", "name": "Rift Starlight", "text": "A shaft of pale light falls through a crack in the rift. It feels like home.",
+		"choices": [
+			{"label": "Bask in it", "desc": "Every hero heals 15% HP · +3 Momentum next fight", "effect": {"heal_pct": 0.15, "ready": true}},
+			{"label": "Bottle it", "desc": "+10 Essence", "effect": {"crystals": 10}},
+		]},
+	{"id": "cart", "name": "Overturned Cart", "text": "A merchant's cart lies on its side. The merchant is nowhere to be seen.",
+		"choices": [
+			{"label": "Take the goods", "desc": "+25 Gold · -2 Renown", "effect": {"coins": 25, "reputation": -2}},
+			{"label": "Take one tonic", "desc": "+1 Healing Tonic", "effect": {"tonic": 1}},
+			{"label": "Right the cart", "desc": "+4 Renown", "effect": {"reputation": 4}},
+		]},
+	{"id": "scarecrow", "biome": "vale", "name": "Silent Scarecrow", "text": "A scarecrow stands in the rift's wheat, its sackcloth head turning to follow you.",
+		"choices": [
+			{"label": "Burn it", "desc": "+8 Essence", "effect": {"crystals": 8}},
+			{"label": "Search its coat", "desc": "Focus check · pass: a Rare-or-better item · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 9, "win": {"item": "rare"}, "lose": {"hurt_pct": 0.10}}},
+		]},
+	{"id": "orchard", "biome": "vale", "name": "Rift Orchard", "text": "Apple trees heavy with softly glowing fruit, in a field that shouldn't exist.",
+		"choices": [
+			{"label": "Eat the fruit", "desc": "70%: every hero heals 30% HP · 30%: bellyache, everyone loses 10% HP", "gamble": {"chance": 0.7, "win": {"heal_pct": 0.30}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Fill a basket", "desc": "+1 Healing Tonic", "effect": {"tonic": 1}},
+		]},
+	{"id": "mill", "biome": "vale", "name": "Haunted Mill", "text": "The mill wheel turns with no water and no wind, grinding something that glows.",
+		"choices": [
+			{"label": "Take the rift-flour", "desc": "+12-18 Essence", "effect": {"crystals": [12, 18]}},
+			{"label": "Jam the wheel", "desc": "Might check · pass: the village thanks you, +4 Renown, +15 Gold · fail: everyone loses 10% HP", "check": {"attr": "might", "target": 9, "win": {"reputation": 4, "coins": 15}, "lose": {"hurt_pct": 0.10}}},
+		]},
+	{"id": "wayshrine", "biome": "vale", "name": "Vale Wayshrine", "text": "A farmer's roadside shrine, its garlands somehow still fresh.",
+		"choices": [
+			{"label": "Leave an offering", "desc": "Costs 10 Gold · every hero heals 20% HP · +2 Renown", "cost": {"coins": 10}, "effect": {"heal_pct": 0.20, "reputation": 2}},
+			{"label": "Pray for strength", "desc": "Every hero gains 20 XP", "effect": {"xp_all": 20}},
+		]},
+	{"id": "sunken_bell", "biome": "marsh", "name": "Sunken Bell", "text": "A bronze bell rises from the black water and tolls once, very slowly.",
+		"choices": [
+			{"label": "Ring it back", "desc": "50%: a Rare-or-better relic surfaces · 50%: the water lashes out, everyone loses 15% HP", "gamble": {"chance": 0.5, "win": {"relic": "rare"}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Leave quietly", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "leech_pool", "biome": "marsh", "name": "Leech Pool", "text": "Fat leeches drift in a warm pool. The old marsh healers swore by them.",
+		"choices": [
+			{"label": "Bathe", "desc": "Every hero heals 25% HP", "effect": {"heal_pct": 0.25}},
+			{"label": "Jar a few", "desc": "+1 Healing Tonic", "effect": {"tonic": 1}},
+		]},
+	{"id": "drowned_chest", "biome": "marsh", "name": "Drowned Chest", "text": "A chest sits chained under a foot of murky water.",
+		"choices": [
+			{"label": "Dive for it", "desc": "Agility check · pass: a Rare-or-better item · fail: everyone loses 12% HP", "check": {"attr": "agility", "target": 10, "win": {"item": "rare"}, "lose": {"hurt_pct": 0.12}}},
+			{"label": "Hook it with a rope", "desc": "+15-25 Gold", "effect": {"coins": [15, 25]}},
+		]},
+	{"id": "fog_voices", "biome": "marsh", "name": "Voices in the Fog", "text": "The fog whispers the names of heroes your guild has lost.",
+		"choices": [
+			{"label": "Answer them", "desc": "Focus check · pass: every hero gains 40 XP · fail: everyone loses 10% HP", "check": {"attr": "focus", "target": 10, "win": {"xp_all": 40}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Press on in silence", "desc": "+3 Momentum next fight", "effect": {"ready": true}},
+		]},
+	{"id": "ash_statue", "biome": "ashen", "name": "Ash-Buried King", "text": "The statue of a forgotten king, half swallowed by ash, still holds out its hand.",
+		"choices": [
+			{"label": "Dig it out", "desc": "Might check · pass: a Rare-or-better relic · fail: everyone loses 10% HP", "check": {"attr": "might", "target": 10, "win": {"relic": "rare"}, "lose": {"hurt_pct": 0.10}}},
+			{"label": "Pry off its gems", "desc": "+12 Essence", "effect": {"crystals": 12}},
+		]},
+	{"id": "glass_bridge", "biome": "ashen", "name": "Glass Bridge", "text": "A bridge of cooled volcanic glass arcs over a river of fire.",
+		"choices": [
+			{"label": "Cross carefully", "desc": "Agility check · pass: +8 Essence, +3 Momentum next fight · fail: everyone loses 15% HP", "check": {"attr": "agility", "target": 9, "win": {"crystals": 8, "ready": true}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Go the long way", "desc": "Everyone loses 5% HP", "effect": {"hurt_pct": 0.05}},
+		]},
+	{"id": "cult_altar", "biome": "ashen", "name": "Cult Offering", "text": "An abandoned fire-cult altar, piled high with offerings.",
+		"choices": [
+			{"label": "Take the offerings", "desc": "+30 Gold · -3 Renown", "effect": {"coins": 30, "reputation": -3}},
+			{"label": "Scatter the ashes", "desc": "+4 Renown", "effect": {"reputation": 4}},
+		]},
+	{"id": "ember_egg", "biome": "ashen", "name": "Ember Egg", "text": "A warm egg rests in the embers, pulsing with light like a heartbeat.",
+		"choices": [
+			{"label": "Warm it", "desc": "40%: it hatches and leaves a gift, a Rare-or-better find, +10 Essence · 60%: it bursts, everyone loses 15% HP", "gamble": {"chance": 0.4, "win": {"loot": "rare", "crystals": 10}, "lose": {"hurt_pct": 0.15}}},
+			{"label": "Take its shell", "desc": "+15 Essence", "effect": {"crystals": 15}},
+		]},
 ]
 
 ## Attribute checks in events: the party's best score in the attribute vs
