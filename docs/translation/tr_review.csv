@@ -256,25 +256,26 @@ Opens when you free your first champion (the end of Act I),İlk şampiyonunu kur
 A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions.,Bir şampiyon yarık seferlerini gözetir: ekibe Lütfu ve Çağrısı. Kadro > Şampiyonlar'dan birini seç ve seviyesini yükselt.,scripts/autoload/game_data/GameDataArt.gd:71
 English,,scripts/autoload/game_data/GameDataArt.gd:110
 Türkçe (beta),,scripts/autoload/game_data/GameDataArt.gd:110
-"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:113
-"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:114
-"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:115
-"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:116
-"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:117
-Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:118
-"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:119
-"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:120
-"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:121
-"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:122
-"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:123
-"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:124
-"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:125
-"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:126
-Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:127
-"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:128
-"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:129
-"Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones.","Dene: I. Perde'nin sonunda ilk şampiyonunu kurtar, gözetmen yap ve kayıpları bulmak için onu Sonsuz Yarık'a götür.",scripts/autoload/game_data/GameDataArt.gd:131
-1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:197
+"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.","Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı.",scripts/autoload/game_data/GameDataArt.gd:113
+"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:114
+"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:115
+"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:116
+"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:117
+"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:118
+Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:119
+"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:120
+"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:121
+"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:122
+"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:123
+"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:124
+"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:125
+"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:126
+"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:127
+Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:128
+"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:129
+"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:130
+"Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones.","Dene: I. Perde'nin sonunda ilk şampiyonunu kurtar, gözetmen yap ve kayıpları bulmak için onu Sonsuz Yarık'a götür.",scripts/autoload/game_data/GameDataArt.gd:132
+1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:198
 Ballista,Balista,scripts/autoload/game_data/GameDataBreach.gd:67
 Long-range bolts at the foe furthest along the road,Yolda en ileri giden düşmana uzun menzilli oklar,scripts/autoload/game_data/GameDataBreach.gd:67
 Fire Brazier,Ateş Mangalı,scripts/autoload/game_data/GameDataBreach.gd:69
@@ -3046,140 +3047,151 @@ No heroes recruited yet.,Henüz kahraman işe alınmadı.,scripts/ui/RosterView.
 Power,Güç,scripts/ui/RosterView.gd:47
 Level,Seviye,scripts/ui/RosterView.gd:48
 Rank,Rütbe,scripts/ui/RosterView.gd:49
-Lv%d %s (%s) · %d/%d HP · Power %d · %s · Morale %d %s,Sv%d %s (%s) · %d/%d Can · Güç %d · %s · Moral %d %s,scripts/ui/RosterView.gd:71
-Personality (from their trait) — e.g. “%s”,Kişilik (özelliğinden) — örn. “%s”,scripts/ui/RosterView.gd:72
-Hero,Kahraman,scripts/ui/RosterView.gd:93
-History,Geçmiş,scripts/ui/RosterView.gd:95
-Skill: %s · %d Momentum%s,Beceri: %s · %d İvme%s,scripts/ui/RosterView.gd:125
- · %s row, · %s sıra,scripts/ui/RosterView.gd:125
- %s twist: %s., %s dokunuşu: %s.,scripts/ui/RosterView.gd:126
-Unlocks at Lv%d,Sv%d'de açılır,scripts/ui/RosterView.gd:129
-Ability: %s,Yetenek: %s,scripts/ui/RosterView.gd:138
-Unlocks at Lv3,Sv3'te açılır,scripts/ui/RosterView.gd:142
-Awakened (%s),Uyandı (%s),scripts/ui/RosterView.gd:144
-"Awaken (%d SP, %s)","Uyandır (%d BP, %s)",scripts/ui/RosterView.gd:146
-"Evolving replaces this Ability, but skill trees carry over.",Evrimleşmek bu Yeteneğin yerine yenisini koyar ama beceri ağaçları korunur.,scripts/ui/RosterView.gd:154
-Evolve (%d Essence),Evrimleş (%d Öz),scripts/ui/RosterView.gd:162
-Evolve — %s,Evrimleş — %s,scripts/ui/RosterView.gd:162
-Hide evolution paths,Evrim yollarını gizle,scripts/ui/RosterView.gd:164
-"[b]%s[/b] — Rank %s, %s","[b]%s[/b] — Rütbe %s, %s",scripts/ui/RosterView.gd:172
-Main stat: %s,Ana nitelik: %s,scripts/ui/RosterView.gd:173
-Passive: %s,Pasif: %s,scripts/ui/RosterView.gd:174
-Ability: %s — %s,Yetenek: %s — %s,scripts/ui/RosterView.gd:177
-Choose,Seç,scripts/ui/RosterView.gd:179
-Hide %s,Gizle: %s,scripts/ui/RosterView.gd:199
-Skill Points: %d,Beceri Puanı: %d,scripts/ui/RosterView.gd:207
-Respec this tree (%d Gold),Bu ağacı sıfırla (%d Altın),scripts/ui/RosterView.gd:215
-No deeds yet — send this hero into a rift.,Henüz bir başarısı yok — bu kahramanı bir yarığa gönder.,scripts/ui/RosterView.gd:226
-Equip best (%d),En iyisini kuşan (%d),scripts/ui/RosterView.gd:269
-Equipped best gear,En iyi teçhizat kuşanıldı,scripts/ui/RosterView.gd:272
-Power %d → %d,Güç %d → %d,scripts/ui/RosterView.gd:272
-Fill this hero's slots with the strongest free gear that fits them. Gear worn by other heroes is left alone.,Bu kahramanın yuvalarını ona uyan en güçlü boştaki teçhizatla doldur. Diğer kahramanların kuşandıklarına dokunulmaz.,scripts/ui/RosterView.gd:274
-Another gear slot opens at rank %s,Rütbe %s'de bir teçhizat yuvası daha açılır,scripts/ui/RosterView.gd:286
-No unequipped gear this hero can use.,Bu kahramanın kullanabileceği boşta teçhizat yok.,scripts/ui/RosterView.gd:317
-"Inventory — drag onto a slot to equip (%d usable, %d need more attributes)","Envanter — kuşanmak için bir yuvaya sürükle (%d kullanılabilir, %d daha yüksek nitelik ister)",scripts/ui/RosterView.gd:320
-Build: ,Yapı: ,scripts/ui/RosterView.gd:335
-Quirks:,Huylar:,scripts/ui/RosterView.gd:345
-born with it,doğuştan,scripts/ui/RosterView.gd:354
-a scar,bir yara izi,scripts/ui/RosterView.gd:354
-Treat (%d Gold),Tedavi et (%d Altın),scripts/ui/RosterView.gd:358
-HP,Can,scripts/ui/RosterView.gd:369
-first strike,ilk vuruş,scripts/ui/RosterView.gd:370
-ability power,yetenek gücü,scripts/ui/RosterView.gd:370
-%d point%s to spend,Harcanacak %d puan%s,scripts/ui/RosterView.gd:387
-Spend them the %s way,%s yoluyla harca,scripts/ui/RosterView.gd:395
-(%+d gear),(%+d teçhizat),scripts/ui/RosterView.gd:412
+Lv%d %s,Sv%d %s,scripts/ui/RosterView.gd:73
+%d/%d HP,%d/%d Can,scripts/ui/RosterView.gd:78
+Hero,Kahraman,scripts/ui/RosterView.gd:100
+History,Geçmiş,scripts/ui/RosterView.gd:102
+Build: ,Yapı: ,scripts/ui/RosterView.gd:126
+Skill: %s · %d Momentum%s,Beceri: %s · %d İvme%s,scripts/ui/RosterView.gd:138
+ · %s row, · %s sıra,scripts/ui/RosterView.gd:138
+ %s twist: %s., %s dokunuşu: %s.,scripts/ui/RosterView.gd:139
+Unlocks at Lv%d,Sv%d'de açılır,scripts/ui/RosterView.gd:142
+Ability: %s,Yetenek: %s,scripts/ui/RosterView.gd:151
+Unlocks at Lv3,Sv3'te açılır,scripts/ui/RosterView.gd:155
+Awakened (%s),Uyandı (%s),scripts/ui/RosterView.gd:157
+"Awaken (%d SP, %s)","Uyandır (%d BP, %s)",scripts/ui/RosterView.gd:159
+"Evolving replaces this Ability, but skill trees carry over.",Evrimleşmek bu Yeteneğin yerine yenisini koyar ama beceri ağaçları korunur.,scripts/ui/RosterView.gd:167
+Evolve (%d Essence),Evrimleş (%d Öz),scripts/ui/RosterView.gd:175
+Evolve — %s,Evrimleş — %s,scripts/ui/RosterView.gd:175
+Hide evolution paths,Evrim yollarını gizle,scripts/ui/RosterView.gd:177
+"[b]%s[/b] — Rank %s, %s","[b]%s[/b] — Rütbe %s, %s",scripts/ui/RosterView.gd:185
+Main stat: %s,Ana nitelik: %s,scripts/ui/RosterView.gd:186
+Passive: %s,Pasif: %s,scripts/ui/RosterView.gd:187
+Ability: %s — %s,Yetenek: %s — %s,scripts/ui/RosterView.gd:190
+Choose,Seç,scripts/ui/RosterView.gd:192
+Hide %s,Gizle: %s,scripts/ui/RosterView.gd:212
+Skill Points: %d,Beceri Puanı: %d,scripts/ui/RosterView.gd:220
+Respec this tree (%d Gold),Bu ağacı sıfırla (%d Altın),scripts/ui/RosterView.gd:228
+%s · Morale %d %s,%s · Moral %d %s,scripts/ui/RosterView.gd:235
+Personality (from their born quirk) — e.g. “%s”,Kişilik (doğuştan huyundan) — ör. “%s”,scripts/ui/RosterView.gd:236
+No deeds yet — send this hero into a rift.,Henüz bir başarısı yok — bu kahramanı bir yarığa gönder.,scripts/ui/RosterView.gd:244
+Equip best (%d),En iyisini kuşan (%d),scripts/ui/RosterView.gd:287
+Equipped best gear,En iyi teçhizat kuşanıldı,scripts/ui/RosterView.gd:290
+Power %d → %d,Güç %d → %d,scripts/ui/RosterView.gd:290
+Fill this hero's slots with the strongest free gear that fits them. Gear worn by other heroes is left alone.,Bu kahramanın yuvalarını ona uyan en güçlü boştaki teçhizatla doldur. Diğer kahramanların kuşandıklarına dokunulmaz.,scripts/ui/RosterView.gd:292
+Another gear slot opens at rank %s,Rütbe %s'de bir teçhizat yuvası daha açılır,scripts/ui/RosterView.gd:304
+No unequipped gear this hero can use.,Bu kahramanın kullanabileceği boşta teçhizat yok.,scripts/ui/RosterView.gd:334
+"Unequipped gear that fits · %d usable%s — drag onto a slot, or click a slot","Uyan, kuşanılmamış teçhizat · %d kullanılabilir%s — bir yuvaya sürükle ya da bir yuvaya tıkla",scripts/ui/RosterView.gd:337
+ · %d need more attributes, · %d daha fazla nitelik istiyor,scripts/ui/RosterView.gd:337
+Quirks:,Huylar:,scripts/ui/RosterView.gd:356
+born with it,doğuştan,scripts/ui/RosterView.gd:365
+a scar,bir yara izi,scripts/ui/RosterView.gd:365
+Treat (%d Gold),Tedavi et (%d Altın),scripts/ui/RosterView.gd:369
+HP,Can,scripts/ui/RosterView.gd:380
+first strike,ilk vuruş,scripts/ui/RosterView.gd:381
+ability power,yetenek gücü,scripts/ui/RosterView.gd:381
+%d point%s to spend,Harcanacak %d puan%s,scripts/ui/RosterView.gd:398
+Spend them the %s way,%s yoluyla harca,scripts/ui/RosterView.gd:406
+(%+d gear),(%+d teçhizat),scripts/ui/RosterView.gd:423
 "
 %d is the baseline: above it adds, below it takes a little away.
 ","
 %d temel değerdir: üstü katkı sağlar, altı biraz eksiltir.
-",scripts/ui/RosterView.gd:426
-at the baseline,temel değerde,scripts/ui/RosterView.gd:428
-below the baseline,temel değerin altında,scripts/ui/RosterView.gd:428
-small gains,küçük kazançlar,scripts/ui/RosterView.gd:428
-Trained %d/%d,Eğitim %d/%d,scripts/ui/RosterView.gd:444
-Train +1 — %d,Eğit +1 — %d,scripts/ui/RosterView.gd:444
-Buy an attribute point with Gold (%d/%d trained; each costs %d more). Training Yard: %d of %d left this week.,Altınla bir nitelik puanı al (%d/%d eğitildi; her biri %d daha pahalı). Talim Alanı: bu hafta %d / %d kaldı.,scripts/ui/RosterView.gd:451
-Yard full this week,Talim alanı bu hafta dolu,scripts/ui/RosterView.gd:453
-Confirm — %d,Onayla — %d,scripts/ui/RosterView.gd:463
-Keep,Koru,scripts/ui/RosterView.gd:470
-Reset %d,Sıfırla %d,scripts/ui/RosterView.gd:472
-Refund all %d spent points for %d Essence (you have %d),Harcanan %d puanın hepsini %d Öz karşılığında iade et (sende %d),scripts/ui/RosterView.gd:477
-Stats,İstatistikler,scripts/ui/RosterView.gd:519
-Damage,Hasar,scripts/ui/RosterView.gd:533
-Learned,Öğrenildi,scripts/ui/RosterView.gd:575
-Locked out by your other path,Diğer yolun yüzünden kilitli,scripts/ui/RosterView.gd:578
-Requires Lv%d,Sv%d gerekir,scripts/ui/RosterView.gd:580
-Needs prerequisite,Ön koşul gerekir,scripts/ui/RosterView.gd:582
-Seal a Rank %s+ rift first,Önce Rütbe %s+ bir yarık mühürle,scripts/ui/RosterView.gd:584
-Needs %d SP,%d BP gerekir,scripts/ui/RosterView.gd:588
-Learn (%d SP%s),Öğren (%d BP%s),scripts/ui/RosterView.gd:590
- + %d Essence, + %d Öz,scripts/ui/RosterView.gd:590
+",scripts/ui/RosterView.gd:437
+at the baseline,temel değerde,scripts/ui/RosterView.gd:439
+below the baseline,temel değerin altında,scripts/ui/RosterView.gd:439
+small gains,küçük kazançlar,scripts/ui/RosterView.gd:439
+Trained %d/%d,Eğitim %d/%d,scripts/ui/RosterView.gd:455
+Train +1 — %d,Eğit +1 — %d,scripts/ui/RosterView.gd:455
+Buy an attribute point with Gold (%d/%d trained; each costs %d more). Training Yard: %d of %d left this week.,Altınla bir nitelik puanı al (%d/%d eğitildi; her biri %d daha pahalı). Talim Alanı: bu hafta %d / %d kaldı.,scripts/ui/RosterView.gd:462
+Yard full this week,Talim alanı bu hafta dolu,scripts/ui/RosterView.gd:464
+Confirm — %d,Onayla — %d,scripts/ui/RosterView.gd:474
+Keep,Koru,scripts/ui/RosterView.gd:481
+Reset %d,Sıfırla %d,scripts/ui/RosterView.gd:483
+Refund all %d spent points for %d Essence (you have %d),Harcanan %d puanın hepsini %d Öz karşılığında iade et (sende %d),scripts/ui/RosterView.gd:488
+Stats,İstatistikler,scripts/ui/RosterView.gd:530
+Damage,Hasar,scripts/ui/RosterView.gd:544
+Learned,Öğrenildi,scripts/ui/RosterView.gd:586
+Locked out by your other path,Diğer yolun yüzünden kilitli,scripts/ui/RosterView.gd:589
+Requires Lv%d,Sv%d gerekir,scripts/ui/RosterView.gd:591
+Needs prerequisite,Ön koşul gerekir,scripts/ui/RosterView.gd:593
+Seal a Rank %s+ rift first,Önce Rütbe %s+ bir yarık mühürle,scripts/ui/RosterView.gd:595
+Needs %d SP,%d BP gerekir,scripts/ui/RosterView.gd:599
+Learn (%d SP%s),Öğren (%d BP%s),scripts/ui/RosterView.gd:601
+ + %d Essence, + %d Öz,scripts/ui/RosterView.gd:601
 "
 Cheaper: your quirks suit this path","
-Daha ucuz: huyların bu yola uygun",scripts/ui/RosterView.gd:592
+Daha ucuz: huyların bu yola uygun",scripts/ui/RosterView.gd:603
 "
 %s+%s if a party ally has reached %s's capstone","
-%s+%s, bir ekip arkadaşı %s zirvesine ulaşmışsa",scripts/ui/RosterView.gd:597
-(Active) ,(Etkin) ,scripts/ui/RosterView.gd:598
-Tier 1,Kademe 1,scripts/ui/RosterView.gd:648
-Tier 2,Kademe 2,scripts/ui/RosterView.gd:648
-Path,Yol,scripts/ui/RosterView.gd:648
-Mastery,Ustalık,scripts/ui/RosterView.gd:648
-Keystone & Rift,Kilit Taşı ve Yarık,scripts/ui/RosterView.gd:648
-Lv%d %s (%s) · %d/%d HP%s,Sv%d %s (%s) · %d/%d Can%s,scripts/ui/RosterView.gd:761
-Unspent skill points or gear that fits an empty slot,Harcanmamış beceri puanı ya da boş bir yuvaya uyan teçhizat,scripts/ui/RosterView.gd:769
-Gear,Teçhizat,scripts/ui/RosterView.gd:787
-Unequip,Çıkar,scripts/ui/RosterView.gd:1393
-No unequipped %s available.,Boşta %s yok.,scripts/ui/RosterView.gd:848
-Equip,Kuşan,scripts/ui/RosterView.gd:850
-Supplies,Erzak,scripts/ui/RosterView.gd:905
-Gear  %d,Teçhizat  %d,scripts/ui/RosterView.gd:933
-Supplies  %d,Erzak  %d,scripts/ui/RosterView.gd:933
-All,Tümü,scripts/ui/RosterView.gd:952
-Weapons,Silahlar,scripts/ui/RosterView.gd:952
-Rarity,Nadirlik,scripts/ui/RosterView.gd:965
-Value,Değer,scripts/ui/RosterView.gd:966
-Name,Ad,scripts/ui/RosterView.gd:967
-No unequipped items here — loot drops in rifts.,Burada boşta eşya yok — ganimet yarıklarda düşer.,scripts/ui/RosterView.gd:978
-Click an item to see it and equip it.  + fills someone's empty slot.,Görmek ve kuşanmak için bir eşyaya tıkla.  + birinin boş yuvasını doldurur.,scripts/ui/RosterView.gd:980
-%s — click for details,%s — ayrıntılar için tıkla,scripts/ui/RosterView.gd:1041
-Equip → %s,Kuşan → %s,scripts/ui/RosterView.gd:1104
-Swap → %s,Değiştir → %s,scripts/ui/RosterView.gd:1104
-Equip on,Kuşandır,scripts/ui/RosterView.gd:1111
-Needs %d %s: %s,%d %s gerekir: %s,scripts/ui/RosterView.gd:1114
-Reforge — reroll one stat (%d Essence),Yeniden döv — bir istatistiği yenile (%d Öz),scripts/ui/RosterView.gd:1117
-Reroll %s value,%s değerini yenile,scripts/ui/RosterView.gd:1125
-Reroll %s,Yenile: %s,scripts/ui/RosterView.gd:1125
-The value rerolls; the kind stays.,Değer yenilenir; tür aynı kalır.,scripts/ui/RosterView.gd:1132
-Rerolls into any stat this item doesn't already have (or the same one).,Bu eşyada olmayan herhangi bir istatistiğe (ya da aynısına) dönüşür.,scripts/ui/RosterView.gd:1132
-Sell,Sat,scripts/ui/RosterView.gd:1138
-Salvage +%d,Söküp kurtar +%d,scripts/ui/RosterView.gd:1144
-"Tonics — belt %d/%d · drink one in a fight on a hero's turn (Tonics, key 8)","Tonikler — kemer %d/%d · dövüşte bir kahramanın sırasında iç (Tonikler, tuş 8)",scripts/ui/RosterView.gd:1160
-Buy,Satın al,scripts/ui/RosterView.gd:1163
-%s (%d Gold) — %s · carrying %d,%s (%d Altın) — %s · taşınan %d,scripts/ui/RosterView.gd:1170
-Relic Altar — %d/%d slots · every relic empowers the whole party,Kalıntı Sunağı — %d/%d yuva · her kalıntı tüm ekibi güçlendirir,scripts/ui/RosterView.gd:1182
-Collection (%d),Koleksiyon (%d),scripts/ui/RosterView.gd:1194
-"No spare relics — they drop from fights, treasure and shops.","Yedek kalıntı yok — dövüşlerden, hazinelerden ve dükkânlardan düşer.",scripts/ui/RosterView.gd:1196
-Empty slot — pick a relic from your collection,Boş yuva — koleksiyonundan bir kalıntı seç,scripts/ui/RosterView.gd:1230
-%s · Lv%d%s,%s · Sv%d%s,scripts/ui/RosterView.gd:1249
- · Awakened, · Uyanmış,scripts/ui/RosterView.gd:1249
+%s+%s, bir ekip arkadaşı %s zirvesine ulaşmışsa",scripts/ui/RosterView.gd:608
+(Active) ,(Etkin) ,scripts/ui/RosterView.gd:609
+Tier 1,Kademe 1,scripts/ui/RosterView.gd:659
+Tier 2,Kademe 2,scripts/ui/RosterView.gd:659
+Path,Yol,scripts/ui/RosterView.gd:659
+Mastery,Ustalık,scripts/ui/RosterView.gd:659
+Keystone & Rift,Kilit Taşı ve Yarık,scripts/ui/RosterView.gd:659
+Lv%d %s (%s) · %d/%d HP%s,Sv%d %s (%s) · %d/%d Can%s,scripts/ui/RosterView.gd:772
+Unspent skill points or gear that fits an empty slot,Harcanmamış beceri puanı ya da boş bir yuvaya uyan teçhizat,scripts/ui/RosterView.gd:780
+Gear,Teçhizat,scripts/ui/RosterView.gd:798
+%s — choose a weapon,%s — bir silah seç,scripts/ui/RosterView.gd:851
+%s — choose gear,%s — teçhizat seç,scripts/ui/RosterView.gd:851
+Wearing,Kuşanılan,scripts/ui/RosterView.gd:863
+Unequip,Çıkar,scripts/ui/RosterView.gd:1490
+No unequipped %s this hero can use.,Bu kahramanın kullanabileceği kuşanılmamış %s yok.,scripts/ui/RosterView.gd:879
+gains: ,kazanır: ,scripts/ui/RosterView.gd:911
+loses: ,kaybeder: ,scripts/ui/RosterView.gd:914
+needs %d %s,%d %s gerekir,scripts/ui/RosterView.gd:937
++%d more (hover),+%d daha (üzerine gel),scripts/ui/RosterView.gd:950
+Equip,Kuşan,scripts/ui/RosterView.gd:954
+Needs %d %s,%d %s gerekir,scripts/ui/RosterView.gd:960
+Supplies,Erzak,scripts/ui/RosterView.gd:1002
+Gear  %d,Teçhizat  %d,scripts/ui/RosterView.gd:1030
+Supplies  %d,Erzak  %d,scripts/ui/RosterView.gd:1030
+All,Tümü,scripts/ui/RosterView.gd:1049
+Weapons,Silahlar,scripts/ui/RosterView.gd:1049
+Rarity,Nadirlik,scripts/ui/RosterView.gd:1062
+Value,Değer,scripts/ui/RosterView.gd:1063
+Name,Ad,scripts/ui/RosterView.gd:1064
+No unequipped items here — loot drops in rifts.,Burada boşta eşya yok — ganimet yarıklarda düşer.,scripts/ui/RosterView.gd:1075
+Click an item to see it and equip it.  + fills someone's empty slot.,Görmek ve kuşanmak için bir eşyaya tıkla.  + birinin boş yuvasını doldurur.,scripts/ui/RosterView.gd:1077
+%s — click for details,%s — ayrıntılar için tıkla,scripts/ui/RosterView.gd:1138
+Equip → %s,Kuşan → %s,scripts/ui/RosterView.gd:1201
+Swap → %s,Değiştir → %s,scripts/ui/RosterView.gd:1201
+Equip on,Kuşandır,scripts/ui/RosterView.gd:1208
+Needs %d %s: %s,%d %s gerekir: %s,scripts/ui/RosterView.gd:1211
+Reforge — reroll one stat (%d Essence),Yeniden döv — bir istatistiği yenile (%d Öz),scripts/ui/RosterView.gd:1214
+Reroll %s value,%s değerini yenile,scripts/ui/RosterView.gd:1222
+Reroll %s,Yenile: %s,scripts/ui/RosterView.gd:1222
+The value rerolls; the kind stays.,Değer yenilenir; tür aynı kalır.,scripts/ui/RosterView.gd:1229
+Rerolls into any stat this item doesn't already have (or the same one).,Bu eşyada olmayan herhangi bir istatistiğe (ya da aynısına) dönüşür.,scripts/ui/RosterView.gd:1229
+Sell,Sat,scripts/ui/RosterView.gd:1235
+Salvage +%d,Söküp kurtar +%d,scripts/ui/RosterView.gd:1241
+"Tonics — belt %d/%d · drink one in a fight on a hero's turn (Tonics, key 8)","Tonikler — kemer %d/%d · dövüşte bir kahramanın sırasında iç (Tonikler, tuş 8)",scripts/ui/RosterView.gd:1257
+Buy,Satın al,scripts/ui/RosterView.gd:1260
+%s (%d Gold) — %s · carrying %d,%s (%d Altın) — %s · taşınan %d,scripts/ui/RosterView.gd:1267
+Relic Altar — %d/%d slots · every relic empowers the whole party,Kalıntı Sunağı — %d/%d yuva · her kalıntı tüm ekibi güçlendirir,scripts/ui/RosterView.gd:1279
+Collection (%d),Koleksiyon (%d),scripts/ui/RosterView.gd:1291
+"No spare relics — they drop from fights, treasure and shops.","Yedek kalıntı yok — dövüşlerden, hazinelerden ve dükkânlardan düşer.",scripts/ui/RosterView.gd:1293
+Empty slot — pick a relic from your collection,Boş yuva — koleksiyonundan bir kalıntı seç,scripts/ui/RosterView.gd:1327
+%s · Lv%d%s,%s · Sv%d%s,scripts/ui/RosterView.gd:1346
+ · Awakened, · Uyanmış,scripts/ui/RosterView.gd:1346
 "%s
 %s
 Click for details","%s
 %s
-Ayrıntılar için tıkla",scripts/ui/RosterView.gd:1260
-Lv%d%s,Sv%d%s,scripts/ui/RosterView.gd:1306
-%s %s relic · Lv%d/%d%s,%s %s kalıntı · Sv%d/%d%s,scripts/ui/RosterView.gd:1351
-+%d party damage · +%d rift shield,+%d ekip hasarı · +%d yarık kalkanı,scripts/ui/RosterView.gd:1352
-Combo: stronger with %s%s,Kombo: %s%s ile daha güçlü,scripts/ui/RosterView.gd:1361
- (active!), (etkin!),scripts/ui/RosterView.gd:1361
-Reroll,Yenile,scripts/ui/RosterView.gd:1374
-Reroll this effect for %d Essence (each reroll costs more),Bu etkiyi %d Öz karşılığında yenile (her yenileme daha pahalı),scripts/ui/RosterView.gd:1381
-Reaches Lv%d: awakens with one more effect.,Sv%d'ye ulaşınca bir etki daha kazanarak uyanır.,scripts/ui/RosterView.gd:1385
-Place on the altar,Sunağa koy,scripts/ui/RosterView.gd:1398
-Every altar slot is full — take a relic off first,Sunaktaki tüm yuvalar dolu — önce bir kalıntıyı kaldır,scripts/ui/RosterView.gd:1404
-Scrap,Hurdaya çıkar,scripts/ui/RosterView.gd:1423
+Ayrıntılar için tıkla",scripts/ui/RosterView.gd:1357
+Lv%d%s,Sv%d%s,scripts/ui/RosterView.gd:1403
+%s %s relic · Lv%d/%d%s,%s %s kalıntı · Sv%d/%d%s,scripts/ui/RosterView.gd:1448
++%d party damage · +%d rift shield,+%d ekip hasarı · +%d yarık kalkanı,scripts/ui/RosterView.gd:1449
+Combo: stronger with %s%s,Kombo: %s%s ile daha güçlü,scripts/ui/RosterView.gd:1458
+ (active!), (etkin!),scripts/ui/RosterView.gd:1458
+Reroll,Yenile,scripts/ui/RosterView.gd:1471
+Reroll this effect for %d Essence (each reroll costs more),Bu etkiyi %d Öz karşılığında yenile (her yenileme daha pahalı),scripts/ui/RosterView.gd:1478
+Reaches Lv%d: awakens with one more effect.,Sv%d'ye ulaşınca bir etki daha kazanarak uyanır.,scripts/ui/RosterView.gd:1482
+Place on the altar,Sunağa koy,scripts/ui/RosterView.gd:1495
+Every altar slot is full — take a relic off first,Sunaktaki tüm yuvalar dolu — önce bir kalıntıyı kaldır,scripts/ui/RosterView.gd:1501
+Scrap,Hurdaya çıkar,scripts/ui/RosterView.gd:1520
 Foes ×%s HP · ×%s damage,Düşmanlar ×%s can · ×%s hasar,scripts/ui/UiKit.gd:343
 Rank %s foes have %s× the HP and %s× the damage of a base %s Rift.,"Rütbe %s düşmanlarının canı %s×, hasarı %s×; temel %s Yarığına göre.",scripts/ui/UiKit.gd:344
  [combo active!], [kombo etkin!],scripts/ui/UiKit.gd:834
@@ -3237,8 +3249,6 @@ Equipped relics (whole party),Kuşanılmış kalıntılar (tüm ekip),scripts/ui
 This rift's boons,Bu yarığın lütufları,scripts/ui/UiKit.gd:1157
 Bonds in the party,Ekipteki bağlar,scripts/ui/UiKit.gd:1160
 Situational:,Duruma bağlı:,scripts/ui/UiKit.gd:1179
-gains: ,kazanır: ,scripts/ui/UiKit.gd:1218
-loses: ,kaybeder: ,scripts/ui/UiKit.gd:1222
 vs ,karşı: ,scripts/ui/UiKit.gd:1225
 Into an empty slot,Boş bir yuvaya,scripts/ui/UiKit.gd:1225
 Relic slots %d/%d — %s,Kalıntı yuvaları %d/%d — %s,scripts/ui/UiKit.gd:1235

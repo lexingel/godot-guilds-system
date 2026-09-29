@@ -68,10 +68,17 @@ func _hero_card(h: Hero) -> PanelContainer:
 	var cv := _vbox(4)
 	cv.add_child(_title_strip(h.name))
 	var voice := GameData.hero_voice(h)
-	var head := _label(tr("Lv%d %s (%s) · %d/%d HP · Power %d · %s · Morale %d %s") % [h.level, tr(str(h.cls_id.capitalize())), tr(str(h.rank)), h.hp, Combat.max_hp(h), Combat.power_of(h), tr(str(GameData.VOICE_NAME[voice])), h.morale, tr(str(GameData.morale_tier(h.morale)[1]))])
-	head.tooltip_text = tr("Personality (from their trait) — e.g. “%s”") % tr(str(GameData.BARKS[voice]["victory"][0]))
-	head.mouse_filter = Control.MOUSE_FILTER_STOP
-	cv.add_child(head)
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 8)
+	chips.add_child(_rule_chip(tr("Lv%d %s") % [h.level, tr(str(h.cls_id.capitalize()))], "", Palette.LINE))
+	chips.add_child(_rule_chip(tr("Rank %s") % tr(str(h.rank)), "", Palette.RANK_S))
+	chips.add_child(_rule_chip(tr("Power %d") % Combat.power_of(h), "", Palette.VIOLET))
+	var hpw := _vbox(2)
+	hpw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hpw.add_child(_label(tr("%d/%d HP") % [h.hp, Combat.max_hp(h)], 11, true))
+	hpw.add_child(_hp_bar(h.hp, Combat.max_hp(h), 150.0))
+	chips.add_child(hpw)
+	cv.add_child(chips)
 
 	# Tabs (Overview · Gear · Skills · History) instead of one long card that
 	# stacked every section. A dot marks a tab with something to act on:
@@ -112,6 +119,12 @@ func _hero_card(h: Hero) -> PanelContainer:
 
 	match roster_tab:
 		"skills":
+			cv.add_child(_rich_line(tr("Passive — ") + _passive_bb(h.pool_id), 12))
+			cv.add_child(_wrap_label(_position_text(h), 12, true))
+			var build := _build_bb(h)
+			if build != "":
+				cv.add_child(_rich_line(tr("Build: ") + build, 12, true))
+			cv.add_child(_hsep())
 			var arch := Combat.hero_main_arch(h)
 			for sk in GameData.ROLE_SKILLS.get(h.cls_id, []):
 				var sk_row := HBoxContainer.new()
@@ -219,6 +232,11 @@ func _hero_card(h: Hero) -> PanelContainer:
 						render()
 					))
 		"history":
+			var who := _label(tr("%s · Morale %d %s") % [tr(str(GameData.VOICE_NAME[voice])), h.morale, tr(str(GameData.morale_tier(h.morale)[1]))], 13)
+			who.tooltip_text = tr("Personality (from their born quirk) — e.g. “%s”") % tr(str(GameData.BARKS[voice]["victory"][0]))
+			who.mouse_filter = Control.MOUSE_FILTER_STOP
+			cv.add_child(who)
+			cv.add_child(_hsep())
 			var hist_lines := _history_lines(h)
 			for line in hist_lines:
 				cv.add_child(_rich_line(line, 12, true))
@@ -307,17 +325,16 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	sheet.add_child(side)
 	cv.add_child(sheet)
 
-	if expanded_slot.begins_with("%s:weapon:" % h.id):
-		_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
-	if expanded_slot.begins_with("%s:gear:" % h.id):
-		_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
+	if expanded_slot.begins_with("%s:weapon:" % h.id) or expanded_slot.begins_with("%s:gear:" % h.id):
+		var parts := expanded_slot.split(":")
+		_equip_picker_modal(h, parts[1], int(parts[2]))
 
 	cv.add_child(_hsep())
 	if fitting_items.is_empty():
 		cv.add_child(_label("No unequipped gear this hero can use.", 12, true))
 	else:
 		var usable := fitting_items.filter(func(it): return GameState.attr_req_met(it, h)).size()
-		cv.add_child(_label(tr("Inventory — drag onto a slot to equip (%d usable, %d need more attributes)") % [usable, fitting_items.size() - usable], 12, true))
+		cv.add_child(_label(tr("Unequipped gear that fits · %d usable%s — drag onto a slot, or click a slot") % [usable, tr(" · %d need more attributes") % (fitting_items.size() - usable) if fitting_items.size() > usable else ""], 12, true))
 		var sorted := fitting_items.duplicate()
 		sorted.sort_custom(func(x, y): return _rarity_rank(x.rarity) > _rarity_rank(y.rarity))
 		var inv_flow := HFlowContainer.new()
@@ -327,12 +344,6 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 			inv_flow.add_child(_item_tile(it, 48, h))
 		cv.add_child(inv_flow)
 
-	cv.add_child(_hsep())
-	cv.add_child(_rich_line(tr("Passive — ") + _passive_bb(h.pool_id), 12))
-	cv.add_child(_wrap_label(_position_text(h), 12, true))
-	var build := _build_bb(h)
-	if build != "":
-		cv.add_child(_rich_line(tr("Build: ") + build, 12, true))
 	cv.add_child(_quirk_row(h))
 
 
@@ -804,67 +815,153 @@ func _equip_slot_frame(h: Hero, slot_type: String, idx: int, size: float = 56.0)
 	return _action_slot(icon_path, "", is_open, false, cb, size, label_text, frame_path, _item_card(equipped, h) if equipped else "", drop_target)
 
 
-## The picker for whichever equip slot is currently expanded: shows the
-## equipped item (with Unequip + matching Socket options) if any, then every
-## unequipped item that fits this hero and slot with an Equip button — reuses
-## GameState.equip_item/item_fits_hero exactly like the old Inventory-tab
-## "Equip →" flow did, just triggered from the hero's own card instead.
-func _render_equip_picker(cv: VBoxContainer, h: Hero, slot_type: String, idx: int) -> void:
-	var equipped := _find_equipped_at(h.id, slot_type, idx)
-	var picker := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE3
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = Palette.VIOLET
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_bottom_left = 6
-	style.content_margin_left = 8
-	style.content_margin_top = 6
-	style.content_margin_right = 8
-	style.content_margin_bottom = 6
-	picker.add_theme_stylebox_override("panel", style)
-	var pv := _vbox(4)
-
-	if equipped:
-		var eq_row := _info_row("%s (%s) — %s" % [tr(str(_loot_display_name(equipped))), tr(str(GameData.ITEM_CATEGORY_LABEL[equipped.category])), tr(str(_loot_desc(equipped, false)))], 12, [], _icon(GameData.item_icon(equipped), 18))
-		_rich_tip(eq_row, _item_card(equipped))
-		pv.add_child(eq_row)
-		var eactions := HBoxContainer.new()
-		eactions.add_child(_icon_button("res://assets/skills/armor_chest.png", "Unequip", func(hid=h.id, st=slot_type, i=idx):
-			GameState.equip_item(hid, st, i, "")
-			render()
-		))
-		pv.add_child(eactions)
-		pv.add_child(_hsep())
-
-	var candidates: Array[Item] = []
-	candidates.assign(GameState.items.filter(func(it): return it.equipped_to == "" and it.slot_type() == slot_type and GameState.item_fits_hero(it, h)))
-	if candidates.is_empty():
-		pv.add_child(_label(tr("No unequipped %s available.") % tr(str(("weapons" if slot_type == "weapon" else "gear"))), 11, true))
-	for it in candidates:
-		var equip_btn := _icon_button(GameData.item_icon(it), "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
-			GameState.equip_item(hid, st, i, iid)
-			expanded_slot = ""
-			render()
-		)
-		var cand_row := _info_row("%s (%s) — %s" % [tr(str(_loot_display_name(it))), tr(str(GameData.ITEM_CATEGORY_LABEL[it.category])), tr(str(_loot_desc(it, false)))], 12, [equip_btn], _icon(GameData.item_icon(it), 18))
-		_rich_tip(cand_row, _item_card(it, h, idx))
-		pv.add_child(cand_row)
-		var cmp := _item_compare_text(it, h, idx)
-		if cmp != "":
-			pv.add_child(_wrap_label(cmp.replace(":\n", ": ").replace("\n", " · "), 10, true))
-
-	pv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", func():
+## The picker for the open equip slot: a pop-up with what's worn there
+## (and Unequip), then a card for every free item that fits this hero and
+## slot, each with how it compares to the worn one. Esc or a click outside
+## closes it.
+func _equip_picker_modal(h: Hero, slot_type: String, idx: int) -> void:
+	var close := func():
 		expanded_slot = ""
 		render()
-	))
-	picker.add_child(pv)
-	cv.add_child(picker)
+	_combat_hotkeys["Escape"] = close
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.6)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		dim.set_offset(side, -80)   # past root's page margins
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		dim.set_offset(side, 80)
+	dim.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed:
+			close.call())
+	overlay.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+	var vs := get_viewport_rect().size
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanelViolet"
+	card.custom_minimum_size.x = minf(836.0, vs.x - 48.0)
+	var cv := _vbox(12)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	var title := _label(tr("%s — choose a weapon") % h.name.split(" the ")[0] if slot_type == "weapon" else tr("%s — choose gear") % h.name.split(" the ")[0], 18)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	head.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Close", close))
+	cv.add_child(head)
+	var equipped := _find_equipped_at(h.id, slot_type, idx)
+	if equipped:
+		var wear := HBoxContainer.new()
+		wear.add_theme_constant_override("separation", 10)
+		wear.add_child(_item_tile(equipped, 40, h))
+		var wl := _vbox(0)
+		wl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		wl.add_child(_label(tr("Wearing"), 11, true))
+		var wn := _label(tr(str(_loot_display_name(equipped))), 14)
+		wn.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(equipped.rarity, Palette.TEXT))
+		wl.add_child(wn)
+		wear.add_child(wl)
+		wear.add_child(_icon_button("res://assets/skills/armor_chest.png", "Unequip", func(hid=h.id, st=slot_type, i=idx):
+			GameState.equip_item(hid, st, i, "")
+			render()))
+		cv.add_child(wear)
+		cv.add_child(_hsep())
+	var candidates: Array = GameState.items.filter(func(it): return it.equipped_to == "" and it.slot_type() == slot_type and GameState.item_fits_hero(it, h))
+	candidates.sort_custom(func(x, y):
+		var ux := GameState.attr_req_met(x, h)
+		var uy := GameState.attr_req_met(y, h)
+		return ux and not uy if ux != uy else _rarity_rank(x.rarity) > _rarity_rank(y.rarity))
+	if candidates.is_empty():
+		cv.add_child(_label(tr("No unequipped %s this hero can use.") % tr(str(("weapons" if slot_type == "weapon" else "gear"))), 13, true))
+	else:
+		var grid := HFlowContainer.new()
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
+		for it in candidates:
+			grid.add_child(_equip_choice_card(h, it, slot_type, idx))
+		var sc := ScrollContainer.new()
+		sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		var per_row := maxi(1, int((card.custom_minimum_size.x - 24.0) / 260.0))
+		sc.custom_minimum_size.y = minf(300.0 * ceili(float(candidates.size()) / per_row), minf(470.0, vs.y - 280.0))
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sc.add_child(grid)
+		cv.add_child(sc)
+	card.add_child(cv)
+	center.add_child(card)
+	root.add_child(overlay)
+
+
+## How equipping `it` into slot idx changes `h`: [text, better?] per stat
+## (every build stat is better higher, whatever its wording says), then the
+## situational effects gained (better) and lost (worse).
+func _compare_lines(it: Item, h: Hero, idx: int) -> Array:
+	var current: Item = _find_equipped_at(h.id, it.slot_type(), idx) if idx >= 0 else null
+	var a := _item_stat_map(it)
+	var b := _item_stat_map(current)
+	var out: Array = []
+	for kind in GameData.BUILD_KINDS:
+		var d: float = float(a.get(kind, 0.0)) - float(b.get(kind, 0.0))
+		if absf(d) >= 0.001:
+			out.append([Combat.describe_skill(kind, d), d > 0.0])
+	for e in (GameData.find_unique_item(it.unique_id).get("effects", []) if it.unique_id != "" else it.effects):
+		out.append([tr("gains: ") + Combat.describe_effect(e), true])
+	if current:
+		for e in (GameData.find_unique_item(current.unique_id).get("effects", []) if current.unique_id != "" else current.effects):
+			out.append([tr("loses: ") + Combat.describe_effect(e), false])
+	return out
+
+
+## One free item in the picker: icon, name, slot and attribute need, how it
+## compares with what's worn (gains green, losses red), and Equip. The full
+## description is on hover.
+func _equip_choice_card(h: Hero, it: Item, slot_type: String, idx: int) -> PanelContainer:
+	var usable := GameState.attr_req_met(it, h)
+	var card := PanelContainer.new()
+	card.theme_type_variation = &"CardPanel"
+	card.custom_minimum_size.x = 250
+	var v := _vbox(6)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 8)
+	top.add_child(_item_tile(it, 44, h))
+	var names := _vbox(1)
+	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nm := _wrap_label(tr(str(_loot_display_name(it))), 13)
+	nm.add_theme_color_override("font_color", ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT))
+	names.add_child(nm)
+	var sub := tr(str(GameData.ITEM_CATEGORY_LABEL[it.category]))
+	if it.attr_req > 0:
+		sub += " · " + tr("needs %d %s") % [it.attr_req, tr(str(GameData.ATTR_LABEL[it.attr]))]
+	var sl := _label(sub, 11, true)
+	if not usable:
+		sl.add_theme_color_override("font_color", Palette.HAZARD)
+	names.add_child(sl)
+	top.add_child(names)
+	v.add_child(top)
+	var cmp := _compare_lines(it, h, idx)
+	for k in mini(cmp.size(), 5):
+		var l := _wrap_label(str(cmp[k][0]), 11)
+		l.add_theme_color_override("font_color", Palette.RANK_E if cmp[k][1] else Palette.HAZARD)
+		v.add_child(l)
+	if cmp.size() > 5:
+		v.add_child(_label(tr("+%d more (hover)") % (cmp.size() - 5), 11, true))
+	var sp := Control.new()
+	sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(sp)
+	var eb := _icon_button(GameData.item_icon(it), "Equip", func(hid=h.id, st=slot_type, i=idx, iid=it.id):
+		GameState.equip_item(hid, st, i, iid)
+		expanded_slot = ""
+		render())
+	eb.disabled = not usable
+	if not usable:
+		eb.tooltip_text = tr("Needs %d %s") % [it.attr_req, tr(str(GameData.ATTR_LABEL[it.attr]))]
+	v.add_child(eb)
+	card.add_child(v)
+	_rich_tip(card, _item_card(it, h, idx))
+	return card
 
 
 func _render_inventory(v: VBoxContainer) -> void:
