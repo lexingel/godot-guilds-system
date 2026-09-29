@@ -855,7 +855,7 @@ func _show_results() -> void:
 	var lines := [
 		(tr("Sealed at %d:%02d") if run.won else tr("Survived %d:%02d")) % [t / 60, t % 60] + (tr("  — a new best!") if _summary.get("best", false) else ""),
 		tr("%d kills · %d elites · %d wardens · reached level %d") % [run.kills, run.elites_killed, run.bosses_killed, run.level],
-		tr("+%d gold · +%d essence · +%d Echoes") % [_summary["coins"], _summary["crystals"], _summary["echoes"]],
+		tr("+%d gold · +%d essence") % [_summary["coins"], _summary["crystals"]],
 	]
 	for name in _summary.get("freed", []):
 		lines.append(tr("Freed: %s — they join your champions") % str(name))

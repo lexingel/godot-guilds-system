@@ -808,15 +808,14 @@ func seal_rift() -> void:
 
 ## Earned by playing (sealing 3 rifts, lesser/greater/endless all count),
 ## not by spending Guild Management currency like every other unlock today.
-## Pays out a finished Endless Rift (survivors) run: a little gold, Essence,
-## Echoes for the champions, loot for elites and wardens, and every lost
+## Pays out a finished Endless Rift (survivors) run: a little gold, Essence
+## (which also levels the champions), loot for elites and wardens, and every lost
 ## champion freed on the way. The guild spends a day on it (wages, healing).
 ## Returns what was earned for the result screen.
 func finish_survivors(r: SurvivorsRun) -> Dictionary:
 	var pay := r.rewards()
 	coins += int(pay["coins"])
 	crystals += int(pay["crystals"])
-	echoes += int(pay["echoes"])
 	var freed: Array = []
 	for id in r.rescued:
 		if not champions.has(id):
@@ -862,7 +861,7 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 		run_history.resize(GameData.RUN_HISTORY_MAX)
 	save()
 	state_changed.emit()
-	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "echoes": int(pay["echoes"]), "freed": freed, "loot": loot_names, "best": best, "milestones": got}
+	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "freed": freed, "loot": loot_names, "best": best, "milestones": got}
 
 
 ## The guild's Endless Rift title (the last milestone title earned), or "".

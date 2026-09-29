@@ -1432,7 +1432,8 @@ var _pending_endless: bool = false
 var _endless_biome := ""   # the Endless Rift region picked on the party screen
 var _pending_finale: bool = false   # Party Assembly is for the current act's finale
 var _pending_tower: bool = false    # Party Assembly is for the next Tower of Trials floor
-var _pending_daily: bool = false    # Party Assembly is for today's Daily Rift
+var _pending_daily: bool = false    # Party Assembly's ladder rift carries today's twist
+var _ladder_twist: bool = true     # the ladder's "today's twist" box
 var records_tab: String = "achievements"   # achievements | stats | history
 ## GameState.combat_speed value meaning "Instant": turns resolve with no playback.
 const INSTANT_SPEED := 4.0

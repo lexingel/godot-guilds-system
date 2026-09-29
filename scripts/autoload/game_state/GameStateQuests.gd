@@ -511,11 +511,8 @@ func rival_day() -> void:
 	if randf() < GameData.RIVAL_TAUNT_CHANCE:
 		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), tr(str(str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name))])
 	# This month's contest.
-	if contest_seals_start < 0:
-		contest_seals_start = rifts_sealed
-		rival_contest_seals = 0
-	if randf() < float(GameData.RIVAL_SEAL_CHANCE[clampi(campaign_act, 1, 3)]):
-		rival_contest_seals += 1
+	if contest_start.is_empty():
+		contest_start = {"ours": reputation, "theirs": rival_renown}
 	if day % GameData.CONTEST_DAYS == 0:
 		_end_contest()
 
@@ -526,13 +523,14 @@ func rival_leader() -> Dictionary:
 	return {"leader": d["leader"], "portrait": GameData.portrait_for_hero("", str(d["portrait"])), "crest": GameData.CREST_PATH[int(d["crest"]) % GameData.CREST_PATH.size()]}
 
 
-## This month's contest: {ours, theirs, days_left}.
+## This month's contest, Renown gained since it began: {ours, theirs, days_left}.
 func contest_status() -> Dictionary:
-	var ours := rifts_sealed - contest_seals_start if contest_seals_start >= 0 else 0
-	return {"ours": ours, "theirs": rival_contest_seals, "days_left": GameData.CONTEST_DAYS - (day % GameData.CONTEST_DAYS)}
+	var ours := reputation - int(contest_start.get("ours", reputation))
+	var theirs := rival_renown - int(contest_start.get("theirs", rival_renown))
+	return {"ours": ours, "theirs": theirs, "days_left": GameData.CONTEST_DAYS - (day % GameData.CONTEST_DAYS)}
 
 
-## The month is up: whoever sealed more rifts takes the prize (a tie, nobody).
+## The month is up: whoever gained more Renown takes the prize (a tie, nobody).
 func _end_contest() -> void:
 	var c := contest_status()
 	var ours: int = c["ours"]
@@ -540,16 +538,15 @@ func _end_contest() -> void:
 	if ours > theirs:
 		coins += int(GameData.CONTEST_PRIZE["coins"])
 		add_reputation(int(GameData.CONTEST_PRIZE["reputation"]))
-		_news(tr("You won the month's contest, %d rifts to %d: +%d Gold, +%d Renown.") % [ours, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]])
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest won"), "text": tr("%d rifts sealed to %s's %d. +%d Gold, +%d Renown.") % [ours, tr(str(rival_name)), theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]]})
+		_news(tr("You won the month's contest, %d Renown to %d: +%d Gold, +%d Renown.") % [ours, theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest won"), "text": tr("%d Renown gained to %s's %d. +%d Gold, +%d Renown.") % [ours, tr(str(rival_name)), theirs, GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]]})
 	elif theirs > ours:
 		rival_renown += int(GameData.CONTEST_PRIZE["reputation"])
-		_news(tr("%s won the month's contest, %d rifts to your %d.") % [tr(str(rival_name)), theirs, ours])
-		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest lost"), "text": tr("%s sealed %d rifts to your %d and takes the prize.") % [tr(str(rival_name)), theirs, ours]})
+		_news(tr("%s won the month's contest, %d Renown to your %d.") % [tr(str(rival_name)), theirs, ours])
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Contest lost"), "text": tr("%s gained %d Renown to your %d and takes the prize.") % [tr(str(rival_name)), theirs, ours]})
 	else:
-		_news(tr("The month's contest ends level at %d rifts each.") % ours)
-	contest_seals_start = rifts_sealed
-	rival_contest_seals = 0
+		_news(tr("The month's contest ends level at %d Renown each.") % ours)
+	contest_start = {"ours": reputation, "theirs": rival_renown}
 
 
 ## The Guild Standings, best Renown first: your guild, the rival, and three

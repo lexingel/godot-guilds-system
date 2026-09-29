@@ -537,16 +537,16 @@ const MILESTONES := [
 	{"id": "climber", "label": "Climber — reach floor 25 of the Tower", "type": "tower_best", "target": 25, "reward": {"crystals": 30}},
 	{"id": "summit", "label": "Summit — clear floor 100 of the Tower", "type": "tower_best", "target": 100, "reward": {"crystals": 120}},
 	{"id": "endless_five", "label": "Beyond the Edge — survive 10 minutes in the Endless Rift", "type": "endless_time", "target": 600, "reward": {"crystals": 50}},
-	{"id": "daily_first", "label": "Daily Duty — clear a Daily Rift", "type": "daily_clears", "target": 1, "reward": {"crystals": 15}},
-	{"id": "daily_streak", "label": "Dedicated — clear Daily Rifts 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 65}},
+	{"id": "daily_first", "label": "Daily Duty — seal a rift with the daily twist", "type": "daily_clears", "target": 1, "reward": {"crystals": 15}},
+	{"id": "daily_streak", "label": "Dedicated — seal the daily twist 7 days in a row", "type": "daily_streak", "target": 7, "reward": {"crystals": 65}},
 	{"id": "full_set", "label": "Build Complete — own a 4-piece boon set", "type": "boon_set4", "target": 1, "reward": {"crystals": 20}},
 	{"id": "legendary_guild", "label": "Legendary Guild — reach Legendary Guild tier", "type": "guild_tier_legendary", "target": 1, "reward": {"reputation": 25}},
 	{"id": "max_level", "label": "Paragon — raise a hero to Level 10", "type": "max_level", "target": 1, "reward": {"crystals": 25}},
 	{"id": "big_guild", "label": "Great Hall — have 10 heroes on the roster", "type": "roster_size", "target": 10, "reward": {"reputation": 10}},
 ]
 
-## The Daily Rift: one attempt per day; its rule and starting boon come from
-## the date, so the fight layout is the same for every guild that day.
+## The daily twist: once a day a ladder rift can carry a rule and a starting
+## boon from the date (the same for every guild), for bonus Essence and a streak.
 const DAILY_CLEAR_CRYSTALS := 35
 const DAILY_CLEAR_CRYSTALS_PER_ACT := 10
 const RUN_HISTORY_MAX := 30
@@ -609,10 +609,9 @@ const RIVAL_TAUNTS := [
 	"%s? I thought they'd disbanded.",
 ]
 const RIVAL_TAUNT_CHANCE := 0.2
-## A monthly contest: whoever seals more rifts in CONTEST_DAYS wins a prize.
+## A monthly contest: whoever gains more Renown in CONTEST_DAYS wins a prize.
 const CONTEST_DAYS := 28
 const CONTEST_PRIZE := {"coins": 200, "reputation": 8}
-const RIVAL_SEAL_CHANCE := {1: 0.25, 2: 0.4, 3: 0.55}   # per day, by campaign act
 ## Sealing a rift earns Renown: 1, +1 per three ladder ranks.
 const SEAL_RENOWN_BASE := 1
 

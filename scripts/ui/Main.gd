@@ -560,8 +560,7 @@ func _render_s_rank_celebration(data: Dictionary) -> Control:
 var CURRENCY_TIPS := {
 	GameData.CURRENCY_ICON_PATH["coins"]: "Gold — recruit and train heroes, buy from rift shops and supplies, reroll offers.",
 	GameData.CURRENCY_ICON_PATH["crystals"]: "Essence — earned by fighting and sealing rifts. Evolves heroes, upgrades relics and the guild, reforges gear, resets attributes.",
-	GameData.CURRENCY_ICON_PATH["reputation"]: "Renown — from rift bounties and quests. Every 20 guarantees an Epic at your next rift shop.",
-}
+	}
 
 
 var _shown_counts: Dictionary = {}   # currency icon path -> value the header last showed
@@ -823,10 +822,17 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	]:
 		var stat_row := HBoxContainer.new()
 		stat_row.add_child(_icon(entry[0], 18))
-		stat_row.add_child(_count_label(str(entry[0]), int(entry[1]), 16))
+		var count := _count_label(str(entry[0]), int(entry[1]), 16)
+		stat_row.add_child(count)
 		var tile := PanelContainer.new()
 		tile.theme_type_variation = &"StatTileEmber"
 		tile.tooltip_text = CURRENCY_TIPS.get(str(entry[0]), "")
+		if entry[0] == GameData.CURRENCY_ICON_PATH["reputation"]:
+			# Renown is the race with the rival: the tile shows where you stand.
+			var lead := GameState.reputation - GameState.rival_renown
+			count.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
+			tile.tooltip_text = tr("Renown %d — %s %s (%d). The leader at payday gets the better recruits; every 20 arms an Epic at your next rift shop. See Guild > Ledger.") % [GameState.reputation,
+				tr("you lead") if lead > 0 else (tr("you trail") if lead < 0 else tr("level with")), tr(str(GameState.rival_name)), GameState.rival_renown]
 		tile.mouse_filter = Control.MOUSE_FILTER_STOP
 		tile.add_child(stat_row)
 		row.add_child(tile)
@@ -1228,7 +1234,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_tower = false
-		_pending_daily = false
+		_pending_daily = not endless and _ladder_twist and GameState.daily_available()
 		screen = "party_assembly"
 		_pending_rift_rank = rank_id
 		_pending_diff_id = "endless" if endless else str(GameData.find_rift_rank(rank_id)["base"])
@@ -1376,7 +1382,6 @@ func _rift_mode_defs(go: Callable) -> Array:
 			"" if GameState.endless_unlocked() else tr("Opens when you complete Act II"), "Assemble party"],
 		["Tower of Trials", tr("100 fixed floors · best floor %d") % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else tr("Opens when you complete Act I"), "Enter the Tower"],
-		_daily_card_def(),
 	]
 
 
@@ -1503,6 +1508,8 @@ func _ladder_card(best: int, go: Callable) -> Control:
 	cv.add_child(go_row)
 	var foes := tr("Foes: base") if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [tr(str(rank["hp"])), tr(str(rank["dmg"]))]
 	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [tr(str(base["name"])) + " · ", tr(str(foes)), tr(str(rank["reward"])), tr(str((" · " + ", ".join(rules)) if not rules.is_empty() else ""))], 12, true))
+	if GameState.rifts_sealed >= 1:
+		cv.add_child(_daily_twist_row())
 	if next_locked != "":
 		cv.add_child(_label(next_locked, 12, true))
 	card.add_child(cv)
@@ -1653,27 +1660,24 @@ func _tower_strip(next_f: int) -> Control:
 	return flow
 
 
-## The Daily Rift's Rift Hall card (same shape as the other card_defs rows).
-func _daily_card_def() -> Array:
+## The ladder's daily twist: a box to take today's rule and starting boon
+## on the next ladder rift, or where the streak stands once it's done.
+func _daily_twist_row() -> Control:
 	var info := GameState.daily_info()
-	var sub := tr("Today: %s · starts with %s") % [tr(str(info["rule"]["name"])), tr(str(GameData.find_boon(str(info["boon"]))["name"]))]
-	if GameState.daily_streak > 0:
-		sub += tr(" · streak %d") % GameState.daily_streak
-	var lock := ""
-	if GameState.rifts_sealed < 1:
-		lock = "Opens after you seal your first rift"
-	elif not GameState.daily_available():
-		lock = tr("Done for today. A new Daily Rift opens tomorrow (%s).") % tr(str(sub.split(" · ")[0]))
-	return ["Daily Rift", sub, Combat.recommended_power(str(info["diff_id"])), func():
-		pending_party.clear()
-		_pending_daily = true
-		_pending_tower = false
-		_pending_finale = false
-		_pending_diff_id = str(info["diff_id"])
-		_pending_rift_rank = ""
-		_pending_endless = false
-		screen = "party_assembly"
-		render(), lock, "Assemble party"]
+	var boon: Dictionary = GameData.find_boon(str(info["boon"]))
+	var bonus := GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)
+	var streak := (tr(" · streak %d") % GameState.daily_streak) if GameState.daily_streak > 0 else ""
+	if not GameState.daily_available():
+		return _label(tr("Today's twist is done%s. A new one tomorrow.") % streak, 12, true)
+	var cb := CheckBox.new()
+	cb.text = tr("Today's twist: %s, start with %s · +%d Essence%s") % [tr(str(info["rule"]["name"])), tr(str(boon["name"])), bonus, streak]
+	cb.button_pressed = _ladder_twist
+	cb.add_theme_font_size_override("font_size", ui_size(12))
+	cb.add_theme_color_override("font_color", Palette.RANK_S)
+	cb.add_theme_color_override("font_pressed_color", Palette.RANK_S)
+	cb.tooltip_text = tr("Rule: %s\nStarting boon: %s (%s)\nOne try a day, any rank. Every guild faces the same twist today; seal it for +%d Essence and a longer streak.") % [tr(str(info["rule"]["desc"])), tr(str(boon["name"])), tr(str(boon["desc"])), bonus]
+	cb.toggled.connect(func(on: bool): _ladder_twist = on)
+	return cb
 
 
 # ---------------- Party Assembly ----------------
@@ -1688,8 +1692,8 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var tower_info := GameState.tower_floor_info(GameState.tower_next_floor()) if _pending_tower else {}
 	if _pending_daily:
 		var dinfo := GameState.daily_info()
-		v.add_child(_label(tr("Daily Rift — %s") % tr(str(dinfo["rule"]["name"])), 20))
-		v.add_child(_wrap_label(tr("One attempt today; every guild faces the same rift. Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence.") % [tr(str(dinfo["rule"]["desc"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["name"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["desc"])), GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)], 12, true))
+		v.add_child(_label(tr("Rank %s Rift — today's twist: %s") % [tr(str(_pending_rift_rank)), tr(str(dinfo["rule"]["name"]))], 20))
+		v.add_child(_wrap_label(tr("Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence. Up to 4 heroes.") % [tr(str(dinfo["rule"]["desc"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["name"])), tr(str(GameData.find_boon(str(dinfo["boon"]))["desc"])), GameData.DAILY_CLEAR_CRYSTALS + GameData.DAILY_CLEAR_CRYSTALS_PER_ACT * mini(GameState.campaign_act, 3)], 12, true))
 	elif _pending_tower:
 		v.add_child(_label(tr("Tower of Trials — Floor %d") % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]
@@ -1760,6 +1764,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 
 	if not GameState.champions.is_empty():
 		v.add_child(_hsep())
+		_coach(v, "overseer", "Your overseer", "A champion never fights in a rift run. They oversee it: their Boon lifts the whole party, and any hero can spend a turn on their Call. (In the Endless Rift champions are the party; in a defense you steer one.)")
 		v.add_child(_overseer_picker())
 	v.add_child(_hsep())
 	var choice_count := 0 if _pending_tower else GameState.relic_choice_count()
@@ -1952,7 +1957,7 @@ func _party_launch_bar() -> Control:
 		if _pending_tower:
 			GameState.start_tower(ids)
 		elif _pending_daily:
-			GameState.start_daily(ids)
+			GameState.start_daily(_pending_rift_rank, ids, chosen)
 		elif _pending_finale:
 			GameState.start_finale(ids, chosen)
 		elif _pending_rift_rank != "":

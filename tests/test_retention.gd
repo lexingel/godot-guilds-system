@@ -23,7 +23,7 @@ func run() -> void:
 	# Daily Rift: the same for everyone on a day, different day to day.
 	var today := GameState.daily_id()
 	var a := GameState.daily_info(today)
-	check(a["rule"] == GameState.daily_info(today)["rule"] and a["boon"] == GameState.daily_info(today)["boon"] and int(a["seed"]) == int(GameState.daily_info(today)["seed"]), "a day's Daily Rift is fixed")
+	check(a["rule"] == GameState.daily_info(today)["rule"] and a["boon"] == GameState.daily_info(today)["boon"] and int(a["seed"]) == int(GameState.daily_info(today)["seed"]), "a day's twist is fixed")
 	var differs := false
 	for d in range(1, 8):
 		var b := GameState.daily_info(today + d)
@@ -34,8 +34,8 @@ func run() -> void:
 	check(not GameState.daily_available(), "locked before the first seal")
 	GameState.rifts_sealed = 1
 	check(GameState.daily_available(), "open after a seal")
-	GameState.start_daily(ids)
-	check(int(GameState.run.get("daily", -1)) == today and GameState.run["boons"] == [a["boon"]], "Daily starts with its boon")
+	GameState.start_daily("E", ids, null)
+	check(int(GameState.run.get("daily", -1)) == today and GameState.run["boons"] == [a["boon"]] and str(GameState.run["rift_rank"]) == "E", "the twist rides a ladder rift, with its boon")
 	var layers1: Array = (GameState.run["layers"] as Array).duplicate(true)
 	check(not GameState.daily_available(), "one attempt a day")
 	var d := GameState._diff()
@@ -49,10 +49,14 @@ func run() -> void:
 	GameState.seal_rift()
 	check(GameState.daily_clears == 1 and GameState.daily_streak == 1 and GameState.crystals > cr0 and not (GameState.run["sealed"].get("daily", {}) as Dictionary).is_empty(), "sealing the Daily pays a bonus and starts a streak")
 	GameState.finish_run()
-	check(GameState.run_history.size() == 1 and GameState.run_history[0]["result"] == "Sealed" and GameState.run_history[0]["kind"] == "Daily Rift", "run history records the sealed Daily")
-	# Same layout again (a second guild on the same day).
+	check(GameState.run_history.size() == 1 and GameState.run_history[0]["result"] == "Sealed" and str(GameState.run_history[0]["kind"]).ends_with("daily twist"), "run history records the sealed twist")
+	# Once a day: a second try is a plain ladder rift.
+	GameState.start_daily("E", ids, null)
+	check(not GameState.run.has("daily") and str(GameState.run["rift_rank"]) == "E", "after today's try, the ladder runs plain")
+	GameState.retreat_now()
+	# Same layout again (a second guild on the same day, same rank).
 	GameState.daily_attempt_day = -1
-	GameState.start_daily(ids)
+	GameState.start_daily("E", ids, null)
 	check((GameState.run["layers"] as Array) == layers1, "the same rift layout for the same day")
 	GameState.run["daily"] = today + 1
 	GameState.daily_last_clear = today

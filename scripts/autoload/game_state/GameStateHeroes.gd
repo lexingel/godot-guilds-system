@@ -231,7 +231,7 @@ func unlock_champion(id: String) -> void:
 		overseer = id
 
 
-## Echoes to raise `id` one level, or -1 at the top.
+## Essence to raise `id` one level, or -1 at the top.
 func champion_level_cost(id: String) -> int:
 	var lv := champion_level(id)
 	return int(GameData.CHAMPION_LEVEL_COST[lv]) if lv >= 1 and lv < GameData.CHAMPION_LEVEL_MAX else -1
@@ -241,9 +241,9 @@ func level_champion(id: String) -> String:
 	var cost := champion_level_cost(id)
 	if cost < 0:
 		return tr("Already at the top level.")
-	if echoes < cost:
-		return tr("Not enough Echoes.")
-	echoes -= cost
+	if crystals < cost:
+		return tr("Not enough Essence.")
+	crystals -= cost
 	champions[id] = champion_level(id) + 1
 	save()
 	state_changed.emit()

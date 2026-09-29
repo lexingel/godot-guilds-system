@@ -164,9 +164,9 @@ func run() -> void:
 	# The rival: a leader with a face, and a monthly contest.
 	var rlead := GameState.rival_leader()
 	check(str(rlead["leader"]) != "" and ResourceLoader.exists(str(rlead["portrait"])) and ResourceLoader.exists(str(rlead["crest"])), "the rival has a leader, a portrait and a crest")
-	GameState.contest_seals_start = GameState.rifts_sealed
-	GameState.rival_contest_seals = 0
-	GameState.rifts_sealed += 3
+	GameState.contest_start = {"ours": GameState.reputation, "theirs": GameState.rival_renown}
+	GameState.add_reputation(5)
+	GameState.rival_renown += 2
 	var cq0 := GameState.coins
 	GameState._end_contest()
-	check(GameState.coins == cq0 + int(GameData.CONTEST_PRIZE["coins"]) and GameState.rival_contest_seals == 0 and GameState.contest_status()["ours"] == 0, "sealing more rifts in the month wins the prize, and a new month starts")
+	check(GameState.coins == cq0 + int(GameData.CONTEST_PRIZE["coins"]) and GameState.contest_status()["ours"] == 0 and GameState.contest_status()["theirs"] == 0, "gaining more Renown in the month wins the prize, and a new month starts")

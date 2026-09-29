@@ -20,7 +20,6 @@ func reset() -> void:
 	caps = {}
 	champions = {}
 	overseer = ""
-	echoes = 0
 	roll_champions()
 	daily_attempt_day = -1
 	daily_clears = 0
@@ -40,8 +39,7 @@ func reset() -> void:
 	breach_next_day = -1
 	damaged = {}
 	wage_raise = {}
-	contest_seals_start = -1
-	rival_contest_seals = 0
+	contest_start = {}
 	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
@@ -170,7 +168,7 @@ func load_save() -> bool:
 			"text": tr("Upgrades are fewer and much stronger now. %d Essence spent on the old tree were refunded.") % int(data["_mgmt_refund"])})
 	champions = data.get("champions", {})
 	overseer = str(data.get("overseer", ""))
-	echoes = int(data.get("echoes", 0))
+	crystals += int(data.get("echoes", 0))   # Echoes (older saves) are Essence now
 	if data.has("champion_roll"):
 		champion_roll.assign(data["champion_roll"])
 	else:
@@ -193,8 +191,7 @@ func load_save() -> bool:
 	breach_next_day = int(data.get("breach_next_day", -1))
 	damaged = (data.get("damaged", {}) as Dictionary).duplicate()
 	wage_raise = (data.get("wage_raise", {}) as Dictionary).duplicate()
-	contest_seals_start = int(data.get("contest_seals_start", -1))
-	rival_contest_seals = int(data.get("rival_contest_seals", 0))
+	contest_start = (data.get("contest_start", {}) as Dictionary).duplicate()
 	endless_milestones = (data.get("endless_milestones", []) as Array).map(func(x): return int(x))
 	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))
@@ -295,17 +292,20 @@ func start_finale(hero_ids: Array[String], starting_relic: Relic) -> void:
 	save()
 
 
-func start_daily(hero_ids: Array[String]) -> void:
+## A ladder rift with today's twist: the day's rule and starting boon, and
+## the same layout for every guild at that rank today.
+func start_daily(rank_id: String, hero_ids: Array[String], starting_relic: Relic) -> void:
 	if not daily_available():
+		start_ladder_rift(rank_id, hero_ids, starting_relic)
 		return
 	var info := daily_info()
-	start_run(str(info["diff_id"]), hero_ids, null)
+	start_ladder_rift(rank_id, hero_ids, starting_relic)
 	run["daily"] = int(info["day"])
 	run["training"] = false
-	run["seed"] = int(info["seed"])
+	run["seed"] = hash([int(info["seed"]), rank_id])
 	run["biome"] = str(info["biome"])
 	run["boons"] = [info["boon"]]
-	seed(int(info["seed"]))
+	seed(int(run["seed"]))
 	run["layers"] = Combat.build_layers(_diff())
 	randomize()
 	run["pos"] = 0

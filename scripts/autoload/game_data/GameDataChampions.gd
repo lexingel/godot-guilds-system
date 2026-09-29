@@ -17,7 +17,7 @@ const CHAMPION_STORY_ACTS := 3
 ## The nine lost champions surface at these times in an Endless run.
 const CHAMPION_DEPTHS := [120, 180, 240, 300, 420, 540, 660, 780, 900]
 const CHAMPION_LEVEL_MAX := 5
-const CHAMPION_LEVEL_COST := [0, 25, 50, 90, 140]   # Echoes to reach level i+1
+const CHAMPION_LEVEL_COST := [0, 40, 75, 135, 210]   # Essence to reach level i+1
 const CHAMPION_LEVEL_POWER := 0.25   # Boon and Call strength per level past 1
 const CHAMPION_LEVEL_STATS := 0.15   # HP and damage per level in the Endless Rift
 const CHAMPION_RANK := "B"

@@ -378,7 +378,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(bl)
 	if GameState.run.has("daily"):
 		var drule: Dictionary = GameState.daily_info(int(GameState.run["daily"]))["rule"]
-		var dl := _wrap_label(tr("Daily Rift · Rule · %s — %s") % [tr(str(drule["name"])), tr(str(drule["desc"]))], 12)
+		var dl := _wrap_label(tr("Today's twist · %s — %s") % [tr(str(drule["name"])), tr(str(drule["desc"]))], 12)
 		dl.add_theme_color_override("font_color", Palette.RANK_S)
 		v.add_child(dl)
 	if GameState.run.has("tower"):
@@ -428,7 +428,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		v.add_child(sealed_row)
 		var dbonus: Dictionary = sealed_dict.get("daily", {})
 		if not dbonus.is_empty():
-			var dl := _label(tr("Daily Rift sealed! +%d Essence · streak %d") % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
+			var dl := _label(tr("Daily twist sealed! +%d Essence · streak %d") % [int(dbonus["crystals"]), int(dbonus["streak"])], 14)
 			dl.add_theme_color_override("font_color", Palette.RANK_S)
 			v.add_child(dl)
 		if str(sealed_dict.get("flavor", "")) != "":

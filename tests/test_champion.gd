@@ -100,11 +100,12 @@ func run() -> void:
 	check(GameState.run_overseer() == first and not GameState.champion_call_ready(), "overseer and spent Call survive a reload")
 	GameState.run = {}
 
-	# Echoes level a champion: stronger Boon and Call, a second Call at 3.
-	check(GameState.level_champion(first) != "", "no Echoes, no level")
-	GameState.echoes = 1000
-	check(GameState.level_champion(first) == "" and GameState.champion_level(first) == 2, "Echoes buy a level")
-	check(GameState.echoes == 1000 - int(GameData.CHAMPION_LEVEL_COST[1]), "for %d Echoes" % GameData.CHAMPION_LEVEL_COST[1])
+	# Essence levels a champion: stronger Boon and Call, a second Call at 3.
+	GameState.crystals = 0
+	check(GameState.level_champion(first) != "", "no Essence, no level")
+	GameState.crystals = 1000
+	check(GameState.level_champion(first) == "" and GameState.champion_level(first) == 2, "Essence buys a level")
+	check(GameState.crystals == 1000 - int(GameData.CHAMPION_LEVEL_COST[1]), "for %d Essence" % GameData.CHAMPION_LEVEL_COST[1])
 	GameState.level_champion(first)
 	GameState.start_run("lesser", ids, null)
 	check(is_equal_approx(GameState.champion_boon(str(b["kind"])), float(b["value"]) * GameData.champion_power(3)), "the Boon grows with level")
@@ -200,10 +201,10 @@ func run() -> void:
 	pair._attacks(0.01)
 	check(float(pair.heroes[1]["ab_cd"]) < 99.0, "the partner fires with it")
 	var day0 := GameState.day
-	var e0 := GameState.echoes
+	var e0 := GameState.crystals
 	var sum := GameState.finish_survivors(r)
 	check(GameState.champion_unlocked(lost_id) and (sum["freed"] as Array).size() == 1, "a freed champion joins after the run")
-	check(GameState.echoes > e0 and int(sum["echoes"]) > 0, "the run pays Echoes")
+	check(GameState.crystals > e0 and int(sum["crystals"]) >= 10, "the run pays Essence (with the rescue's share)")
 	check(GameState.day == day0 + 1, "an Endless run costs the guild a day")
 
 	# Saves: the roll and the champions persist; an old save's hired

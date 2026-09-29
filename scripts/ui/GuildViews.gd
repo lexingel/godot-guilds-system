@@ -15,8 +15,8 @@ func _render_camp_screen(v: VBoxContainer) -> void:
 	_last_guild_tier_name = tier_name
 
 	if term_tab == "camp":
-		if GameState.heroes.is_empty():
-			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Hire your first hero under Roster > Recruits (key 1), then head to the Rift Hall (key 3) to seal a rift.")
+		if GameState.runs_started == 0:
+			_coach(v, "welcome", "Welcome to your guild", "Rifts are tearing open across the land. Your first three heroes have signed on (Roster, key 1). Head to the Rift Hall (key 3) to seal a rift.")
 		elif GameState.runs_started >= 1 and GameState.run.is_empty():
 			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
@@ -466,7 +466,7 @@ func _render_stats(v: VBoxContainer) -> void:
 		["Campaign", "complete" if GameState.campaign_done() else tr("Act %s") % tr(str(GameState._roman(GameState.campaign_act)))],
 		["Tower of Trials, best floor", str(GameState.tower_best)],
 		["Endless Rift, best time", "%d:%02d" % [GameState.best_endless_time / 60, GameState.best_endless_time % 60]],
-		["Daily Rifts cleared", tr("%d (streak %d)") % [GameState.daily_clears, GameState.daily_streak]],
+		["Daily twists sealed", tr("%d (streak %d)") % [GameState.daily_clears, GameState.daily_streak]],
 		["Items and relics crafted", str(GameState.crafts_performed)],
 		["Renown", str(GameState.reputation)],
 		["Heroes lost", str(GameState.heroes_lost_total)],
@@ -634,13 +634,13 @@ func _render_ledger(v: VBoxContainer) -> void:
 	rhead.add_child(rnames)
 	rv.add_child(rhead)
 	var lead := GameState.reputation - GameState.rival_renown
-	var rl := _label(tr("Renown — you %d · them %d (%s)") % [GameState.reputation, GameState.rival_renown, tr("you lead by %d") % lead if lead > 0 else (tr("they lead by %d") % -lead if lead < 0 else "level")], 14)
+	var rl := _label(tr("Renown — you %d · them %d (%s)") % [GameState.reputation, GameState.rival_renown, tr("you lead by %d") % lead if lead > 0 else (tr("they lead by %d") % -lead if lead < 0 else tr("level"))], 14)
 	rl.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
-	rl.tooltip_text = tr("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.")
+	rl.tooltip_text = tr("Renown is the one race with the rival. They gain it every day and sometimes take a posted contract before you do. At payday the leader gets the pick of next week's recruits (one more offer for you, or one fewer); every 20 you earn arms an Epic relic at your next Shop. Seal rifts and finish contracts to gain it; failed contracts and unpaid upkeep cost it.")
 	rl.mouse_filter = Control.MOUSE_FILTER_STOP
 	rv.add_child(rl)
 	var cs := GameState.contest_status()
-	var cl := _label(tr("This month's contest: rifts sealed — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.") % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), tr(str(_pl(int(cs["days_left"])))), GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
+	var cl := _label(tr("This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.") % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), tr(str(_pl(int(cs["days_left"])))), GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
 	cl.add_theme_color_override("font_color", Palette.good() if int(cs["ours"]) > int(cs["theirs"]) else (Palette.HAZARD if int(cs["ours"]) < int(cs["theirs"]) else Palette.TEXT))
 	rv.add_child(cl)
 	rival.add_child(rv)
@@ -918,13 +918,13 @@ func _champion_card(id: String) -> PanelContainer:
 	btns.add_child(oversee)
 	var cost := GameState.champion_level_cost(id)
 	if cost >= 0:
-		var up := _button(tr("Level up — %d Echoes") % cost, func(i=id):
+		var up := _button(tr("Level up — %d Essence") % cost, func(i=id):
 			var err := GameState.level_champion(i)
 			if err != "":
 				push_warning(err)
 			render()
 		)
-		up.disabled = GameState.echoes < cost
+		up.disabled = GameState.crystals < cost
 		up.tooltip_text = tr("Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift.") % [int(GameData.CHAMPION_LEVEL_POWER * 100), int(GameData.CHAMPION_LEVEL_STATS * 100), GameData.CHAMPION_EXTRA_CALL_LEVEL]
 		btns.add_child(up)
 	col.add_child(btns)
@@ -934,13 +934,13 @@ func _champion_card(id: String) -> PanelContainer:
 
 
 func _render_champions(v: VBoxContainer) -> void:
-	_coach(v, "champions", "Champions", "Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party, and the Echoes they earn there level them up.")
+	_coach(v, "champions", "Champions", "Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party. Spend Essence here to level them up.")
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 14)
 	head.add_child(_label("Champions", 20))
-	var ech := _label(tr("Echoes: %d") % GameState.echoes, 15)
+	var ech := _label(tr("Essence: %d") % GameState.crystals, 15)
 	ech.add_theme_color_override("font_color", Palette.CRYSTALS)
-	ech.tooltip_text = tr("Earned in the Endless Rift; spend them to level up champions.")
+	ech.tooltip_text = tr("Spend it to level up champions. The Endless Rift pays the most.")
 	ech.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(ech)
 	v.add_child(head)
@@ -1372,8 +1372,8 @@ func _render_compendium_crafting(v: VBoxContainer) -> void:
 func _render_compendium_systems(v: VBoxContainer) -> void:
 	var entries := [
 		["Guild Management", "Spend Essence on 9 upgrades across 4 branches, and Gold on the Defenses branch (Armory, Engineering, Palisade, Watchtower) for Riftbreaks. Every level adds its effect; some levels unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots, tier 3 towers…). Guild Tier tracks total levels. A building damaged in a Riftbreak works a level lower until you repair it with Gold."],
-		["Daily Rift", "Once you have sealed a rift, the Rift Hall offers one Daily Rift attempt per day. Its rule, starting boon, region and layout come from the date, so every guild faces the same rift that day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
-		["Endless Rift", "A real-time survival run in the region you pick, and only champions go in (up to 4). You steer the first (WASD, arrows, drag or stick); the rest follow and fight on their own, and each fires their signature move on a timer (the ring over their head fills as it recharges). Your equipped relics come along. Every five minutes the rift runs the same cycle: the horde, a swarm, an elite pack (its leader carries a chest), archers and casters, then a lull with a chest nearby, and a warden at the end of it. At 20:00 the Rift Warden comes: beat it to seal the rift. The rift's strength (shown before you enter) starts gentle and grows with every champion you free and every act you pass. A run pays Echoes and costs the guild a day."],
+		["Daily twist", "Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."],
+		["Endless Rift", "A real-time survival run in the region you pick, and only champions go in (up to 4). You steer the first (WASD, arrows, drag or stick); the rest follow and fight on their own, and each fires their signature move on a timer (the ring over their head fills as it recharges). Your equipped relics come along. Every five minutes the rift runs the same cycle: the horde, a swarm, an elite pack (its leader carries a chest), archers and casters, then a lull with a chest nearby, and a warden at the end of it. At 20:00 the Rift Warden comes: beat it to seal the rift. The rift's strength (shown before you enter) starts gentle and grows with every champion you free and every act you pass. A run pays Essence and a little Gold, and costs the guild a day."],
 		["Endless picks", "Collect shards to level up and pick 1 of 3; one card is always a signature pick while any are left. Party upgrades (damage, speed, health…), a champion's role skill, a rank in their signature (up to 3: sooner and harder), or one of their two signature mods once it has a rank (Aftershock, Kindled, Frostbite, Expose, Stagger, Leech, Shrapnel, Radiance, Bulwark, Fervor, Renewal, Smokescreen). From level 10, two champions whose signatures are rank 2 can fuse: they fire together, 25% harder, and carry each other's mods. Max an upgrade and the matching role's attack can evolve (Whirlwind, Thousand Cuts, Arrow Storm, Starfall, Sanctum). Chests give one of three rift relics for the run."],
 		["Endless ground", "The Vale has pillars that block foes, the Marches have pools that slow everyone, the Wastes have lava that burns foes and your lead. Braziers break when you walk into or hit them, dropping a heal, a magnet for shards or a bomb. Elites and wardens slam: step out of the red circle before it fills. Your first 5, 10 and 15 minutes and your first sealed rift each pay once, with two Endless relics and guild titles."],
 		["Hero voices", "A hero's born quirk sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."],
@@ -1398,10 +1398,10 @@ func _render_compendium_systems(v: VBoxContainer) -> void:
 		["Quirks", "Everything personal about a hero beyond class, skills and gear: at most one born quirk (it sets their voice), up to 2 scars from being knocked out (a wound with a small upside), and quirks earned by what they've done. Bad born quirks and scars can be treated for Gold at the Arcane Lab."],
 		["Riftbreaks", "From Act II a rift swells every so often: a rank, a place and a countdown in days (Rift Hall and the camp's status board). Seal a rift of that rank or higher before it runs out to close it, for a little Essence. Otherwise it breaks, and every rift run waits until your guild defends. Ranks below S break out in a region; from S up they break at your camp. Holding pays Gold and Essence. Losing costs a share of your Essence and of the Gold beyond the coming payday's wages, damages a building (two at the camp) and wounds the posted heroes who fell."],
 		["Defending", "Foes walk the roads toward the goal. Build towers on the round pads with supplies (you start with some and earn more for every kill); click a tower to upgrade or sell it. Ballistas shoot far, Fire Braziers splash and burn, Frost Totems slow, Ward Stones shield nearby heroes, Chapels mend them; research in the Defenses branch opens the last three and tier 3. Idle heroes stand at posts: warriors and rogues hold foes in place, rangers and mages shoot. Steer one champion by clicking where to go. Every foe that gets through costs integrity (an elite 3, a warden 10); at 0 the defense is lost. Call a wave early for bonus supplies."],
-		["Champions", "Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Echoes earned there level them up (to 5)."],
+		["Champions", "Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Essence levels them up (to 5)."],
 		["Attributes", "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."],
 		["Quests & Milestones", "The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."],
-		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, poaches posted contracts and taunts you in the news; at payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild sealed more rifts wins a prize."],
+		["Wages, morale and the rival", "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, poaches posted contracts and taunts you in the news; at payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize."],
 		["Hero requests", "Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no."],
 	]
 	for entry in entries:

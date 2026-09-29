@@ -1609,12 +1609,12 @@ func autopilot_dir() -> Vector2:
 
 ## What the guild earns for this run (time survived and kills).
 ## Gold is light here (the champions don't draw wages, and a run costs the
-## guild a day); Echoes level the champions.
+## guild a day); its Essence also levels the champions.
 func rewards() -> Dictionary:
 	var m := minutes()
 	var coins := (15.0 * m + 0.02 * kills + (100.0 if won else 0.0)) * (1.4 if relics.has("idol") else 1.0) + bonus_coins
-	return {"coins": int(round(coins)), "crystals": int(round(7.0 * m + 3.0 * elites_killed + 20.0 * bosses_killed + (50.0 if won else 0.0))),
-		"echoes": int(round(2.0 * m + 1.0 * elites_killed + 5.0 * bosses_killed + (20.0 if won else 0.0) + 10.0 * rescued.size())),
+	# (What used to be Echoes is folded into the Essence: + 2/min, 1/elite, 5/boss, 20 won, 10/rescue.)
+	return {"coins": int(round(coins)), "crystals": int(round(9.0 * m + 4.0 * elites_killed + 25.0 * bosses_killed + (70.0 if won else 0.0) + 10.0 * rescued.size())),
 		"loot": elites_killed / 4 + bosses_killed + (2 if won else 0)}
 
 

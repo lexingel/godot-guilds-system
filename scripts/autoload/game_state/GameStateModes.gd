@@ -1,5 +1,5 @@
 extends "res://scripts/autoload/game_state/GameStateQuests.gd"
-## GameState, part 5: rift difficulty and the modes built on runs — campaign, Daily Rift, Tower hooks, boons, records.
+## GameState, part 5: rift difficulty and the modes built on runs — campaign, the daily twist, Tower hooks, boons, records.
 
 
 ## Folds a ladder rank (GameData.RIFT_RANKS) into a copy of its base `diff`:
@@ -148,13 +148,13 @@ static func _roman(n: int) -> String:
 	return ["I", String(TranslationServer.translate("II")), String(TranslationServer.translate("III")), "IV"][clampi(n - 1, 0, 3)]
 
 
-# ---------------- Daily Rift ----------------
+# ---------------- The daily twist on the ladder ----------------
 
 static func daily_id() -> int:
 	return int(Time.get_unix_time_from_system() / 86400.0)
 
 
-## Today's Daily Rift: difficulty, rule, starting boon, region and seed.
+## Today's twist: rule, starting boon, region and seed.
 func daily_info(day: int = -1) -> Dictionary:
 	if day < 0:
 		day = daily_id()
@@ -164,7 +164,7 @@ func daily_info(day: int = -1) -> Dictionary:
 	var rule: Dictionary = rules[rng.randi() % rules.size()]
 	var boon: Dictionary = GameData.BOONS[rng.randi() % GameData.BOONS.size()]
 	var biomes := ["vale", "marsh", "ashen"]
-	return {"day": day, "diff_id": "greater" if greater_rift_unlocked() else "lesser", "rule": rule, "boon": str(boon["id"]),
+	return {"day": day, "rule": rule, "boon": str(boon["id"]),
 		"biome": biomes[rng.randi() % biomes.size()], "seed": rng.randi()}
 
 
@@ -182,7 +182,7 @@ func _apply_daily(diff: Dictionary) -> Dictionary:
 	return d
 
 
-## Sealing today's Daily Rift: the bonus, and the streak.
+## Sealing a rift with today's twist: the bonus, and the streak.
 func _complete_daily() -> Dictionary:
 	var day := int(run["daily"])
 	daily_clears += 1
@@ -196,10 +196,8 @@ func _complete_daily() -> Dictionary:
 # ---------------- Records: run history, memorial ----------------
 
 func _run_label() -> String:
-	if run.has("daily"):
-		return tr("Daily Rift")
 	if str(run.get("rift_rank", "")) != "":
-		return tr("Rank %s rift") % tr(str(run["rift_rank"]))
+		return tr("Rank %s rift") % tr(str(run["rift_rank"])) + (tr(" · daily twist") if run.has("daily") else "")
 	if int(run.get("finale", 0)) > 0:
 		return tr("Act %s finale") % tr(str(_roman(int(run["finale"]))))
 	return str(_diff().get("name", tr("Rift")))
