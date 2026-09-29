@@ -75,7 +75,7 @@ const SURV_RUNS := 12
 func _best_pick(o: Array) -> String:
 	if o.is_empty():
 		return ""
-	for pref in ["evolve:", "ability:", "might", "vigor", "twist:", "skill:", "haste", "area"]:
+	for pref in ["evolve:", "fuse:", "ability:", "mod:", "might", "vigor", "skill:", "haste", "area"]:
 		for id in o:
 			if str(id).begins_with(pref) and not (pref == "skill:" and str(id).split(":")[2] in ["heal", "sanctuary", "taunt", "smoke_bomb"]):
 				return str(id)
@@ -109,9 +109,9 @@ func _survivors(name: String, p: Array) -> void:
 ## enough to free them.
 func _champions() -> void:
 	# [label, champions, best hero level, champion level, relics (rare), threat]
-	# Threat follows GameState.endless_threat: 0.6 when it opens, +0.1 a rescue, +0.1 for Act III.
-	var cases := [["Opens · 2 Lv1", 2, 6, 1, 1, 0.6], ["1 freed · 3 Lv1", 3, 6, 1, 1, 0.7],
-		["3 freed · 4 Lv2", 4, 7, 2, 2, 0.9], ["Act III, 3 freed · 4 Lv3", 4, 8, 3, 2, 1.0], ["All freed · 4 Lv5", 4, 10, 5, 3, 1.0]]
+	# Threat follows GameState.endless_threat: 0.6 when it opens, +0.15 a rescue, +0.15 for Act III, at most 1.6.
+	var cases := [["Opens · 2 Lv1", 2, 6, 1, 1, 0.6], ["1 freed · 3 Lv1", 3, 6, 1, 1, 0.75],
+		["3 freed · 4 Lv2", 4, 7, 2, 2, 1.05], ["Act III, 3 freed · 4 Lv3", 4, 8, 3, 2, 1.2], ["All freed · 4 Lv5", 4, 10, 5, 3, 1.6]]
 	for c in cases:
 		var times: Array = []
 		var freed := 0

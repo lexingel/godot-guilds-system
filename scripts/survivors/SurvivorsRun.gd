@@ -102,11 +102,31 @@ const SKILL_MOVES := {
 const ABILITY_RANK_MAX := 3
 const ABILITY_RANK_CD := 0.8      # cooldown multiplier per rank
 const ABILITY_RANK_POWER := 0.3   # extra power per rank
-const TWIST_TEXT := {
-	"guardian": "also heals the party 8%", "sustain": "also heals this hero 25%",
-	"evasion": "and the party dodges more for 2s", "attrition": "and slows foes around the hero",
-	"opener": "fires twice", "executioner": "hits 50% harder",
+## A champion's signature mods (their two are listed in GameData.CHAMPIONS
+## "mods"): learned once the signature has a rank, each changes every cast.
+## Foes "touched" are the ones the cast hit, or those near the champion when
+## it hits nothing (a heal, a war cry).
+const SIG_MODS := {
+	"aftershock": {"name": "Aftershock", "desc": "fires again a moment later at half strength", "icon": "res://assets/skills/gem_red.png"},
+	"ignite": {"name": "Kindled", "desc": "sets the foes it touches alight", "icon": "res://assets/skills/shield_orange.png"},
+	"frostbite": {"name": "Frostbite", "desc": "slows the foes it touches for 4s", "icon": "res://assets/skills/gem_blue_a.png"},
+	"expose": {"name": "Expose", "desc": "marks the foes it touches: they take 30% more damage for 6s", "icon": "res://assets/skills/eye_gem.png"},
+	"stagger": {"name": "Stagger", "desc": "stuns the foes it touches for 1s", "icon": "res://assets/skills/shield_blue.png"},
+	"leech": {"name": "Leech", "desc": "heals the party 2% for every foe it touches (up to 12%)", "icon": "res://assets/skills/potion_red.png"},
+	"shrapnel": {"name": "Shrapnel", "desc": "bursts into 8 piercing shards", "icon": "res://assets/skills/sword_dual.png"},
+	"radiant": {"name": "Radiance", "desc": "light bursts around every champion, burning nearby foes", "icon": "res://assets/skills/heart.png"},
+	"bulwark": {"name": "Bulwark", "desc": "the party takes half damage for 3s", "icon": "res://assets/skills/armor_chest.png"},
+	"fervor": {"name": "Fervor", "desc": "the party hits 25% harder for 4s", "icon": "res://assets/skills/sword_a.png"},
+	"renewal": {"name": "Renewal", "desc": "the party regains 3% HP a second for 5s", "icon": "res://assets/skills/potion_red.png"},
+	"smokescreen": {"name": "Smokescreen", "desc": "the party dodges far more for 3s", "icon": "res://assets/skills/boots.png"},
 }
+## Fusion: from this run level, two champions whose signatures have rank 2
+## can fuse (once each): their signatures fire together, harder, and each
+## carries the other's mods.
+const FUSION_LEVEL := 10
+const FUSION_RANK := 2
+const FUSION_POWER := 0.25
+const AFTERSHOCK_DELAY := 0.8
 const RALLY_MULT := 1.25
 const RALLY_TIME := 4.0
 const SLOW_TIME := 4.0
@@ -197,13 +217,16 @@ var _aegis_t := 20.0
 var dodge := 0.0
 var mend := 0.0
 var rally_t := 0.0
-var dodge_t := 0.0   # a Smoke Bomb or an evasion twist: extra dodge while > 0
+var dodge_t := 0.0   # a Smoke Bomb, an evasion signature or Smokescreen: extra dodge while > 0
 var wall_t := 0.0    # a shield wall: the party takes half damage while > 0
 var regen_t := 0.0   # lifesteal: the party regains 3% HP a second while > 0
 var traps: Array = []   # {pos, r, dmg, life}: the first foe to step in springs it
 var lost: Array = []       # [[champion id, depth seconds]]: champions lost in this rift (set by the caller)
 var beacon: Dictionary = {}   # {id, pos, held}: a lost champion's light; stand in it to free them
 var rescued: Array = []    # champion ids freed this run
+var _after: Array = []     # {t, hero}: aftershocks waiting to fire
+var _casting := false      # a signature is resolving: _damage notes who it touched
+var _touched := {}         # foe id -> foe, touched by the signature resolving now
 var threat := 1.0          # foe strength scale (GameState.endless_threat): gentle when the rift first opens
 
 
@@ -228,7 +251,8 @@ func _init(party: Array, biome_id: String = "vale", seed_val: int = 0) -> void:
 			"alive": true, "lead": i == 0, "cd": rng.randf() * 0.5, "ab_cd": ABILITY_CD * (0.5 + 0.2 * i), "facing": 1.0,
 			"has_ability": not ab.is_empty(), "ability_name": str(ab.get("name", "")), "style": str(ABILITY_STYLE.get(str(ab.get("effect", "")), "")),
 			"bonus_dmg": float(Combat.relic_dmg_bonus()) / n, "haste": 1.0 + 0.5 * maxf(0.0, Combat.hero_skill_total(h, "speed_pct")),
-			"skills": {}, "ab_rank": 0, "arch": Combat.hero_main_arch(h), "taunt_t": 0.0,
+			"skills": {}, "ab_rank": 0, "taunt_t": 0.0,
+			"champ": h.id.trim_prefix("champ:") if h.is_champion else "", "mods": [], "fused": -1,
 			"ab_icon": str(GameData.ABILITY_EFFECT_ICON.get(str(ab.get("effect", "")), "res://assets/skills/sword_a.png"))})
 
 
@@ -572,6 +596,15 @@ func _hero_dmg(h: Dictionary, mult: float) -> float:
 func _attacks(dt: float) -> void:
 	var cd_mult := pow(0.9, _stat("haste"))
 	var area := 1.0 + 0.2 * _stat("area")
+	for a in _after.duplicate():
+		a["t"] = float(a["t"]) - dt
+		if float(a["t"]) <= 0.0:
+			_after.erase(a)
+			var ah: Dictionary = a["hero"]
+			if ah["alive"]:
+				ah["pw_scale"] = 0.5
+				_cast(ah, WEAPONS.get(ah["role"], WEAPONS["warrior"]), area)
+				ah["pw_scale"] = 1.0
 	for h in heroes:
 		if not h["alive"]:
 			continue
@@ -587,10 +620,12 @@ func _attacks(dt: float) -> void:
 			if h["ab_cd"] <= 0.0 and _nearest_foe(h["pos"], 400.0) >= 0:
 				h["ab_cd"] = ability_cd_max(h)
 				_ability(h, w, area)
-				if relics.has("echo"):
-					_ability(h, w, area)
-				if h.get("twist", false):
-					_twist(h, w, area)
+				# A fused partner answers at once (and its own timer restarts).
+				var pi := int(h.get("fused", -1))
+				if pi >= 0 and heroes[pi]["alive"]:
+					var ph: Dictionary = heroes[pi]
+					ph["ab_cd"] = ability_cd_max(ph)
+					_ability(ph, WEAPONS.get(ph["role"], WEAPONS["warrior"]), area)
 		for tk in ["taunt_t", "riposte_t", "undying_t"]:
 			h[tk] = maxf(0.0, float(h.get(tk, 0.0)) - dt)
 		var skills: Dictionary = h["skills"]
@@ -644,29 +679,9 @@ func _fire(h: Dictionary, w: Dictionary, area: float, power: float) -> bool:
 	return true
 
 
-## A hero's archetype twist (TWIST_TEXT), picked at level-up, rides on every Ability.
-func _twist(h: Dictionary, w: Dictionary, area: float) -> void:
-	match str(h.get("arch", "")):
-		"guardian":
-			_heal_all(0.08)
-		"sustain":
-			h["hp"] = minf(h["max_hp"], h["hp"] + h["max_hp"] * 0.25)
-		"evasion":
-			dodge_t = maxf(dodge_t, 2.0)
-		"attrition":
-			for f in foes:
-				if f["pos"].distance_squared_to(h["pos"]) <= 260.0 * 260.0:
-					f["slow_t"] = SLOW_TIME
-		"opener":
-			_ability(h, w, area)
-
-
-## The power an Ability hits with: its ranks, and an executioner's rank-3 twist.
+## The power a signature hits with: its ranks, a fusion, and an aftershock's half.
 func _ability_power(h: Dictionary) -> float:
-	var p := 1.0 + ABILITY_RANK_POWER * int(h.get("ab_rank", 0))
-	if h.get("twist", false) and str(h.get("arch", "")) == "executioner":
-		p *= 1.5
-	return p
+	return (1.0 + ABILITY_RANK_POWER * int(h.get("ab_rank", 0)) + (FUSION_POWER if int(h.get("fused", -1)) >= 0 else 0.0)) * float(h.get("pw_scale", 1.0))
 
 
 ## A learned role skill's auto-move; false if it had nothing to hit.
@@ -728,7 +743,77 @@ func _skill_move(h: Dictionary, id: String, area: float) -> bool:
 	return false
 
 
+## A signature fires: the move itself (_cast), then every mod it carries.
 func _ability(h: Dictionary, w: Dictionary, area: float) -> void:
+	_touched = {}
+	_casting = true
+	_cast(h, w, area)
+	if relics.has("echo"):
+		_cast(h, w, area)
+	_casting = false
+	_apply_mods(h, area)
+
+
+## The mods a signature carries: its own, and a fused partner's.
+func sig_mods(h: Dictionary) -> Array:
+	var out: Array = (h["mods"] as Array).duplicate()
+	var pi := int(h.get("fused", -1))
+	if pi >= 0:
+		for m in heroes[pi]["mods"]:
+			if not out.has(m):
+				out.append(m)
+	return out
+
+
+func _apply_mods(h: Dictionary, area: float) -> void:
+	var mods := sig_mods(h)
+	if mods.is_empty():
+		return
+	var pw := _ability_power(h)
+	var hit: Array = _touched.values().filter(func(f): return float(f["hp"]) > 0.0)
+	if hit.is_empty():
+		var r := 220.0 * area
+		hit = foes.filter(func(f): return f["pos"].distance_squared_to(h["pos"]) <= r * r)
+	for m in mods:
+		match str(m):
+			"aftershock":
+				_after.append({"t": AFTERSHOCK_DELAY, "hero": h})
+			"ignite":
+				for f in hit:
+					f["burn_t"] = 4.0
+					f["burn_dps"] = maxf(float(f.get("burn_dps", 0.0)), _hero_dmg(h, 0.6 * pw))
+			"frostbite":
+				for f in hit:
+					f["slow_t"] = SLOW_TIME
+			"expose":
+				for f in hit:
+					f["marked_t"] = 6.0
+			"stagger":
+				for f in hit:
+					f["stun_t"] = maxf(float(f.get("stun_t", 0.0)), 1.0)
+			"leech":
+				if not hit.is_empty():
+					_heal_all(minf(0.12, 0.02 * hit.size()))
+			"shrapnel":
+				for k in 8:
+					shots.append({"pos": h["pos"], "vel": Vector2.RIGHT.rotated(TAU * k / 8.0 + 0.2) * 560.0, "dmg": _hero_dmg(h, 1.2 * pw), "r": 10.0,
+						"life": 0.9, "pierce": 2, "burst": 0.0, "hit": [], "kind": "shot"})
+			"radiant":
+				for o in heroes:
+					if o["alive"]:
+						_hit_area(o["pos"], 110.0 * area, _hero_dmg(h, 1.5 * pw))
+						events.append({"type": "sanctuary", "pos": o["pos"], "r": 110.0 * area})
+			"bulwark":
+				wall_t = maxf(wall_t, 3.0)
+			"fervor":
+				rally_t = maxf(rally_t, RALLY_TIME)
+			"renewal":
+				regen_t = maxf(regen_t, 5.0)
+			"smokescreen":
+				dodge_t = maxf(dodge_t, 3.0)
+
+
+func _cast(h: Dictionary, w: Dictionary, area: float) -> void:
 	events.append({"type": "ability", "pos": h["pos"], "role": h["role"], "name": str(h.get("ability_name", "")), "hero": h["hero"].id})
 	var pw := _ability_power(h)
 	match str(h.get("style", "")):
@@ -935,6 +1020,8 @@ func _hit_area(center: Vector2, r: float, dmg: float) -> void:
 
 func _damage(i: int, dmg: float) -> void:
 	var f: Dictionary = foes[i]
+	if _casting:
+		_touched[f["id"]] = f
 	f["hp"] -= dmg * (1.3 if float(f.get("marked_t", 0.0)) > 0.0 else 1.0)
 	f["flash"] = 0.12
 	if f["tier"] == "boss" and not f["phased"] and f["hp"] <= f["max_hp"] * 0.5 and f["hp"] > 0.0:
@@ -1275,21 +1362,31 @@ func _heal_all(frac: float) -> void:
 
 # ---------------- Level-ups ----------------
 
-## Three upgrade ids that aren't maxed yet.
+## Three upgrade ids that aren't maxed yet: a ready evolution or fusion
+## first, then always one signature pick (rank or mod) while any are left.
 func offer() -> Array:
 	var pool: Array = UPGRADES.keys().filter(func(id): return _stat(id) < int(UPGRADES[id]["max"]))
 	var evos: Array = evolutions_ready()
+	var sig: Array = []   # signature ranks and mods: one is always on offer while any are left
 	for i in heroes.size():
 		var h: Dictionary = heroes[i]
 		for sk in GameData.ROLE_SKILLS.get(h["hero"].cls_id, []):
 			if not (h["skills"] as Dictionary).has(sk["id"]) and SKILL_MOVES.has(sk["id"]):
 				pool.append("skill:%d:%s" % [i, sk["id"]])
 		if h["has_ability"] and int(h["ab_rank"]) < ABILITY_RANK_MAX:
-			pool.append("ability:%d" % i)
-		if h["has_ability"] and int(h["ab_rank"]) >= 1 and not h.get("twist", false) and TWIST_TEXT.has(str(h["arch"])):
-			pool.append("twist:%d" % i)
-	# A ready evolution is always offered, first.
+			sig.append("ability:%d" % i)
+		if h["has_ability"] and int(h["ab_rank"]) >= 1 and h["champ"] != "":
+			for m in GameData.champion_def(str(h["champ"])).get("mods", []):
+				if not (h["mods"] as Array).has(m):
+					sig.append("mod:%d:%s" % [i, m])
+	# A ready evolution is always offered first, then a ready fusion.
 	var out: Array = evos.slice(0, 1).map(func(r): return "evolve:" + str(r))
+	var fuses := fusions_ready()
+	if not fuses.is_empty():
+		out.append(fuses[rng.randi() % fuses.size()])
+	if out.size() < 3 and not sig.is_empty():
+		out.append(sig.pop_at(rng.randi() % sig.size()))
+	pool.append_array(sig)
 	while out.size() < 3 and not pool.is_empty():
 		out.append(pool.pop_at(rng.randi() % pool.size()))
 	return out
@@ -1308,8 +1405,15 @@ func pick(id: String) -> void:
 	if parts[0] == "evolve":
 		evolved[parts[1]] = true
 		return
-	if parts[0] == "twist":
-		heroes[int(parts[1])]["twist"] = true
+	if parts[0] == "mod":
+		(heroes[int(parts[1])]["mods"] as Array).append(parts[2])
+		return
+	if parts[0] == "fuse":
+		var a := int(parts[1])
+		var b := int(parts[2])
+		heroes[a]["fused"] = b
+		heroes[b]["fused"] = a
+		events.append({"type": "fusion", "a": heroes[a]["ability_name"], "b": heroes[b]["ability_name"], "pos": heroes[a]["pos"]})
 		return
 	if parts[0] == "ability":
 		heroes[int(parts[1])]["ab_rank"] = int(heroes[int(parts[1])]["ab_rank"]) + 1
@@ -1340,6 +1444,11 @@ func tray() -> Array:
 		for sid in h["skills"]:
 			var sk := GameData.find_role_skill(str(sid))
 			out.append({"icon": sk["icon"], "name": "%s: %s" % [tr(str(h["hero"].name.split(" the ")[0])), tr(str(sk["name"]))], "count": 0, "special": false})
+		for m in h["mods"]:
+			out.append({"icon": SIG_MODS[m]["icon"], "name": "%s: %s — %s" % [tr(str(h["ability_name"])), tr(str(SIG_MODS[m]["name"])), tr(str(SIG_MODS[m]["desc"]))], "count": 0, "special": false})
+	for i in heroes.size():
+		if int(heroes[i]["fused"]) > i:
+			out.append({"icon": heroes[i]["ab_icon"], "name": tr("Fused: %s + %s") % [tr(str(heroes[i]["ability_name"])), tr(str(heroes[int(heroes[i]["fused"])]["ability_name"]))], "count": 0, "special": true})
 	return out
 
 
@@ -1349,6 +1458,21 @@ func evolutions_ready() -> Array:
 	for role in EVOLUTIONS:
 		if not evolved.has(role) and _stat(EVOLUTIONS[role]["needs"]) >= int(UPGRADES[EVOLUTIONS[role]["needs"]]["max"]) and heroes.any(func(h): return h["role"] == role):
 			out.append(role)
+	return out
+
+
+## "fuse:a:b" for every pair of unfused champions ready to fuse (FUSION_LEVEL,
+## both signatures at FUSION_RANK).
+func fusions_ready() -> Array:
+	var out: Array = []
+	if level < FUSION_LEVEL:
+		return out
+	for a in heroes.size():
+		for b in range(a + 1, heroes.size()):
+			var ha: Dictionary = heroes[a]
+			var hb: Dictionary = heroes[b]
+			if ha["has_ability"] and hb["has_ability"] and int(ha["fused"]) < 0 and int(hb["fused"]) < 0 and int(ha["ab_rank"]) >= FUSION_RANK and int(hb["ab_rank"]) >= FUSION_RANK:
+				out.append("fuse:%d:%d" % [a, b])
 	return out
 
 
@@ -1378,10 +1502,17 @@ func upgrade_info(id: String) -> Dictionary:
 	if parts[0] == "evolve":
 		var ev: Dictionary = EVOLUTIONS[parts[1]]
 		return {"name": tr("Evolve: ") + tr(str(ev["name"])), "desc": ev["desc"], "icon": ev["icon"], "have": 0, "max": 1, "special": true}
-	if parts[0] == "twist":
-		var ht: Dictionary = heroes[int(parts[1])]
-		return {"name": tr("%s: %s twist") % [tr(str(ht["hero"].name.split(" the ")[0])), tr(str(GameData.ARCHETYPES[ht["arch"]]))], "desc": "%s %s" % [tr(str(ht["ability_name"])), tr(str(TWIST_TEXT[ht["arch"]]))],
-			"icon": ht["ab_icon"], "have": 0, "max": 1}
+	if parts[0] == "mod":
+		var hm: Dictionary = heroes[int(parts[1])]
+		var md: Dictionary = SIG_MODS[parts[2]]
+		return {"name": "%s: %s" % [tr(str(hm["ability_name"])), tr(str(md["name"]))], "desc": "%s — %s" % [tr(str(hm["hero"].name.split(" the ")[0])), tr(str(md["desc"]))],
+			"icon": md["icon"], "have": 0, "max": 1}
+	if parts[0] == "fuse":
+		var fa: Dictionary = heroes[int(parts[1])]
+		var fb: Dictionary = heroes[int(parts[2])]
+		return {"name": tr("Fuse: %s + %s") % [tr(str(fa["ability_name"])), tr(str(fb["ability_name"]))],
+			"desc": tr("%s and %s fire together, 25%% harder, and each carries the other's mods") % [tr(str(fa["hero"].name.split(" the ")[0])), tr(str(fb["hero"].name.split(" the ")[0]))],
+			"icon": fa["ab_icon"], "have": 0, "max": 1, "special": true}
 	if parts[0] == "relic":
 		var rl: Dictionary = RIFT_RELICS[parts[1]]
 		return {"name": rl["name"], "desc": rl["desc"], "icon": rl["icon"], "have": 0, "max": 1, "special": true}
@@ -1407,8 +1538,10 @@ func owned_lines() -> Array:
 			out.append("%s: %s" % [tr(str(who)), tr(str(GameData.find_role_skill(str(sid))["name"]))])
 		if int(h["ab_rank"]) > 0:
 			out.append(tr("%s: %s rank %d") % [tr(str(who)), tr(str(h["ability_name"])), int(h["ab_rank"])])
-		if h.get("twist", false):
-			out.append(tr("%s: %s twist") % [tr(str(who)), tr(str(GameData.ARCHETYPES[h["arch"]]))])
+		for m in h["mods"]:
+			out.append("%s: %s" % [tr(str(h["ability_name"])), tr(str(SIG_MODS[m]["name"]))])
+		if int(h["fused"]) > int(heroes.find(h)):
+			out.append(tr("Fused: %s + %s") % [tr(str(h["ability_name"])), tr(str(heroes[int(h["fused"])]["ability_name"]))])
 	for role in evolved:
 		out.append(str(EVOLUTIONS[role]["name"]))
 	for id in relics:

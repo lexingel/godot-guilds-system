@@ -386,6 +386,9 @@ func _play_events() -> void:
 				Fx.burst(_fx, "holy", e["pos"] + Vector2(0, -40), 200.0, Color(0.8, 0.95, 1.0), 16.0)
 				_banner(tr("%s is free!") % GameData.champion_full_name(str(e["id"])), Palette.RANK_S, tr("They join your champions when the run ends"))
 				AudioManager.cue("victory", tr("[A champion is freed]"), Palette.RANK_S)
+			"fusion":
+				Fx.burst(_fx, "holy", e["pos"] + Vector2(0, -40), 160.0, Palette.RANK_S, 14.0)
+				_banner(tr("Fusion: %s + %s") % [tr(str(e["a"])), tr(str(e["b"]))], Palette.RANK_S, tr("They fire together now, and share their mods"))
 			"heal":
 				var hn: Node2D = _hero_nodes.get(e["hero"])
 				if hn:
@@ -812,6 +815,8 @@ func _pick_cards(v: VBoxContainer, offer: Array, choose: Callable, empty_text: S
 		var have := int(u["have"])
 		nm.text = "%d. %s%s" % [i + 1, tr(str(u["name"])), tr(str("  (%d/%d)" % [have + 1, u["max"]] if have > 0 else ""))]
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nm.custom_minimum_size.x = 180
 		nm.add_theme_color_override("font_color", Palette.RANK_S if u.get("special", false) else Palette.EMBER_BRIGHT)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(nm)
@@ -823,6 +828,8 @@ func _pick_cards(v: VBoxContainer, offer: Array, choose: Callable, empty_text: S
 		d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_child(d)
 		b.add_child(col)
+		# Long fusion names wrap: grow the card once its labels have laid out.
+		(func(): if is_instance_valid(b): b.custom_minimum_size.y = maxf(150.0, col.get_combined_minimum_size().y + 20.0)).call_deferred()
 		b.pressed.connect(func():
 			choose.call(id)
 			_close_panel())

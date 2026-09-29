@@ -203,7 +203,7 @@ func story_champion(act: int) -> String:
 func endless_threat() -> float:
 	var freed := lost_champions().filter(func(e): return champion_unlocked(str(e[0]))).size()
 	var acts_after := maxi(0, campaign_act - 3)   # the rift opens once Act II is done
-	return minf(1.0, GameData.THREAT_BASE + GameData.THREAT_PER_RESCUE * freed + GameData.THREAT_PER_ACT * acts_after)
+	return minf(GameData.THREAT_MAX, GameData.THREAT_BASE + GameData.THREAT_PER_RESCUE * freed + GameData.THREAT_PER_ACT * acts_after)
 
 
 ## [[id, depth seconds], ...]: this guild's champions lost in the Endless Rift.

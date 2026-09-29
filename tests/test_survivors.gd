@@ -42,7 +42,7 @@ func run() -> void:
 	check(r.time < 300.0 or saw_boss, "a warden arrives at 5:00")
 	check(r.foes.size() <= SurvivorsRun.MAX_FOES + 12, "foe count stays capped")
 	check(r.gems.size() <= SurvivorsRun.MAX_GEMS, "shards merge past the cap")
-	check(not r.upgrades.is_empty(), "picks are recorded")
+	check(not r.upgrades.is_empty() or r.heroes.any(func(h): return int(h["ab_rank"]) > 0 or not (h["skills"] as Dictionary).is_empty()), "picks are recorded")
 	print("    survived %.0fs, %d kills, level %d" % [r.time, r.kills, r.level])
 
 	# A lone weak hero standing still falls, and the run ends.
@@ -223,23 +223,6 @@ func run() -> void:
 	r8.pending_levels = 1
 	r8.pick("evolve:" + role)
 	check(r8.evolved.has(role) and not r8.offer().has("evolve:" + role), "an evolution is taken once")
-
-	# Archetype twists are their own pick, once the Ability has a rank.
-	for i in r8.heroes.size():
-		var hx: Dictionary = r8.heroes[i]
-		if hx["has_ability"] and SurvivorsRun.TWIST_TEXT.has(str(hx["arch"])):
-			var seen := false
-			for k in 80:
-				seen = seen or r8.offer().has("twist:%d" % i)
-			check(not seen, "no twist before the Ability has a rank")
-			hx["ab_rank"] = 1
-			for k in 80:
-				seen = seen or r8.offer().has("twist:%d" % i)
-			check(seen, "the twist is offered once the Ability has a rank")
-			r8.pending_levels = 1
-			r8.pick("twist:%d" % i)
-			check(hx.get("twist", false), "the twist is learned")
-			break
 
 	# The Rift Warden: beat it and the run is won, with a bonus.
 	var r9 := SurvivorsRun.new(party, "ashen", 61)

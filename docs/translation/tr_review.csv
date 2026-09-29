@@ -252,166 +252,167 @@ Opens when you free your first champion (the end of Act I),İlk şampiyonunu kur
 A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions.,Bir şampiyon yarık seferlerini gözetir: ekibe Lütfu ve Çağrısı. Kadro > Şampiyonlar'dan birini seç ve seviyesini yükselt.,scripts/autoload/game_data/GameDataArt.gd:71
 English,,scripts/autoload/game_data/GameDataArt.gd:110
 Türkçe (beta),,scripts/autoload/game_data/GameDataArt.gd:110
-"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:113
-Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:114
-"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:115
-"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:116
-"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:117
-"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:118
-"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:119
-"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:120
-"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:121
-"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:122
-Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:123
-"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:124
-"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:125
-"Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones.","Dene: I. Perde'nin sonunda ilk şampiyonunu kurtar, gözetmen yap ve kayıpları bulmak için onu Sonsuz Yarık'a götür.",scripts/autoload/game_data/GameDataArt.gd:127
-1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:193
-Brannoch,,scripts/autoload/game_data/GameDataChampions.gd:36
+"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:113
+"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:114
+Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:115
+"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:116
+"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:117
+"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:118
+"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:119
+"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:120
+"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:121
+"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:122
+"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:123
+Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:124
+"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:125
+"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:126
+"Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones.","Dene: I. Perde'nin sonunda ilk şampiyonunu kurtar, gözetmen yap ve kayıpları bulmak için onu Sonsuz Yarık'a götür.",scripts/autoload/game_data/GameDataArt.gd:128
+1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:194
+Brannoch,,scripts/autoload/game_data/GameDataChampions.gd:37
 the Unbroken,Kırılmaz,locale/extra_msgids.txt
-The last knight of the old guilds held a rift shut with his own body for eleven years. The chains are still on his wrists; he says they help him remember why.,"Eski loncaların son şövalyesi, on bir yıl boyunca bir yarığı kendi bedeniyle kapalı tuttu. Zincirler hâlâ bileklerinde; nedenini hatırlamasına yardım ettiklerini söylüyor.",scripts/autoload/game_data/GameDataChampions.gd:37
-Unbroken Line,Kırılmaz Hat,scripts/autoload/game_data/GameDataChampions.gd:38
-Last Stand,Son Direniş,scripts/autoload/game_data/GameDataChampions.gd:39
-shields every ally for 35% of their max HP,her müttefike en yüksek canının %35'i kadar kalkan verir,scripts/autoload/game_data/GameDataChampions.gd:39
-Grell,,scripts/autoload/game_data/GameDataChampions.gd:40
+The last knight of the old guilds held a rift shut with his own body for eleven years. The chains are still on his wrists; he says they help him remember why.,"Eski loncaların son şövalyesi, on bir yıl boyunca bir yarığı kendi bedeniyle kapalı tuttu. Zincirler hâlâ bileklerinde; nedenini hatırlamasına yardım ettiklerini söylüyor.",scripts/autoload/game_data/GameDataChampions.gd:38
+Unbroken Line,Kırılmaz Hat,scripts/autoload/game_data/GameDataChampions.gd:39
+Last Stand,Son Direniş,scripts/autoload/game_data/GameDataChampions.gd:40
+shields every ally for 35% of their max HP,her müttefike en yüksek canının %35'i kadar kalkan verir,scripts/autoload/game_data/GameDataChampions.gd:40
+Grell,,scripts/autoload/game_data/GameDataChampions.gd:42
 Ironjaw,Demirçene,locale/extra_msgids.txt
-Lost his jaw to a rift-beast and had a better one forged. He has not stopped talking since.,Çenesini bir yarık canavarına kaptırdı ve daha iyisini döktürdü. O günden beri susmadı.,scripts/autoload/game_data/GameDataChampions.gd:41
-Iron Resolve,Demir İrade,scripts/autoload/game_data/GameDataChampions.gd:42
-War Cry,Savaş Çığlığı,scripts/autoload/game_data/GameDataChampions.gd:43
-the whole party hits 25% harder for the rest of the fight,dövüşün geri kalanında tüm ekip %25 daha sert vurur,scripts/autoload/game_data/GameDataChampions.gd:43
-Mordrake,,scripts/autoload/game_data/GameDataChampions.gd:44
+Lost his jaw to a rift-beast and had a better one forged. He has not stopped talking since.,Çenesini bir yarık canavarına kaptırdı ve daha iyisini döktürdü. O günden beri susmadı.,scripts/autoload/game_data/GameDataChampions.gd:43
+Iron Resolve,Demir İrade,scripts/autoload/game_data/GameDataChampions.gd:44
+War Cry,Savaş Çığlığı,scripts/autoload/game_data/GameDataChampions.gd:45
+the whole party hits 25% harder for the rest of the fight,dövüşün geri kalanında tüm ekip %25 daha sert vurur,scripts/autoload/game_data/GameDataChampions.gd:45
+Mordrake,,scripts/autoload/game_data/GameDataChampions.gd:47
 the Deathless,Ölümsüz,locale/extra_msgids.txt
-He died in the Endless Rift once. It didn't take.,Bir kez Sonsuz Yarık'ta öldü. Tutmadı.,scripts/autoload/game_data/GameDataChampions.gd:45
-Grim Momentum,Kasvetli İvme,scripts/autoload/game_data/GameDataChampions.gd:46
-Deathless,Ölümsüz,scripts/autoload/game_data/GameDataChampions.gd:47
-braces the party against a wipe for the rest of the fight,dövüşün geri kalanında ekibi tümden yok olmaya karşı hazırlar,scripts/autoload/game_data/GameDataChampions.gd:47
-Sigrun,,scripts/autoload/game_data/GameDataChampions.gd:48
+He died in the Endless Rift once. It didn't take.,Bir kez Sonsuz Yarık'ta öldü. Tutmadı.,scripts/autoload/game_data/GameDataChampions.gd:48
+Grim Momentum,Kasvetli İvme,scripts/autoload/game_data/GameDataChampions.gd:49
+Deathless,Ölümsüz,scripts/autoload/game_data/GameDataChampions.gd:50
+braces the party against a wipe for the rest of the fight,dövüşün geri kalanında ekibi tümden yok olmaya karşı hazırlar,scripts/autoload/game_data/GameDataChampions.gd:50
+Sigrun,,scripts/autoload/game_data/GameDataChampions.gd:52
 Shieldmaiden,Kalkan Kızı,locale/extra_msgids.txt
-Her village sank into a rift in a single night. She walked in after it and has been walking ever since.,Köyü tek bir gecede bir yarığa gömüldü. Ardından içeri yürüdü ve o günden beri yürüyor.,scripts/autoload/game_data/GameDataChampions.gd:49
-Shieldwall,Kalkan Duvarı,scripts/autoload/game_data/GameDataChampions.gd:50
-Shield Wall,Kalkan Duvarı,scripts/autoload/game_data/GameDataChampions.gd:51
-wards the front row for 50% of their max HP,ön sırayı en yüksek canlarının %50'si kadar korur,scripts/autoload/game_data/GameDataChampions.gd:51
-Kael,,scripts/autoload/game_data/GameDataChampions.gd:52
+Her village sank into a rift in a single night. She walked in after it and has been walking ever since.,Köyü tek bir gecede bir yarığa gömüldü. Ardından içeri yürüdü ve o günden beri yürüyor.,scripts/autoload/game_data/GameDataChampions.gd:53
+Shieldwall,Kalkan Duvarı,scripts/autoload/game_data/GameDataChampions.gd:54
+Shield Wall,Kalkan Duvarı,scripts/autoload/game_data/GameDataChampions.gd:55
+wards the front row for 50% of their max HP,ön sırayı en yüksek canlarının %50'si kadar korur,scripts/autoload/game_data/GameDataChampions.gd:55
+Kael,,scripts/autoload/game_data/GameDataChampions.gd:57
 the Oathsworn,Yeminli,locale/extra_msgids.txt
-Swore to guard a rift-gate until relieved. Nobody came. He is very glad to see you.,Nöbeti devralınana dek bir yarık kapısını korumaya yemin etti. Kimse gelmedi. Seni gördüğüne çok sevindi.,scripts/autoload/game_data/GameDataChampions.gd:53
-Vanguard Oath,Öncü Yemini,scripts/autoload/game_data/GameDataChampions.gd:54
-Spear Wall,Mızrak Duvarı,scripts/autoload/game_data/GameDataChampions.gd:55
-a sweep of the spear hits every foe,mızrağın savruluşu her düşmanı vurur,scripts/autoload/game_data/GameDataChampions.gd:55
-Kaya,,scripts/autoload/game_data/GameDataChampions.gd:57
+Swore to guard a rift-gate until relieved. Nobody came. He is very glad to see you.,Nöbeti devralınana dek bir yarık kapısını korumaya yemin etti. Kimse gelmedi. Seni gördüğüne çok sevindi.,scripts/autoload/game_data/GameDataChampions.gd:58
+Vanguard Oath,Öncü Yemini,scripts/autoload/game_data/GameDataChampions.gd:59
+Spear Wall,Mızrak Duvarı,scripts/autoload/game_data/GameDataChampions.gd:60
+a sweep of the spear hits every foe,mızrağın savruluşu her düşmanı vurur,scripts/autoload/game_data/GameDataChampions.gd:60
+Kaya,,scripts/autoload/game_data/GameDataChampions.gd:63
 Swiftwind,Tezrüzgâr,locale/extra_msgids.txt
-"She outran a rift-storm once. Now she can't stop running, so she brings the storm with her.","Bir kez bir yarık fırtınasından kaçıp kurtuldu. Artık durmadan koşuyor, fırtınayı da yanında getiriyor.",scripts/autoload/game_data/GameDataChampions.gd:58
-Tailwind,Arka Rüzgâr,scripts/autoload/game_data/GameDataChampions.gd:59
-Arrow Storm,Ok Fırtınası,scripts/autoload/game_data/GameDataChampions.gd:60
-"arrows ride the wind, jumping between foes","oklar rüzgâra biner, düşmandan düşmana sıçrar",scripts/autoload/game_data/GameDataChampions.gd:60
-Hesk,,scripts/autoload/game_data/GameDataChampions.gd:61
+"She outran a rift-storm once. Now she can't stop running, so she brings the storm with her.","Bir kez bir yarık fırtınasından kaçıp kurtuldu. Artık durmadan koşuyor, fırtınayı da yanında getiriyor.",scripts/autoload/game_data/GameDataChampions.gd:64
+Tailwind,Arka Rüzgâr,scripts/autoload/game_data/GameDataChampions.gd:65
+Arrow Storm,Ok Fırtınası,scripts/autoload/game_data/GameDataChampions.gd:66
+"arrows ride the wind, jumping between foes","oklar rüzgâra biner, düşmandan düşmana sıçrar",scripts/autoload/game_data/GameDataChampions.gd:66
+Hesk,,scripts/autoload/game_data/GameDataChampions.gd:68
 the Beastcaller,Canavarçağıran,locale/extra_msgids.txt
-"Raised by rift-wolves. Speaks their language better than ours, and prefers their company.","Yarık kurtları tarafından büyütüldü. Onların dilini bizimkinden iyi konuşur, onların arkadaşlığını yeğler.",scripts/autoload/game_data/GameDataChampions.gd:62
-Pack Hunter,Sürü Avcısı,scripts/autoload/game_data/GameDataChampions.gd:63
-Pounce,Atılış,scripts/autoload/game_data/GameDataChampions.gd:64
-"the pack falls on the weakest foe, harder the more it's hurt",sürü en zayıf düşmana saldırır; ne kadar yaralıysa o kadar sert,scripts/autoload/game_data/GameDataChampions.gd:64
-Lyra,,scripts/autoload/game_data/GameDataChampions.gd:65
+"Raised by rift-wolves. Speaks their language better than ours, and prefers their company.","Yarık kurtları tarafından büyütüldü. Onların dilini bizimkinden iyi konuşur, onların arkadaşlığını yeğler.",scripts/autoload/game_data/GameDataChampions.gd:69
+Pack Hunter,Sürü Avcısı,scripts/autoload/game_data/GameDataChampions.gd:70
+Pounce,Atılış,scripts/autoload/game_data/GameDataChampions.gd:71
+"the pack falls on the weakest foe, harder the more it's hurt",sürü en zayıf düşmana saldırır; ne kadar yaralıysa o kadar sert,scripts/autoload/game_data/GameDataChampions.gd:71
+Lyra,,scripts/autoload/game_data/GameDataChampions.gd:73
 Thornwood,Dikenorman,locale/extra_msgids.txt
-The last warden of a forest the rifts swallowed. The forest is still in there; so is she.,Yarıkların yuttuğu bir ormanın son bekçisi. Orman hâlâ orada; o da öyle.,scripts/autoload/game_data/GameDataChampions.gd:66
-Leaf on the Wind,Rüzgârdaki Yaprak,scripts/autoload/game_data/GameDataChampions.gd:67
-Thorn Snare,Diken Kapanı,scripts/autoload/game_data/GameDataChampions.gd:68
-"thorns bind the target: it loses its next two actions (a boss, one)",dikenler hedefi sarar: sonraki iki hamlesini kaybeder (boss bir),scripts/autoload/game_data/GameDataChampions.gd:68
-Bram,,scripts/autoload/game_data/GameDataChampions.gd:69
+The last warden of a forest the rifts swallowed. The forest is still in there; so is she.,Yarıkların yuttuğu bir ormanın son bekçisi. Orman hâlâ orada; o da öyle.,scripts/autoload/game_data/GameDataChampions.gd:74
+Leaf on the Wind,Rüzgârdaki Yaprak,scripts/autoload/game_data/GameDataChampions.gd:75
+Thorn Snare,Diken Kapanı,scripts/autoload/game_data/GameDataChampions.gd:76
+"thorns bind the target: it loses its next two actions (a boss, one)",dikenler hedefi sarar: sonraki iki hamlesini kaybeder (boss bir),scripts/autoload/game_data/GameDataChampions.gd:76
+Bram,,scripts/autoload/game_data/GameDataChampions.gd:78
 the Trapper,Tuzakçı,locale/extra_msgids.txt
-Forty years of setting snares for things that come out of rifts. Some of them are still in his cellar.,Kırk yıldır yarıklardan çıkan şeylere tuzak kuruyor. Bazıları hâlâ mahzeninde.,scripts/autoload/game_data/GameDataChampions.gd:70
-Trail Wisdom,İz Bilgeliği,scripts/autoload/game_data/GameDataChampions.gd:71
-Deadfall,Ölüm Tuzağı,scripts/autoload/game_data/GameDataChampions.gd:72
-springs every trap at once on the wounded foes,yaralı düşmanlara karşı bütün tuzakları birden tetikler,scripts/autoload/game_data/GameDataChampions.gd:72
-Ossian,,scripts/autoload/game_data/GameDataChampions.gd:73
+Forty years of setting snares for things that come out of rifts. Some of them are still in his cellar.,Kırk yıldır yarıklardan çıkan şeylere tuzak kuruyor. Bazıları hâlâ mahzeninde.,scripts/autoload/game_data/GameDataChampions.gd:79
+Trail Wisdom,İz Bilgeliği,scripts/autoload/game_data/GameDataChampions.gd:80
+Deadfall,Ölüm Tuzağı,scripts/autoload/game_data/GameDataChampions.gd:81
+springs every trap at once on the wounded foes,yaralı düşmanlara karşı bütün tuzakları birden tetikler,scripts/autoload/game_data/GameDataChampions.gd:81
+Ossian,,scripts/autoload/game_data/GameDataChampions.gd:83
 Greyfeather,Boztüy,locale/extra_msgids.txt
-Has never missed a shot. He will tell you this before you ask.,Hiç ıskalamadı. Sen sormadan söyler.,scripts/autoload/game_data/GameDataChampions.gd:74
-First Shot,İlk Atış,scripts/autoload/game_data/GameDataChampions.gd:75
-Killshot,Öldürücü Atış,scripts/autoload/game_data/GameDataChampions.gd:76
-"one perfect arrow at the weakest foe, deadlier the more it's hurt",en zayıf düşmana kusursuz bir ok; ne kadar yaralıysa o kadar ölümcül,scripts/autoload/game_data/GameDataChampions.gd:76
-Vesh,,scripts/autoload/game_data/GameDataChampions.gd:78
+Has never missed a shot. He will tell you this before you ask.,Hiç ıskalamadı. Sen sormadan söyler.,scripts/autoload/game_data/GameDataChampions.gd:84
+First Shot,İlk Atış,scripts/autoload/game_data/GameDataChampions.gd:85
+Killshot,Öldürücü Atış,scripts/autoload/game_data/GameDataChampions.gd:86
+"one perfect arrow at the weakest foe, deadlier the more it's hurt",en zayıf düşmana kusursuz bir ok; ne kadar yaralıysa o kadar ölümcül,scripts/autoload/game_data/GameDataChampions.gd:86
+Vesh,,scripts/autoload/game_data/GameDataChampions.gd:89
 the Ashborn,Küldoğan,locale/extra_msgids.txt
-"Once the herald of an ash-queen, until he read what he was heralding. The embers under his skin never cooled.","Bir zamanlar bir kül kraliçesinin habercisiydi, ta ki neyin haberini verdiğini okuyana dek. Derisinin altındaki korlar hiç soğumadı.",scripts/autoload/game_data/GameDataChampions.gd:79
-Cinder Tongue,Kor Dil,scripts/autoload/game_data/GameDataChampions.gd:80
-Crownfall,Taç Düşüşü,scripts/autoload/game_data/GameDataChampions.gd:81
-a rain of burning ash engulfs every foe,yanan bir kül yağmuru her düşmanı sarar,scripts/autoload/game_data/GameDataChampions.gd:81
-Auriel,,scripts/autoload/game_data/GameDataChampions.gd:82
+"Once the herald of an ash-queen, until he read what he was heralding. The embers under his skin never cooled.","Bir zamanlar bir kül kraliçesinin habercisiydi, ta ki neyin haberini verdiğini okuyana dek. Derisinin altındaki korlar hiç soğumadı.",scripts/autoload/game_data/GameDataChampions.gd:90
+Cinder Tongue,Kor Dil,scripts/autoload/game_data/GameDataChampions.gd:91
+Crownfall,Taç Düşüşü,scripts/autoload/game_data/GameDataChampions.gd:92
+a rain of burning ash engulfs every foe,yanan bir kül yağmuru her düşmanı sarar,scripts/autoload/game_data/GameDataChampions.gd:92
+Auriel,,scripts/autoload/game_data/GameDataChampions.gd:94
 the Starwright,Yıldızyazan,locale/extra_msgids.txt
-"Mapped every star, then noticed new ones leaking out of the rifts. She has been following them since.","Her yıldızın haritasını çıkardı, sonra yarıklardan yenilerinin sızdığını fark etti. O günden beri onların peşinde.",scripts/autoload/game_data/GameDataChampions.gd:83
-Star Chart,Yıldız Haritası,scripts/autoload/game_data/GameDataChampions.gd:84
-Meteor,Göktaşı,scripts/autoload/game_data/GameDataChampions.gd:85
-calls down a falling star on every foe,her düşmanın üstüne düşen bir yıldız indirir,scripts/autoload/game_data/GameDataChampions.gd:85
-Morwen,,scripts/autoload/game_data/GameDataChampions.gd:86
+"Mapped every star, then noticed new ones leaking out of the rifts. She has been following them since.","Her yıldızın haritasını çıkardı, sonra yarıklardan yenilerinin sızdığını fark etti. O günden beri onların peşinde.",scripts/autoload/game_data/GameDataChampions.gd:95
+Star Chart,Yıldız Haritası,scripts/autoload/game_data/GameDataChampions.gd:96
+Meteor,Göktaşı,scripts/autoload/game_data/GameDataChampions.gd:97
+calls down a falling star on every foe,her düşmanın üstüne düşen bir yıldız indirir,scripts/autoload/game_data/GameDataChampions.gd:97
+Morwen,,scripts/autoload/game_data/GameDataChampions.gd:99
 of the Frost,Ayazın,locale/extra_msgids.txt
-Froze a rift solid to save a town. The town is fine. She has been cold for a hundred years.,Bir kasabayı kurtarmak için bir yarığı buz gibi dondurdu. Kasaba iyi. O ise yüz yıldır üşüyor.,scripts/autoload/game_data/GameDataChampions.gd:87
-Rime Ward,Kırağı Kalkanı,scripts/autoload/game_data/GameDataChampions.gd:88
-Deep Freeze,Derin Ayaz,scripts/autoload/game_data/GameDataChampions.gd:89
-"freezes the target solid: it loses its next two actions (a boss, one)",hedefi buz kesti: sonraki iki hamlesini kaybeder (boss bir),scripts/autoload/game_data/GameDataChampions.gd:89
-Tamsin,,scripts/autoload/game_data/GameDataChampions.gd:90
+Froze a rift solid to save a town. The town is fine. She has been cold for a hundred years.,Bir kasabayı kurtarmak için bir yarığı buz gibi dondurdu. Kasaba iyi. O ise yüz yıldır üşüyor.,scripts/autoload/game_data/GameDataChampions.gd:100
+Rime Ward,Kırağı Kalkanı,scripts/autoload/game_data/GameDataChampions.gd:101
+Deep Freeze,Derin Ayaz,scripts/autoload/game_data/GameDataChampions.gd:102
+"freezes the target solid: it loses its next two actions (a boss, one)",hedefi buz kesti: sonraki iki hamlesini kaybeder (boss bir),scripts/autoload/game_data/GameDataChampions.gd:102
+Tamsin,,scripts/autoload/game_data/GameDataChampions.gd:104
 Sparkwright,Kıvılcımcı,locale/extra_msgids.txt
-Built a machine to close rifts. It opened one instead. She is working on version two.,Yarıkları kapatacak bir makine yaptı. Makine bir tane açtı. İkinci sürüm üzerinde çalışıyor.,scripts/autoload/game_data/GameDataChampions.gd:91
-Overclock,Aşırı Yük,scripts/autoload/game_data/GameDataChampions.gd:92
-Chain Lightning,Zincirleme Şimşek,scripts/autoload/game_data/GameDataChampions.gd:93
-lightning arcs from foe to foe,şimşek düşmandan düşmana sıçrar,scripts/autoload/game_data/GameDataChampions.gd:93
-Ezra,,scripts/autoload/game_data/GameDataChampions.gd:94
+Built a machine to close rifts. It opened one instead. She is working on version two.,Yarıkları kapatacak bir makine yaptı. Makine bir tane açtı. İkinci sürüm üzerinde çalışıyor.,scripts/autoload/game_data/GameDataChampions.gd:105
+Overclock,Aşırı Yük,scripts/autoload/game_data/GameDataChampions.gd:106
+Chain Lightning,Zincirleme Şimşek,scripts/autoload/game_data/GameDataChampions.gd:107
+lightning arcs from foe to foe,şimşek düşmandan düşmana sıçrar,scripts/autoload/game_data/GameDataChampions.gd:107
+Ezra,,scripts/autoload/game_data/GameDataChampions.gd:109
 the Pale,Solgun,locale/extra_msgids.txt
-"Studies what the rifts take from people. Keeps some of it in the lantern, for safekeeping. He insists.",Yarıkların insanlardan aldıklarını inceler. Bir kısmını güvende dursun diye fenerinde saklar. Israr ediyor.,scripts/autoload/game_data/GameDataChampions.gd:95
-Soul Tithe,Ruh Öşürü,scripts/autoload/game_data/GameDataChampions.gd:96
-Harvest,Hasat,scripts/autoload/game_data/GameDataChampions.gd:97
-"drains the weakest foe, healing the caster for a share of it","en zayıf düşmanı emer, kullananı bunun bir kısmı kadar iyileştirir",scripts/autoload/game_data/GameDataChampions.gd:97
-Imre,,scripts/autoload/game_data/GameDataChampions.gd:99
+"Studies what the rifts take from people. Keeps some of it in the lantern, for safekeeping. He insists.",Yarıkların insanlardan aldıklarını inceler. Bir kısmını güvende dursun diye fenerinde saklar. Israr ediyor.,scripts/autoload/game_data/GameDataChampions.gd:110
+Soul Tithe,Ruh Öşürü,scripts/autoload/game_data/GameDataChampions.gd:111
+Harvest,Hasat,scripts/autoload/game_data/GameDataChampions.gd:112
+"drains the weakest foe, healing the caster for a share of it","en zayıf düşmanı emer, kullananı bunun bir kısmı kadar iyileştirir",scripts/autoload/game_data/GameDataChampions.gd:112
+Imre,,scripts/autoload/game_data/GameDataChampions.gd:115
 of the Tides,Gelgitlerin,locale/extra_msgids.txt
-Kept alive at the bottom of a drowned spire as a lantern for something that hated the dark. She still carries the light.,Karanlıktan nefret eden bir şeye fener olsun diye batık bir kulenin dibinde yaşatıldı. Işığı hâlâ taşıyor.,scripts/autoload/game_data/GameDataChampions.gd:100
-Tidal Grace,Gelgit Lütfu,scripts/autoload/game_data/GameDataChampions.gd:101
-Low Tide,Cezir,scripts/autoload/game_data/GameDataChampions.gd:102
-"heals the party 55% and washes away burn, poison, chill, stun and curses","ekibi %55 iyileştirir; yanık, zehir, üşüme, sersemlik ve lanetleri siler",scripts/autoload/game_data/GameDataChampions.gd:102
-Odo,,scripts/autoload/game_data/GameDataChampions.gd:103
+Kept alive at the bottom of a drowned spire as a lantern for something that hated the dark. She still carries the light.,Karanlıktan nefret eden bir şeye fener olsun diye batık bir kulenin dibinde yaşatıldı. Işığı hâlâ taşıyor.,scripts/autoload/game_data/GameDataChampions.gd:116
+Tidal Grace,Gelgit Lütfu,scripts/autoload/game_data/GameDataChampions.gd:117
+Low Tide,Cezir,scripts/autoload/game_data/GameDataChampions.gd:118
+"heals the party 55% and washes away burn, poison, chill, stun and curses","ekibi %55 iyileştirir; yanık, zehir, üşüme, sersemlik ve lanetleri siler",scripts/autoload/game_data/GameDataChampions.gd:118
+Odo,,scripts/autoload/game_data/GameDataChampions.gd:120
 the Lamplighter,Fenerci,locale/extra_msgids.txt
-Lit the lamps of a city that fell into a rift. He kept lighting them. Eventually the lamps led him out.,Bir yarığa düşen bir şehrin fenerlerini yaktı. Yakmayı sürdürdü. Sonunda fenerler onu dışarı çıkardı.,scripts/autoload/game_data/GameDataChampions.gd:104
-Lamp in the Dark,Karanlıkta Fener,scripts/autoload/game_data/GameDataChampions.gd:105
-Light the Way,Yolu Aydınlat,scripts/autoload/game_data/GameDataChampions.gd:106
-raises a fallen ally at 60% HP (or heals the most hurt),düşmüş bir müttefiki %60 canla kaldırır (ya da en yaralıyı iyileştirir),scripts/autoload/game_data/GameDataChampions.gd:106
-Seraphine,,scripts/autoload/game_data/GameDataChampions.gd:107
+Lit the lamps of a city that fell into a rift. He kept lighting them. Eventually the lamps led him out.,Bir yarığa düşen bir şehrin fenerlerini yaktı. Yakmayı sürdürdü. Sonunda fenerler onu dışarı çıkardı.,scripts/autoload/game_data/GameDataChampions.gd:121
+Lamp in the Dark,Karanlıkta Fener,scripts/autoload/game_data/GameDataChampions.gd:122
+Light the Way,Yolu Aydınlat,scripts/autoload/game_data/GameDataChampions.gd:123
+raises a fallen ally at 60% HP (or heals the most hurt),düşmüş bir müttefiki %60 canla kaldırır (ya da en yaralıyı iyileştirir),scripts/autoload/game_data/GameDataChampions.gd:123
+Seraphine,,scripts/autoload/game_data/GameDataChampions.gd:125
 Dawnbringer,Şafakgetiren,locale/extra_msgids.txt
-Walked into the dark between rifts to find the sunrise. Came back with it.,Gün doğumunu bulmak için yarıklar arasındaki karanlığa yürüdü. Onunla döndü.,scripts/autoload/game_data/GameDataChampions.gd:108
-Dawn's Blessing,Şafak Kutsaması,scripts/autoload/game_data/GameDataChampions.gd:109
-Sunrise,Gün Doğumu,scripts/autoload/game_data/GameDataChampions.gd:110
-heals the whole party for 65% of their max HP,tüm ekibi en yüksek canlarının %65'i kadar iyileştirir,scripts/autoload/game_data/GameDataChampions.gd:110
-Hobb,,scripts/autoload/game_data/GameDataChampions.gd:111
+Walked into the dark between rifts to find the sunrise. Came back with it.,Gün doğumunu bulmak için yarıklar arasındaki karanlığa yürüdü. Onunla döndü.,scripts/autoload/game_data/GameDataChampions.gd:126
+Dawn's Blessing,Şafak Kutsaması,scripts/autoload/game_data/GameDataChampions.gd:127
+Sunrise,Gün Doğumu,scripts/autoload/game_data/GameDataChampions.gd:128
+heals the whole party for 65% of their max HP,tüm ekibi en yüksek canlarının %65'i kadar iyileştirir,scripts/autoload/game_data/GameDataChampions.gd:128
+Hobb,,scripts/autoload/game_data/GameDataChampions.gd:130
 the Friar,Keşiş,locale/extra_msgids.txt
-Opened a tavern at the edge of a rift. Business was terrible. Blessings were excellent.,Bir yarığın kıyısında meyhane açtı. İşler berbattı. Kutsamalar mükemmeldi.,scripts/autoload/game_data/GameDataChampions.gd:112
-Liquid Courage,Şişe Cesareti,scripts/autoload/game_data/GameDataChampions.gd:113
-Round's On Me,Bu Tur Benden,scripts/autoload/game_data/GameDataChampions.gd:114
-heals the whole party for 50% of their max HP,tüm ekibi en yüksek canlarının %50'si kadar iyileştirir,scripts/autoload/game_data/GameDataChampions.gd:114
-Veyla,,scripts/autoload/game_data/GameDataChampions.gd:115
+Opened a tavern at the edge of a rift. Business was terrible. Blessings were excellent.,Bir yarığın kıyısında meyhane açtı. İşler berbattı. Kutsamalar mükemmeldi.,scripts/autoload/game_data/GameDataChampions.gd:131
+Liquid Courage,Şişe Cesareti,scripts/autoload/game_data/GameDataChampions.gd:132
+Round's On Me,Bu Tur Benden,scripts/autoload/game_data/GameDataChampions.gd:133
+heals the whole party for 50% of their max HP,tüm ekibi en yüksek canlarının %50'si kadar iyileştirir,scripts/autoload/game_data/GameDataChampions.gd:133
+Veyla,,scripts/autoload/game_data/GameDataChampions.gd:135
 the Penitent,Tövbekâr,locale/extra_msgids.txt
-Wears the mask so the rift can't see her face. It has been looking for her a long time.,Yarık yüzünü görmesin diye maske takıyor. Uzun zamandır onu arıyor.,scripts/autoload/game_data/GameDataChampions.gd:116
-Incense Veil,Tütsü Peçesi,scripts/autoload/game_data/GameDataChampions.gd:117
-Censer Smoke,Buhurdan Dumanı,scripts/autoload/game_data/GameDataChampions.gd:118
-thick smoke: +30% dodge for the rest of the fight,yoğun duman: dövüşün geri kalanında +%30 kaçınma,scripts/autoload/game_data/GameDataChampions.gd:118
-Selune,,scripts/autoload/game_data/GameDataChampions.gd:120
+Wears the mask so the rift can't see her face. It has been looking for her a long time.,Yarık yüzünü görmesin diye maske takıyor. Uzun zamandır onu arıyor.,scripts/autoload/game_data/GameDataChampions.gd:136
+Incense Veil,Tütsü Peçesi,scripts/autoload/game_data/GameDataChampions.gd:137
+Censer Smoke,Buhurdan Dumanı,scripts/autoload/game_data/GameDataChampions.gd:138
+thick smoke: +30% dodge for the rest of the fight,yoğun duman: dövüşün geri kalanında +%30 kaçınma,scripts/autoload/game_data/GameDataChampions.gd:138
+Selune,,scripts/autoload/game_data/GameDataChampions.gd:141
 of the Hollow Moon,Karanlık Ay'ın,locale/extra_msgids.txt
-An assassin who took one contract too many: on the moon. It didn't go well for either of them.,Bir sözleşme fazla alan bir suikastçı: hedef Ay'dı. İkisi için de iyi gitmedi.,scripts/autoload/game_data/GameDataChampions.gd:121
-New Moon,Yeni Ay,scripts/autoload/game_data/GameDataChampions.gd:122
-Eclipse,Tutulma,scripts/autoload/game_data/GameDataChampions.gd:123
-"darkness falls, and every wounded foe with it","karanlık çöker, her yaralı düşman da onunla",scripts/autoload/game_data/GameDataChampions.gd:123
-Pip,,scripts/autoload/game_data/GameDataChampions.gd:124
+An assassin who took one contract too many: on the moon. It didn't go well for either of them.,Bir sözleşme fazla alan bir suikastçı: hedef Ay'dı. İkisi için de iyi gitmedi.,scripts/autoload/game_data/GameDataChampions.gd:142
+New Moon,Yeni Ay,scripts/autoload/game_data/GameDataChampions.gd:143
+Eclipse,Tutulma,scripts/autoload/game_data/GameDataChampions.gd:144
+"darkness falls, and every wounded foe with it","karanlık çöker, her yaralı düşman da onunla",scripts/autoload/game_data/GameDataChampions.gd:144
+Pip,,scripts/autoload/game_data/GameDataChampions.gd:146
 Quickfingers,Çevikparmak,locale/extra_msgids.txt
-Stole a key from a rift-lord's belt. The key opened the rift. Pip would like to give it back.,Bir yarık lordunun kemerinden bir anahtar çaldı. Anahtar yarığı açtı. Pip onu geri vermek istiyor.,scripts/autoload/game_data/GameDataChampions.gd:125
-Slippery,Kaygan,scripts/autoload/game_data/GameDataChampions.gd:126
-Smoke and Mirrors,Duman ve Aynalar,scripts/autoload/game_data/GameDataChampions.gd:127
-+35% dodge for the rest of the fight,dövüşün geri kalanında +%35 kaçınma,scripts/autoload/game_data/GameDataChampions.gd:127
-Raske,,scripts/autoload/game_data/GameDataChampions.gd:128
+Stole a key from a rift-lord's belt. The key opened the rift. Pip would like to give it back.,Bir yarık lordunun kemerinden bir anahtar çaldı. Anahtar yarığı açtı. Pip onu geri vermek istiyor.,scripts/autoload/game_data/GameDataChampions.gd:147
+Slippery,Kaygan,scripts/autoload/game_data/GameDataChampions.gd:148
+Smoke and Mirrors,Duman ve Aynalar,scripts/autoload/game_data/GameDataChampions.gd:149
++35% dodge for the rest of the fight,dövüşün geri kalanında +%35 kaçınma,scripts/autoload/game_data/GameDataChampions.gd:149
+Raske,,scripts/autoload/game_data/GameDataChampions.gd:151
 the Red,Kızıl,locale/extra_msgids.txt
-Captained a ship that sailed off the edge of the world and into a rift. Kept the coat.,Dünyanın kıyısından bir yarığa yelken açan bir gemiye kaptanlık etti. Ceketi sakladı.,scripts/autoload/game_data/GameDataChampions.gd:129
-Blood in the Water,Suda Kan,scripts/autoload/game_data/GameDataChampions.gd:130
-Whirlwind,Kasırga Dönüşü,scripts/autoload/game_data/GameDataChampions.gd:131
-a spinning storm of cutlasses hits every foe,dönen bir pala fırtınası her düşmanı vurur,scripts/autoload/game_data/GameDataChampions.gd:131
-Corvin,,scripts/autoload/game_data/GameDataChampions.gd:132
+Captained a ship that sailed off the edge of the world and into a rift. Kept the coat.,Dünyanın kıyısından bir yarığa yelken açan bir gemiye kaptanlık etti. Ceketi sakladı.,scripts/autoload/game_data/GameDataChampions.gd:152
+Blood in the Water,Suda Kan,scripts/autoload/game_data/GameDataChampions.gd:153
+Whirlwind,Kasırga Dönüşü,scripts/autoload/game_data/GameDataChampions.gd:154
+a spinning storm of cutlasses hits every foe,dönen bir pala fırtınası her düşmanı vurur,scripts/autoload/game_data/GameDataChampions.gd:154
+Corvin,,scripts/autoload/game_data/GameDataChampions.gd:156
 Ashwhisper,Külfısıltı,locale/extra_msgids.txt
-Brews poisons from what bleeds out of rifts. Swears most of them are medicine.,Yarıklardan sızanlardan zehir kaynatır. Çoğunun ilaç olduğuna yemin eder.,scripts/autoload/game_data/GameDataChampions.gd:133
-Slow Venom,Yavaş Zehir,scripts/autoload/game_data/GameDataChampions.gd:134
-Plague Cloud,Veba Bulutu,scripts/autoload/game_data/GameDataChampions.gd:135
-a toxic cloud that eats at every foe for three rounds,üç tur boyunca her düşmanı kemiren zehirli bir bulut,scripts/autoload/game_data/GameDataChampions.gd:135
-{name} {title},{title} {name},scripts/autoload/game_data/GameDataChampions.gd:147
+Brews poisons from what bleeds out of rifts. Swears most of them are medicine.,Yarıklardan sızanlardan zehir kaynatır. Çoğunun ilaç olduğuna yemin eder.,scripts/autoload/game_data/GameDataChampions.gd:157
+Slow Venom,Yavaş Zehir,scripts/autoload/game_data/GameDataChampions.gd:158
+Plague Cloud,Veba Bulutu,scripts/autoload/game_data/GameDataChampions.gd:159
+a toxic cloud that eats at every foe for three rounds,üç tur boyunca her düşmanı kemiren zehirli bir bulut,scripts/autoload/game_data/GameDataChampions.gd:159
+{name} {title},{title} {name},scripts/autoload/game_data/GameDataChampions.gd:172
 Warrior,Savaşçı,scripts/autoload/game_data/GameDataHeroes.gd:4
 Ranger,Korucu,scripts/autoload/game_data/GameDataHeroes.gd:5
 Mage,Büyücü,scripts/autoload/game_data/GameDataHeroes.gd:6
@@ -2024,58 +2025,81 @@ Every 6s: heals the most-hurt hero 20%,Her 6 sn: en yaralı kahramanı %20 iyile
 Every 12s: heals the whole party 12%,Her 12 sn: tüm ekibi %12 iyileştirir,scripts/survivors/SurvivorsRun.gd:98
 "Every 3s: a heavy stab, heavier on a wounded foe","Her 3 sn: ağır bir bıçak darbesi, yaralı düşmana daha ağır",scripts/survivors/SurvivorsRun.gd:99
 Every 10s: +40% dodge for the party for 3s,Her 10 sn: ekibe 3 sn boyunca +%40 kaçınma,scripts/survivors/SurvivorsRun.gd:100
-Sharpened Steel,Bilenmiş Çelik,scripts/survivors/SurvivorsRun.gd:116
-+15% damage for the whole party,Tüm ekibe +%15 hasar,scripts/survivors/SurvivorsRun.gd:116
-Battle Rhythm,Savaş Ritmi,scripts/survivors/SurvivorsRun.gd:117
-Attacks come 10% faster,Saldırılar %10 daha hızlı gelir,scripts/survivors/SurvivorsRun.gd:117
-Wide Arcs,Geniş Yaylar,scripts/survivors/SurvivorsRun.gd:118
-+20% attack area and burst size,Saldırı alanı ve patlama boyutu +%20,scripts/survivors/SurvivorsRun.gd:118
-Split Shot,Bölünen Atış,scripts/survivors/SurvivorsRun.gd:119
-Rangers and Mages fire one more projectile,Korucular ve Büyücüler bir mermi fazla atar,scripts/survivors/SurvivorsRun.gd:119
-Vigor,Dinçlik,scripts/survivors/SurvivorsRun.gd:120
-"+20% max HP, and heal 30% now",En yüksek can +%20 ve şimdi %30 iyileş,scripts/survivors/SurvivorsRun.gd:120
-Heroes regain 1% HP every second,Kahramanlar her saniye canlarının %1'ini geri kazanır,scripts/survivors/SurvivorsRun.gd:121
-Tempered Plate,Tavlanmış Zırh,scripts/survivors/SurvivorsRun.gd:122
-Take 12% less damage from foes,Düşmanlardan %12 daha az hasar al,scripts/survivors/SurvivorsRun.gd:122
-Fleet Foot,Çevik Ayak,scripts/survivors/SurvivorsRun.gd:123
-+12% move speed,Hareket hızı +%12,scripts/survivors/SurvivorsRun.gd:123
-Shard Lure,Parça Yemi,scripts/survivors/SurvivorsRun.gd:124
-+50% pickup range,Toplama menzili +%50,scripts/survivors/SurvivorsRun.gd:124
-Focused Mind,Odaklı Zihin,scripts/survivors/SurvivorsRun.gd:125
-Abilities come back 20% sooner,Yetenekler %20 daha erken hazır olur,scripts/survivors/SurvivorsRun.gd:125
-Barbed Guard,Dikenli Koruma,scripts/survivors/SurvivorsRun.gd:126
-Foes that hit a hero take 40% of your damage back,Bir kahramana vuran düşmanlar hasarının %40'ını geri alır,scripts/survivors/SurvivorsRun.gd:126
-Warriors' sweeps reach 40% farther and strike twice,Savaşçıların süpürmeleri %40 daha uzağa ulaşır ve iki kez vurur,scripts/survivors/SurvivorsRun.gd:131
-Thousand Cuts,Bin Kesik,scripts/survivors/SurvivorsRun.gd:132
-Rogues' stabs hit the three nearest foes,Haydutların bıçak darbeleri en yakın üç düşmana vurur,scripts/survivors/SurvivorsRun.gd:132
-Rangers' arrows pierce every foe in their path,Korucuların okları yollarındaki her düşmanı deler,scripts/survivors/SurvivorsRun.gd:133
-Starfall,Yıldız Yağmuru,scripts/survivors/SurvivorsRun.gd:134
-Mages' bolts burst twice as wide and set foes alight,Büyücülerin okları iki kat geniş patlar ve düşmanları tutuşturur,scripts/survivors/SurvivorsRun.gd:134
-Sanctum,Kutsal Oda,scripts/survivors/SurvivorsRun.gd:135
-Clerics' pulses reach 40% farther and heal the party 3%,Rahiplerin nabızları %40 daha uzağa ulaşır ve ekibi %3 iyileştirir,scripts/survivors/SurvivorsRun.gd:135
-Bloodfang,Kan Dişi,scripts/survivors/SurvivorsRun.gd:139
-Every kill heals the party 0.2%,"Her öldürme ekibi %0,2 iyileştirir",scripts/survivors/SurvivorsRun.gd:139
-Gilded Idol,Yaldızlı Put,scripts/survivors/SurvivorsRun.gd:140
-+40% gold from this run,Bu koşudan +%40 altın,scripts/survivors/SurvivorsRun.gd:140
-Echo Stone,Yankı Taşı,scripts/survivors/SurvivorsRun.gd:141
-Every Ability fires twice,Her Yetenek iki kez çalışır,scripts/survivors/SurvivorsRun.gd:141
-"The first time your lead falls, they rise at half health",Önderin ilk düştüğünde yarı canla kalkar,scripts/survivors/SurvivorsRun.gd:142
-Storm Crown,Fırtına Tacı,scripts/survivors/SurvivorsRun.gd:143
-Lightning strikes a foe near the party every 1.5s,"Her 1,5 sn'de ekibin yakınındaki bir düşmana şimşek çakar",scripts/survivors/SurvivorsRun.gd:143
-Lodestone,Mıknatıs Taşı,scripts/survivors/SurvivorsRun.gd:144
-"+60% pickup range, and every 30s every shard flies to you",Toplama menzili +%60 ve her 30 sn'de tüm parçalar sana uçar,scripts/survivors/SurvivorsRun.gd:144
-Sandglass,Kum Saati,scripts/survivors/SurvivorsRun.gd:145
-Foes move 15% slower,Düşmanlar %15 daha yavaş hareket eder,scripts/survivors/SurvivorsRun.gd:145
-Ember Heart,Kor Yürek,scripts/survivors/SurvivorsRun.gd:146
-Foes that strike a hero catch fire,Bir kahramana vuran düşmanlar alev alır,scripts/survivors/SurvivorsRun.gd:146
-Rift Aegis,Yarık Egisi,scripts/survivors/SurvivorsRun.gd:147
-Every 20s the party takes half damage for 3s,Her 20 sn'de ekip 3 sn boyunca yarı hasar alır,scripts/survivors/SurvivorsRun.gd:147
+Aftershock,Artçı Sarsıntı,scripts/survivors/SurvivorsRun.gd:110
+fires again a moment later at half strength,kısa süre sonra yarı güçle yeniden ateşlenir,scripts/survivors/SurvivorsRun.gd:110
+Kindled,Tutuşmuş,scripts/survivors/SurvivorsRun.gd:111
+sets the foes it touches alight,dokunduğu düşmanları tutuşturur,scripts/survivors/SurvivorsRun.gd:111
+slows the foes it touches for 4s,dokunduğu düşmanları 4 sn yavaşlatır,scripts/survivors/SurvivorsRun.gd:112
+Expose,Açığa Çıkar,scripts/survivors/SurvivorsRun.gd:113
+marks the foes it touches: they take 30% more damage for 6s,dokunduğu düşmanları işaretler: 6 sn boyunca %30 fazla hasar alırlar,scripts/survivors/SurvivorsRun.gd:113
+Stagger,Sersemlet,scripts/survivors/SurvivorsRun.gd:114
+stuns the foes it touches for 1s,dokunduğu düşmanları 1 sn sersemletir,scripts/survivors/SurvivorsRun.gd:114
+heals the party 2% for every foe it touches (up to 12%),dokunduğu her düşman için ekibi %2 iyileştirir (en fazla %12),scripts/survivors/SurvivorsRun.gd:115
+Shrapnel,Şarapnel,scripts/survivors/SurvivorsRun.gd:116
+bursts into 8 piercing shards,8 delici parçaya bölünür,scripts/survivors/SurvivorsRun.gd:116
+Radiance,Nur,scripts/survivors/SurvivorsRun.gd:117
+"light bursts around every champion, burning nearby foes","her şampiyonun çevresinde ışık patlar, yakındaki düşmanları yakar",scripts/survivors/SurvivorsRun.gd:117
+the party takes half damage for 3s,ekip 3 sn boyunca yarı hasar alır,scripts/survivors/SurvivorsRun.gd:118
+Fervor,Coşku,scripts/survivors/SurvivorsRun.gd:119
+the party hits 25% harder for 4s,ekip 4 sn boyunca %25 daha sert vurur,scripts/survivors/SurvivorsRun.gd:119
+Renewal,Yenilenme,scripts/survivors/SurvivorsRun.gd:120
+the party regains 3% HP a second for 5s,ekip 5 sn boyunca saniyede %3 can kazanır,scripts/survivors/SurvivorsRun.gd:120
+Smokescreen,Sis Perdesi,scripts/survivors/SurvivorsRun.gd:121
+the party dodges far more for 3s,ekip 3 sn boyunca çok daha fazla kaçınır,scripts/survivors/SurvivorsRun.gd:121
+Sharpened Steel,Bilenmiş Çelik,scripts/survivors/SurvivorsRun.gd:136
++15% damage for the whole party,Tüm ekibe +%15 hasar,scripts/survivors/SurvivorsRun.gd:136
+Battle Rhythm,Savaş Ritmi,scripts/survivors/SurvivorsRun.gd:137
+Attacks come 10% faster,Saldırılar %10 daha hızlı gelir,scripts/survivors/SurvivorsRun.gd:137
+Wide Arcs,Geniş Yaylar,scripts/survivors/SurvivorsRun.gd:138
++20% attack area and burst size,Saldırı alanı ve patlama boyutu +%20,scripts/survivors/SurvivorsRun.gd:138
+Split Shot,Bölünen Atış,scripts/survivors/SurvivorsRun.gd:139
+Rangers and Mages fire one more projectile,Korucular ve Büyücüler bir mermi fazla atar,scripts/survivors/SurvivorsRun.gd:139
+Vigor,Dinçlik,scripts/survivors/SurvivorsRun.gd:140
+"+20% max HP, and heal 30% now",En yüksek can +%20 ve şimdi %30 iyileş,scripts/survivors/SurvivorsRun.gd:140
+Heroes regain 1% HP every second,Kahramanlar her saniye canlarının %1'ini geri kazanır,scripts/survivors/SurvivorsRun.gd:141
+Tempered Plate,Tavlanmış Zırh,scripts/survivors/SurvivorsRun.gd:142
+Take 12% less damage from foes,Düşmanlardan %12 daha az hasar al,scripts/survivors/SurvivorsRun.gd:142
+Fleet Foot,Çevik Ayak,scripts/survivors/SurvivorsRun.gd:143
++12% move speed,Hareket hızı +%12,scripts/survivors/SurvivorsRun.gd:143
+Shard Lure,Parça Yemi,scripts/survivors/SurvivorsRun.gd:144
++50% pickup range,Toplama menzili +%50,scripts/survivors/SurvivorsRun.gd:144
+Focused Mind,Odaklı Zihin,scripts/survivors/SurvivorsRun.gd:145
+Abilities come back 20% sooner,Yetenekler %20 daha erken hazır olur,scripts/survivors/SurvivorsRun.gd:145
+Barbed Guard,Dikenli Koruma,scripts/survivors/SurvivorsRun.gd:146
+Foes that hit a hero take 40% of your damage back,Bir kahramana vuran düşmanlar hasarının %40'ını geri alır,scripts/survivors/SurvivorsRun.gd:146
+Warriors' sweeps reach 40% farther and strike twice,Savaşçıların süpürmeleri %40 daha uzağa ulaşır ve iki kez vurur,scripts/survivors/SurvivorsRun.gd:151
+Thousand Cuts,Bin Kesik,scripts/survivors/SurvivorsRun.gd:152
+Rogues' stabs hit the three nearest foes,Haydutların bıçak darbeleri en yakın üç düşmana vurur,scripts/survivors/SurvivorsRun.gd:152
+Rangers' arrows pierce every foe in their path,Korucuların okları yollarındaki her düşmanı deler,scripts/survivors/SurvivorsRun.gd:153
+Starfall,Yıldız Yağmuru,scripts/survivors/SurvivorsRun.gd:154
+Mages' bolts burst twice as wide and set foes alight,Büyücülerin okları iki kat geniş patlar ve düşmanları tutuşturur,scripts/survivors/SurvivorsRun.gd:154
+Sanctum,Kutsal Oda,scripts/survivors/SurvivorsRun.gd:155
+Clerics' pulses reach 40% farther and heal the party 3%,Rahiplerin nabızları %40 daha uzağa ulaşır ve ekibi %3 iyileştirir,scripts/survivors/SurvivorsRun.gd:155
+Bloodfang,Kan Dişi,scripts/survivors/SurvivorsRun.gd:159
+Every kill heals the party 0.2%,"Her öldürme ekibi %0,2 iyileştirir",scripts/survivors/SurvivorsRun.gd:159
+Gilded Idol,Yaldızlı Put,scripts/survivors/SurvivorsRun.gd:160
++40% gold from this run,Bu koşudan +%40 altın,scripts/survivors/SurvivorsRun.gd:160
+Echo Stone,Yankı Taşı,scripts/survivors/SurvivorsRun.gd:161
+Every Ability fires twice,Her Yetenek iki kez çalışır,scripts/survivors/SurvivorsRun.gd:161
+"The first time your lead falls, they rise at half health",Önderin ilk düştüğünde yarı canla kalkar,scripts/survivors/SurvivorsRun.gd:162
+Storm Crown,Fırtına Tacı,scripts/survivors/SurvivorsRun.gd:163
+Lightning strikes a foe near the party every 1.5s,"Her 1,5 sn'de ekibin yakınındaki bir düşmana şimşek çakar",scripts/survivors/SurvivorsRun.gd:163
+Lodestone,Mıknatıs Taşı,scripts/survivors/SurvivorsRun.gd:164
+"+60% pickup range, and every 30s every shard flies to you",Toplama menzili +%60 ve her 30 sn'de tüm parçalar sana uçar,scripts/survivors/SurvivorsRun.gd:164
+Sandglass,Kum Saati,scripts/survivors/SurvivorsRun.gd:165
+Foes move 15% slower,Düşmanlar %15 daha yavaş hareket eder,scripts/survivors/SurvivorsRun.gd:165
+Ember Heart,Kor Yürek,scripts/survivors/SurvivorsRun.gd:166
+Foes that strike a hero catch fire,Bir kahramana vuran düşmanlar alev alır,scripts/survivors/SurvivorsRun.gd:166
+Rift Aegis,Yarık Egisi,scripts/survivors/SurvivorsRun.gd:167
+Every 20s the party takes half damage for 3s,Her 20 sn'de ekip 3 sn boyunca yarı hasar alır,scripts/survivors/SurvivorsRun.gd:167
 Warden,Bekçi,locale/extra_msgids.txt
-Rift Warden,Yarık Bekçisi,scripts/survivors/SurvivorsRun.gd:420
-Evolve: ,Evrimleş: ,scripts/survivors/SurvivorsRun.gd:1380
-%s: %s twist,%s: %s dokunuşu,scripts/survivors/SurvivorsRun.gd:1383
-Fires 20% sooner and hits 30% harder,%20 daha erken çalışır ve %30 daha sert vurur,scripts/survivors/SurvivorsRun.gd:1395
-%s: %s rank %d,%s: %s kademe %d,scripts/survivors/SurvivorsRun.gd:1409
+Rift Warden,Yarık Bekçisi,scripts/survivors/SurvivorsRun.gd:444
+Fused: %s + %s,Kaynaştı: %s + %s,scripts/survivors/SurvivorsRun.gd:1446
+Evolve: ,Evrimleş: ,scripts/survivors/SurvivorsRun.gd:1499
+Fuse: %s + %s,Kaynaştır: %s + %s,scripts/survivors/SurvivorsRun.gd:1508
+"%s and %s fire together, 25%% harder, and each carries the other's mods","%s ve %s birlikte ateşlenir, %%25 daha sert vurur ve her biri diğerinin güçlendirmelerini taşır",scripts/survivors/SurvivorsRun.gd:1509
+Fires 20% sooner and hits 30% harder,%20 daha erken çalışır ve %30 daha sert vurur,scripts/survivors/SurvivorsRun.gd:1521
+%s: %s rank %d,%s: %s kademe %d,scripts/survivors/SurvivorsRun.gd:1535
 Button,,scripts/survivors/SurvivorsView.gd:228
 [The warden falls],[Bekçi düşüyor],scripts/survivors/SurvivorsView.gd:371
 [An elite falls],[Bir seçkin düşüyor],scripts/survivors/SurvivorsView.gd:371
@@ -2085,43 +2109,45 @@ Stand in it to free %s,%s serbest kalsın diye ışığın içinde dur,scripts/s
 %s is free!,%s kurtuldu!,scripts/survivors/SurvivorsView.gd:387
 They join your champions when the run ends,Sefer bitince şampiyonlarına katılır,scripts/survivors/SurvivorsView.gd:387
 [A champion is freed],[Bir şampiyon kurtuldu],scripts/survivors/SurvivorsView.gd:388
-The Rift Warden: %s!,Yarık Bekçisi: %s!,scripts/survivors/SurvivorsView.gd:397
-Bring it down to seal the rift,Yarığı mühürlemek için onu yık,scripts/survivors/SurvivorsView.gd:397
-%s emerges!,%s ortaya çıkıyor!,scripts/survivors/SurvivorsView.gd:399
-[%s roars],[%s kükrüyor],scripts/survivors/SurvivorsView.gd:400
-[A chest drops],[Bir sandık düşüyor],scripts/survivors/SurvivorsView.gd:405
-Healed!,İyileşti!,scripts/survivors/SurvivorsView.gd:412
-Shards come to you,Parçalar sana geliyor,scripts/survivors/SurvivorsView.gd:412
-Boom!,Bum!,scripts/survivors/SurvivorsView.gd:412
-[A slam hits the party],[Bir darbe ekibe çarpıyor],scripts/survivors/SurvivorsView.gd:422
-[Ground slam],[Yere vuruş],scripts/survivors/SurvivorsView.gd:424
-The rift is sealed!,Yarık mühürlendi!,scripts/survivors/SurvivorsView.gd:426
-%s calls the horde!,%s sürüyü çağırıyor!,scripts/survivors/SurvivorsView.gd:429
-[%s is down],[%s yere düştü],scripts/survivors/SurvivorsView.gd:431
-A hero,Bir kahraman,scripts/survivors/SurvivorsView.gd:448
-Pause,Duraklat,scripts/survivors/SurvivorsView.gd:536
-"Move: WASD / arrows, or drag  ·  Pause: Esc",Hareket: WASD / oklar ya da sürükle  ·  Duraklat: Esc,scripts/survivors/SurvivorsView.gd:585
-%d kills,%d öldürme,scripts/survivors/SurvivorsView.gd:621
-Level %d,Seviye %d,scripts/survivors/SurvivorsView.gd:622
-Everything is maxed — carry on,Her şey en üst seviyede — devam et,scripts/survivors/SurvivorsView.gd:775
-A rift chest,Bir yarık sandığı,scripts/survivors/SurvivorsView.gd:780
-Take one relic for the rest of this run,Bu koşunun geri kalanı için bir kalıntı al,scripts/survivors/SurvivorsView.gd:782
-Every relic found: take 60 gold,Tüm kalıntılar bulundu: 60 altın al,scripts/survivors/SurvivorsView.gd:786
-Paused,Duraklatıldı,scripts/survivors/SurvivorsView.gd:848
-Upgrades: ,Geliştirmeler: ,scripts/survivors/SurvivorsView.gd:851
-none yet,henüz yok,scripts/survivors/SurvivorsView.gd:851
-Resume,Devam et,scripts/survivors/SurvivorsView.gd:856
-Leave the rift (keep what you've earned),Yarıktan ayrıl (kazandıkların sende kalır),scripts/survivors/SurvivorsView.gd:860
-The rift closes,Yarık kapanıyor,scripts/survivors/SurvivorsView.gd:893
-Sealed at %d:%02d,%d:%02d'da mühürlendi,scripts/survivors/SurvivorsView.gd:895
-Survived %d:%02d,%d:%02d dayanıldı,scripts/survivors/SurvivorsView.gd:895
-  — a new best!,  — yeni rekor!,scripts/survivors/SurvivorsView.gd:895
-%d kills · %d elites · %d wardens · reached level %d,%d öldürme · %d seçkin · %d bekçi · ulaşılan seviye %d,scripts/survivors/SurvivorsView.gd:896
-+%d gold · +%d essence · +%d Echoes,+%d altın · +%d öz · +%d Yankı,scripts/survivors/SurvivorsView.gd:897
-Freed: %s — they join your champions,Kurtarıldı: %s — şampiyonlarına katılıyor,scripts/survivors/SurvivorsView.gd:900
-Found: %s,Bulundu: %s,scripts/survivors/SurvivorsView.gd:902
-Milestone! ,Kilometre taşı! ,scripts/survivors/SurvivorsView.gd:904
-Return to the guild,Loncaya dön,scripts/survivors/SurvivorsView.gd:911
+Fusion: %s + %s,Kaynaşma: %s + %s,scripts/survivors/SurvivorsView.gd:391
+"They fire together now, and share their mods",Artık birlikte ateşleniyorlar ve güçlendirmelerini paylaşıyorlar,scripts/survivors/SurvivorsView.gd:391
+The Rift Warden: %s!,Yarık Bekçisi: %s!,scripts/survivors/SurvivorsView.gd:400
+Bring it down to seal the rift,Yarığı mühürlemek için onu yık,scripts/survivors/SurvivorsView.gd:400
+%s emerges!,%s ortaya çıkıyor!,scripts/survivors/SurvivorsView.gd:402
+[%s roars],[%s kükrüyor],scripts/survivors/SurvivorsView.gd:403
+[A chest drops],[Bir sandık düşüyor],scripts/survivors/SurvivorsView.gd:408
+Healed!,İyileşti!,scripts/survivors/SurvivorsView.gd:415
+Shards come to you,Parçalar sana geliyor,scripts/survivors/SurvivorsView.gd:415
+Boom!,Bum!,scripts/survivors/SurvivorsView.gd:415
+[A slam hits the party],[Bir darbe ekibe çarpıyor],scripts/survivors/SurvivorsView.gd:425
+[Ground slam],[Yere vuruş],scripts/survivors/SurvivorsView.gd:427
+The rift is sealed!,Yarık mühürlendi!,scripts/survivors/SurvivorsView.gd:429
+%s calls the horde!,%s sürüyü çağırıyor!,scripts/survivors/SurvivorsView.gd:432
+[%s is down],[%s yere düştü],scripts/survivors/SurvivorsView.gd:434
+A hero,Bir kahraman,scripts/survivors/SurvivorsView.gd:451
+Pause,Duraklat,scripts/survivors/SurvivorsView.gd:539
+"Move: WASD / arrows, or drag  ·  Pause: Esc",Hareket: WASD / oklar ya da sürükle  ·  Duraklat: Esc,scripts/survivors/SurvivorsView.gd:588
+%d kills,%d öldürme,scripts/survivors/SurvivorsView.gd:624
+Level %d,Seviye %d,scripts/survivors/SurvivorsView.gd:625
+Everything is maxed — carry on,Her şey en üst seviyede — devam et,scripts/survivors/SurvivorsView.gd:778
+A rift chest,Bir yarık sandığı,scripts/survivors/SurvivorsView.gd:783
+Take one relic for the rest of this run,Bu koşunun geri kalanı için bir kalıntı al,scripts/survivors/SurvivorsView.gd:785
+Every relic found: take 60 gold,Tüm kalıntılar bulundu: 60 altın al,scripts/survivors/SurvivorsView.gd:789
+Paused,Duraklatıldı,scripts/survivors/SurvivorsView.gd:851
+Upgrades: ,Geliştirmeler: ,scripts/survivors/SurvivorsView.gd:854
+none yet,henüz yok,scripts/survivors/SurvivorsView.gd:854
+Resume,Devam et,scripts/survivors/SurvivorsView.gd:859
+Leave the rift (keep what you've earned),Yarıktan ayrıl (kazandıkların sende kalır),scripts/survivors/SurvivorsView.gd:863
+The rift closes,Yarık kapanıyor,scripts/survivors/SurvivorsView.gd:896
+Sealed at %d:%02d,%d:%02d'da mühürlendi,scripts/survivors/SurvivorsView.gd:898
+Survived %d:%02d,%d:%02d dayanıldı,scripts/survivors/SurvivorsView.gd:898
+  — a new best!,  — yeni rekor!,scripts/survivors/SurvivorsView.gd:898
+%d kills · %d elites · %d wardens · reached level %d,%d öldürme · %d seçkin · %d bekçi · ulaşılan seviye %d,scripts/survivors/SurvivorsView.gd:899
++%d gold · +%d essence · +%d Echoes,+%d altın · +%d öz · +%d Yankı,scripts/survivors/SurvivorsView.gd:900
+Freed: %s — they join your champions,Kurtarıldı: %s — şampiyonlarına katılıyor,scripts/survivors/SurvivorsView.gd:903
+Found: %s,Bulundu: %s,scripts/survivors/SurvivorsView.gd:905
+Milestone! ,Kilometre taşı! ,scripts/survivors/SurvivorsView.gd:907
+Return to the guild,Loncaya dön,scripts/survivors/SurvivorsView.gd:914
 Space,,scripts/ui/BattleView.gd:256
 Tab,,scripts/ui/BattleView.gd:257
 Escape,,scripts/ui/BattleView.gd:276
