@@ -1582,7 +1582,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var intent := Combat.monster_intent(state, i)
 		if intent.is_empty():
 			continue
-		var hit_list: Array = intent.get("targets", []) if intent.has("targets") else ([intent["target"]] if intent.get("target") != null and int(intent["dmg"]) > 0 or intent.get("charging", false) else [])
+		var hit_list: Array = intent.get("targets", []) if intent.has("targets") else ([intent["target"]] if intent.get("target") != null and (int(intent["dmg"]) > 0 or intent.get("charging", false)) else [])
 		for t in hit_list:
 			var e: Dictionary = incoming.get(t.id, {"dmg": 0, "heavy": false, "from": []})
 			e["dmg"] = int(e["dmg"]) + int(intent["dmg"])
@@ -1844,18 +1844,28 @@ func _tutorial_step(state: Dictionary, h: Hero) -> Dictionary:
 			if float(monsters[i]["hp"]) > 0 and (monsters[i].get("_winding", false) or monsters[i].get("_charged", false)):
 				var it := Combat.monster_intent(state, i)
 				var t: Hero = it.get("target") if not it.is_empty() else null
-				var tname := t.name.split(" the ")[0] if t else tr("a hero")
+				var step := _tut_step_no(seen)
+				if t == null:
+					# Wound up already: the blow's target is picked when it lands.
+					return {"step": step, "key": "5", "text": tr("Wind-ups. %s has wound up a heavy blow (the red tag above it). Next round it lands on one hero and stuns them unless they Defend. Press Defend (5) to take half and earn Momentum, or Guard (6) a hurt ally.") % tr(str(monsters[i]["name"]))}
+				var tname := t.name.split(" the ")[0]
 				var own := t == h
-				return {"step": 3, "key": "5" if own else "6", "text": tr("Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s") % [str(monsters[i]["name"]), tname,
+				return {"step": step, "key": "5" if own else "6", "text": tr("Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s") % [tr(str(monsters[i]["name"])), tr(str(tname)),
 					tr("Press Defend (5) — %s takes half and earns Momentum.") % tr(str(who)) if own else tr("Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker.") % [tr(str(tname)), tr(str(who))]]}
 	if not seen.has("tut_attack"):
-		return {"step": 1, "key": "1", "text": tr("Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name.") % [tr(str(who)), tr(str(who))]}
+		return {"step": _tut_step_no(seen), "key": "1", "text": tr("Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name.") % [tr(str(who)), tr(str(who))]}
 	if not seen.has("tut_skill"):
 		for sk in GameData.hero_role_skills(h):
 			if Combat.action_block(state, h, "skill:" + str(sk["id"])) == "":
-				return {"step": 2, "key": "2", "text": tr("Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it.") % [int(state.get("momentum", 0)), tr(str(who)), tr(str(sk["name"])), int(sk["cost"])]}
-		return {"step": 2, "key": "", "text": tr("Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it.")}
+				return {"step": _tut_step_no(seen), "key": "2", "text": tr("Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it.") % [int(state.get("momentum", 0)), tr(str(who)), tr(str(sk["name"])), int(sk["cost"])]}
+		return {"step": _tut_step_no(seen), "key": "", "text": tr("Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it.")}
 	return {}
+
+
+## The guided fight's lessons come in whatever order the fight brings them;
+## the step shown is how many are done, plus one.
+func _tut_step_no(seen: Array) -> int:
+	return 1 + ["tut_attack", "tut_skill", "tut_windup"].filter(func(k): return seen.has(k)).size()
 
 
 func _tutorial_panel(tut: Dictionary) -> Control:

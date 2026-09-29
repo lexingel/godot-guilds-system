@@ -1146,9 +1146,13 @@ func _render_onboard(v: VBoxContainer) -> void:
 	))
 	v.add_child(crest_row)
 
-	v.add_child(_icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
+	var found := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
 		var n := edit.text.strip_edges()
 		if n == "":
+			# Say what's missing instead of doing nothing.
+			edit.placeholder_text = tr("Name your guild first")
+			edit.add_theme_color_override("font_placeholder_color", Palette.HAZARD)
+			edit.grab_focus()
 			return
 		GameState.guild_name = n
 		GameState.guild_crest = pending_crest
@@ -1160,7 +1164,9 @@ func _render_onboard(v: VBoxContainer) -> void:
 		_flavor_toast = GameData.narrative_line("guild_founded")
 		screen = "camp"
 		render()
-	))
+	)
+	v.add_child(found)
+	edit.text_submitted.connect(func(_t): found.pressed.emit())   # Enter founds it too
 
 
 # ---------------- Rift Hall ----------------
@@ -1774,7 +1780,25 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some under Roster > Recruits first."))
 	elif not bench.is_empty():
-		v.add_child(_label("Roster — drag into a row, or Add (joins their natural row)", 12, true))
+		var bench_head := HBoxContainer.new()
+		bench_head.add_theme_constant_override("separation", 10)
+		var bl := _label("Roster — drag into a row, or Add (joins their natural row)", 12, true)
+		bl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bench_head.add_child(bl)
+		# One click to a full party: the strongest ready heroes, each in their natural row.
+		var ready: Array = bench.filter(func(x): return not x.is_champion and not x.is_downed() and x.busy_runs <= 0)
+		ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+		var fill := _button("Add strongest", func():
+			for x in ready:
+				if pending_party.size() >= _party_cap():
+					break
+				pending_party.append(x.id)
+				GameState.set_hero_formation(x.id, str(GameData.ROLE_POSITION.get(GameData.hero_role(x), {}).get("row", x.formation)))
+			render())
+		fill.tooltip_text = tr("Fill the party with your strongest ready heroes, each in their natural row.")
+		fill.disabled = ready.is_empty() or pending_party.size() >= _party_cap()
+		bench_head.add_child(fill)
+		v.add_child(bench_head)
 		var bench_flow := HFlowContainer.new()
 		bench_flow.add_theme_constant_override("h_separation", 8)
 		bench_flow.add_theme_constant_override("v_separation", 8)

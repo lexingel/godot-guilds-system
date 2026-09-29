@@ -348,11 +348,13 @@ func monster_intent(state: Dictionary, i: int) -> Dictionary:
 	if float(m["hp"]) <= 0:
 		return {}
 	# A monster that has already acted this round has nothing left to show
-	# (and Guard can't change a hit that already landed).
+	# (and Guard can't change a hit that already landed), except a wound-up
+	# blow: it keeps its warning until it lands next round (the target is
+	# only picked then).
 	var order: Array = state.get("turn_order", [])
 	for k in min(int(state.get("turn_idx", 0)), order.size()):
 		if str(order[k]["type"]) == "monster" and int(order[k]["id"]) == i:
-			return {}
+			return {"kind": "windup", "target": null, "dmg": 0, "heavy": false, "guarded": false, "charging": true} if m.get("_charged", false) else {}
 	if state.get("_m_stunned", {}).has(i):
 		return {"kind": "stunned", "target": null, "dmg": 0, "heavy": false}
 	var it: Dictionary = _intent_of(state, i)
@@ -531,6 +533,9 @@ func _start_round(state: Dictionary) -> void:
 			mw["_windup_cd"] = int(mw["_windup_cd"]) - 1
 			continue
 		if (mw.get("affixes", []) as Array).has("hasted"):
+			continue
+		# The guided first fight teaches attacks and skills before its one wind-up (round 2).
+		if GameState.run.get("training", false) and int(state["round_num"]) < 2 and not GameState.hints_seen.has("tut_windup"):
 			continue
 		var wtier := str(mw.get("tier", "combat"))
 		if wtier == "combat" and GameData.WINDUP_BRUTES.has(str(mw["name"])):

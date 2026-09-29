@@ -22,6 +22,14 @@ func run() -> void:
 	for n in ["Blight Hound", "Lantern Wight", "Tide Caller", "Mudscale Brute", "Cinder Hound", "Obsidian Sentinel"]:
 		check(GameData.monster_anim_frames(n, "attack").size() == 5 and GameData.monster_anim_frames(n, "hurt").size() == 5, "%s is animated" % n)
 
+	# Rift bosses come from their region (the Act III boss never in the Vale).
+	for b in GameData.BIOMES:
+		var bd: Dictionary = GameData.DIFFICULTIES[0].duplicate()
+		bd["biome"] = b
+		for t in 12:
+			var boss := str(Combat.gen_monster(bd, 6, "boss")["name"]).split(",")[0]
+			check((GameData.BIOMES[b]["bosses"] as Array).has(boss), "%s's warden is one of its own (%s)" % [b, boss])
+
 	# Encounters: known members, shares about 1, every region has several.
 	for b in GameData.BIOMES:
 		var encs: Array = GameData.ENCOUNTERS.get(b, [])

@@ -82,6 +82,20 @@ func run() -> void:
 	GameState._close_rival_event()
 	check(GameState.guild_board.size() == n0 - 1 and GameState.rival_event.is_empty(), "left unanswered, the rival takes it")
 
+	# The board refreshes before you answer: the rival takes the posting.
+	posted = GameState.guild_board.filter(func(q): return str(q["status"]) == "posted")
+	GameState.rival_event = {"type": "snatch", "quest": str(posted[0]["id"]), "day": GameState.day}
+	GameState.board_refresh_day = GameState.day
+	GameState.resolve_guild_board()
+	check(GameState.rival_event.is_empty() and not GameState.guild_board.any(func(q): return str(q["id"]) == str(posted[0]["id"])), "a refreshed board ends the grab (the rival took it)")
+	# Taking the contract from the board yourself ends it too.
+	posted = GameState.guild_board.filter(func(q): return str(q["status"]) == "posted")
+	for q in GameState.active_quests():
+		GameState.abandon_quest(str(q["id"]))
+	GameState.rival_event = {"type": "snatch", "quest": str(posted[0]["id"]), "day": GameState.day}
+	GameState.accept_quest(str(posted[0]["id"]))
+	check(GameState.rival_event.is_empty(), "accepting the contract yourself ends the grab")
+
 	# Saved with the guild.
 	GameState.rival_event = {"type": "challenge", "rank": "E", "day": GameState.day, "accepted": true}
 	GameState.save()

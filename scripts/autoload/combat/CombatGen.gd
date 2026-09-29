@@ -323,7 +323,9 @@ func gen_monster(diff: Dictionary, floor_idx: int, kind: String) -> Dictionary:
 	if kind == "boss" and diff.has("boss_name"):
 		name = str(diff["boss_name"])   # a campaign finale's named foe
 	elif kind == "boss":
-		name = "%s, %s Warden" % [GameData.BOSS_NAMES[randi() % GameData.BOSS_NAMES.size()], diff["name"].split(" ")[0]]
+		# A region's own wardens: a new guild in the Vale never meets the Act III boss.
+		var bosses: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("bosses", GameData.BOSS_NAMES)
+		name = "%s, %s Warden" % [bosses[randi() % bosses.size()], diff["name"].split(" ")[0]]
 	elif kind == "elite":
 		var elites: Array = GameData.BIOMES.get(str(diff.get("biome", "")), {}).get("elites", GameData.ELITE_NAMES)
 		name = str(elites[randi() % elites.size()])

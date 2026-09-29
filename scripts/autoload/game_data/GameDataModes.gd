@@ -696,7 +696,8 @@ const QUEST_DUE_DAYS := {1: 6, 2: 8, 3: 10}
 
 ## The rival guild competing for the same contracts and recruits.
 const RIVAL_NAMES := ["The Iron Chorus", "The Ashen Wolves", "The Gilded Lance", "The Last Lantern", "The Hollow Crown Company"]
-const RIVAL_DAILY_RENOWN := {1: [0, 1], 2: [1, 2], 3: [1, 3]}   # [min, max] per day by campaign act (3 = Act III and after)
+const RIVAL_DAILY_RENOWN := {1: [1, 2], 2: [2, 4], 3: [3, 5]}   # [min, max] per day by campaign act (3 = Act III and after); a guild earns ~3-4 a day in Act II
+const RIVAL_CATCH_UP := 10   # trailing by this much or more, the rival gains 1 more a day
 ## The rival's weekly move: on RIVAL_MOVE_DAY of the week, with this chance,
 ## it courts a hero, dares you to a challenge or goes for a posted contract,
 ## and you answer before payday (no answer: the "no" side).

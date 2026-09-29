@@ -113,6 +113,12 @@ func resolve_guild_board() -> void:
 		board_refresh_day = day
 		changed = true
 	if day >= board_refresh_day:
+		# The rival was after a posting that's coming down: it takes it.
+		var grab := _rival_quest()
+		if str(rival_event.get("type", "")) == "snatch" and (grab.is_empty() or str(grab["status"]) == "posted"):
+			if not grab.is_empty():
+				_news(tr("%s took the contract: %s.") % [tr(str(rival_name)), tr(str(quest_desc(grab)))])
+			rival_event = {}
 		guild_board.assign(guild_board.filter(func(q): return str(q["status"]) == "active"))
 		while guild_board.filter(func(q): return str(q["status"]) == "posted").size() < GameData.QUEST_POSTED:
 			guild_board.append(roll_quest())
@@ -144,6 +150,9 @@ func accept_quest(quest_id: String) -> String:
 			q["status"] = "active"
 			q["baseline"] = _quest_current(q)
 			q["due"] = day + int(GameData.QUEST_DUE_DAYS.get(int(q.get("diff", 1)), 6))
+			if str(rival_event.get("type", "")) == "snatch" and str(rival_event.get("quest", "")) == quest_id:
+				_news(tr("You took the contract before %s could: %s.") % [tr(str(rival_name)), tr(str(quest_desc(q)))])
+				rival_event = {}
 			save()
 			state_changed.emit()
 			return ""
@@ -501,7 +510,7 @@ func hold_feast() -> String:
 ## make a move you have to answer (maybe_rival_move).
 func rival_day() -> void:
 	var span: Array = GameData.RIVAL_DAILY_RENOWN[mini(3, campaign_act)]
-	rival_renown += int(span[0]) + randi() % (int(span[1]) - int(span[0]) + 1)
+	rival_renown += int(span[0]) + randi() % (int(span[1]) - int(span[0]) + 1) + (1 if reputation - rival_renown >= GameData.RIVAL_CATCH_UP else 0)
 	maybe_rival_move()
 	if randf() < GameData.RIVAL_TAUNT_CHANCE:
 		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), tr(str(str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name))])

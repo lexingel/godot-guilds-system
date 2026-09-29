@@ -104,7 +104,7 @@ func run() -> void:
 	for i in 20:
 		GameState.rival_day()
 	check(GameState.rival_renown >= r0 + 20, "the rival gains Renown every day in Act III")
-	GameState.reputation = GameState.rival_renown + 5
+	GameState.reputation = GameState.rival_renown + 20
 	var offers0 := GameState.recruit_offer_count() - GameState.rival_ahead
 	GameState.coins = 999
 	GameState.day = 10 * GameData.PAYDAY_DAYS - 1
