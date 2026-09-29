@@ -850,7 +850,8 @@ func _loot_desc(obj, is_relic: bool) -> String:
 	if it.tertiary_kind != "":
 		parts.append(Combat.describe_skill(it.tertiary_kind, it.tertiary_value))
 	for e in it.effects:
-		parts.append("%s [%s]" % [tr(str(Combat.describe_effect(e))), tr(str(GameData.ARCHETYPES.get(str(e.get("arch", "")), "")))])
+		var named := (tr(str(e["name"])) + ": ") if e.has("name") else ""
+		parts.append("%s%s [%s]" % [named, tr(str(Combat.describe_effect(e))), tr(str(GameData.ARCHETYPES.get(str(e.get("arch", "")), "")))])
 	var text := ", ".join(parts)
 	if it.implicit_kind != "":
 		text = tr("Base: %s · %s") % [tr(str(Combat.describe_skill(it.implicit_kind, it.implicit_value))), tr(str(text))]
@@ -1052,7 +1053,8 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		if it.locked_role != "":
 			lines.append(_bb(Palette.MUTED, tr("%s only") % tr(str(it.locked_role.capitalize()))))
 	for e in it.effects:
-		lines.append("[i]%s[/i]  %s" % [tr(str(Combat.describe_effect(e).replace("[", "[lb]"))), tr(str(_arch_chip(str(e.get("arch", "")))))])
+		var named := ("[b]★ %s[/b] — " % _bb(Palette.EMBER_BRIGHT, tr(str(e["name"])))) if e.has("name") else ""
+		lines.append("%s[i]%s[/i]  %s" % [named, tr(str(Combat.describe_effect(e).replace("[", "[lb]"))), tr(str(_arch_chip(str(e.get("arch", "")))))])
 	if it.attune_level > 0 or it.attune_wins > 0:
 		var nxt := "" if it.attune_level >= GameData.ATTUNE_MAX else tr(" · %d/%d wins to next") % [it.attune_wins, GameData.ATTUNE_WINS * (it.attune_level + 1)]
 		lines.append(_bb(Palette.RANK_E, tr("Attuned %d/%d (+%d%% stats)%s") % [it.attune_level, GameData.ATTUNE_MAX, int(round((pow(1.0 + GameData.ATTUNE_STEP, it.attune_level) - 1.0) * 100)), tr(str(nxt))]))
@@ -1062,6 +1064,9 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 		var current: Item = _find_equipped_at(compare_for.id, it.slot_type(), slot) if slot >= 0 else null
 		lines.append("")
 		lines.append(_bb(Palette.MUTED, tr("If equipped on %s%s:") % [tr(str(compare_for.name.split(" the ")[0])), tr(str((tr(" (replacing %s)") % tr(str(current.name))) if current else ""))]))
+		if slot >= 0:
+			var dp := GameState.power_delta(compare_for, it, slot)
+			lines.append(_bb(Palette.good() if dp > 0 else (Palette.HAZARD if dp < 0 else Palette.MUTED), tr("Power %+d") % dp))
 		var a := _item_stat_map(it)
 		var b := _item_stat_map(current)
 		var any := false

@@ -198,20 +198,19 @@ func gen_item(rarity_id: String, category_override: String = "", rank: String = 
 	if rolled_kinds.size() > 2:
 		it.tertiary_kind = str(rolled_kinds[2])
 		it.tertiary_value = snappedf(GameData.ITEM_KIND_BASE[it.tertiary_kind] * rarity["mult"] * GameData.ITEM_AFFIX_VALUE_SHARE[2] * roll.call(), 0.001)
-	var implicit: Dictionary = GameData.ITEM_BASE_IMPLICIT[noun]
-	it.implicit_kind = str(implicit["kind"])
-	it.implicit_value = snappedf(float(implicit["value"]) * rank_mult, 0.001)
-	if rarity_id == "epic":
-		var affix: Dictionary = GameData.ITEM_COND_AFFIXES[randi() % GameData.ITEM_COND_AFFIXES.size()].duplicate(true)
-		affix["value"] = snappedf(float(affix["value"]) * roll.call(), 0.001)
-		it.effects = [affix]
+	# Rare and Epic items carry a defining effect, which names them.
+	var fx := {}
+	if rarity_id in ["rare", "epic"]:
+		var fx_pool: Array = (GameData.ITEM_EFFECTS[category] as Array).filter(func(e): return rarity_id == "epic" or not e.get("epic", false))
+		fx = (fx_pool[randi() % fx_pool.size()] as Dictionary).duplicate(true)
+		fx["value"] = snappedf(float(fx["value"]) * (GameData.ITEM_EFFECT_EPIC_MULT if rarity_id == "epic" else 1.0) * randf_range(0.9, 1.1), 0.001)
+		it.effects = [fx]
 
 	var prefixes: Array = GameData.ITEM_AFFIX_PREFIX[it.kind]
 	# Stored in English (it's in the save); NameTranslation shows it translated.
 	var name := "%s %s" % [prefixes[randi() % prefixes.size()], noun]
-	if it.secondary_kind != "":
-		var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[it.secondary_kind]
-		name += " %s" % suffixes[randi() % suffixes.size()]
+	if not fx.is_empty():
+		name += " %s" % str(fx["suffix"])
 	it.name = name
 	it.attr = str(GameData.ITEM_BASE_ATTR.get(noun, "might"))
 	it.attr_bonus = int(GameData.ITEM_ATTR_BONUS[rarity_id])

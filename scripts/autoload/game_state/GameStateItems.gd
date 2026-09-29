@@ -145,8 +145,9 @@ func reforge_item(item_id: String, line: int) -> String:
 		1:
 			it.secondary_kind = kind
 			it.secondary_value = val
-			var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[kind]
-			it.name = "%s %s" % [it.name.split(" of ")[0], str(suffixes[randi() % suffixes.size()])]
+			if it.effects.is_empty() or not (it.effects[0] as Dictionary).has("suffix"):   # older items are named by their 2nd stat
+				var suffixes: Array = GameData.ITEM_AFFIX_SUFFIX[kind]
+				it.name = "%s %s" % [it.name.split(" of ")[0], str(suffixes[randi() % suffixes.size()])]
 		2:
 			it.tertiary_kind = kind
 			it.tertiary_value = val
@@ -197,6 +198,28 @@ func item_slot_type_of(it: Item) -> String:
 
 ## Every flat kind->value an item contributes (what Combat.hero_item_total
 ## sums for it).
+## How much `h`'s Power changes with `it` in their slot `idx` (replacing
+## what's there), tried on and taken off again without saving.
+func power_delta(h: Hero, it: Item, idx: int) -> int:
+	var before := Combat.power_of(h)
+	var cur: Item = null
+	for x in items:
+		if x != it and x.equipped_to == h.id and x.slot_type() == it.slot_type() and x.equipped_idx == idx:
+			cur = x
+	var was_to := it.equipped_to
+	var was_idx := it.equipped_idx
+	if cur:
+		cur.equipped_to = ""
+	it.equipped_to = h.id
+	it.equipped_idx = idx
+	var after := Combat.power_of(h)
+	it.equipped_to = was_to
+	it.equipped_idx = was_idx
+	if cur:
+		cur.equipped_to = h.id
+	return after - before
+
+
 func item_stat_map(it: Item) -> Dictionary:
 	var m := {}
 	if it == null:

@@ -33,6 +33,9 @@ func _init(lang: String = "tr") -> void:
 			_suffixes[str(w)] = true
 	for w in GameData.RELIC_SPECIAL_SUFFIX.values():
 		_suffixes[str(w)] = true
+	for list in GameData.ITEM_EFFECTS.values():
+		for e in list:
+			_suffixes[str(e["suffix"])] = true
 	for w in GameData.RELIC_TYPES:
 		_relic_types[str(w)] = true
 	for w in Combat.RARITY_NOUNS:

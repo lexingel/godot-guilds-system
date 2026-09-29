@@ -511,7 +511,8 @@ func _power(heroes: Array, party_terms: bool) -> int:
 	var dmg := 0.0
 	var hp := 0.0
 	for h in party:
-		dmg += dmg_of(h) * (1.0 + 0.3 * hero_skill_total(h, "ability_power"))
+		# Turn speed is more turns, but not every turn is an attack: half weight.
+		dmg += dmg_of(h) * (1.0 + 0.3 * hero_skill_total(h, "ability_power")) * (1.0 + 0.5 * maxf(0.0, hero_skill_total(h, "speed_pct")))
 		hp += max_hp(h)
 	dmg *= GameState.tactical_bonus()
 	var dodge := party_skill_total(party, "dodge_pct")

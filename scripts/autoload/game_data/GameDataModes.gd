@@ -305,9 +305,9 @@ const RIFT_RANKS := [
 	{"id": "D", "rec": 220, "base": "lesser", "hp": 2.4, "dmg": 2.0, "reward": 1.7},
 	{"id": "C", "rec": 480, "base": "greater", "hp": 1.0, "dmg": 1.0, "reward": 1.0},
 	{"id": "B", "rec": 740, "base": "greater", "hp": 1.4, "dmg": 1.3, "reward": 1.3, "elite_chance_up": true},
-	{"id": "A", "rec": 960, "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
+	{"id": "A", "rec": 850, "base": "greater", "hp": 1.9, "dmg": 1.6, "reward": 1.7, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true},
 	{"id": "S", "rec": 1200, "base": "greater", "hp": 3.0, "dmg": 2.2, "reward": 2.2, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true},
-	{"id": "SS", "rec": 1700, "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
+	{"id": "SS", "rec": 1850, "base": "greater", "hp": 4.2, "dmg": 3.0, "reward": 2.8, "elite_chance_up": true, "hazard_severity_up": 1, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
 	{"id": "SSS", "rec": 2200, "base": "greater", "hp": 6.0, "dmg": 3.8, "reward": 3.5, "elite_chance_up": true, "hazard_severity_up": 2, "shop_chance_down": true, "relic_rarity_floor_down": true, "boss_double_mechanic": true},
 ]
 

@@ -110,6 +110,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.",
 	"Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger.",
 	"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.",
 	"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.",

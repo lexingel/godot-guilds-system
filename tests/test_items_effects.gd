@@ -1,5 +1,6 @@
 extends "res://tests/base_test.gd"
-## Items (ranks, implicits, epic affixes), item effects and fights.
+## Items (ranks, one or two stats, a named effect on Rare and Epic), item
+## effects and fights.
 
 var fired := {}
 
@@ -14,17 +15,29 @@ func run() -> void:
 		for rar in ["common", "rare", "epic"]:
 			var it := Combat.gen_item(rar, "", rank)
 			check(it.item_rank == rank, "rank stored")
-			check(it.implicit_kind != "", "implicit rolled")
-			check((it.effects.size() == 1) == (rar == "epic"), "epic cond affix only on epic")
+			var stats := [it.kind, it.secondary_kind, it.tertiary_kind, it.implicit_kind].filter(func(k): return k != "").size()
+			check(stats == int(GameData.ITEM_AFFIX_COUNT_BY_RARITY[rar]) and (GameData.ITEM_CATEGORY_KINDS[it.category] as Array).has(it.kind), "%s: %d stat%s from its category" % [rar, stats, "" if stats == 1 else "s"])
+			check((it.effects.size() == 1) == (rar != "common") and (rar == "common" or it.name.ends_with(str(it.effects[0]["suffix"]))), "a named effect on Rare and Epic, in the name (%s)" % it.name)
 			var back := Item.from_dict(JSON.parse_string(JSON.stringify(it.to_dict())))
-			check(is_equal_approx(back.implicit_value, it.implicit_value) and back.item_rank == it.item_rank and back.effects.size() == it.effects.size(), "roundtrip")
+			check(is_equal_approx(back.value, it.value) and back.item_rank == it.item_rank and back.effects.size() == it.effects.size() and (it.effects.is_empty() or str(back.effects[0]["id"]) == str(it.effects[0]["id"])), "roundtrip")
 			print("[%s/%s] %s | %s" % [rank, rar, it.name, _desc(it)])
 	var lo := Combat.gen_item("common", "weapon", "F")
 	var hi := Combat.gen_item("common", "weapon", "SSS")
-	check(hi.implicit_value > lo.implicit_value, "rank scales implicit")
-	for e in GameData.ITEM_COND_AFFIXES:
-		var d := Combat.describe_effect(e)
-		check(d != "" and not d.begins_with(":"), "describe affix " + str(e))
+	check(hi.value > lo.value * 1.1, "rank scales the stat")
+	var epic_only := 0
+	for cat in GameData.ITEM_EFFECTS:
+		for e in GameData.ITEM_EFFECTS[cat]:
+			var d := Combat.describe_effect(e)
+			check(d != "" and not d.begins_with(":") and GameData.ARCHETYPES.has(str(e["arch"])), "describe effect " + str(e["id"]))
+			epic_only += 1 if e.get("epic", false) else 0
+	var rare_epics := 0
+	for k in 200:
+		rare_epics += 1 if Combat.gen_item("rare", "weapon", "C").effects[0].get("epic", false) else 0
+	check(rare_epics == 0, "epic-only effects never roll on a Rare")
+	var seen := {}
+	for k in 300:
+		seen[str(Combat.gen_item("epic", "", "C").effects[0]["id"])] = true
+	check(seen.size() >= 14, "Epics roll the whole effect pool (%d seen)" % seen.size())
 	for u in GameData.UNIQUE_ITEMS:
 		for e in u["effects"]:
 			print("  %s: %s" % [u["name"], Combat.describe_effect(e)])

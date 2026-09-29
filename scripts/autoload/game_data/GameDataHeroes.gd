@@ -215,30 +215,35 @@ const NARRATIVE_LINES := {
 # instead of just guaranteeing every stat in that category at Epic.
 const ITEM_CATEGORIES := ["weapon", "armor", "focus"]
 const ITEM_CATEGORY_LABEL := {"weapon": "Weapon", "armor": "Armor", "focus": "Focus"}
+## The stats a generated item rolls, two per category: weapons hit, armor
+## holds, focus items keep the party going. (Older items may carry first-strike,
+## escalating or wipe-guard stats; those are effects now, see ITEM_EFFECTS.)
 const ITEM_CATEGORY_KINDS := {
-	"weapon": ["dmg_pct", "first_round_pct", "escalate_pct", "speed_pct"],
-	"armor": ["hp_pct", "hazard_guard_pct", "mend_pct", "dodge_pct"],
-	"focus": ["dodge_pct", "speed_pct", "mend_pct", "hp_pct"],
+	"weapon": ["dmg_pct", "speed_pct"],
+	"armor": ["hp_pct", "hazard_guard_pct"],
+	"focus": ["mend_pct", "dodge_pct"],
 }
 const ITEM_NOUNS := {
 	"weapon": ["Blade", "Bow", "Staff", "Mace", "Dagger", "Axe", "Spear", "Wand"],
 	"armor": ["Plate", "Guard", "Bracer", "Greaves", "Mail", "Robe", "Helm"],
 	"focus": ["Ring", "Amulet", "Charm", "Band", "Talisman", "Tome", "Orb"],
 }
+## A Rank-F Common's value per stat. The six rolled kinds carry what the old
+## base-type stat added on top; the rest are only for older items (reforging).
 const ITEM_KIND_BASE := {
-	"dmg_pct": 0.12, "hp_pct": 0.12, "first_round_pct": 0.15, "escalate_pct": 0.04,
-	"mend_pct": 0.06, "hazard_guard_pct": 0.12, "dodge_pct": 0.10, "speed_pct": 0.12,
+	"dmg_pct": 0.16, "hp_pct": 0.17, "first_round_pct": 0.15, "escalate_pct": 0.04,
+	"mend_pct": 0.075, "hazard_guard_pct": 0.16, "dodge_pct": 0.12, "speed_pct": 0.14,
 }
 
 ## How many distinct stats a generated (non-Legendary) item rolls — the actual
 ## "build-around" lever: a Common is a single clean number, an Epic is a real
 ## multi-stat piece worth building toward, same shape as a hero's rank ladder.
-const ITEM_AFFIX_COUNT_BY_RARITY := {"common": 1, "rare": 2, "epic": 3}
+const ITEM_AFFIX_COUNT_BY_RARITY := {"common": 1, "rare": 1, "epic": 2}   # stats; Rare and Epic also roll an ITEM_EFFECTS effect
 
 ## Each slot past the first rolls at a reduced share of ITEM_KIND_BASE so the
 ## primary stat stays the item's clear identity instead of 3 equally-loud
 ## numbers — 100% / 55% / 35% for primary/secondary/tertiary.
-const ITEM_AFFIX_VALUE_SHARE := [1.0, 0.55, 0.35]
+const ITEM_AFFIX_VALUE_SHARE := [1.0, 0.5, 0.35]
 
 ## Flavor vocabulary for generated item names — a prefix (from the primary
 ## stat) and, when there's a secondary stat, a suffix phrase, e.g. "Swift
@@ -583,7 +588,40 @@ const ITEM_RANK_MULT := [1.0, 1.04, 1.08, 1.12, 1.16, 1.22, 1.28, 1.35, 1.42]
 ## Each rolled affix lands somewhere in this band of its base value.
 const ITEM_ROLL_RANGE := [0.8, 1.2]
 
-## An Epic's extra, situational affix — the Combat.hero_effects entry shape
+## A Rare or Epic item's defining effect, by category: a named Combat.
+## hero_effects entry (a conditional stat, or a trigger and what it does),
+## whose `suffix` names the item ("Brutal Blade of the Ambush"). Values are a
+## Rare's; an Epic's are ITEM_EFFECT_EPIC_MULT stronger. `epic` ones only
+## roll on Epics. `arch` is the build archetype it counts toward.
+const ITEM_EFFECTS := {
+	"weapon": [
+		{"id": "ambush", "name": "Ambush", "suffix": "of the Ambush", "arch": "opener", "kind": "dmg_pct", "value": 0.35, "cond": {"round_max": 1}},
+		{"id": "executioner", "name": "Executioner", "suffix": "of the Headsman", "arch": "executioner", "trigger": "after_hit", "effect": "execute_below", "value": 0.12},
+		{"id": "bloodthirst", "name": "Bloodthirst", "suffix": "of Thirst", "arch": "sustain", "trigger": "after_hit", "effect": "lifesteal", "value": 0.15},
+		{"id": "surge", "name": "Surge", "suffix": "of the Surge", "arch": "opener", "trigger": "on_kill", "effect": "gain_momentum", "value": 0.8},
+		{"id": "thunder", "name": "Thunderclap", "suffix": "of Thunder", "arch": "attrition", "trigger": "round_third", "effect": "nova", "value": 0.35},
+		{"id": "relentless", "name": "Relentless", "suffix": "of the Long Fight", "arch": "attrition", "kind": "dmg_pct", "value": 0.25, "cond": {"round_min": 4}},
+		{"id": "onslaught", "name": "Onslaught", "suffix": "of Onslaught", "arch": "executioner", "trigger": "on_kill", "effect": "extra_turn", "value": 1.0, "epic": true},
+	],
+	"armor": [
+		{"id": "riposte", "name": "Riposte", "suffix": "of Riposte", "arch": "evasion", "trigger": "evade_or_heavy", "effect": "counter_attack", "value": 0.4},
+		{"id": "bulwark", "name": "Shield-Bearer", "suffix": "of the Shield-Bearer", "arch": "guardian", "trigger": "ally_targeted", "effect": "intercept", "value": 0.3},
+		{"id": "blunting", "name": "Blunting", "suffix": "of Blunting", "arch": "guardian", "trigger": "evade_or_heavy", "effect": "weaken_attacker", "value": 0.1},
+		{"id": "laststand", "name": "Last Stand", "suffix": "of the Last Stand", "arch": "executioner", "kind": "dmg_pct", "value": 0.3, "cond": {"hp_below": 0.4}},
+		{"id": "aegis", "name": "Aegis", "suffix": "of the Aegis", "arch": "guardian", "trigger": "round_third", "effect": "shield_party", "value": 0.06, "epic": true},
+	],
+	"focus": [
+		{"id": "renewal", "name": "Renewal", "suffix": "of Renewal", "arch": "sustain", "trigger": "round_third", "effect": "mend_party", "value": 0.06},
+		{"id": "grace", "name": "Grace", "suffix": "of Grace", "arch": "sustain", "trigger": "party_mend", "effect": "shield_lowest", "value": 0.08},
+		{"id": "blur", "name": "Blur", "suffix": "of the Blur", "arch": "evasion", "kind": "dodge_pct", "value": 0.15, "cond": {"hp_above": 0.75}},
+		{"id": "slayer", "name": "Giant-Slayer", "suffix": "of Giants", "arch": "executioner", "kind": "dmg_pct", "value": 0.2, "cond": {"vs_boss": true}},
+		{"id": "focus", "name": "Focus", "suffix": "of Focus", "arch": "opener", "trigger": "evade_or_heavy", "effect": "gain_momentum", "value": 0.5},
+	],
+}
+const ITEM_EFFECT_EPIC_MULT := 1.35
+
+
+## An older Epic's extra, situational affix (before ITEM_EFFECTS) — the Combat.hero_effects entry shape
 ## (see its doc comment), rolled once and stored on the Item. "arch" is the
 ## build archetype it belongs to (ARCHETYPES). Values here are Rank-F, pre-roll.
 const ITEM_COND_AFFIXES := [

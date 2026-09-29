@@ -1336,7 +1336,7 @@ func _render_compendium(v: VBoxContainer) -> void:
 
 
 func _render_compendium_items(v: VBoxContainer) -> void:
-	v.add_child(_wrap_label("Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one \"gear\" slot pool that grows with hero rank.", 12, true))
+	v.add_child(_wrap_label("Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one \"gear\" slot pool that grows with hero rank. A Common rolls one stat, a Rare one bigger stat and a named effect, an Epic two stats and a stronger effect (some effects only come on Epics). Legendaries are unique.", 12, true))
 	for category in GameData.ITEM_CATEGORIES:
 		v.add_child(_hsep())
 		var head := HBoxContainer.new()
@@ -1344,8 +1344,10 @@ func _render_compendium_items(v: VBoxContainer) -> void:
 		head.add_child(_icon(str(GameData.ITEM_CATEGORY_ICON_PATH.get(category, "")), 28))
 		head.add_child(_label(str(GameData.ITEM_CATEGORY_LABEL.get(category, category)), 16))
 		v.add_child(head)
-		for kind in GameData.ITEM_CATEGORY_KINDS.get(category, []):
-			v.add_child(_wrap_label("• %s" % tr(str(_KIND_LABEL.get(kind, kind))), 12, true))
+		var stats: Array = GameData.ITEM_CATEGORY_KINDS.get(category, []).map(func(k): return tr(str(_KIND_LABEL.get(k, k))))
+		v.add_child(_wrap_label(tr("Stats: %s") % ", ".join(stats), 13))
+		for e in GameData.ITEM_EFFECTS.get(category, []):
+			v.add_child(_rich_line("[b]%s[/b]%s — %s" % [tr(str(e["name"])), tr(" (Epic)") if e.get("epic", false) else "", tr(str(Combat.describe_effect(e)))], 12))
 
 
 func _render_compendium_relics(v: VBoxContainer) -> void:

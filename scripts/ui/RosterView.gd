@@ -941,7 +941,16 @@ func _equip_choice_card(h: Hero, it: Item, slot_type: String, idx: int) -> Panel
 	names.add_child(sl)
 	top.add_child(names)
 	v.add_child(top)
-	var cmp := _compare_lines(it, h, idx)
+	var dp := GameState.power_delta(h, it, idx)
+	var pwl := _label(tr("Power %+d") % dp, 14)
+	pwl.add_theme_color_override("font_color", Palette.RANK_E if dp > 0 else (Palette.HAZARD if dp < 0 else Palette.MUTED))
+	v.add_child(pwl)
+	for e in it.effects:
+		if (e as Dictionary).has("name"):
+			var el := _wrap_label("★ %s — %s" % [tr(str(e["name"])), tr(str(Combat.describe_effect(e)))], 12)
+			el.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			v.add_child(el)
+	var cmp := _compare_lines(it, h, idx).filter(func(c): return not (str(c[0]).begins_with(tr("gains: ")) and it.effects.any(func(e): return (e as Dictionary).has("name"))))
 	for k in mini(cmp.size(), 5):
 		var l := _wrap_label(str(cmp[k][0]), 11)
 		l.add_theme_color_override("font_color", Palette.RANK_E if cmp[k][1] else Palette.HAZARD)
