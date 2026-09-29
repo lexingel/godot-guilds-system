@@ -50,7 +50,7 @@ var evolve_picker_hero_id: String = ""   # "" = closed, else which hero's evolut
 var expanded_slot: String = ""     #"<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
 
 
-var rift_gear_open: bool = false   # "Gear Up" panel toggle on non-combat rift nodes (shop/hazard/fork) — lets the party re-equip between fights without retreating
+var rift_hero_id: String = ""   # a party member's page, open between fights in a rift ("" = the rift itself)
 
 
 var confirm_reset: bool = false

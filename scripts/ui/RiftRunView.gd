@@ -296,6 +296,13 @@ func _run_bar(in_combat: bool) -> Control:
 			hrow.add_child(nv)
 			hv.add_child(hrow)
 			hv.add_child(_hp_bar(h.hp, Combat.max_hp(h), 70.0))
+			hv.mouse_filter = Control.MOUSE_FILTER_STOP
+			hv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			hv.tooltip_text = tr("Open %s's page") % h.name.split(" the ")[0]
+			hv.gui_input.connect(func(e, id=h.id):
+				if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+					rift_hero_id = id
+					render())
 			bottom.add_child(hv)
 	var relics := Combat.equipped_relics()
 	if not relics.is_empty():
@@ -347,7 +354,12 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		render()
 		return
 	var kind := GameState.current_node_kind()
+	if kind in ["combat", "boss", "elite"] or GameState.run.get("sealed") != null:
+		rift_hero_id = ""
 	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	if rift_hero_id != "":
+		_render_rift_hero_page(v)
+		return
 	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
 		v.add_child(_orders_bar())
 	if not (GameState.run.get("boons", []) as Array).is_empty():
@@ -384,7 +396,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	elif kind in ["combat", "elite", "boss"] and ns_tip.has("combat_state") and not ns_tip.has("result") and not GameState.run.get("training", false):
 		_coach(v, "battle", "How fights work", "Heroes and foes act in the turn order shown under the arena. The tag above each foe shows its next move: who it hits, or a Sweep, Snipe, Curse, Ward, Mend or Roar. Attacks build Momentum (the pips under the hero's name); skills (2-4) spend it. Defend (5) halves damage and Guard (6) takes a hit for an ally, both earning Momentum. Foes \"winding up\" land a heavy blow next round: Defend, or break it with Shield Bash or Frost Nova. Melee heroes hit at half strength from the back row.")
 	elif ns_tip.has("result") and bool(ns_tip["result"].get("won", false)) and not ns_tip.get("reward_chosen", false):
-		_coach(v, "reward", "Picking loot", "Choose one reward. Items are worn by one hero (equip them on the Roster's Hero tab); relics go on the Relic Altar and help the whole party.")
+		_coach(v, "reward", "Picking loot", "Choose one reward. Items are worn by one hero: equip them on the hero's page (click a hero in the bar at the top); relics go on the Relic Altar and help the whole party.")
 	if not GameState.pending_injuries().is_empty():
 		v.add_child(_injury_panel())
 	# The battle screen already shows every hero's HP twice over (arena
@@ -425,9 +437,12 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		return
 
 	if not is_combat_kind:
-		v.add_child(_hsep())
-		_render_mid_rift_gear(v)
-		v.add_child(_hsep())
+		var hp := _icon_button("res://assets/skills/armor_chest.png", "Hero pages — gear, attributes, skills", func():
+			rift_hero_id = GameState.current_party()[0].id
+			render())
+		hp.tooltip_text = tr("Or click a hero in the bar above")
+		hp.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		v.add_child(hp)
 
 	# An unresolved fork (kind == "") is now chosen directly on the path map
 	# rendered above — its two options are clickable node markers right
@@ -739,38 +754,44 @@ func _hazard_option(icon_path: String, title: String, lines: Array, downs: Array
 	return card
 
 
-## "Gear Up" toggle on non-combat rift nodes (shop/hazard/fork) — same
-## weapon/gear paper-doll widgets as the Roster tab, scoped to the current
-## party, so newly bought/found loot can go on before the next fight instead
-## of forcing a Retreat (which ends the run) to reach the Inventory tab.
-func _render_mid_rift_gear(v: VBoxContainer) -> void:
-	v.add_child(_icon_button("res://assets/skills/armor_chest.png", "Hide Gear" if rift_gear_open else "Gear Up", func():
-		rift_gear_open = not rift_gear_open
-		render()
-	))
-	if not rift_gear_open:
+## A party member's page between fights: the Roster's hero card (gear,
+## attributes, skills), tabs for the rest of the party, and the way back.
+func _render_rift_hero_page(v: VBoxContainer) -> void:
+	var party := GameState.current_party()
+	var h: Hero = null
+	for p in party:
+		if p.id == rift_hero_id:
+			h = p
+	if h == null:
+		rift_hero_id = ""
+		render.call_deferred()
 		return
-	for h in GameState.current_party():
-		var card := PanelContainer.new()
-		card.theme_type_variation = &"CardPanelViolet"
-		var cv := _vbox(4)
-		cv.add_child(_label(h.name, 13))
-		var weapon_row := HBoxContainer.new()
-		weapon_row.add_theme_constant_override("separation", 8)
-		for i in GameData.weapon_slots(h.pool_id):
-			weapon_row.add_child(_equip_slot_frame(h, "weapon", i))
-		cv.add_child(weapon_row)
-		if expanded_slot.begins_with("%s:weapon:" % h.id):
-			_render_equip_picker(cv, h, "weapon", int(expanded_slot.split(":")[2]))
-		var gear_row := HBoxContainer.new()
-		gear_row.add_theme_constant_override("separation", 8)
-		for i in GameData.gear_slots(h.rank):
-			gear_row.add_child(_equip_slot_frame(h, "gear", i))
-		cv.add_child(gear_row)
-		if expanded_slot.begins_with("%s:gear:" % h.id):
-			_render_equip_picker(cv, h, "gear", int(expanded_slot.split(":")[2]))
-		card.add_child(cv)
-		v.add_child(card)
+	var back := func():
+		rift_hero_id = ""
+		expanded_slot = ""
+		render()
+	_combat_hotkeys["Escape"] = back
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back to the rift", back))
+	var sp := Control.new()
+	sp.custom_minimum_size.x = 12
+	row.add_child(sp)
+	for p in party:
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = p == h
+		b.icon = load(GameData.portrait_for_hero(p.cls_id, p.pool_id)) if GameData.portrait_for_hero(p.cls_id, p.pool_id) != "" else null
+		b.add_theme_constant_override("icon_max_width", 26)
+		b.custom_minimum_size = Vector2(0, 40)
+		b.text = p.name.split(" the ")[0] + ("  •" if p.skill_points > 0 or p.attr_points > 0 else "")
+		b.pressed.connect(func(id=p.id):
+			rift_hero_id = id
+			expanded_slot = ""
+			render())
+		row.add_child(b)
+	v.add_child(row)
+	v.add_child(_hero_card(h))
 
 
 func _render_hazard_node(v: VBoxContainer) -> void:

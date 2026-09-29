@@ -56,8 +56,13 @@ func _render_roster(v: VBoxContainer) -> void:
 		still_here.assign([sorted[0]])
 	for hh in sorted:
 		left.add_child(_roster_row(hh))
-	var h: Hero = still_here[0]
+	right.add_child(_hero_card(still_here[0]))
 
+
+## A hero's page: header, tabs (Hero · Skills · History) and the open tab.
+## The Roster shows it beside the list; a rift shows it for the party
+## (see _render_rift_hero_page), where camp-only actions stay hidden.
+func _hero_card(h: Hero) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
@@ -150,7 +155,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			# Evolving costs Crystals; the B/A/S jump also needs a rift of that rank
 			# sealed once. The player picks the path: "Evolve" opens every candidate
 			# with what it would change, each with its own confirm button.
-			if not evolve_choices.is_empty():
+			if not evolve_choices.is_empty() and screen != "rift_run":   # evolving waits for camp
 				var next_rank_id: String = evolve_choices[0]["rank"]
 				var next_rank := GameData.find_rank(next_rank_id)
 				var gate := GameState.evolve_rank_gate(next_rank_id)
@@ -206,7 +211,7 @@ func _render_roster(v: VBoxContainer) -> void:
 				# fork choice you regret no longer means nuking the other tree too.
 				var tree_prefix := "%s:" % tr(str(expanded_skill_tree_kind))
 				var tree_spent := h.skills.keys().any(func(k): return h.skills[k] and str(k).begins_with(tree_prefix))
-				if tree_spent:
+				if tree_spent and screen != "rift_run":
 					cv.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], tr("Respec this tree (%d Gold)") % GameState.tree_respec_cost(h, expanded_skill_tree_kind), func(id=h.id, k=expanded_skill_tree_kind):
 						var err := GameState.respec_hero(id, k)
 						if err != "":
@@ -223,7 +228,7 @@ func _render_roster(v: VBoxContainer) -> void:
 			_render_hero_sheet(cv, h, fitting_items)
 
 	card.add_child(cv)
-	right.add_child(card)
+	return card
 
 
 ## The hero sheet: a paper doll (weapons left, the hero in the middle, gear
@@ -433,7 +438,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 	# Camp training (Gold) and a full reset (Essence).
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 8)
-	if not h.is_champion:
+	if not h.is_champion and screen != "rift_run":   # training and resets wait for camp
 		var tcost := GameState.attr_train_cost(h)
 		var maxed := h.attr_trained >= GameData.ATTR_TRAIN_CAP
 		var train := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], tr("Trained %d/%d") % [h.attr_trained, GameData.ATTR_TRAIN_CAP] if maxed else tr("Train +1 — %d") % tcost, func(id=h.id):
@@ -451,7 +456,7 @@ func _attr_panel(h: Hero) -> PanelContainer:
 	fsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	foot.add_child(fsp)
 	var refund := GameState.attr_points_spent(h)
-	if refund > 0 and not h.is_champion:
+	if refund > 0 and not h.is_champion and screen != "rift_run":
 		var cost := GameState.attr_respec_cost(h)
 		var reset: Button
 		if _confirm_respec_id == h.id:
