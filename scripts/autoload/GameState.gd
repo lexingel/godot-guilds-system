@@ -1,4 +1,4 @@
-extends "res://scripts/autoload/game_state/GameStateRuns.gd"
+extends "res://scripts/autoload/game_state/GameStateBreach.gd"
 ## GameState, part 7 (the autoload): starting special runs, Guild Orders, and loading/resetting a guild.
 ## The chain, bottom up: game_state/GameStateCore.gd (state, formulas, saving)
 ## -> Heroes -> Items -> Quests -> Modes -> Runs -> this file. Each part only calls
@@ -36,6 +36,9 @@ func reset() -> void:
 	endless_milestones = []
 	week_start_coins = -1
 	hero_request = {}
+	breach = {}
+	breach_next_day = -1
+	damaged = {}
 	wage_raise = {}
 	contest_seals_start = -1
 	rival_contest_seals = 0
@@ -186,6 +189,9 @@ func load_save() -> bool:
 	endless_best = (data.get("endless_best", {}) as Dictionary).duplicate()
 	week_start_coins = int(data.get("week_start_coins", -1))
 	hero_request = (data.get("hero_request", {}) as Dictionary).duplicate(true)
+	breach = (data.get("breach", {}) as Dictionary).duplicate(true)
+	breach_next_day = int(data.get("breach_next_day", -1))
+	damaged = (data.get("damaged", {}) as Dictionary).duplicate()
 	wage_raise = (data.get("wage_raise", {}) as Dictionary).duplicate()
 	contest_seals_start = int(data.get("contest_seals_start", -1))
 	rival_contest_seals = int(data.get("rival_contest_seals", 0))

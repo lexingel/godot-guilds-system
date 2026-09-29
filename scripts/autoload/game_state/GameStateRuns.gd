@@ -764,6 +764,7 @@ func seal_rift() -> void:
 	var mapped_rank: String = str(run.get("rift_rank", ""))
 	if mapped_rank != "":
 		best_rift_rank_sealed = max(best_rift_rank_sealed, GameData.rift_rank_index(mapped_rank))
+		_on_rift_sealed(GameData.rift_rank_index(mapped_rank))
 	var just_unlocked_greater := rifts_sealed == 2
 	rifts_sealed += 1
 	add_reputation(GameData.SEAL_RENOWN_BASE + (GameData.rift_rank_index(mapped_rank) / 3 if mapped_rank != "" else 0))
@@ -1091,6 +1092,7 @@ func pass_time() -> void:
 			if h.hp >= mx:
 				h.bedded = false
 	resolve_guild_board()
+	_on_day_passed()
 
 
 ## Rest instead of running a rift: time passes (see pass_time) without a

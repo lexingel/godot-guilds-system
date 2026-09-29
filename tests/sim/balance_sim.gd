@@ -4,7 +4,7 @@ extends Node
 ## loot/XP/attribute gains inside a run are modelled. Never saves. ~1 min:
 ##   godot --headless --path . res://tests/sim/balance_sim.tscn
 ## (`-- ranks`: only the ladder-rank profiles; `-- calibrate`: power at a
-## 65% clear per rank; `-- tower`, `-- survivors`, `-- champions`)
+## 65% clear per rank; `-- tower`, `-- survivors`, `-- champions`, `-- defense`)
 
 const N := 120
 var GAINS := true   # model loot/XP/attribute gains inside a run
@@ -43,6 +43,10 @@ func _ready() -> void:
 	TOWER_ONLY = OS.get_cmdline_user_args().has("tower")
 	if OS.get_cmdline_user_args().has("calibrate"):
 		_calibrate()
+		get_tree().quit()
+		return
+	if OS.get_cmdline_user_args().has("defense"):
+		_defense()
 		get_tree().quit()
 		return
 	if OS.get_cmdline_user_args().has("champions"):
@@ -136,6 +140,41 @@ func _champions() -> void:
 		times.sort()
 		print("%-24s median %d:%02d (min %d:%02d, max %d:%02d) · first light (%d:%02d) held %d/%d" % [c[0], times[SURV_RUNS / 2] / 60, times[SURV_RUNS / 2] % 60,
 			times[0] / 60, times[0] % 60, times[-1] / 60, times[-1] % 60, GameData.CHAMPION_DEPTHS[0] / 60, GameData.CHAMPION_DEPTHS[0] % 60, freed, SURV_RUNS])
+
+
+## Riftbreak defenses (`-- defense`): how often a guild holds a breach of
+## each rank on autoplay, with no research and with it all. The posted heroes
+## are the rank's ladder profile (plus one more), the champion is level 2.
+func _defense() -> void:
+	var research := {"none": {}, "full": {"towers": GameData.DEFENSE_TOWERS.keys(), "max_tier": 3, "supplies": 100, "integrity": 10}}
+	for name in PROFILES:
+		var p: Array = PROFILES[name]
+		if p[0] in MODES:
+			continue
+		var idx := GameData.rift_rank_index(str(p[0]))
+		for rs in research:
+			var held := 0
+			var keep := 0.0
+			var runs := 8
+			for i in runs:
+				GameState.reset()
+				GameState.guild_name = "Sim"
+				var party: Array = _build_party(p)
+				party.append(_build_party(p)[0])
+				var champ_id: String = GameState.champion_roll[0]
+				GameState.champions[champ_id] = 2
+				var region: String = "camp" if idx >= GameData.rift_rank_index(GameData.BREACH_CAMP_RANK) else ["vale", "marsh", "ashen"][i % 3]
+				var r := DefenseRun.new(region, idx, party, GameState.champion_hero(champ_id), 100 + i, research[rs])
+				for k in 30000:
+					if r.over:
+						break
+					if k % 25 == 0:
+						r.autoplay()
+					r.step(0.1)
+					r.events.clear()
+				held += 1 if r.held else 0
+				keep += float(r.integrity) / float(r.max_integrity)
+			print("%-22s research %-4s  held %d/%d · integrity kept %d%%" % [name, rs, held, runs, int(keep / runs * 100.0)])
 
 
 ## Tower of Trials: how high each profile climbs (3 tries a floor, full HP

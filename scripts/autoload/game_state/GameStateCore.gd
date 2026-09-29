@@ -113,10 +113,26 @@ var tips_off: bool = false
 var board_refresh_day: int = 0   # the day the Guild Board's unaccepted postings are replaced
 var quest_tally: Dictionary = {}   # counters only quests read: boss:<name>, map:<uid>, rank_seals:<i>, *_seals, flawless_rifts
 var milestones_claimed: Array[String] = []  # GameData.MILESTONES ids already granted
+var breach: Dictionary = {}       # a swelling rift: {rank (ladder index), region ("camp" or a biome), started, breaks_on, broken}, or empty
+var breach_next_day: int = -1     # the day the next rift swells (-1: breaches not started yet)
+var damaged: Dictionary = {}      # Guild Management key -> levels lost to a Riftbreak until repaired
 
 
+
+
+## A Guild Management upgrade's working level: a building damaged in a
+## Riftbreak works that many levels lower until repaired.
 func lvl(key: String) -> int:
-	return upgrades.get(key, 0)
+	return maxi(0, int(upgrades.get(key, 0)) - int(damaged.get(key, 0)))
+
+
+## Hooks for GameStateBreach (later in the chain): a day passed, a ladder rift was sealed.
+func _on_day_passed() -> void:
+	pass
+
+
+func _on_rift_sealed(_rank_idx: int) -> void:
+	pass
 
 
 func has_cap(key: String) -> bool:
@@ -546,7 +562,7 @@ func save() -> void:
 		"tower_best": tower_best, "tower_week": tower_week, "tower_week_cleared": tower_week_cleared,
 		"daily_attempt_day": daily_attempt_day, "daily_clears": daily_clears, "daily_streak": daily_streak, "daily_last_clear": daily_last_clear,
 		"run_history": run_history, "runs_finished": runs_finished, "fallen": fallen, "heroes_lost_total": heroes_lost_total, "best_endless_time": best_endless_time, "endless_runs": endless_runs, "endless_best": endless_best, "endless_milestones": endless_milestones, "boon_set4_reached": boon_set4_reached,
-		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "contest_seals_start": contest_seals_start, "rival_contest_seals": rival_contest_seals, "guild_news": guild_news,
+		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "contest_seals_start": contest_seals_start, "rival_contest_seals": rival_contest_seals, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
 		"guide_hidden": guide_hidden,
