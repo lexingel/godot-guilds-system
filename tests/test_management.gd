@@ -20,7 +20,7 @@ func run() -> void:
 			nodes += 1
 			check(GameData.MANAGEMENT_NODE_ICON.has("%s.%s" % [b["id"], n["id"]]), "icon for %s" % n["id"])
 			check(Combat.describe_node_effect(n["id"], 3) != "", "description for %s" % n["id"])
-	check(nodes == 9, "9 upgrades")
+	check(nodes == 13, "13 upgrades (4 of them Defenses)")
 	GameState.crystals = 10000
 	for i in 6:
 		GameState.upgrade_node("ops.barracks")

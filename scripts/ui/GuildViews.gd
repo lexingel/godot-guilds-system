@@ -330,6 +330,13 @@ func _guild_status_lines() -> Array:
 	var go_screen := func(s: String): return func(): screen = s; render()
 	if GameState.heroes.is_empty():
 		out.append(["Hire your first hero in Recruits", Palette.EMBER_BRIGHT, go_term.call("recruits")])
+	if GameState.breach_broken():
+		out.append([tr("The rift has broken! Defend near %s") % GameState.breach_place(), Palette.HAZARD, go_screen.call("defense")])
+	elif GameState.breach_active():
+		var dl := GameState.breach_days_left()
+		out.append([tr("A Rank %s rift breaks in %d day%s") % [tr(GameState.breach_rank_id()), dl, tr(str(_pl(dl)))], Palette.EMBER_BRIGHT, go_screen.call("rift_hall")])
+	if not GameState.damaged.is_empty():
+		out.append([tr("%d building%s damaged: repair in Manage") % [GameState.damaged.size(), tr(str(_pl(GameState.damaged.size())))], Palette.HAZARD, go_term.call("management")])
 	var act := GameState.current_act()
 	if not act.is_empty():
 		if GameState.finale_ready():
@@ -1669,6 +1676,12 @@ func _render_management_hub(v: VBoxContainer) -> void:
 		scene.add_child(hotspot)
 
 	v.add_child(scene)
+	# Defenses (towers and walls for Riftbreaks) has no station on the table yet.
+	var dfn := _icon_button(GameData.MANAGEMENT_NODE_ICON["def.palisade"], tr("Defenses — towers and walls for Riftbreaks (Gold)"), func():
+		mgmt_branch = "def"
+		render())
+	dfn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(dfn)
 
 	var reset_btn := _icon_button("res://assets/skills/shard_green.png", "Click again to confirm reset" if confirm_reset else "Reset Guild", func():
 		if not confirm_reset:
@@ -1696,8 +1709,9 @@ func _render_management_hub(v: VBoxContainer) -> void:
 ## rather than a stack of near-identical lines.
 func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	var key := "%s.%s" % [branch["id"], n["id"]]
-	var cur := GameState.lvl(key)
+	var cur := int(GameState.upgrades.get(key, 0))   # as built; a damaged building works lower (GameState.lvl)
 	var node_max := int(n["max"])
+	var gold := str(n.get("currency", "")) == "gold"
 	var maxed := cur >= node_max
 	var icon_path: String = GameData.MANAGEMENT_NODE_ICON.get(key, "")
 
@@ -1732,9 +1746,18 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	bar.add_theme_stylebox_override("fill", bar_fill)
 	cv.add_child(bar)
 
-	var now := _wrap_label(Combat.describe_node_effect(n["id"], cur), 13)
+	var now := _wrap_label(Combat.describe_node_effect(n["id"], GameState.lvl(key)), 13)
 	now.add_theme_color_override("font_color", Palette.TEXT if cur > 0 else Palette.MUTED)
 	cv.add_child(now)
+	if int(GameState.damaged.get(key, 0)) > 0:
+		var dmg := _wrap_label(tr("Damaged in a Riftbreak: works at Lv %d until repaired.") % GameState.lvl(key), 12)
+		dmg.add_theme_color_override("font_color", Palette.HAZARD)
+		cv.add_child(dmg)
+		var rb := _button(tr("Repair a level — %d Gold") % GameState.repair_cost(key), func(k=key):
+			GameState.repair_building(k)
+			render())
+		rb.disabled = GameState.coins < GameState.repair_cost(key)
+		cv.add_child(rb)
 	cv.add_child(_wrap_label(tr("Each level: %s · upkeep +%d Gold a week") % [tr(str(n["every"])), GameData.UPKEEP_PER_LEVEL], 11, true))
 	var perks: Dictionary = n["perks"]
 	for pl in perks:
@@ -1753,13 +1776,13 @@ func _management_node_card(branch: Dictionary, n: Dictionary) -> PanelContainer:
 	if not maxed:
 		var cost: int = int(n["cost_base"]) + int(n["cost_step"]) * cur
 		var next_perk := str(perks.get(cur + 1, ""))
-		var ub := _icon_button(icon_path, tr("Upgrade to Lv%d — %d Essence") % [cur + 1, cost], func(k=key):
+		var ub := _icon_button(icon_path, (tr("Upgrade to Lv%d — %d Gold") if gold else tr("Upgrade to Lv%d — %d Essence")) % [cur + 1, cost], func(k=key):
 			var err := GameState.upgrade_node(k)
 			if err != "":
 				push_warning(err)
 			render()
 		)
-		ub.disabled = GameState.crystals < cost
+		ub.disabled = (GameState.coins if gold else GameState.crystals) < cost
 		ub.tooltip_text = tr("Next: %s%s") % [tr(str(Combat.describe_node_effect(n["id"], cur + 1))), tr(str((tr("\nUnlocks: ") + next_perk) if next_perk != "" else ""))]
 		cv.add_child(ub)
 	else:

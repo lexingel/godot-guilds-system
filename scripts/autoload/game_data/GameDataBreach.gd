@@ -44,9 +44,19 @@ const DEFENSE_MAPS := {
 		"goal": Vector2(1200, 380)},
 	"camp": {
 		"paths": [[Vector2(-40, 140), Vector2(240, 120), Vector2(360, 300), Vector2(620, 250), Vector2(800, 360)], [Vector2(-40, 620), Vector2(260, 650), Vector2(420, 470), Vector2(640, 480), Vector2(800, 360)], [Vector2(460, -40), Vector2(430, 110), Vector2(620, 250)], [Vector2(800, 360), Vector2(960, 250), Vector2(1180, 330)]],
-		"pads": [Vector2(540, 570), Vector2(80, 530), Vector2(220, 270), Vector2(640, 390), Vector2(340, 50), Vector2(1200, 230), Vector2(740, 210), Vector2(1100, 410), Vector2(400, 650), Vector2(700, 530), Vector2(400, 190), Vector2(900, 170)],
+		"pads": [Vector2(540, 570), Vector2(80, 530), Vector2(220, 270), Vector2(640, 390), Vector2(340, 50), Vector2(1110, 190), Vector2(740, 210), Vector2(1100, 410), Vector2(400, 650), Vector2(700, 530), Vector2(400, 190), Vector2(900, 170)],
 		"posts": [Vector2(1060, 250), Vector2(220, 610), Vector2(400, 110), Vector2(620, 450), Vector2(460, 310), Vector2(200, 90)],
 		"goal": Vector2(1180, 330)},
+}
+
+## Scenery off the road: the camp's own buildings (as built, so a damaged one
+## shows it), stone pillars out in the regions. [hamlet building id or "pillar", position]
+const DEFENSE_DECOR := {
+	"camp": [["barracks", Vector2(240, 380)], ["infirmary", Vector2(1000, 560)], ["market", Vector2(1200, 480)],
+		["lab", Vector2(800, 480)], ["scouts", Vector2(640, 640)], ["campfire", Vector2(980, 360)]],
+	"vale": [["pillar", Vector2(440, 250)], ["pillar", Vector2(900, 360)], ["pillar", Vector2(120, 470)], ["pillar", Vector2(900, 600)]],
+	"marsh": [["pillar", Vector2(580, 120)], ["pillar", Vector2(1000, 250)], ["pillar", Vector2(420, 600)], ["pillar", Vector2(760, 640)]],
+	"ashen": [["pillar", Vector2(420, 460)], ["pillar", Vector2(80, 520)], ["pillar", Vector2(760, 420)], ["pillar", Vector2(1150, 620)]],
 }
 
 ## Towers, by tier (index 0-2). Built on pads with supplies earned in the

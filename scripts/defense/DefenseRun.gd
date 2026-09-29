@@ -33,6 +33,9 @@ var kills := 0
 var fallen: Array = []     # ids of stationed heroes who fell (they come back wounded)
 var tower_types: Array = []   # tower ids this guild can build
 var max_tier := 2          # how many tiers this guild can build (research raises it to 3)
+var tower_dmg := 1.0       # research: Armory
+var cost_mult := 1.0       # research: Engineering
+var sell_back := GameData.DEFENSE_SELL_BACK
 var _next_id := 0
 var _wave_t := 0.0
 
@@ -49,6 +52,10 @@ func _init(region_id: String, rank_idx: int, defenders: Array, champion: Hero = 
 	integrity = max_integrity
 	tower_types = opts.get("towers", ["ballista", "brazier"])
 	max_tier = int(opts.get("max_tier", 2))
+	tower_dmg = float(opts.get("tower_dmg", 1.0))
+	cost_mult = float(opts.get("cost", 1.0))
+	sell_back = float(opts.get("sell_back", GameData.DEFENSE_SELL_BACK))
+	var hero_hp := float(opts.get("hero_hp", 1.0))
 	waves_total = GameData.DEFENSE_WAVES + (GameData.DEFENSE_CAMP_WAVES if region == "camp" else 0)
 	build_t = GameData.DEFENSE_FIRST_BUILD
 	_build_routes()
@@ -57,6 +64,8 @@ func _init(region_id: String, rank_idx: int, defenders: Array, champion: Hero = 
 	var posts: Array = map["posts"]
 	for i in mini(defenders.size(), posts.size()):
 		_add_hero(defenders[i], posts[i], false)
+		heroes[-1]["max_hp"] = float(heroes[-1]["max_hp"]) * hero_hp
+		heroes[-1]["hp"] = heroes[-1]["max_hp"]
 	if champion:
 		_add_hero(champion, map["goal"] + Vector2(-70, 0), true)
 
@@ -285,7 +294,7 @@ func tower_stat(pad: Dictionary, key: String) -> float:
 
 
 func _tower_power() -> float:
-	return 1.0 + GameData.DEFENSE_TOWER_RANK_SCALE * rank
+	return (1.0 + GameData.DEFENSE_TOWER_RANK_SCALE * rank) * tower_dmg
 
 
 func _towers(dt: float) -> void:
@@ -345,7 +354,7 @@ func _guard_at(p: Vector2) -> float:
 
 
 func tower_cost(type: String, tier: int) -> int:
-	return int(GameData.DEFENSE_TOWERS[type]["cost"][tier])
+	return int(round(int(GameData.DEFENSE_TOWERS[type]["cost"][tier]) * cost_mult))
 
 
 ## "" if a tower of `type` can go on empty pad i, else why not.
@@ -399,7 +408,7 @@ func upgrade(i: int) -> String:
 func sell(i: int) -> int:
 	if pads[i]["tower"] == "":
 		return 0
-	var back := int(int(pads[i]["spent"]) * GameData.DEFENSE_SELL_BACK)
+	var back := int(int(pads[i]["spent"]) * sell_back)
 	supplies += back
 	pads[i]["tower"] = ""
 	pads[i]["tier"] = 0

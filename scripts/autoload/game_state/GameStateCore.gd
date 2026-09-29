@@ -143,13 +143,17 @@ func upgrade_node(key: String) -> String:
 	var node := GameData.find_branch_node(key)
 	if node.is_empty():
 		return ""
-	var cur := lvl(key)
+	var cur := int(upgrades.get(key, 0))   # the built level (a damaged building still keeps it)
 	if cur >= int(node["max"]):
 		return ""
 	var cost: int = int(node["cost_base"]) + int(node["cost_step"]) * cur
-	if crystals < cost:
-		return tr("Not enough Essence")
-	crystals -= cost
+	var gold := str(node.get("currency", "")) == "gold"
+	if (coins if gold else crystals) < cost:
+		return tr("Not enough Gold") if gold else tr("Not enough Essence")
+	if gold:
+		coins -= cost
+	else:
+		crystals -= cost
 	upgrades[key] = cur + 1
 	save()
 	state_changed.emit()

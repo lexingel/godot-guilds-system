@@ -38,7 +38,28 @@ func breach_place() -> String:
 
 
 func breach_warn_days() -> int:
-	return GameData.BREACH_WARN
+	return GameData.BREACH_WARN + (1 if lvl("def.watch") >= 1 else 0) + (1 if lvl("def.watch") >= 3 else 0)
+
+
+## What the Defenses research brings to a defense (DefenseRun opts).
+func defense_opts() -> Dictionary:
+	var a := lvl("def.armory")
+	var e := lvl("def.engineering")
+	var p := lvl("def.palisade")
+	var towers: Array = ["ballista", "brazier"]
+	for pair in [[1, "frost"], [2, "ward"], [3, "chapel"]]:
+		if a >= int(pair[0]):
+			towers.append(pair[1])
+	return {"towers": towers, "max_tier": 3 if e >= 3 else 2, "supplies": 20 * p, "integrity": 2 * p,
+		"tower_dmg": 1.0 + 0.06 * a, "cost": 1.0 - 0.06 * e, "sell_back": 1.0 if e >= 5 else GameData.DEFENSE_SELL_BACK,
+		"hero_hp": 1.0 + 0.06 * lvl("def.watch")}
+
+
+## Idle heroes fit to stand at a post (not wounded), strongest first.
+func defense_candidates() -> Array[Hero]:
+	var out: Array[Hero] = idle_heroes().filter(func(h): return h.down_runs == 0 and h.hp > 0)
+	out.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+	return out
 
 
 ## Rewards scale with the breach's ladder rank.
@@ -95,7 +116,7 @@ func _close_breach() -> void:
 
 
 ## The defense's outcome. result: {held: bool, integrity: 0-1 kept,
-## fallen: [hero ids]}. Returns what happened, for the results screen:
+## fallen: [hero ids of posted heroes who fell; wounded only on a loss]}. Returns what happened, for the results screen:
 ## {held, coins, crystals, lost_coins, lost_crystals, damaged: [names], wounded: [names]}.
 ## A defense takes the guild's day.
 func resolve_breach(result: Dictionary) -> Dictionary:
@@ -104,7 +125,8 @@ func resolve_breach(result: Dictionary) -> Dictionary:
 	pass_time()   # the defense takes the day; its wounds come after
 	_resolving = false
 	var out := {"held": held, "coins": 0, "crystals": 0, "lost_coins": 0, "lost_crystals": 0, "damaged": [], "wounded": []}
-	for hid in result.get("fallen", []):
+	# Defenders who fell are only hurt for real when the defense is lost.
+	for hid in ([] if held else result.get("fallen", [])):
 		var h := find_hero(str(hid))
 		if h and h.down_runs == 0:
 			knock_out(h)

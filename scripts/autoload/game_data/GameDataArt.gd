@@ -110,6 +110,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.",
 	"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.",
 	"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",
 	"Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.",
@@ -170,7 +171,7 @@ const INFRA_BANNER := "res://assets/screens/infra_banner.png"
 const LOGISTICS_BANNER := "res://assets/screens/logistics_banner.png"
 const RESEARCH_BANNER := "res://assets/screens/research_banner.png"
 const BRANCH_BANNER := {
-	"ops": OPS_BANNER, "infra": INFRA_BANNER, "log": LOGISTICS_BANNER, "res": RESEARCH_BANNER,
+	"ops": OPS_BANNER, "infra": INFRA_BANNER, "log": LOGISTICS_BANNER, "res": RESEARCH_BANNER, "def": INFRA_BANNER,
 }
 const CAMP_HUB_ICON_PATH := {
 	"roster": "res://assets/camp/icon_roster.png",

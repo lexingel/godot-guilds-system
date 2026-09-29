@@ -58,7 +58,7 @@ func run() -> void:
 	var day0 := GameState.day
 	var won := GameState.resolve_breach({"held": true, "integrity": 1.0, "fallen": [h.id]})
 	check(won["held"] and GameState.coins == c0 + int(won["coins"]) and int(won["coins"]) > 0, "holding pays Gold (%d)" % int(won["coins"]))
-	check(h.down_runs > 0 and (won["wounded"] as Array).has(h.name), "a defender who fell comes back wounded")
+	check(h.down_runs == 0 and (won["wounded"] as Array).is_empty(), "a defense that holds wounds nobody")
 	check(not GameState.breach_active() and GameState.day == day0 + 1, "the breach is over, and it took the day")
 
 	# Lost: Gold and Essence, and a damaged building until repaired.
@@ -66,7 +66,8 @@ func run() -> void:
 	GameState.coins = 1000
 	GameState.crystals = 500
 	GameState.breach = {"rank": 3, "region": "marsh", "started": GameState.day, "breaks_on": GameState.day, "broken": true}
-	var lost := GameState.resolve_breach({"held": false, "integrity": 0.0, "fallen": []})
+	var lost := GameState.resolve_breach({"held": false, "integrity": 0.0, "fallen": [h.id]})
+	check(h.down_runs > 0 and (lost["wounded"] as Array).has(h.name), "a lost defense: the defenders who fell come back wounded")
 	check(int(lost["lost_coins"]) == 200 and int(lost["lost_crystals"]) == 100, "losing costs %d%% of Gold and Essence" % int(GameData.BREACH_LOSS_SHARE * 100))
 	check(lost["damaged"] == ["Drill Yard"] and GameState.lvl("ops.drill") == 2 and int(GameState.upgrades["ops.drill"]) == 3, "a building is damaged: it works a level lower")
 	GameState.save()
@@ -82,3 +83,15 @@ func run() -> void:
 	GameState.breach = {}
 	GameState._swell_breach()
 	check(str(GameState.breach["region"]) == "camp" and GameState.breach_place() == "your camp", "Rank %s and up break at the camp" % GameData.BREACH_CAMP_RANK)
+
+	# Defenses research is bought with Gold; buying on a damaged building
+	# builds on its built level, not the damaged one.
+	GameState.coins = 1000
+	var e0 := GameState.crystals
+	check(GameState.upgrade_node("def.armory") == "" and GameState.coins == 1000 - 60 and GameState.crystals == e0, "Defenses research costs Gold")
+	check((GameState.defense_opts()["towers"] as Array).has("frost"), "Armory Lv1 opens the Frost Totem")
+	GameState.upgrades["ops.barracks"] = 3
+	GameState.damaged["ops.barracks"] = 1
+	GameState.crystals = 1000
+	GameState.upgrade_node("ops.barracks")
+	check(int(GameState.upgrades["ops.barracks"]) == 4 and GameState.lvl("ops.barracks") == 3, "an upgrade on a damaged building builds on its real level")

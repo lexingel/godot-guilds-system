@@ -7,8 +7,6 @@ extends Node2D
 
 signal finished(summary: Dictionary)
 
-const WALK_DIR := "res://assets/survivors/walk/"
-const SKILL_DIR := "res://assets/survivors/skill/"   # a champion's signature move (frames 0-7)
 const FLOOR_PATH := "res://assets/survivors/floor_%s.png"
 const THEME := preload("res://theme/guild_theme.tres")
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
@@ -53,7 +51,6 @@ var _panel: Control          # level-up / pause / results overlay, or null
 var _hero_nodes := {}
 var _foe_nodes := {}
 var _prop_nodes := {}   # pillar / brazier id -> Sprite2D
-var _frames_cache := {}
 var _drag_from := Vector2.INF
 var _drag_to := Vector2.INF
 var _summary := {}
@@ -103,11 +100,8 @@ func _ready() -> void:
 	add_child(_cam)
 	_cam.make_current()
 	for h in run.heroes:
-		# The hero's own walk cycle (their subclass look), else their role's.
-		var own := "sub_" + str(h["hero"].pool_id)
-		# A champion without a walk cycle yet still looks like themself.
-		var key := own if ResourceLoader.exists(WALK_DIR + own + "_0.png") or own.begins_with("sub_champ_") else str(h["role"])
-		var n := _make_sprite(key, 1.0)
+		var key := WalkSprites.hero_key(h["hero"], str(h["role"]))
+		var n := WalkSprites.make(key, 1.0)
 		n.set_meta("away", GameData.faces_away(key))
 		n.material = UiKit.look_material(GameState.look_for(h["hero"]))
 		_world.add_child(n)
@@ -117,46 +111,6 @@ func _ready() -> void:
 
 
 # ---------------- Sprites ----------------
-
-func _frames_for(key: String) -> SpriteFrames:
-	if _frames_cache.has(key):
-		return _frames_cache[key]
-	var sf := SpriteFrames.new()
-	sf.set_animation_speed("default", 10.0)
-	for i in 8:
-		var p := WALK_DIR + "%s_%d.png" % [key, i]
-		if ResourceLoader.exists(p):
-			sf.add_frame("default", load(p))
-	for i in 8:
-		var sp := SKILL_DIR + "%s_%d.png" % [key, i]
-		if ResourceLoader.exists(sp):
-			if not sf.has_animation("skill"):
-				sf.add_animation("skill")
-				sf.set_animation_speed("skill", 12.0)
-				sf.set_animation_loop("skill", false)
-			sf.add_frame("skill", load(sp))
-	if sf.get_frame_count("default") == 0:
-		# No walk cycle yet: the static battle sprite, scaled down.
-		var still := str(GameData.MONSTER_SPRITE_PATH.get(key, GameData.HERO_PORTRAIT_PATH.get(key, "")))
-		if key.begins_with("sub_champ_"):
-			still = GameData.champion_portrait(key.trim_prefix("sub_champ_"))
-		if still != "":
-			sf.add_frame("default", load(still))
-	_frames_cache[key] = sf
-	return sf
-
-
-func _make_sprite(key: String, scale_mult: float) -> AnimatedSprite2D:
-	var s := AnimatedSprite2D.new()
-	s.sprite_frames = _frames_for(key)
-	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var tex := s.sprite_frames.get_frame_texture("default", 0)
-	var h := float(tex.get_height()) if tex else 64.0
-	s.offset = Vector2(0, 4.0 - h * 0.5)   # feet on the spot (-28 for a 64px walk frame)
-	s.scale = Vector2.ONE * scale_mult * (64.0 / h if h > 64.0 else 1.0)
-	s.play()
-	return s
-
 
 func _foe_key(name: String) -> String:
 	return GameData.monster_sprite_key(name)
@@ -296,7 +250,7 @@ func _sync() -> void:
 	else:
 		if _beacon_node == null:
 			_beacon_node = _Beacon.new()
-			_beacon_node.ghost_frames = _frames_for("sub_champ_" + str(run.beacon["id"]))
+			_beacon_node.ghost_frames = WalkSprites.frames("sub_champ_" + str(run.beacon["id"]))
 			_world.add_child(_beacon_node)
 		_beacon_node.position = run.beacon["pos"]
 		_beacon_node.progress = float(run.beacon["held"]) / GameData.BEACON_HOLD
@@ -306,7 +260,7 @@ func _sync() -> void:
 		seen[id] = true
 		var n: AnimatedSprite2D = _foe_nodes.get(id)
 		if n == null:
-			n = _make_sprite(_foe_key(str(f["name"])), TIER_SCALE[f["tier"]])
+			n = WalkSprites.make(_foe_key(str(f["name"])), TIER_SCALE[f["tier"]])
 			n.set_meta("away", GameData.faces_away(_foe_key(str(f["name"]))))
 			n.frame = randi() % maxi(1, n.sprite_frames.get_frame_count("default"))
 			_world.add_child(n)

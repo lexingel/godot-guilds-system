@@ -47,6 +47,10 @@ func describe_node_effect(node_id: String, level: int) -> String:
 			var choices := 4 if level >= 4 else (3 if level >= 2 else 2)
 			return tr("%d starting relic choices · %d relic slots") % [choices, 3 + (1 if level >= 3 else 0) + (1 if level >= 5 else 0)]
 		"lab": return tr("+%d%% element-set bonuses") % (level * 10)
+		"armory": return tr("+%d%% tower damage") % (level * 6)
+		"engineering": return tr("-%d%% tower costs") % (level * 6)
+		"palisade": return tr("+%d integrity · +%d starting supplies") % [level * 2, level * 20]
+		"watch": return tr("posted heroes +%d%% max HP") % (level * 6)
 		_: return ""
 
 

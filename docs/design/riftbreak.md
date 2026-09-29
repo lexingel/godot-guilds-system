@@ -57,8 +57,7 @@ Ranks S and up break at **the camp** itself; lower ranks break out in a
 | Result | What happens |
 |---|---|
 | Held (integrity left) | Gold and Essence by rank, scaled by the integrity kept |
-| Lost | 1-2 **damaged buildings** (a Guild Management upgrade works 1 level lower until repaired with Gold); a share of stored Gold and Essence lost; stationed heroes who fell are wounded |
-| Held, but heroes fell | They come back wounded either way |
+| Lost | 1-2 **damaged buildings** (a Guild Management upgrade works 1 level lower until repaired with Gold); a share of stored Gold and Essence lost; posted heroes who fell come back wounded |
 
 Never game over.
 

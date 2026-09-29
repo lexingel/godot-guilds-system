@@ -324,6 +324,7 @@ func render() -> void:
 		"onboard": _render_onboard(v)
 		"rift_hall": _render_rift_hall(v)
 		"party_assembly": _render_party_assembly(v)
+		"defense": _render_defense_setup(v)
 		"tower":
 			if GameState.feature_unlocked("tower"):
 				_render_tower(v)
@@ -447,6 +448,7 @@ func _breadcrumb_for_screen() -> String:
 		"rift_hall": return "Rift Hall"
 		"tower": return "Tower of Trials"
 		"party_assembly": return "Party Assembly"
+		"defense": return "Riftbreak"
 		"rift_run" when GameState.run.has("tower"): return tr("Tower of Trials — Floor %d") % int(GameState.run["tower"])
 		"rift_run": return tr("Rift Run — Floor %d/%d") % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting"
@@ -712,6 +714,8 @@ func _header_back() -> Array:
 				return [to_camp, "Camp"]
 		"rift_hall", "crafting_hall":
 			return [to_camp, "Camp"]
+		"defense":
+			return [func(): screen = "rift_hall"; render(), "Rift Hall"]
 		"tower":
 			return [func(): screen = "rift_hall"; render(), "Rift Hall"]
 		"party_assembly":
@@ -1186,6 +1190,8 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 			var fl := _wrap_label(msg, 12)
 			fl.add_theme_color_override("font_color", pay_col)
 			v.add_child(fl)
+	if GameState.breach_active():
+		v.add_child(_breach_card())
 	_coach(v, "rift_hall", "Choosing a rift", "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.")
 	if _ladder_pick == "" or GameState.ladder_rank_lock(_ladder_pick) != "":
 		_ladder_pick = GameState.highest_open_rank()
@@ -1644,6 +1650,10 @@ func _daily_card_def() -> Array:
 
 # ---------------- Party Assembly ----------------
 func _render_party_assembly(v: VBoxContainer) -> void:
+	if GameState.breach_blocks_runs():
+		screen = "defense"   # a broken rift comes first
+		_render_defense_setup(v)
+		return
 	if _pending_endless and _pending_rift_rank == "":
 		_render_endless_assembly(v)
 		return
@@ -2000,6 +2010,152 @@ func _endless_region_picker() -> Control:
 
 ## The Endless Rift is a real-time survivors run in its own node; Main steps
 ## aside (hidden and paused) until the player leaves it.
+# ---------------- Riftbreaks ----------------
+var _defense_posted: Array[String] = []   # hero ids for the posts, in order
+var _defense_champ := ""                   # the champion to steer ("" = none)
+var _defense_ready := false                # the picks above were filled in for this breach
+
+
+## The swelling or broken rift, at the top of the Rift Hall.
+func _breach_card() -> PanelContainer:
+	var broken := GameState.breach_broken()
+	var card := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.16, 0.05, 0.06, 0.95) if broken else Color(0.12, 0.08, 0.16, 0.95)
+	st.border_color = Palette.HAZARD if broken else Palette.EMBER_BRIGHT
+	st.set_border_width_all(2)
+	st.set_corner_radius_all(8)
+	st.set_content_margin_all(12)
+	card.add_theme_stylebox_override("panel", st)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+	var col := _vbox(4)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(col)
+	var rank := tr(GameState.breach_rank_id())
+	if broken:
+		var t := _label(tr("The rift has broken! Rank %s near %s") % [rank, GameState.breach_place()], 17)
+		t.add_theme_color_override("font_color", Palette.HAZARD)
+		col.add_child(t)
+		col.add_child(_wrap_label(tr("Monsters are pouring out. Rift runs wait until your guild defends."), 13))
+		var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Defend"), func(): screen = "defense"; render())
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(b)
+	else:
+		var days := GameState.breach_days_left()
+		var t := _label(tr("A rift is swelling: Rank %s near %s") % [rank, GameState.breach_place()], 17)
+		t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		col.add_child(t)
+		col.add_child(_wrap_label(tr("It breaks in %d day%s. Seal a Rank %s rift or higher before then to close it, or prepare to defend (Guild > Manage > Defenses).") % [days, tr(str(_pl(days))), rank], 13))
+	return card
+
+
+## Before a defense: who stands at the posts, which champion goes, and what's at stake.
+func _render_defense_setup(v: VBoxContainer) -> void:
+	if not GameState.breach_broken():
+		screen = "rift_hall"
+		_render_rift_hall(v)
+		return
+	var region := str(GameState.breach["region"])
+	var posts: int = (GameData.DEFENSE_MAPS[region]["posts"] as Array).size()
+	var cands := GameState.defense_candidates()
+	if not _defense_ready:
+		_defense_ready = true
+		_defense_posted.clear()
+		for h in cands.slice(0, posts):
+			_defense_posted.append(h.id)
+		_defense_champ = GameState.overseer
+	_defense_posted.assign(_defense_posted.filter(func(id): return cands.any(func(h): return h.id == id)))
+	v.add_child(_label(tr("Riftbreak — Rank %s near %s") % [tr(GameState.breach_rank_id()), GameState.breach_place()], 20))
+	_coach(v, "defense", "Defending", "Foes walk the roads toward your outpost. Build towers on the round pads with supplies: you start with some and earn more for every kill. Tap a built tower to upgrade or sell it. Heroes at posts stand by the road: warriors and rogues hold foes in place, rangers and mages shoot. Tap the ground to send your champion. Every foe that gets through costs integrity; at 0 the defense is lost.")
+	var opts := GameState.defense_opts()
+	var names: Array = (opts["towers"] as Array).map(func(t): return tr(str(GameData.DEFENSE_TOWERS[t]["name"])))
+	var waves := GameData.DEFENSE_WAVES + (GameData.DEFENSE_CAMP_WAVES if region == "camp" else 0)
+	var info := _vbox(3)
+	info.add_child(_wrap_label(tr("%d waves · integrity %d · %d starting supplies") % [waves, GameData.DEFENSE_INTEGRITY + int(opts["integrity"]), GameData.DEFENSE_SUPPLIES + int(opts["supplies"])], 13))
+	info.add_child(_wrap_label(tr("Towers: %s · up to tier %d") % [", ".join(names), int(opts["max_tier"])], 13))
+	var dmg_n := 2 if region == "camp" else 1
+	info.add_child(_wrap_label(tr("Holding pays Gold and Essence. If it falls, you lose %d%% of your Gold and Essence, %d building%s is damaged, and posted heroes who fell come back wounded.") % [int(GameData.BREACH_LOSS_SHARE * 100), dmg_n, tr(str(_pl(dmg_n)))], 12, true))
+	v.add_child(info)
+	v.add_child(_label(tr("Posts (%d/%d)") % [_defense_posted.size(), posts], 15))
+	if cands.is_empty():
+		v.add_child(_wrap_label(tr("No idle heroes can stand guard: towers and your champion will have to hold."), 12, true))
+	var grid := HFlowContainer.new()
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	for h in cands:
+		var on := _defense_posted.has(h.id)
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelEmber" if on else &"CardPanel"
+		card.custom_minimum_size.x = 220
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row.add_child(_icon_trimmed(GameData.portrait_for_hero(h.cls_id, h.pool_id), 48))
+		var col := _vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label(h.name, 13))
+		col.add_child(_label(tr("%s · Lv%d · Power %d") % [tr(GameData.hero_role(h).capitalize()), h.level, Combat.power_of(h)], 11, true))
+		var btn := _button(tr("Stand down") if on else tr("Post"), func(id=h.id):
+			if _defense_posted.has(id):
+				_defense_posted.erase(id)
+			elif _defense_posted.size() < posts:
+				_defense_posted.append(id)
+			render())
+		btn.disabled = not on and _defense_posted.size() >= posts
+		col.add_child(btn)
+		row.add_child(col)
+		card.add_child(row)
+		grid.add_child(card)
+	v.add_child(grid)
+	v.add_child(_label(tr("Champion: %s") % (GameData.champion_full_name(_defense_champ) if _defense_champ != "" else tr("none")), 15))
+	var crow := HFlowContainer.new()
+	crow.add_theme_constant_override("h_separation", 6)
+	for id in GameState.champion_roll:
+		if not GameState.champion_unlocked(id):
+			continue
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = id == _defense_champ
+		b.text = str(GameData.champion_def(id)["name"])
+		b.pressed.connect(func(i=id): _defense_champ = i; render())
+		crow.add_child(b)
+	var none := Button.new()
+	none.toggle_mode = true
+	none.button_pressed = _defense_champ == ""
+	none.text = tr("None")
+	none.pressed.connect(func(): _defense_champ = ""; render())
+	crow.add_child(none)
+	v.add_child(crow)
+	var go := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Defend"), _start_defense)
+	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(go)
+
+
+func _start_defense() -> void:
+	if not GameState.breach_broken():
+		return
+	var posted: Array = []
+	for id in _defense_posted:
+		var h := GameState.find_hero(id)
+		if h:
+			posted.append(h)
+	var champ: Hero = GameState.champion_hero(_defense_champ) if _defense_champ != "" and GameState.champion_unlocked(_defense_champ) else null
+	var view := DefenseView.new()
+	view.setup(str(GameState.breach["region"]), int(GameState.breach["rank"]), posted, champ, GameState.defense_opts())
+	_camp_track = ""
+	visible = false
+	process_mode = Node.PROCESS_MODE_DISABLED
+	get_tree().root.add_child(view)
+	view.finished.connect(func(_summary):
+		view.queue_free()
+		visible = true
+		process_mode = Node.PROCESS_MODE_INHERIT
+		_defense_ready = false
+		screen = "rift_hall"
+		render())
+
+
 func _start_survivors(ids: Array[String]) -> void:
 	var party: Array = []
 	for id in ids:
