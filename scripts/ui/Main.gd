@@ -45,14 +45,14 @@ func _ready() -> void:
 	add_child(toast_layer)
 	_toast_box = VBoxContainer.new()
 	_toast_box.add_theme_constant_override("separation", 6)
-	# Top centre, just under the menus, stacking down: over the camp's open
-	# sky rather than its buildings or the Rift Hall's cards.
-	_toast_box.anchor_left = 0.5
-	_toast_box.anchor_right = 0.5
-	_toast_box.offset_left = -300
-	_toast_box.offset_right = 300
-	_toast_box.offset_top = 250
-	_toast_box.offset_bottom = 650
+	# Top right, under the currencies, stacking down: a narrow corner rather
+	# than the middle of the page, where it sat on headings and cards.
+	_toast_box.anchor_left = 1.0
+	_toast_box.anchor_right = 1.0
+	_toast_box.offset_left = -TOAST_W - 20.0
+	_toast_box.offset_right = -20.0
+	_toast_box.offset_top = 78
+	_toast_box.offset_bottom = 400
 	_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_layer.add_child(_toast_box)
@@ -161,10 +161,20 @@ func _fit_to_window() -> bool:
 	if win.content_scale_size == want:
 		return false
 	win.content_scale_size = want
+	if want.x == 760 and not _landscape_hinted:
+		# The portrait canvas still reads small on a phone: say so once a session.
+		_landscape_hinted = true
+		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Best in landscape"),
+			"text": tr("Guildhold is made for a wider screen. On a phone, turn it sideways; a tablet or desktop is best.")})
 	return true
 
 
+var _landscape_hinted := false
+
+
 var _toast_box: VBoxContainer
+const TOAST_W := 330.0
+const TOAST_MAX := 2   # at once; the rest wait their turn
 
 
 ## Shows every queued GameState toast as a portrait card at the top right,
@@ -176,51 +186,66 @@ func _drain_toasts() -> void:
 	# A story card is up: the pills wait for it (they'd sit on its title).
 	if not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
 		return
-	for t in GameState.pending_toasts:
-		# A slim pill: "Title · text" on one line where it fits.
+	# Mid-fight they'd sit on the arena: they wait for the fight to end.
+	var ns: Dictionary = GameState.run.get("node_state", {}) if screen == "rift_run" else {}
+	if ns.has("combat_state") and not ns.has("result"):
+		return
+	while not GameState.pending_toasts.is_empty() and _toast_box.get_children().filter(func(c): return not c.is_queued_for_deletion()).size() < TOAST_MAX:
+		var t: Dictionary = GameState.pending_toasts.pop_front()
+		# A card in the corner: the title over its text. Click to dismiss.
 		var card := PanelContainer.new()
-		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		card.size_flags_horizontal = Control.SIZE_SHRINK_END
+		card.tooltip_text = tr("Click to dismiss")
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(Palette.SURFACE2, 0.94)
 		style.border_color = Palette.EMBER_BRIGHT
 		style.set_border_width_all(1)
-		style.set_corner_radius_all(14)
-		style.content_margin_left = 12
-		style.content_margin_right = 14
-		style.content_margin_top = 4
-		style.content_margin_bottom = 4
+		style.set_corner_radius_all(8)
+		style.set_content_margin_all(9)
 		card.add_theme_stylebox_override("panel", style)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		var portrait := GameData.portrait_for_hero(str(t["cls_id"]), str(t["pool_id"]))
 		if portrait != "":
 			row.add_child(_icon_trimmed(portrait, 28))
+		var tcol := _vbox(1)
+		tcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(tcol)
 		if str(t["title"]) != "":
 			var title := _label(str(t["title"]), 13)
 			title.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-			title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			row.add_child(title)
-		var body := _label(str(t["text"]), 12, true)
-		body.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		# Wraps only past the pill's widest.
+			tcol.add_child(title)
+		var body := _label(str(t["text"]), 13)
+		# Wraps only past the card's widest.
 		var font := body.get_theme_font("font")
-		if font.get_string_size(body.text, HORIZONTAL_ALIGNMENT_LEFT, -1, body.get_theme_font_size("font_size")).x > 380.0:
+		if font.get_string_size(body.text, HORIZONTAL_ALIGNMENT_LEFT, -1, body.get_theme_font_size("font_size")).x > TOAST_W - 80.0:
 			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			body.custom_minimum_size.x = 380.0
-		row.add_child(body)
+			body.custom_minimum_size.x = TOAST_W - 80.0
+		tcol.add_child(body)
 		card.add_child(row)
 		_toast_box.add_child(card)
 		AudioManager.play_sfx(GameData.SFX_PATH["ui_confirm"])
+		var gone := func():
+			if is_instance_valid(card) and not card.is_queued_for_deletion():
+				card.queue_free()
+				_drain_toasts.call_deferred()   # the next one waiting takes its place
+		card.gui_input.connect(func(e):
+			if e is InputEventMouseButton and e.pressed:
+				gone.call())
 		var tw := card.create_tween()
 		tw.set_ignore_time_scale(true)
-		tw.tween_interval(4.5)
+		tw.tween_interval(5.0)
 		tw.tween_property(card, "modulate:a", 0.0, 0.6)
-		tw.tween_callback(card.queue_free)
-	GameState.pending_toasts.clear()
+		tw.tween_callback(gone)
 
 
 func render() -> void:
+	# A fight is playing out: rebuilding now would free the arena under its
+	# animation. The fight re-renders itself when the turn is done.
+	if _combat_animating and screen == "rift_run":
+		return
+	_coached_this_render = false
 	var was_focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
 	if was_focused is Button:
 		_pad_focus_text = (was_focused as Button).text
@@ -1101,6 +1126,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 			return
 		GameState.guild_name = n
 		GameState.guild_crest = pending_crest
+		GameState.hire_starters()
 		GameState.refresh_recruit_pool()
 		GameState.save()
 		pending_guild_name = ""
@@ -1451,8 +1477,6 @@ func _ladder_card(best: int, go: Callable) -> Control:
 			b.tooltip_text = tr("Rank %s — sealed") % tr(str(rid))
 		row.add_child(b)
 	cv.add_child(row)
-	if next_locked != "":
-		cv.add_child(_label(next_locked, 12, true))
 	var rank: Dictionary = GameData.find_rift_rank(_ladder_pick)
 	var base: Dictionary = GameData.DIFFICULTIES[0]
 	for d in GameData.DIFFICULTIES:
@@ -1464,19 +1488,23 @@ func _ladder_card(best: int, go: Callable) -> Control:
 			rules.append(tr(str(GameData.RIFT_RANK_RULE_TEXT[k])))
 	var t := _label(tr("Rank %s · %d floors") % [tr(str(_ladder_pick)), int(base["floors"])], 15)
 	t.add_theme_color_override("font_color", Palette.rank_color(_ladder_pick))
-	cv.add_child(t)
-	var foes := tr("Foes: base") if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [tr(str(rank["hp"])), tr(str(rank["dmg"]))]
-	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [tr(str(base["name"])) + " · ", tr(str(foes)), tr(str(rank["reward"])), tr(str((" · " + ", ".join(rules)) if not rules.is_empty() else ""))], 12, true))
 	var go_row := HBoxContainer.new()
 	go_row.add_theme_constant_override("separation", 10)
+	var pick_col := _vbox(2)
+	pick_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pick_col.add_child(t)
 	var pr := _power_readout(best, Combat.recommended_power("", _ladder_pick), "Your best party")
 	pr.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	pr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	go_row.add_child(pr)
+	pick_col.add_child(pr)
+	go_row.add_child(pick_col)
 	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], "Assemble party", go.bind(_ladder_pick, false))
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	go_row.add_child(b)
 	cv.add_child(go_row)
+	var foes := tr("Foes: base") if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [tr(str(rank["hp"])), tr(str(rank["dmg"]))]
+	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [tr(str(base["name"])) + " · ", tr(str(foes)), tr(str(rank["reward"])), tr(str((" · " + ", ".join(rules)) if not rules.is_empty() else ""))], 12, true))
+	if next_locked != "":
+		cv.add_child(_label(next_locked, 12, true))
 	card.add_child(cv)
 	return card
 
@@ -2016,9 +2044,18 @@ var _defense_champ := ""                   # the champion to steer ("" = none)
 var _defense_ready := false                # the picks above were filled in for this breach
 
 
-## The swelling or broken rift, at the top of the Rift Hall.
+## The swelling or broken rift, at the top of the Rift Hall: a one-line
+## strip while it swells, a card with Defend once it breaks.
 func _breach_card() -> PanelContainer:
 	var broken := GameState.breach_broken()
+	if not broken:
+		var days := GameState.breach_days_left()
+		var r := tr(GameState.breach_rank_id())
+		var chip := _rule_chip(tr("⚠ A Rank %s rift near %s breaks in %d day%s — seal a Rank %s rift or higher to close it") % [r, GameState.breach_place(), days, tr(str(_pl(days))), r],
+			tr("Or let it break and defend: build towers, post idle heroes, steer a champion (Guild > Manage > Defenses researches towers)."), Palette.EMBER_BRIGHT)
+		(chip.get_child(0) as Label).add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		return chip
 	var card := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(0.16, 0.05, 0.06, 0.95) if broken else Color(0.12, 0.08, 0.16, 0.95)
@@ -2042,12 +2079,6 @@ func _breach_card() -> PanelContainer:
 		var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Defend"), func(): screen = "defense"; render())
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(b)
-	else:
-		var days := GameState.breach_days_left()
-		var t := _label(tr("A rift is swelling: Rank %s near %s") % [rank, GameState.breach_place()], 17)
-		t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		col.add_child(t)
-		col.add_child(_wrap_label(tr("It breaks in %d day%s. Seal a Rank %s rift or higher before then to close it, or prepare to defend (Guild > Manage > Defenses).") % [days, tr(str(_pl(days))), rank], 13))
 	return card
 
 

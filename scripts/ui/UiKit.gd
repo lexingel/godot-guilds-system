@@ -50,6 +50,7 @@ var evolve_picker_hero_id: String = ""   # "" = closed, else which hero's evolut
 var expanded_slot: String = ""     #"<hero_id>:weapon:0"/"<hero_id>:gear:2" — which equip slot's picker is open (hero-scoped since the mid-rift Gear Up panel can show several heroes at once)
 
 
+var _coached_this_render := false   # a coach tip is already on this screen
 var rift_hero_id: String = ""   # a party member's page, open between fights in a rift ("" = the rift itself)
 
 
@@ -1493,8 +1494,9 @@ const ABILITY_BUCKET_COLOR := {
 ## A one-time coach tip: shown until dismissed (or tips are turned off in
 ## Settings). `id` is remembered per guild in GameState.hints_seen.
 func _coach(v: Control, id: String, title: String, text: String) -> void:
-	if not GameState.hint_pending(id) or GameState.guild_name == "":
+	if not GameState.hint_pending(id) or GameState.guild_name == "" or _coached_this_render:
 		return
+	_coached_this_render = true   # one tip at a time: the next shows once this one is dismissed
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"CardPanelEmber"
 	var row := HBoxContainer.new()

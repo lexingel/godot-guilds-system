@@ -1157,3 +1157,15 @@ func finish_run() -> void:
 	pass_time()
 	save()
 	state_changed.emit()
+
+
+## A new guild's first three: a warrior, a cleric and a ranger or mage
+## (Rank F), so a player's first step is a rift, not the recruit board.
+func hire_starters() -> void:
+	for roles in [["warrior"], ["cleric"], ["ranger", "mage"]]:
+		for tries in 80:
+			var h := Combat.gen_hero("F", 1)
+			if GameData.hero_role(h) in roles:
+				heroes.append(h)
+				break
+	coins += weekly_wages()   # the founders pay their first week, so a new guild doesn't open in the red

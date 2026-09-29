@@ -579,6 +579,7 @@ func _request_card() -> PanelContainer:
 
 func _render_ledger(v: VBoxContainer) -> void:
 	v.add_child(_label("Guild Ledger", 20))
+	_coach(v, "ledger", "Paying the guild", tr("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep.") % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID, GameData.UPKEEP_PER_LEVEL])
 	if not GameState.hero_request.is_empty():
 		v.add_child(_request_card())
 	var wages := GameState.weekly_wages() + GameState.upkeep()
@@ -590,8 +591,10 @@ func _render_ledger(v: VBoxContainer) -> void:
 	var pv := _vbox(6)
 	var pl := _label(tr("Payday in %d day%s · wages %d + upkeep %d Gold · you have %d") % [dtp, tr(str(_pl(dtp))), GameState.weekly_wages(), GameState.upkeep(), GameState.coins], 16)
 	pl.add_theme_color_override("font_color", Palette.HAZARD if short else Palette.EMBER_BRIGHT)
+	var rules := tr("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out.") % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID]
+	pl.tooltip_text = rules
+	pl.mouse_filter = Control.MOUSE_FILTER_STOP
 	pv.add_child(pl)
-	pv.add_child(_wrap_label(tr("A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out.") % [GameData.PAYDAY_DAYS, -GameData.MORALE_UNPAID], 12, true))
 	var rep: Dictionary = GameState.payday_report
 	if not rep.is_empty():
 		var bits: Array[String] = [tr("%d Gold paid") % int(rep.get("paid", 0))]
@@ -600,7 +603,10 @@ func _render_ledger(v: VBoxContainer) -> void:
 		if not (rep.get("left", []) as Array).is_empty():
 			bits.append(tr("walked out: %s") % tr(str(", ".join(rep["left"]))))
 		pv.add_child(_wrap_label(tr("Last payday (day %d): %s.") % [int(rep.get("day", 0)), tr(str("; ".join(bits)))], 12, true))
-	pv.add_child(_wrap_label(tr("Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown. Training Yard: %d of %d trainings left this week.") % [GameData.UPKEEP_PER_LEVEL, GameData.UPKEEP_UNPAID_RENOWN, GameState.training_left(), GameState.training_slots()], 12, true))
+	var up := _label(tr("Training Yard: %d of %d trainings left this week") % [GameState.training_left(), GameState.training_slots()], 12, true)
+	up.tooltip_text = tr("Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown.") % [GameData.UPKEEP_PER_LEVEL, GameData.UPKEEP_UNPAID_RENOWN]
+	up.mouse_filter = Control.MOUSE_FILTER_STOP
+	pv.add_child(up)
 	var feast := _button(tr("Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first") % [GameState.feast_cost(), GameData.FEAST_MORALE, GameState.feast_seats()], func():
 		var err := GameState.hold_feast()
 		if err != "":
@@ -630,12 +636,13 @@ func _render_ledger(v: VBoxContainer) -> void:
 	var lead := GameState.reputation - GameState.rival_renown
 	var rl := _label(tr("Renown — you %d · them %d (%s)") % [GameState.reputation, GameState.rival_renown, tr("you lead by %d") % lead if lead > 0 else (tr("they lead by %d") % -lead if lead < 0 else "level")], 14)
 	rl.add_theme_color_override("font_color", Palette.good() if lead > 0 else (Palette.HAZARD if lead < 0 else Palette.TEXT))
+	rl.tooltip_text = tr("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.")
+	rl.mouse_filter = Control.MOUSE_FILTER_STOP
 	rv.add_child(rl)
 	var cs := GameState.contest_status()
 	var cl := _label(tr("This month's contest: rifts sealed — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.") % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), tr(str(_pl(int(cs["days_left"])))), GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
 	cl.add_theme_color_override("font_color", Palette.good() if int(cs["ours"]) > int(cs["theirs"]) else (Palette.HAZARD if int(cs["ours"]) < int(cs["theirs"]) else Palette.TEXT))
 	rv.add_child(cl)
-	rv.add_child(_wrap_label("They gain Renown every day and sometimes take a posted contract before you do. At payday, whichever guild leads gets the pick of next week's recruits (one more offer for you, or one fewer). Seal rifts and finish contracts to gain Renown; failed contracts cost it.", 12, true))
 	rival.add_child(rv)
 	v.add_child(rival)
 
@@ -708,7 +715,6 @@ func _render_getting_started(v: VBoxContainer) -> void:
 	if GameState.guide_hidden or GameState.rifts_sealed >= 3:
 		return
 	var steps := [
-		["Recruit a hero (Roster > Recruits)", not GameState.heroes.is_empty()],
 		["Assemble a party in the Rift Hall and enter a rift", not GameState.monsters_seen.is_empty()],
 		["Equip an item on a hero (Roster > Heroes)", GameState.items.any(func(it): return it.equipped_to != "")],
 		["Spend a skill point (Roster > Heroes > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
@@ -954,6 +960,12 @@ func _render_recruits(v: VBoxContainer) -> void:
 	v.add_child(_hsep())
 
 	v.add_child(_label(tr("Hero Recruits — %d/%d roster slots") % [GameState.heroes.size(), GameState.hero_slot_cap()]))
+	if GameState.heroes.size() >= GameState.hero_slot_cap():
+		var full := _wrap_label(tr("Your roster is full. The Barracks (Guild > Manage > Operations) adds 2 slots a level; you can also let a hero go from the Ledger."), 13)
+		full.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		v.add_child(full)
+	elif GameState.recruit_pool.is_empty():
+		v.add_child(_wrap_label(tr("No one is looking for work right now. New recruits arrive every payday."), 13, true))
 	for h in GameState.recruit_pool:
 		var rank := GameData.find_rank(h.rank)
 		var card := PanelContainer.new()
@@ -988,12 +1000,16 @@ func _render_recruits(v: VBoxContainer) -> void:
 				push_warning(err)
 			render()
 		))
-		row.add_child(_icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
+		var hire := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id):
 			var err := GameState.recruit_hero(id)
 			if err != "":
 				push_warning(err)
 			render()
-		))
+		)
+		var why := tr("Roster is full.") if GameState.heroes.size() >= GameState.hero_slot_cap() else (tr("Not enough Gold.") if GameState.coins < int(rank["cost"]) else "")
+		hire.disabled = why != ""
+		hire.tooltip_text = why
+		row.add_child(hire)
 		card.add_child(row)
 		v.add_child(card)
 

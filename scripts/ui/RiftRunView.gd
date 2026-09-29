@@ -266,8 +266,13 @@ func _run_bar(in_combat: bool) -> Control:
 			var rb := _icon_button("res://assets/skills/wing.png", "Retreat", func(): _confirm_retreat = true; render())
 			rb.tooltip_text = "Leave the rift now — keep your loot, no sealing reward"
 			top.add_child(rb)
+	if in_combat and GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
+		var osp := Control.new()
+		osp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top.add_child(osp)
+		top.add_child(_orders_bar())
 	col.add_child(top)
-	if not rank_rules.is_empty():
+	if not rank_rules.is_empty() and not in_combat:   # a fight shows them on the arena
 		var chips := HFlowContainer.new()
 		chips.add_theme_constant_override("h_separation", 6)
 		chips.add_theme_constant_override("v_separation", 4)
@@ -356,11 +361,12 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	var kind := GameState.current_node_kind()
 	if kind in ["combat", "boss", "elite"] or GameState.run.get("sealed") != null:
 		rift_hero_id = ""
-	v.add_child(_run_bar(kind in ["combat", "boss", "elite"]))
+	var fighting := kind in ["combat", "boss", "elite"]
+	v.add_child(_run_bar(fighting))
 	if rift_hero_id != "":
 		_render_rift_hero_page(v)
 		return
-	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):
+	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower") and not fighting:   # a fight has them in the run bar
 		v.add_child(_orders_bar())
 	if not (GameState.run.get("boons", []) as Array).is_empty():
 		var bl := HBoxContainer.new()
@@ -381,7 +387,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			rl.add_theme_color_override("font_color", Palette.HAZARD)
 			v.add_child(rl)
 	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
-	if not biome.is_empty():
+	if not biome.is_empty() and not fighting:   # the arena shows where you are
 		var bl := _label(str(biome["name"]), 12, true)
 		bl.tooltip_text = "This rift's region sets which foes you'll meet."
 		bl.mouse_filter = Control.MOUSE_FILTER_STOP

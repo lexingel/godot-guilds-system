@@ -897,8 +897,8 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 				break
 			continue
 		await _play_turn_bounded(state, hero_wrappers, hero_rects, monster_wrappers, monster_rects, arena)
-		if GameState.run.get("node_state", {}).has("result"):
-			break
+		if GameState.run.get("node_state", {}).has("result") or not is_instance_valid(arena):
+			break   # (the player left the fight's screen: the rest resolves on the next render)
 		await _await_or_timeout(get_tree().create_timer(0.15).timeout, 1.0)
 	if not GameState.state_changed.is_connected(_on_state_changed):
 		GameState.state_changed.connect(_on_state_changed)
@@ -934,7 +934,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		GameState.ensure_combat_bg()
 		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
 		var bw := _battle_width()
-		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, roundf(clampf(bw * 0.36, 280.0, 420.0))))
+		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, _battle_height(bw)))
 		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else tr("Combat"))
 		v.add_child(_label(tr("A %s encounter awaits.") % tr(str(kind_label)), 16))
 		var guild_bits: Array[String] = []
@@ -1533,7 +1533,7 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 	var living_heroes: Array[Hero] = []
 	living_heroes.assign(party.filter(func(h): return h.hp > 0))
 	var W := _battle_width()
-	var H: float = roundf(clampf(W * 0.36, 280.0, 420.0))
+	var H := _battle_height(W)
 	_hero_plates = {}
 	_monster_plates = {}
 
@@ -1883,6 +1883,13 @@ func _tutorial_panel(tut: Dictionary) -> Control:
 
 ## The on-screen size of one art pixel in the arena: a clean factor (0.5,
 ## 0.75 or 1) so nearest filtering keeps pixels even, the same for everyone.
+## The arena's height: wide screens get a taller stage, but never so tall
+## that the command bar under it falls off the bottom of the window.
+func _battle_height(w: float) -> float:
+	var room := get_viewport_rect().size.y - 390.0   # header, run bar, turn order and command bar
+	return roundf(clampf(minf(w * 0.36, room), 240.0, 420.0))
+
+
 func _battle_px_scale(arena_h: float) -> float:
 	var raw := 0.31 * arena_h / 200.0
 	return 1.0 if raw >= 0.875 else (0.75 if raw >= 0.625 else 0.5)
