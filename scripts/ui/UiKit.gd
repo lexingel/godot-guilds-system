@@ -149,6 +149,8 @@ func _clear_root() -> void:
 ## Screens whose art fills the window with clickable props on it (the camp
 ## and the Rift Hall on a landscape window). The UI above lets clicks through.
 func _bleed_ui() -> bool:
+	if _compact():
+		return screen == "camp" and term_tab == "camp" and hub_cluster == ""   # the Rift Hall's cards need the room
 	if _narrow():
 		return false
 	return (screen == "camp" and term_tab == "camp" and hub_cluster == "") or screen == "rift_hall"
@@ -297,10 +299,27 @@ func _motes(parent: Control, rect: Rect2, color: Color, amount: int, velocity: V
 	return p
 
 
-## True on the portrait (760-wide) canvas — rows that sit side by side on
-## desktop stack or wrap instead.
+## True on the portrait (760-wide) and the phone (800x450) canvases — rows
+## that sit side by side on desktop stack or wrap instead.
 func _narrow() -> bool:
-	return get_viewport().get_visible_rect().size.x < 1000.0
+	return get_viewport().get_visible_rect().size.x < 1000.0 or _compact()
+
+
+## A window shorter than this many CSS pixels, on its side, is a phone.
+const COMPACT_MAX_H := 560.0
+const COMPACT_CANVAS := Vector2i(800, 450)
+var _rotate_prompt := false   # a phone held upright: ask for landscape
+
+
+## The guild's orders keep a row of their own above a fight.
+func _has_orders_row() -> bool:
+	return GameState.orders_per_rift() > 0 and not GameState.run.has("tower")
+
+
+## True on the phone canvas (a short landscape window): half the height of
+## the desktop one, so headers shrink and a fight has to fit without scrolling.
+func _compact() -> bool:
+	return get_tree().root.content_scale_size == COMPACT_CANVAS
 
 
 func _vbox(gap: int = 10) -> VBoxContainer:

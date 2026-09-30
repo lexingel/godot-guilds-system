@@ -272,7 +272,8 @@ func _run_bar(in_combat: bool) -> Control:
 		top.add_child(osp)
 		top.add_child(_orders_bar())
 	col.add_child(top)
-	if not rank_rules.is_empty() and not in_combat:   # a fight shows them on the arena
+	var node_open := GameState.current_node_kind() != ""
+	if not rank_rules.is_empty() and not in_combat and not (_compact() and node_open):   # a fight shows them on the arena; the phone canvas, on the path
 		var chips := HFlowContainer.new()
 		chips.add_theme_constant_override("h_separation", 6)
 		chips.add_theme_constant_override("v_separation", 4)
@@ -323,7 +324,12 @@ func _run_bar(in_combat: bool) -> Control:
 		else:
 			bottom.add_child(rrow)
 	if bottom.get_child_count() > 0:
-		col.add_child(bottom)
+		if _compact() and not in_combat:
+			# One row on the phone canvas: the party sits beside the floor pips.
+			top.add_child(bottom)
+			top.move_child(bottom, 2)
+		else:
+			col.add_child(bottom)
 	panel.add_child(col)
 	return panel
 
@@ -362,13 +368,20 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	if kind in ["combat", "boss", "elite"] or GameState.run.get("sealed") != null:
 		rift_hero_id = ""
 	var fighting := kind in ["combat", "boss", "elite"]
-	v.add_child(_run_bar(fighting))
+	# The phone canvas, mid-fight: the arena and its command bar take the whole screen;
+	# only the guild's orders (when there are any) keep a row above it.
+	var ns_now: Dictionary = GameState.run.get("node_state", {})
+	var slim := _compact() and fighting and ns_now.has("combat_state") and not ns_now.has("result")
+	if not slim:
+		v.add_child(_run_bar(fighting))
+	elif _has_orders_row():
+		v.add_child(_orders_bar())
 	if rift_hero_id != "":
 		_render_rift_hero_page(v)
 		return
 	if GameState.orders_per_rift() > 0 and not GameState.run.has("tower") and not fighting:   # a fight has them in the run bar
 		v.add_child(_orders_bar())
-	if not (GameState.run.get("boons", []) as Array).is_empty():
+	if not (GameState.run.get("boons", []) as Array).is_empty() and not slim:
 		var bl := HBoxContainer.new()
 		bl.add_theme_constant_override("separation", 8)
 		var bt := _label("Boons", 13)
@@ -376,23 +389,23 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		bl.add_child(bt)
 		bl.add_child(_boon_chips())
 		v.add_child(bl)
-	if GameState.run.has("daily"):
+	if GameState.run.has("daily") and not slim:
 		var drule: Dictionary = GameState.daily_info(int(GameState.run["daily"]))["rule"]
 		var dl := _wrap_label(tr("Today's twist · %s — %s") % [tr(str(drule["name"])), tr(str(drule["desc"]))], 12)
 		dl.add_theme_color_override("font_color", Palette.RANK_S)
 		v.add_child(dl)
-	if GameState.run.has("tower"):
+	if GameState.run.has("tower") and not slim:
 		for r in GameState.tower_floor_info(int(GameState.run["tower"]))["rules"]:
 			var rl := _wrap_label(tr("Rule · %s — %s") % [tr(str(r["name"])), tr(str(r["desc"]))], 12)
 			rl.add_theme_color_override("font_color", Palette.HAZARD)
 			v.add_child(rl)
 	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
-	if not biome.is_empty() and not fighting:   # the arena shows where you are
+	if not biome.is_empty() and not fighting and not _compact():   # the arena shows where you are
 		var bl := _label(str(biome["name"]), 12, true)
 		bl.tooltip_text = "This rift's region sets which foes you'll meet."
 		bl.mouse_filter = Control.MOUSE_FILTER_STOP
 		v.add_child(bl)
-	if GameState.run.get("training", false):
+	if GameState.run.get("training", false) and not slim:
 		var tb := _label("Training rift — shorter and gentler than a real one. Beat the boss at the end to seal it.", 12)
 		tb.add_theme_color_override("font_color", Palette.RANK_E)
 		v.add_child(tb)
@@ -412,7 +425,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	# The path map is hidden here too — it's one more thing to scroll past
 	# on a screen that's already the most cramped in the game.
 	var is_combat_kind := kind in ["combat", "boss", "elite"]
-	if not is_combat_kind:
+	if not is_combat_kind and not (_compact() and kind != ""):   # the phone canvas shows the map only while choosing a path
 		_render_rift_map(v)
 
 	var sealed = GameState.run.get("sealed")
@@ -505,7 +518,7 @@ func _render_shop_node(v: VBoxContainer) -> void:
 
 		var card := PanelContainer.new()
 		card.theme_type_variation = &"CardPanelViolet"
-		card.custom_minimum_size.x = 260
+		card.custom_minimum_size.x = 226 if _compact() else 260   # three across on the smallest phone
 		var cv := _vbox(4)
 		var icon_wrap := CenterContainer.new()
 		icon_wrap.add_child(_icon(icon_path, 40))
@@ -718,6 +731,8 @@ func _render_treasure_node(v: VBoxContainer) -> void:
 ## shape, the choices beside it — everything on screen without scrolling.
 ## Returns the right-hand column to build into.
 func _node_split(v: VBoxContainer, art_path: String) -> VBoxContainer:
+	if _narrow():
+		return v   # no room for the art beside the choices: the choices alone
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	var art := _banner(art_path, 320, 200)
@@ -745,7 +760,7 @@ func _hazard_damage_text(pv: Dictionary) -> String:
 ## anyone it would knock out.
 func _hazard_option(icon_path: String, title: String, lines: Array, downs: Array, cb: Callable, disabled: bool = false) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.custom_minimum_size.x = 260
+	card.custom_minimum_size.x = 226 if _compact() else 260
 	var cv := _vbox(6)
 	var b := _icon_button(icon_path, title, cb)
 	b.size_flags_horizontal = Control.SIZE_FILL

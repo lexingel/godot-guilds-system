@@ -151,25 +151,30 @@ func _apply_resolution(idx: int) -> void:
 	get_window().size = Vector2i(int(opt["w"]), int(opt["h"]))
 
 
-## A portrait window (a phone held upright) lays the UI out on a 760-wide
-## canvas instead of 1280, so it scales up ~1.7x instead of shrinking to a
-## third; screens that sit side by side on desktop stack there (see _narrow).
-## Returns whether the canvas size changed.
+## The canvas the UI is laid out on, by the window's shape:
+## - 1280x800 on a desktop or tablet.
+## - 800x450 on a short landscape window (a phone on its side, see
+##   COMPACT_MAX_H): everything is drawn nearly twice as large, and screens
+##   use the stacked layouts (_narrow) and scroll (_compact).
+## - 760x800 on a portrait window; a phone held upright is asked to turn
+##   (_rotate_prompt), since a fight doesn't fit across it.
+## Sizes are compared in CSS pixels (the window's, over the screen's scale).
+## Returns whether anything changed.
 func _fit_to_window() -> bool:
 	var win := get_tree().root
-	var want := Vector2i(760, 800) if win.size.x < win.size.y * 0.9 else Vector2i(1280, 800)
-	if win.content_scale_size == want:
+	var css := Vector2(win.size) / maxf(1.0, DisplayServer.screen_get_scale())
+	var portrait := win.size.x < win.size.y * 0.9
+	var want := Vector2i(1280, 800)
+	if portrait:
+		want = Vector2i(760, 800)
+	elif css.y < COMPACT_MAX_H:
+		want = COMPACT_CANVAS
+	var rotate := portrait and css.x < COMPACT_MAX_H
+	if win.content_scale_size == want and rotate == _rotate_prompt:
 		return false
 	win.content_scale_size = want
-	if want.x == 760 and not _landscape_hinted:
-		# The portrait canvas still reads small on a phone: say so once a session.
-		_landscape_hinted = true
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Best in landscape"),
-			"text": tr("Guildhold is made for a wider screen. On a phone, turn it sideways; a tablet or desktop is best.")})
+	_rotate_prompt = rotate
 	return true
-
-
-var _landscape_hinted := false
 
 
 var _toast_box: VBoxContainer
@@ -184,13 +189,22 @@ func _drain_toasts() -> void:
 	if _toast_box == null:
 		return
 	# A story card is up: the pills wait for it (they'd sit on its title).
+	if _rotate_prompt:
+		return
 	if not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
 		return
 	# Mid-fight they'd sit on the arena: they wait for the fight to end.
 	var ns: Dictionary = GameState.run.get("node_state", {}) if screen == "rift_run" else {}
 	if ns.has("combat_state") and not ns.has("result"):
 		return
-	while not GameState.pending_toasts.is_empty() and _toast_box.get_children().filter(func(c): return not c.is_queued_for_deletion()).size() < TOAST_MAX:
+	# The phone canvas: one at a time, narrower, right under its shorter header.
+	var compact := _compact()
+	var toast_w := 270.0 if compact else TOAST_W
+	_toast_box.offset_left = -toast_w - (10.0 if compact else 20.0)
+	_toast_box.offset_right = -10.0 if compact else -20.0
+	_toast_box.offset_top = 50.0 if compact else 78.0
+	_toast_box.offset_bottom = 300.0 if compact else 400.0
+	while not GameState.pending_toasts.is_empty() and _toast_box.get_children().filter(func(c): return not c.is_queued_for_deletion()).size() < (1 if compact else TOAST_MAX):
 		var t: Dictionary = GameState.pending_toasts.pop_front()
 		# A card in the corner: the title over its text. Click to dismiss.
 		var card := PanelContainer.new()
@@ -219,9 +233,9 @@ func _drain_toasts() -> void:
 		var body := _label(str(t["text"]), 13)
 		# Wraps only past the card's widest.
 		var font := body.get_theme_font("font")
-		if font.get_string_size(body.text, HORIZONTAL_ALIGNMENT_LEFT, -1, body.get_theme_font_size("font_size")).x > TOAST_W - 80.0:
+		if font.get_string_size(body.text, HORIZONTAL_ALIGNMENT_LEFT, -1, body.get_theme_font_size("font_size")).x > toast_w - 80.0:
 			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			body.custom_minimum_size.x = TOAST_W - 80.0
+			body.custom_minimum_size.x = toast_w - 80.0
 		tcol.add_child(body)
 		card.add_child(row)
 		_toast_box.add_child(card)
@@ -309,17 +323,20 @@ func render() -> void:
 	var bleed := _bleed_ui()
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE if bleed else _root_filter
 	_set_ambient("" if bleed or screen == "title" else _ambient_path())
-	var outer := _vbox(10)
+	var outer := _vbox(4 if _compact() else 10)
 	if bleed:
 		outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(outer)
 	if screen not in ["title", "load_game", "credits", "onboard"]:
+		# The tabs first: on the phone canvas their buttons go in the top bar (_nav_bar).
+		_nav_bar = null
+		var nav: Control = _quick_nav() if screen in ["camp", "crafting_hall", "rift_hall"] else null
 		_topbar(outer, _breadcrumb_for_screen())
 		var back := _header_back()
 		if not back.is_empty():
 			_combat_hotkeys["Escape"] = back[0]
-		if screen in ["camp", "crafting_hall", "rift_hall"]:
-			outer.add_child(_quick_nav())
+		if nav:
+			outer.add_child(nav)
 	if not _s_rank_celebration.is_empty():
 		outer.add_child(_render_s_rank_celebration(_s_rank_celebration))
 
@@ -372,7 +389,9 @@ func render() -> void:
 	# world instead of a slideshow of unrelated pages.
 	# Not before the guild is founded: the Act I intro waits for the camp, even
 	# when Settings is opened from the naming screen.
-	if not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
+	if _rotate_prompt:
+		_rotate_overlay()
+	elif not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
 		var card_key := "story:" + str(GameState.pending_stories[0].get("title", ""))
 		if not _sfx_seen.has(card_key):
 			_sfx_seen[card_key] = true
@@ -391,6 +410,30 @@ func render() -> void:
 		var fade_tw := create_tween()
 		fade_tw.tween_property(root, "modulate:a", 1.0, 0.18).set_ease(Tween.EASE_OUT)
 	_was_bleed = bleed_now
+
+
+## A phone held upright: the game needs the long side across (a fight is six
+## figures in a row), so it asks, over whatever screen is up.
+func _rotate_overlay() -> void:
+	var cover := ColorRect.new()
+	cover.color = Color(0.06, 0.05, 0.1)
+	cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cover.mouse_filter = Control.MOUSE_FILTER_STOP
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var col := _vbox(14)
+	var t := _label("Turn your phone sideways", 30)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	t.custom_minimum_size.x = 600
+	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(t)
+	var sub := _wrap_label("Guildhold plays in landscape.", 22, true)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(sub)
+	center.add_child(col)
+	cover.add_child(center)
+	root.add_child(cover)
 
 
 ## A campaign story card over the screen (act intros, finale outros, the
@@ -658,14 +701,27 @@ func _quick_go(id: String) -> void:
 	render()
 
 
+var _nav_bar: Control = null   # the phone canvas: the tab buttons, for the top bar
+
+
 func _quick_nav() -> Control:
 	var col := _vbox(6)
-	# Wraps to two rows on the narrow (portrait) canvas.
-	var bar := HFlowContainer.new()
-	bar.add_theme_constant_override("h_separation", 6)
-	bar.add_theme_constant_override("v_separation", 6)
-	bar.alignment = FlowContainer.ALIGNMENT_CENTER
-	col.add_child(bar)
+	var compact := _compact()
+	# Wraps to two rows on the narrow (portrait) canvas; a plain row in the phone's top bar.
+	var bar: Container
+	if compact:
+		bar = HBoxContainer.new()
+		bar.add_theme_constant_override("separation", 4)
+	else:
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 6)
+		flow.add_theme_constant_override("v_separation", 6)
+		flow.alignment = FlowContainer.ALIGNMENT_CENTER
+		bar = flow
+	if compact:
+		_nav_bar = bar   # icons only, in the top bar; only the sub-tabs stay below
+	else:
+		col.add_child(bar)
 	var badges := _camp_badges()
 	var current := _quick_nav_current()
 	for i in NAV_GROUPS.size():
@@ -677,7 +733,7 @@ func _quick_nav() -> Control:
 		var locked := open.is_empty()
 		var go := _quick_go.bind(str(open[0]) if not locked else "")
 		var b := _button("", go)
-		b.custom_minimum_size = Vector2(88, 54)
+		b.custom_minimum_size = Vector2(48, 38) if compact else Vector2(88, 54)
 		b.toggle_mode = true
 		b.button_pressed = ids.has(current)
 		b.tooltip_text = tr("%s  (key %s)") % [tr(str(g[0])), tr(str(key))]
@@ -695,21 +751,23 @@ func _quick_nav() -> Control:
 		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tile.add_child(ic)
-		var nl := _label(str(g[0]), 12)
-		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		tile.add_child(nl)
+		if not compact:
+			var nl := _label(str(g[0]), 12)
+			nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			tile.add_child(nl)
 		b.add_child(tile)
 		if not locked:
 			_combat_hotkeys[key] = go
-		var kl := _label(key, 12)
-		kl.add_theme_color_override("font_color", Palette.MUTED)
-		kl.position = Vector2(3, 0)
-		b.add_child(kl)
+		if not compact:
+			var kl := _label(key, 12)
+			kl.add_theme_color_override("font_color", Palette.MUTED)
+			kl.position = Vector2(3, 0)
+			b.add_child(kl)
 		for m in members:
 			var badge: Array = badges.get(str(m[0]), [])
 			if not badge.is_empty() and not _nav_locked(str(m[0])):
 				var chip := _count_badge(str(badge[0]), str(badge[1]))
-				chip.position = Vector2(70, -6)
+				chip.position = Vector2(32 if compact else 70, -6)
 				b.add_child(chip)
 				break
 		bar.add_child(b)
@@ -800,8 +858,8 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	bar_style.border_color = Palette.EMBER_DEEP
 	bar_style.content_margin_left = 12.0
 	bar_style.content_margin_right = 12.0
-	bar_style.content_margin_top = 8.0
-	bar_style.content_margin_bottom = 8.0
+	bar_style.content_margin_top = 3.0 if _compact() else 8.0
+	bar_style.content_margin_bottom = 3.0 if _compact() else 8.0
 	var bar := PanelContainer.new()
 	bar.add_theme_stylebox_override("panel", bar_style)
 	var bar_v := _vbox(4)
@@ -810,16 +868,26 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	row.add_theme_constant_override("separation", 12)
 	var back := _header_back()
 	if not back.is_empty():
-		var bb := _button(str(back[1]), back[0])
+		var bb := _button("" if _compact() else str(back[1]), back[0])
 		bb.icon = load(GameData.BUTTON_ICON_PATH["back"])
 		bb.tooltip_text = tr("Back to %s") % tr(str(back[1]))
 		bb.custom_minimum_size = Vector2(40, 36)
 		row.add_child(bb)
-	row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
-	var name_lbl := _label(GameState.guild_name, 16)
-	name_lbl.add_theme_font_override("font", DISPLAY_FONT)
-	name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(name_lbl)
+	if _nav_bar != null:
+		row.add_child(_nav_bar)
+	elif not _compact() or screen == "camp":
+		row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
+		var name_lbl := _label(GameState.guild_name, 16)
+		name_lbl.add_theme_font_override("font", DISPLAY_FONT)
+		name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(name_lbl)
+	elif breadcrumb != "":
+		# No room for the guild's name: say where you are instead.
+		var here := _label(tr(breadcrumb), 15)
+		here.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		here.clip_text = true
+		here.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(here)
 	var titles: Array = [GameState.tower_title(), GameState.endless_title()].filter(func(x): return x != "")
 	if not titles.is_empty() and not _narrow():
 		var title_lbl := _label(" · ".join(titles), 12)
@@ -1112,6 +1180,9 @@ func _fullscreen_button() -> Button:
 	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	return _button(tr("Leave fullscreen") if full else tr("Fullscreen"), func():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		if not full and OS.has_feature("web"):
+			# A phone that allows it (Android) stays on its side while fullscreen.
+			JavaScriptBridge.eval("setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);", true)
 		render.call_deferred())
 
 
@@ -1142,6 +1213,10 @@ func _render_credits(v: VBoxContainer) -> void:
 
 
 # ---------------- Onboard ----------------
+const GUILD_NAME_A := ["Ashen", "Silver", "Iron", "Storm", "Ember", "Dawn", "Hollow", "Raven", "Gilded", "Last"]
+const GUILD_NAME_B := ["Lantern", "Crows", "Wardens", "Blades", "Oath", "Company", "Watch", "Hearth", "Banner", "Vigil"]
+
+
 func _render_onboard(v: VBoxContainer) -> void:
 	var top_row := HBoxContainer.new()
 	top_row.add_theme_constant_override("separation", 8)
@@ -1160,7 +1235,15 @@ func _render_onboard(v: VBoxContainer) -> void:
 	edit.placeholder_text = "Guild name"
 	edit.text = pending_guild_name
 	edit.text_changed.connect(func(t: String): pending_guild_name = t)
-	v.add_child(edit)
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_row.add_child(edit)
+	# A name without typing (a phone's keyboard can be awkward in a browser).
+	name_row.add_child(_icon_button(GameData.BUTTON_ICON_PATH["dice"], "Random name", func():
+		pending_guild_name = "The %s %s" % [GUILD_NAME_A[randi() % GUILD_NAME_A.size()], GUILD_NAME_B[randi() % GUILD_NAME_B.size()]]
+		render()))
+	v.add_child(name_row)
 
 	v.add_child(_label("Choose a Crest", 16))
 	var crest_row := HBoxContainer.new()
@@ -1317,6 +1400,18 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var best := _best_party_power()
 	if wide:
 		_rift_hall_wide(v, gates, best, go)
+		return
+	if _compact():
+		# The phone canvas: no gate art to scroll past; the act and the ladder side by side, the other modes under them.
+		var cols := HBoxContainer.new()
+		cols.add_theme_constant_override("separation", 8)
+		_render_campaign_panel(cols)
+		(cols.get_child(cols.get_child_count() - 1) as Control).custom_minimum_size.x = 250
+		var ladder := _ladder_card(best, go)
+		ladder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cols.add_child(ladder)
+		v.add_child(cols)
+		v.add_child(_rift_mode_rows(best, go))
 		return
 
 	var scene := Control.new()

@@ -265,6 +265,93 @@ func _input(event: InputEvent) -> void:
 			_pad_focus.call_deferred()
 	elif event is InputEventMouseMotion and event.relative.length() > 2.0:
 		_pad_mode = false
+	elif event is InputEventScreenTouch:
+		_hold_id += 1
+		if event.pressed:
+			_hold_at = event.position
+			var id := _hold_id
+			get_tree().create_timer(HOLD_SECS, true, false, true).timeout.connect(func(): if id == _hold_id: _show_hold_tip())
+			if GameState.guild_name != "" and GameState.hint_pending("touch_hold"):
+				GameState.dismiss_hint("touch_hold")
+				GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Press and hold"), "text": tr("Hold a finger on anything to read what it does.")})
+		else:
+			_hide_hold_tip()
+	elif event is InputEventScreenDrag and event.position.distance_to(_hold_at) > 14.0:
+		_hold_id += 1   # a scroll, not a hold
+		_hide_hold_tip()
+
+
+# ---------------- Touch: press and hold to read ----------------
+## A finger can't hover, and most of what a thing does is in its tooltip: so
+## holding a finger still for HOLD_SECS shows the tooltip of what's under it
+## (the plain text, or the card for BBCode), and lifting it doesn't press
+## the button that was held.
+const HOLD_SECS := 0.45
+var _hold_at := Vector2.ZERO
+var _hold_id := 0   # bumps on every touch and drag: a stale timer sees another id
+var _hold_tip: CanvasLayer = null
+var _hold_button: BaseButton = null   # switched off while held, so lifting doesn't press it
+
+
+## The front-most visible Control under `pos` that passes `want`.
+func _control_at(n: Node, pos: Vector2, want: Callable) -> Control:
+	if n is CanvasItem and not (n as CanvasItem).visible:
+		return null
+	for i in range(n.get_child_count() - 1, -1, -1):
+		var found := _control_at(n.get_child(i), pos, want)
+		if found:
+			return found
+	if n is Control and (n as Control).get_global_rect().has_point(pos) and want.call(n):
+		return n
+	return null
+
+
+func _show_hold_tip() -> void:
+	var tip_of := _control_at(self, _hold_at, func(c): return str(c.tooltip_text) != "")
+	if tip_of == null:
+		return
+	var btn := _control_at(self, _hold_at, func(c): return c is BaseButton and not c.disabled)
+	if btn:
+		_hold_button = btn
+		_hold_button.disabled = true
+	_hide_hold_tip(false)
+	_hold_tip = CanvasLayer.new()
+	_hold_tip.layer = 60
+	var body: Control = RichTip.card(tip_of.tooltip_text)
+	if body == null:
+		var panel := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		st.bg_color = Palette.SURFACE
+		st.border_color = Palette.EMBER_BRIGHT
+		st.set_border_width_all(1)
+		st.set_corner_radius_all(6)
+		st.set_content_margin_all(8)
+		panel.add_theme_stylebox_override("panel", st)
+		var l := _label(tr(tip_of.tooltip_text), 14)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size.x = minf(340.0, maxf(120.0, l.get_theme_font("font").get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x + 4.0))
+		panel.add_child(l)
+		body = panel
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hold_tip.add_child(body)
+	add_child(_hold_tip)
+	body.reset_size()
+	# Above the finger, inside the window.
+	var vp := get_viewport().get_visible_rect().size
+	var at := Vector2(_hold_at.x - body.size.x * 0.5, _hold_at.y - body.size.y - 36.0)
+	if at.y < 6.0:
+		at.y = _hold_at.y + 44.0
+	body.position = Vector2(clampf(at.x, 6.0, maxf(6.0, vp.x - body.size.x - 6.0)), clampf(at.y, 6.0, maxf(6.0, vp.y - body.size.y - 6.0)))
+
+
+func _hide_hold_tip(release_button: bool = true) -> void:
+	if _hold_tip:
+		_hold_tip.queue_free()
+		_hold_tip = null
+	if release_button and _hold_button:
+		if is_instance_valid(_hold_button):
+			_hold_button.set_deferred("disabled", false)
+		_hold_button = null
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -934,7 +1021,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		GameState.ensure_combat_bg()
 		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
 		var bw := _battle_width()
-		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, _battle_height(bw)))
+		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, 120.0 if _compact() else _battle_height(bw)))   # the phone canvas keeps Engage on screen
 		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else tr("Combat"))
 		v.add_child(_label(tr("A %s encounter awaits.") % tr(str(kind_label)), 16))
 		var guild_bits: Array[String] = []
@@ -1035,7 +1122,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if result.has("heroes"):
 			victory_col.add_child(_victory_party(result))
 		if int(result.get("hand_bonus", 0)) > 0:
-			var hb := _label(tr("Flawless, by hand: +%d Gold (no one went down and you played every turn).") % int(result["hand_bonus"]), 12)
+			var hb := _label(tr("Flawless, by hand: +%d Gold, +%d Essence (no one went down and you played every turn).") % [int(result["hand_bonus"]), int(result.get("hand_bonus_ess", 0))], 12)
 			hb.add_theme_color_override("font_color", Palette.RANK_S)
 			victory_col.add_child(hb)
 		if str(result.get("escort_saved", "")) != "":
@@ -1787,12 +1874,13 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			arena.add_child(hit)
 	arena.add_child(frame)
 
-	var col := _vbox(8)
+	var compact := _compact()
+	var col := _vbox(4 if compact else 8)
 	col.custom_minimum_size.x = W
 	col.add_child(arena)
 
 	var warn := Combat.describe_incoming(state)
-	if warn != "":
+	if warn != "" and not compact:   # no room on the phone canvas; the tags over the foes say it
 		var warn_row := HBoxContainer.new()
 		warn_row.add_theme_constant_override("separation", 6)
 		warn_row.add_child(_icon("res://assets/skills/icon_boss_skull.png", 16))
@@ -1801,7 +1889,16 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		warn_row.add_child(wl)
 		col.add_child(warn_row)
 
-	col.add_child(_turn_order_strip(state))
+	if compact:
+		var strip_row := HBoxContainer.new()
+		strip_row.add_theme_constant_override("separation", 8)
+		var strip := _turn_order_strip(state)
+		strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		strip_row.add_child(strip)
+		strip_row.add_child(_battle_tools(living_heroes, hero_wrappers))
+		col.add_child(strip_row)
+	else:
+		col.add_child(_turn_order_strip(state))
 	var tut := _tutorial_step(state, current_hero)
 	_tut_key = str(tut.get("key", ""))
 	if not tut.is_empty():
@@ -1897,6 +1994,10 @@ func _tutorial_panel(tut: Dictionary) -> Control:
 ## The arena's height: wide screens get a taller stage, but never so tall
 ## that the command bar under it falls off the bottom of the window.
 func _battle_height(w: float) -> float:
+	if _compact():
+		# Header, the turn-order row and a one-row command bar; the guided fight's panel when it's up.
+		var guided: bool = GameState.run.get("training", false) and not GameState.hints_seen.has("tut_done") and not GameState.tips_off
+		return roundf(clampf(get_viewport_rect().size.y - 204.0 - (62.0 if guided else 0.0) - (44.0 if _has_orders_row() else 0.0), 170.0, 270.0))
 	var room := get_viewport_rect().size.y - 390.0   # header, run bar, turn order and command bar
 	return roundf(clampf(minf(w * 0.36, room), 240.0, 420.0))
 
@@ -1937,7 +2038,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 	if key != "" and key == _tut_key:
 		selected = true
 		_pulse(b, 0.55, 0.5)
-	b.custom_minimum_size = Vector2(92, 72)
+	b.custom_minimum_size = Vector2(70, 54) if _compact() else Vector2(92, 72)
 	b.tooltip_text = tip
 	b.disabled = block != ""
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -1955,7 +2056,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 	col.add_theme_constant_override("separation", 2)
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ic := _icon(icon_path, 30)
+	var ic := _icon(icon_path, 22 if _compact() else 30)
 	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(ic)
 	var cap := _label(caption, 12)
@@ -2134,28 +2235,30 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 	st.bg_color = Palette.SURFACE2
 	st.border_color = Palette.LINE
 	st.set_border_width_all(1)
+	var compact := _compact()
 	st.set_corner_radius_all(8)
-	st.set_content_margin_all(10)
+	st.set_content_margin_all(5 if compact else 10)
 	panel.add_theme_stylebox_override("panel", st)
 	# Wraps instead of running off the side (the full kit is wider than a
 	# narrow window).
 	var row: Container = HFlowContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	row.add_theme_constant_override("h_separation", 10)
-	row.add_theme_constant_override("v_separation", 8)
+	row.add_theme_constant_override("h_separation", 5 if compact else 10)
+	row.add_theme_constant_override("v_separation", 5 if compact else 8)
 	panel.add_child(row)
 
 	if current_hero:
 		var who := HBoxContainer.new()
-		who.add_theme_constant_override("separation", 8)
-		who.custom_minimum_size.x = 200
-		who.add_child(_hero_icon(current_hero, 56))
+		who.add_theme_constant_override("separation", 6 if compact else 8)
+		who.custom_minimum_size.x = 138 if compact else 200
+		who.add_child(_hero_icon(current_hero, 40 if compact else 56))
 		var info := _vbox(2)
 		info.alignment = BoxContainer.ALIGNMENT_CENTER
 		var nm := _label(tr("%s's turn") % tr(str(current_hero.name.split(" the ")[0])), 15)
 		nm.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		info.add_child(nm)
-		info.add_child(_label(tr("Lv%d %s · %d/%d HP") % [current_hero.level, tr(str(GameData.find_class(current_hero.pool_id).get("name", ""))), current_hero.hp, Combat.max_hp(current_hero)], 12, true))
+		if not compact:
+			info.add_child(_label(tr("Lv%d %s · %d/%d HP") % [current_hero.level, tr(str(GameData.find_class(current_hero.pool_id).get("name", ""))), current_hero.hp, Combat.max_hp(current_hero)], 12, true))
 		info.add_child(_momentum_meter(int(state.get("momentum", 0))))
 		who.add_child(info)
 		row.add_child(who)
@@ -2173,9 +2276,11 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if weak_reach:
 			atk_tip += tr("\nFrom the back row a %s hits at half strength.") % tr(str(current_hero.cls_id))
 		var mom := int(state.get("momentum", 0))
+		# The phone canvas has one row: with More open, its buttons stand in for the main actions (whose keys still work).
+		var primary: Container = HBoxContainer.new() if compact and (_more_open or _tut_key in ["6", "7", "8", "9"] or last_action == "guard") else row
 		var ab_atk := _cmd_button("res://assets/skills/sword_a.png", "Attack" if not weak_reach else "Attack ½", "1", do_attack, atk_tip, last_action == "attack")
 		_momentum_hover(ab_atk, mom, 2 if atk_kills else 1)
-		row.add_child(ab_atk)
+		primary.add_child(ab_atk)
 		_combat_hotkeys["1"] = do_attack
 		if last_action == "attack":
 			_combat_hotkeys["Space"] = do_attack
@@ -2200,15 +2305,15 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var do_skill := func(): run_turns.call(func(): GameState.set_hero_action(hid, act_id, tgt if sk_target else 0))
 			var tip := tr("%s (%s) — %d Momentum. %s%s") % [tr(str(d[2])), tr(str(key)), int(d[4]), tr(str(d[3])), tr(str(("\n" + block) if block != "" else ""))]
 			var sb := _cmd_button(str(d[1]), str(d[2]), key, do_skill, tip, last_action == act_id, block, int(d[4]))
-			sb.custom_minimum_size.x = 104
+			sb.custom_minimum_size.x = 84 if compact else 104
 			_momentum_hover(sb, mom, -int(d[4]) if block == "" else 0)
-			row.add_child(sb)
+			primary.add_child(sb)
 			if block == "":
 				_combat_hotkeys[key] = do_skill
 				if last_action == act_id:
 					_combat_hotkeys["Space"] = do_skill
 		var do_defend := func(): run_turns.call(func(): GameState.set_hero_action(hid, "defend"))
-		row.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "5", do_defend, "Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow).", last_action == "defend"))
+		primary.add_child(_cmd_button("res://assets/skills/shield_basic.png", "Defend", "5", do_defend, "Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow).", last_action == "defend"))
 		_combat_hotkeys["5"] = do_defend
 		if last_action == "defend":
 			_combat_hotkeys["Space"] = do_defend
@@ -2221,7 +2326,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			_more_open = not show_more
 			render()
 		var more_btn := _cmd_button("res://assets/skills/gear.png", "Less" if show_more else ("More ★" if call_ready else "More"), "M", toggle_more, more_tip, false)
-		more_btn.custom_minimum_size.x = 72
+		more_btn.custom_minimum_size.x = 58 if compact else 72
 		if call_ready and not show_more:
 			more_btn.modulate = Color(1.15, 1.0, 0.7)
 		row.add_child(more_btn)
@@ -2259,6 +2364,8 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			_combat_hotkeys["8"] = start_tonic
 		if more_row != row:
 			more_row.queue_free()
+		if primary != row:
+			primary.queue_free()
 		if not _combat_hotkeys.has("Space"):
 			_combat_hotkeys["Space"] = do_attack
 		var living_idx: Array[int] = []
@@ -2271,20 +2378,28 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_combat_target = living_idx[(living_idx.find(_combat_target) + 1) % living_idx.size()]
 				render()
-		var hint := _label(tr("Target: %s\nSpace repeats your last action") % tr(str(tgt_name)), 12, true)
-		hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(hint)
+		if not compact:   # a keyboard hint; the ring under the foe shows the target
+			var hint := _label(tr("Target: %s\nSpace repeats your last action") % tr(str(tgt_name)), 12, true)
+			hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(hint)
 		if _ally_pick != "":
 			_guard_picker(row, state, current_hero, living_heroes, run_turns)
 	else:
 		var l := _label(tr("The party is down.") if living_heroes.is_empty() else tr("Enemy turn…"), 14, true)
-		l.custom_minimum_size = Vector2(200, 72)
+		l.custom_minimum_size = Vector2(160, 54) if compact else Vector2(200, 72)
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		row.add_child(l)
 
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer)
+	if not _compact():   # the phone canvas keeps the tools beside the turn order
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(spacer)
+		row.add_child(_battle_tools(living_heroes, hero_wrappers))
+	return panel
+
+
+## Battle speed, Auto, the fight log and Retreat.
+func _battle_tools(living_heroes: Array[Hero], hero_wrappers: Dictionary) -> HBoxContainer:
 	var tools := HBoxContainer.new()
 	tools.add_theme_constant_override("separation", 6)
 	tools.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2295,7 +2410,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold.") % int(GameData.HAND_BONUS * 100), func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()
@@ -2323,8 +2438,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 		if screen == "rift_run":
 			render()
 	))
-	row.add_child(tools)
-	return panel
+	return tools
 
 
 ## Round N slides in across the arena once per round; a boss gets a name

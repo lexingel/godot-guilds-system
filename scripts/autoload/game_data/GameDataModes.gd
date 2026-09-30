@@ -121,7 +121,7 @@ const HERO_REQUESTS := {
 }
 
 ## A fight won by hand (Auto never on) with no hero down pays this share
-## of its gold again.
+## of its Gold and its Essence again.
 const HAND_BONUS := 0.3
 
 ## The Endless Rift pays once for each of these, the first time the guild

@@ -33,6 +33,7 @@ func run() -> void:
 	check(res.get("won", false), "the strong party wins")
 	var coins_before := GameState.coins
 	check(int(res.get("hand_bonus", 0)) > 0, "a flawless fight played by hand pays a bonus (%d)" % int(res.get("hand_bonus", 0)))
+	check(int(res.get("hand_bonus_ess", 0)) > 0, "and the same share of its Essence (%d)" % int(res.get("hand_bonus_ess", 0)))
 	for h in GameState.heroes:
 		h.hp = Combat.max_hp(h)
 	var res2 := _fight(true)
