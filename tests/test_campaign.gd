@@ -21,7 +21,9 @@ func run() -> void:
 	check(not GameState.greater_rift_unlocked() and not GameState.endless_unlocked(), "Greater and Endless start locked")
 	check(not GameState.finale_ready(), "finale closed until objectives are met")
 	var ids := _heroes(3)
-	GameState.rifts_sealed = 2
+	GameState.rifts_sealed = 3
+	check(not GameState.finale_ready(), "Act I still needs a Rank E seal")
+	GameState.best_rift_rank_sealed = GameData.rift_rank_index("E")
 	check(GameState.finale_ready(), "Act I objectives met -> finale open")
 	GameState.runs_started = 5
 	GameState.start_finale(ids, null)
@@ -51,7 +53,8 @@ func run() -> void:
 	GameState.finish_run()
 	# Act II objectives.
 	GameState.quest_tally["greater_seals"] = 2
-	GameState.reputation = 20
+	GameState.quest_tally["quests_done"] = 1
+	GameState.best_rift_rank_sealed = GameData.rift_rank_index("D")
 	check(not GameState.finale_ready(), "Act II still needs a Rank C+ map seal")
 	GameState.best_rift_rank_sealed = GameData.rift_rank_index("C")
 	check(GameState.finale_ready(), "Act II objectives met")

@@ -128,7 +128,7 @@ func run() -> void:
 	# A finale fights in its act's biome.
 	GameState.campaign_act = 2
 	GameState.quest_tally["greater_seals"] = 2
-	GameState.reputation = 20
+	GameState.quest_tally["quests_done"] = 1
 	GameState.best_rift_rank_sealed = 3
 	GameState.start_finale(ids, null)
 	check(GameState.run_biome() == "marsh", "the Act II finale is in the Marshes")

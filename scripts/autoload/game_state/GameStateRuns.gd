@@ -231,6 +231,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 	var state: Dictionary = ns.get("combat_state", {})
 	if outcome["done"]:
 		var result: Dictionary = outcome["result"]
+		var tally := ("auto" if state.get("auto_used", false) else "hand") + ("_w" if result["won"] else "_l")
+		session[tally] = int(session.get(tally, 0)) + 1
 		if not result["won"] and not bool(result.get("retreated", false)):
 			result["defeat_reasons"] = Combat.defeat_reasons(state)
 		if run.has("tower"):

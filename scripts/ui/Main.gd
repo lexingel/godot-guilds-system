@@ -246,6 +246,7 @@ func render() -> void:
 	if _combat_animating and screen == "rift_run":
 		return
 	_coached_this_render = false
+	GameState.session_live = screen not in ["title", "load_game", "credits", "onboard"]
 	var was_focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
 	if was_focused is Button:
 		_pad_focus_text = (was_focused as Button).text
@@ -1030,9 +1031,7 @@ func _whats_new_card() -> PanelContainer:
 	var head := _label(tr("What's new in %s") % tr(str(_version())), 15)
 	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(head)
-	for line in GameData.WHATS_NEW.slice(0, 4):
-		col.add_child(_wrap_label("• " + tr(str(line)), 12))
-	col.add_child(_wrap_label(GameData.WHATS_NEW_TRY, 12, true))
+	col.add_child(_wrap_label(tr(str(GameData.WHATS_NEW[0])), 12))   # the latest note only: a new player shouldn't open on a changelog
 	if OS.has_feature("web"):
 		col.add_child(_wrap_label("Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then.", 12, true))
 	p.add_child(col)
@@ -1051,7 +1050,31 @@ func _feedback_report() -> String:
 		bits.append(tr("Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d") % [GameState.day, GameState.campaign_act, GameState.heroes.size(),
 			GameState.rifts_sealed, GameData.RIFT_RANKS[clampi(GameState.best_rift_rank_sealed, 0, GameData.RIFT_RANKS.size() - 1)]["id"] if GameState.best_rift_rank_sealed >= 0 else "none",
 			GameState.best_endless_time / 60, GameState.best_endless_time % 60, GameState.tower_best])
+		bits.append_array(_session_lines())
 	return "\n".join(bits) + tr("\n\nWhat happened:\n\nWhat you expected:\n\nAnything confusing, too hard or too easy:\n")
+
+
+## How the guild has been played, for the Feedback report: time in the game,
+## fights by hand and on Auto, recent runs by result, and what sits unspent.
+func _session_lines() -> Array[String]:
+	var s: Dictionary = GameState.session
+	var secs := int(s.get("secs", 0.0))
+	var out: Array[String] = [tr("Played %dh %02dm") % [secs / 3600, (secs % 3600) / 60]]
+	out.append(tr("Fights: %d by hand (%d won), %d on Auto (%d won)") % [int(s.get("hand_w", 0)) + int(s.get("hand_l", 0)), int(s.get("hand_w", 0)), int(s.get("auto_w", 0)) + int(s.get("auto_l", 0)), int(s.get("auto_w", 0))])
+	var runs := {}
+	for r in GameState.run_history:
+		var k := "%s %s" % [str(r["kind"]), str(r["result"]).to_lower()]
+		runs[k] = int(runs.get(k, 0)) + 1
+	if not runs.is_empty():
+		out.append(tr("Last %d runs: %s") % [GameState.run_history.size(), ", ".join(runs.keys().map(func(k): return "%s x%d" % [k, runs[k]]))])
+	var sp := 0
+	var ap := 0
+	for h in GameState.heroes:
+		sp += h.skill_points
+		ap += h.attr_points
+	out.append(tr("Unspent: %d Gold, %d Essence, %d skill points, %d attribute points") % [GameState.coins, GameState.crystals, sp, ap])
+	out.append(tr("Renown %d vs rival %d; heroes lost %d") % [GameState.reputation, GameState.rival_renown, GameState.heroes_lost_total])
+	return out
 
 
 ## Copy the report, or copy it and open the playtest Discord.

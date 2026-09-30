@@ -948,7 +948,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var gl := _label(tr("Drill Yard: ") + ", ".join(guild_bits), 12, true)
 			gl.add_theme_color_override("font_color", Palette.RANK_E)
 			v.add_child(gl)
-		if kind == "combat":
+		# Not in the training rift until its guided fight is done: that fight teaches the game.
+		if kind == "combat" and (not GameState.run.get("training", false) or GameState.hints_seen.has("tut_done") or GameState.tips_off):
 			var qf := _icon_button("res://assets/skills/sword_dual.png", "Quick fight  (Q)", func():
 				GameState.quick_fight()
 			)

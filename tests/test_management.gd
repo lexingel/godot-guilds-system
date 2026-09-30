@@ -27,7 +27,7 @@ func run() -> void:
 	check(GameState.lvl("ops.barracks") == 5 and GameState.crystals == 10000 - 750, "5 levels cost 750, no 6th")
 
 	# Operations.
-	check(GameState.hero_slot_cap() == 14 and GameState.guild_mentor() and GameState.xp_mult() > 1.0, "Barracks: slots, mentor, XP")
+	check(GameState.hero_slot_cap() == 16 and GameState.guild_mentor() and GameState.xp_mult() > 1.0, "Barracks: slots, mentor, XP")
 	var h := Combat.gen_hero("C", 3)
 	var hp0 := Combat.max_hp(h)
 	GameState.upgrades["ops.drill"] = 5

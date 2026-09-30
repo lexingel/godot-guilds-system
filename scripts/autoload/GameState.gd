@@ -41,6 +41,7 @@ func reset() -> void:
 	wage_raise = {}
 	contest_start = {}
 	rival_event = {}
+	session = {}
 	boon_set4_reached = false
 	tower_best = 0
 	tower_week = 0
@@ -194,6 +195,7 @@ func load_save() -> bool:
 	wage_raise = (data.get("wage_raise", {}) as Dictionary).duplicate()
 	contest_start = (data.get("contest_start", {}) as Dictionary).duplicate()
 	rival_event = (data.get("rival_event", {}) as Dictionary).duplicate(true)
+	session = (data.get("session", {}) as Dictionary).duplicate()
 	endless_milestones = (data.get("endless_milestones", []) as Array).map(func(x): return int(x))
 	boon_set4_reached = bool(data.get("boon_set4_reached", false))
 	tower_week = int(data.get("tower_week", 0))
@@ -427,3 +429,14 @@ func start_tower(hero_ids: Array[String]) -> void:
 	auto_resolve_single_option()
 	save()
 	state_changed.emit()
+
+
+## Time in the game for the Feedback report (session["secs"]): counted while
+## a guild is being played (Main.render sets session_live; not on the title
+## or naming screens), and never across a pause longer than a second.
+var session_live := false
+
+
+func _process(delta: float) -> void:
+	if session_live and guild_name != "" and delta < 1.0:
+		session["secs"] = float(session.get("secs", 0.0)) + delta

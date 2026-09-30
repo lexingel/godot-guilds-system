@@ -110,6 +110,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.",
 	"Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen.",
 	"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.",
 	"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.",
@@ -135,7 +136,6 @@ const WHATS_NEW := [
 	"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.",
 	"New music, larger text, and rank rules shown in the rift.",
 ]
-const WHATS_NEW_TRY := "Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones."
 const FEEDBACK_DISCORD_URL := "https://discord.gg/85XrXjBUmk"   # the playtest Discord (the Feedback panel opens it)
 
 ## Looping background music (AudioManager.play_music loops it).
