@@ -311,6 +311,15 @@ const COMPACT_CANVAS := Vector2i(800, 450)
 var _rotate_prompt := false   # a phone held upright: ask for landscape
 
 
+## A phone has no keyboard: its visible text drops the key hints ("(Space)",
+## "(key 3)", ", key 1", "Attack (1)"). Tooltips keep them for desktop.
+static var _key_hint_re := RegEx.create_from_string("\\s*\\((?:(?:key|tuş)\\s*)?(?:Space|Boşluk|Esc|Tab|Q|M|A|[1-9](?:-[1-9])?)\\)|,\\s*(?:key|tuş)\\s*[1-9]")   # English and Turkish
+
+
+func _no_keys(text: String) -> String:
+	return _key_hint_re.sub(text, "", true) if _compact() else text
+
+
 ## The guild's orders keep a row of their own above a fight.
 func _has_orders_row() -> bool:
 	return GameState.orders_per_rift() > 0 and not GameState.run.has("tower")
@@ -1586,7 +1595,7 @@ func _coach(v: Control, id: String, title: String, text: String) -> void:
 	var t := _label(title, 14)
 	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(t)
-	col.add_child(_wrap_label(text, 12))
+	col.add_child(_wrap_label(_no_keys(tr(text)), 12))
 	row.add_child(col)
 	var got := _button("Got it", func():
 		GameState.dismiss_hint(id)

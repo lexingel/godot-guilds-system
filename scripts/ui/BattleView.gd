@@ -1037,14 +1037,14 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			v.add_child(gl)
 		# Not in the training rift until its guided fight is done: that fight teaches the game.
 		if kind == "combat" and (not GameState.run.get("training", false) or GameState.hints_seen.has("tut_done") or GameState.tips_off):
-			var qf := _icon_button("res://assets/skills/sword_dual.png", "Quick fight  (Q)", func():
+			var qf := _icon_button("res://assets/skills/sword_dual.png", _no_keys(tr("Quick fight  (Q)")), func():
 				GameState.quick_fight()
 			)
 			qf.tooltip_text = "Play the whole fight out instantly on Auto and jump to the result"
 			v.add_child(qf)
 			_combat_hotkeys["Q"] = func(): GameState.quick_fight()
 		_combat_hotkeys["Space"] = func(): GameState.engage_node()
-		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", "Engage  (Space)", func():
+		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", _no_keys(tr("Engage  (Space)")), func():
 			# engage_node() already emits state_changed, which render() is
 			# connected to — an explicit render() call here on top of that
 			# double-renders: the first (nested, from the emit) already
@@ -1975,7 +1975,7 @@ func _tutorial_panel(tut: Dictionary) -> Control:
 	tag.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	tag.custom_minimum_size.x = 110
 	row.add_child(tag)
-	var txt := _wrap_label(str(tut["text"]), 14)
+	var txt := _wrap_label(_no_keys(str(tut["text"])), 14)
 	txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(txt)
 	var done := int(tut["step"]) > 3
@@ -1997,7 +1997,7 @@ func _battle_height(w: float) -> float:
 	if _compact():
 		# Header, the turn-order row and a one-row command bar; the guided fight's panel when it's up.
 		var guided: bool = GameState.run.get("training", false) and not GameState.hints_seen.has("tut_done") and not GameState.tips_off
-		return roundf(clampf(get_viewport_rect().size.y - 204.0 - (62.0 if guided else 0.0) - (44.0 if _has_orders_row() else 0.0), 170.0, 270.0))
+		return roundf(clampf(get_viewport_rect().size.y - 204.0 - (72.0 if guided else 0.0) - (44.0 if _has_orders_row() else 0.0), 170.0, 270.0))
 	var room := get_viewport_rect().size.y - 390.0   # header, run bar, turn order and command bar
 	return roundf(clampf(minf(w * 0.36, room), 240.0, 420.0))
 
@@ -2065,7 +2065,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 	cap.clip_text = true
 	col.add_child(cap)
 	b.add_child(col)
-	if key != "":
+	if key != "" and not _compact():   # a keycap; a phone has no keys
 		var kb := _label(key, 11)
 		kb.add_theme_color_override("font_color", Palette.MUTED)
 		kb.position = Vector2(6, 3)

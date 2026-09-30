@@ -1263,7 +1263,7 @@ func _item_modal(it: Item) -> void:
 
 
 func _render_inventory_supplies(v: VBoxContainer) -> void:
-	v.add_child(_label(tr("Tonics — belt %d/%d · drink one in a fight on a hero's turn (Tonics, key 8)") % [GameState.tonic_count(), GameData.TONIC_CAP], 16))
+	v.add_child(_label(_no_keys(tr("Tonics — belt %d/%d · drink one in a fight on a hero's turn (Tonics, key 8)") % [GameState.tonic_count(), GameData.TONIC_CAP]), 16))
 	for def in GameData.TONIC_TYPES:
 		var tid: String = def["id"]
 		var buy := _icon_button(GameData.CURRENCY_ICON_PATH["coins"], "Buy", func():

@@ -422,13 +422,14 @@ func _rotate_overlay() -> void:
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var col := _vbox(14)
-	var t := _label("Turn your phone sideways", 30)
+	# The portrait canvas is 760 wide on a ~390px screen (about half size), so these are set large.
+	var t := _label("Turn your phone sideways", 60)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.custom_minimum_size.x = 600
+	t.custom_minimum_size.x = 680
 	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 	col.add_child(t)
-	var sub := _wrap_label("Guildhold plays in landscape.", 22, true)
+	var sub := _wrap_label("Guildhold plays in landscape.", 36, true)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(sub)
 	center.add_child(col)

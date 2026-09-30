@@ -539,7 +539,8 @@ func _build_hud() -> void:
 	_tray.add_theme_constant_override("v_separation", 4)
 	root.add_child(_tray)
 	var hint := _hud_label(root, 14)
-	hint.text = "Move: WASD / arrows, or drag  ·  Pause: Esc"
+	# A phone (the 800x450 canvas, see UiKit._compact) has no keys to name.
+	hint.text = tr("Drag to move") if get_tree().root.content_scale_size == Vector2i(800, 450) else tr("Move: WASD / arrows, or drag  ·  Pause: Esc")
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 14)
 	hint.modulate = Color(1, 1, 1, 0.6)
 

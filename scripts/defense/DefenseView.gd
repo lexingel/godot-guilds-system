@@ -453,7 +453,7 @@ func _build_hud() -> void:
 	pause.pressed.connect(_toggle_pause)
 	row.add_child(pause)
 	var hint := Label.new()
-	hint.text = tr("Tap a pad to build · tap the ground to send your champion · Space: next wave")
+	hint.text = tr("Tap a pad to build · tap the ground to send your champion") if get_tree().root.content_scale_size == Vector2i(800, 450) else tr("Tap a pad to build · tap the ground to send your champion · Space: next wave")   # a phone has no Space
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	hint.add_theme_constant_override("outline_size", 4)
