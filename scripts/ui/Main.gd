@@ -1054,13 +1054,13 @@ func _feedback_report() -> String:
 	return "\n".join(bits) + tr("\n\nWhat happened:\n\nWhat you expected:\n\nAnything confusing, too hard or too easy:\n")
 
 
-## Copy the report, or open it as a GitHub issue.
+## Copy the report, or copy it and open the playtest Discord.
 func _feedback_panel() -> PanelContainer:
 	var p := PanelContainer.new()
 	p.theme_type_variation = &"CardPanelEmber"
 	var col := _vbox(6)
 	col.add_child(_label("Send feedback", 15))
-	col.add_child(_wrap_label("Found a bug, or something felt off? Copy this report and paste it wherever you talk with us, or open it as an issue on GitHub. It already says which build you're on and how far your guild is.", 12, true))
+	col.add_child(_wrap_label("Found a bug, or something felt off? Tell us on Discord. This report already says which build you're on and how far your guild is: copy it, then paste it into your message.", 12, true))
 	var pre := _wrap_label(_feedback_report(), 12)
 	pre.add_theme_color_override("font_color", Palette.MUTED)
 	col.add_child(pre)
@@ -1068,10 +1068,13 @@ func _feedback_panel() -> PanelContainer:
 	row.add_theme_constant_override("separation", 8)
 	row.add_child(_button("Copy report", func():
 		DisplayServer.clipboard_set(_feedback_report())
-		_feedback_note = "Copied — paste it into your message."
+		_feedback_note = "Copied. Paste it into a message on the Discord."
 		render()))
-	row.add_child(_button("Open a GitHub issue", func():
-		OS.shell_open(tr("%s?title=%s&body=%s") % [tr(str(GameData.FEEDBACK_ISSUES_URL)), tr(str((tr("Feedback (%s)") % tr(str(_version()))).uri_encode())), tr(str(_feedback_report().uri_encode()))])))
+	row.add_child(_button("Copy and open Discord", func():
+		DisplayServer.clipboard_set(_feedback_report())
+		_feedback_note = "Copied. Paste it into a message on the Discord."
+		OS.shell_open(GameData.FEEDBACK_DISCORD_URL)
+		render()))
 	col.add_child(row)
 	if _feedback_note != "":
 		var n := _label(_feedback_note, 12)

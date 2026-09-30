@@ -136,7 +136,7 @@ const WHATS_NEW := [
 	"New music, larger text, and rank rules shown in the rift.",
 ]
 const WHATS_NEW_TRY := "Try: free your first champion at the end of Act I, make them your overseer, and take them into the Endless Rift to find the lost ones."
-const FEEDBACK_ISSUES_URL := "https://github.com/lexingel/guildhold/issues/new"
+const FEEDBACK_DISCORD_URL := "https://discord.gg/85XrXjBUmk"   # the playtest Discord (the Feedback panel opens it)
 
 ## Looping background music (AudioManager.play_music loops it).
 ## The pools the game picks from: a new camp track each time you come home,
