@@ -26,7 +26,7 @@ func run() -> void:
 	check(GameState.rival_name != "" and GameState.rival_renown == 0, "a new guild has a rival")
 	var a := _hero("F", 1)
 	var b := _hero("C", 5)
-	check(GameState.wage_of(a) == 40 and GameState.wage_of(b) == int(round(110 * 1.12)), "wages by rank and level")
+	check(GameState.wage_of(a) == 60 and GameState.wage_of(b) == int(round(165 * 1.12)), "wages by rank and level")
 	check(GameState.weekly_wages() == GameState.wage_of(a) + GameState.wage_of(b), "weekly wages sum the roster")
 
 	# Payday: paid in full.

@@ -262,35 +262,36 @@ Opens when you free your first champion (the end of Act I),İlk şampiyonunu kur
 A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions.,Bir şampiyon yarık seferlerini gözetir: ekibe Lütfu ve Çağrısı. Kadro > Şampiyonlar'dan birini seç ve seviyesini yükselt.,scripts/autoload/game_data/GameDataArt.gd:73
 English,,scripts/autoload/game_data/GameDataArt.gd:112
 Türkçe (beta),,scripts/autoload/game_data/GameDataArt.gd:112
-"A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday.","Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor.",scripts/autoload/game_data/GameDataArt.gd:115
-"Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt.","Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük.",scripts/autoload/game_data/GameDataArt.gd:116
-"Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold.","Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor.",scripts/autoload/game_data/GameDataArt.gd:117
-"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.","Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor.",scripts/autoload/game_data/GameDataArt.gd:118
-"Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen.","Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle.",scripts/autoload/game_data/GameDataArt.gd:119
-"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.","Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor.",scripts/autoload/game_data/GameDataArt.gd:120
-"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.","Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler.",scripts/autoload/game_data/GameDataArt.gd:121
-"Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead.","Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner.",scripts/autoload/game_data/GameDataArt.gd:122
-"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.","Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez.",scripts/autoload/game_data/GameDataArt.gd:123
-"Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger.","Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu.",scripts/autoload/game_data/GameDataArt.gd:124
-"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.","Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı.",scripts/autoload/game_data/GameDataArt.gd:125
-"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:126
-"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:127
-"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:128
-"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:129
-"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:130
-Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:131
-"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:132
-"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:133
-"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:134
-"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:135
-"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:136
-"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:137
-"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:138
-"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:139
-Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:140
-"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:141
-"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:142
-1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:209
+"Balance: from Rank E up, monsters hit harder and last longer, so a party at Recommended power now seals about 3 rifts in 5 and Deadly means it. Hero wages are 50% higher, so a big roster has to earn its keep.",Denge: Rütbe E'den itibaren canavarlar daha sert vuruyor ve daha uzun dayanıyor; Önerilen güçteki bir grup artık 5 yarıktan yaklaşık 3'ünü mühürlüyor ve Ölümcül gerçekten ölümcül. Kahraman maaşları %50 daha yüksek; büyük bir kadro kendi masrafını çıkarmalı.,scripts/autoload/game_data/GameDataArt.gd:115
+"A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday.","Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor.",scripts/autoload/game_data/GameDataArt.gd:116
+"Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt.","Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük.",scripts/autoload/game_data/GameDataArt.gd:117
+"Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold.","Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor.",scripts/autoload/game_data/GameDataArt.gd:118
+"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.","Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor.",scripts/autoload/game_data/GameDataArt.gd:119
+"Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen.","Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle.",scripts/autoload/game_data/GameDataArt.gd:120
+"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.","Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor.",scripts/autoload/game_data/GameDataArt.gd:121
+"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.","Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler.",scripts/autoload/game_data/GameDataArt.gd:122
+"Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead.","Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner.",scripts/autoload/game_data/GameDataArt.gd:123
+"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.","Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez.",scripts/autoload/game_data/GameDataArt.gd:124
+"Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger.","Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu.",scripts/autoload/game_data/GameDataArt.gd:125
+"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.","Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı.",scripts/autoload/game_data/GameDataArt.gd:126
+"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:127
+"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:128
+"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:129
+"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:130
+"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:131
+Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:132
+"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:133
+"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:134
+"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:135
+"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:136
+"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:137
+"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:138
+"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:139
+"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:140
+Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:141
+"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:142
+"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:143
+1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:210
 Ballista,Balista,scripts/autoload/game_data/GameDataBreach.gd:67
 Long-range bolts at the foe furthest along the road,Yolda en ileri giden düşmana uzun menzilli oklar,scripts/autoload/game_data/GameDataBreach.gd:67
 Fire Brazier,Ateş Mangalı,scripts/autoload/game_data/GameDataBreach.gd:69
@@ -1319,186 +1320,186 @@ Warm it,Isıt,scripts/autoload/game_data/GameDataModes.gd:388
 "40%: it hatches and leaves a gift, a Rare-or-better find, +10 Essence · 60%: it bursts, everyone loses 15% HP","%40: yumurtadan çıkan şey bir hediye bırakır, Nadir ya da daha iyi bir buluntu, +10 Öz · %60: patlar, herkes canının %15'ini kaybeder",scripts/autoload/game_data/GameDataModes.gd:388
 Take its shell,Kabuğunu al,scripts/autoload/game_data/GameDataModes.gd:389
 +15 Essence,+15 Öz,scripts/autoload/game_data/GameDataModes.gd:389
-SS,SS,scripts/autoload/game_data/GameDataModes.gd:417
-SSS,SSS,scripts/autoload/game_data/GameDataModes.gd:418
-more elites,daha çok seçkin,scripts/autoload/game_data/GameDataModes.gd:423
-harsher hazards,daha sert tehlikeler,scripts/autoload/game_data/GameDataModes.gd:423
-fewer shops,daha az dükkân,scripts/autoload/game_data/GameDataModes.gd:423
-no rarity floor on the starting relic,başlangıç kalıntısında nadirlik alt sınırı yok,scripts/autoload/game_data/GameDataModes.gd:424
-bosses use two mechanics,bosslar iki mekanik kullanır,scripts/autoload/game_data/GameDataModes.gd:424
-Forks offer elite fights more often.,Ayrımlar daha sık seçkin dövüşü sunar.,scripts/autoload/game_data/GameDataModes.gd:430
-The mildest hazards are skipped: every hazard is at least Moderate (at least Severe at SSS).,En hafif tehlikeler atlanır: her tehlike en az Orta (SSS'de en az Ağır).,scripts/autoload/game_data/GameDataModes.gd:431
-Forks offer a shop less often.,Ayrımlar daha seyrek dükkân sunar.,scripts/autoload/game_data/GameDataModes.gd:432
-"The starting relic can be any rarity, even Common.","Başlangıç kalıntısı her nadirlikte olabilir, Sıradan bile.",scripts/autoload/game_data/GameDataModes.gd:433
-The boss uses two of its mechanics at once.,Boss iki mekaniğini aynı anda kullanır.,scripts/autoload/game_data/GameDataModes.gd:434
-Operations Branch,Operasyon Dalı,scripts/autoload/game_data/GameDataModes.gd:460
-Heroes & Combat,Kahramanlar ve Dövüş,scripts/autoload/game_data/GameDataModes.gd:460
-Barracks,Kışla,scripts/autoload/game_data/GameDataModes.gd:461
-+2 hero slots,+2 kahraman yeri,scripts/autoload/game_data/GameDataModes.gd:461
-Mentors: new recruits join 1 level higher,Akıl hocaları: yeni adaylar 1 seviye yüksek katılır,scripts/autoload/game_data/GameDataModes.gd:462
-Veteran instructors: heroes earn +20% XP,Kıdemli eğitmenler: kahramanlar +%20 TP kazanır,scripts/autoload/game_data/GameDataModes.gd:462
-Infirmary,Revir,scripts/autoload/game_data/GameDataModes.gd:463
--15% recovery time; a bed at Lv1/3/5,Toparlanma süresi -%15; Sv1/3/5'te bir yatak,scripts/autoload/game_data/GameDataModes.gd:463
-Order: Supply Drop — heal the party 35% between fights,Emir: İkmal Atışı — dövüşler arasında ekibi %35 iyileştir,scripts/autoload/game_data/GameDataModes.gd:464
-"Field Triage: once per rift, get a downed hero back up","Sahada Triyaj: yarık başına bir kez, düşmüş bir kahramanı ayağa kaldır",scripts/autoload/game_data/GameDataModes.gd:464
-Wounded heroes heal fully after every run,Yaralı kahramanlar her koşudan sonra tamamen iyileşir,scripts/autoload/game_data/GameDataModes.gd:464
-Drill Yard,Talim Alanı,scripts/autoload/game_data/GameDataModes.gd:465
-a Training Yard slot every 2 levels; +4% party damage and +4% max HP,her 2 seviyede bir Talim Alanı yeri; ekip hasarı +%4 ve en yüksek can +%4,scripts/autoload/game_data/GameDataModes.gd:465
-Order: Rally — the party acts first this round and hits 30% harder,Emir: Toparlan — ekip bu tur önce davranır ve %30 daha sert vurur,scripts/autoload/game_data/GameDataModes.gd:466
-Vanguard: a fight's first strike deals +25% damage,Öncü: dövüşün ilk vuruşu +%25 hasar verir,scripts/autoload/game_data/GameDataModes.gd:466
-Abilities are ready at the start of every fight,Yetenekler her dövüşün başında hazır,scripts/autoload/game_data/GameDataModes.gd:466
-Infrastructure Branch,Altyapı Dalı,scripts/autoload/game_data/GameDataModes.gd:468
-Rift Yield & Safety,Yarık Verimi ve Güvenlik,scripts/autoload/game_data/GameDataModes.gd:468
-Essence Amplifiers,Öz Güçlendiricileri,scripts/autoload/game_data/GameDataModes.gd:469
-+8% Essence from fights,Dövüşlerden +%8 Öz,scripts/autoload/game_data/GameDataModes.gd:469
-Energy extraction: elites often drop bonus Essence,Enerji çıkarımı: seçkinler sık sık bonus Öz düşürür,scripts/autoload/game_data/GameDataModes.gd:470
-Resonance: bosses drop an Essence cache,Rezonans: bosslar bir Öz zulası düşürür,scripts/autoload/game_data/GameDataModes.gd:470
-Wardstones,Koruma Taşları,scripts/autoload/game_data/GameDataModes.gd:471
-"-12% hazard damage, +10% Essence for sealing","Tehlike hasarı -%12, mühürleme için +%10 Öz",scripts/autoload/game_data/GameDataModes.gd:471
-Anchor: the first hazard of each rift is negated,Çapa: her yarığın ilk tehlikesi etkisiz kalır,scripts/autoload/game_data/GameDataModes.gd:472
-Hazards can't knock a hero out,Tehlikeler bir kahramanı bayıltamaz,scripts/autoload/game_data/GameDataModes.gd:472
-Logistics Branch,Lojistik Dalı,scripts/autoload/game_data/GameDataModes.gd:474
-Trade & Recruiting,Ticaret ve Adaylar,scripts/autoload/game_data/GameDataModes.gd:474
-Trade Network,Ticaret Ağı,scripts/autoload/game_data/GameDataModes.gd:475
-"+1 feast seat; -6% shop prices, -2% auction fees, +5% Rift Cache chance","+1 ziyafet yeri; dükkân fiyatları -%6, müzayede ücretleri -%2, Yarık Zulası şansı +%5",scripts/autoload/game_data/GameDataModes.gd:475
-Order: Requisition — reroll a fight's loot choices,Emir: Talep — bir dövüşün ganimet seçeneklerini yenile,scripts/autoload/game_data/GameDataModes.gd:476
-Black Market: Rift Caches hold 30% more Gold,Kara Pazar: Yarık Zulaları %30 daha fazla Altın içerir,scripts/autoload/game_data/GameDataModes.gd:476
-Every rift shop stocks an Epic relic,Her yarık dükkânında bir Destansı kalıntı bulunur,scripts/autoload/game_data/GameDataModes.gd:476
-Scouts' Lodge,İzci Köşkü,scripts/autoload/game_data/GameDataModes.gd:477
-Recruit board: +1 offer at Lv1 and Lv4,Aday panosu: Sv1 ve Sv4'te +1 teklif,scripts/autoload/game_data/GameDataModes.gd:477
-Order: Scout Ahead — reroll the next fork's paths,Emir: Öncü Keşif — sonraki ayrımın yollarını yenile,scripts/autoload/game_data/GameDataModes.gd:478
-Headhunter: every recruit refresh has a Rank C+ hero,Kelle Avcısı: her aday yenilemesinde bir Rütbe C+ kahraman olur,scripts/autoload/game_data/GameDataModes.gd:478
-Recruit rerolls cost half,Aday yenilemeleri yarı fiyatına,scripts/autoload/game_data/GameDataModes.gd:478
-Defenses Branch,Savunma Dalı,scripts/autoload/game_data/GameDataModes.gd:480
-Riftbreaks (paid in Gold),Yarık Taşmaları (Altınla ödenir),scripts/autoload/game_data/GameDataModes.gd:480
-Armory,Cephanelik,scripts/autoload/game_data/GameDataModes.gd:481
-+6% tower damage,+%6 kule hasarı,scripts/autoload/game_data/GameDataModes.gd:481
-Towers: Frost Totem,Kuleler: Ayaz Totemi,scripts/autoload/game_data/GameDataModes.gd:482
-Towers: Ward Stone,Kuleler: Muhafız Taşı,scripts/autoload/game_data/GameDataModes.gd:482
-Towers: Wayside Chapel,Kuleler: Yol Kenarı Şapeli,scripts/autoload/game_data/GameDataModes.gd:482
-Engineering,Mühendislik,scripts/autoload/game_data/GameDataModes.gd:483
--6% tower costs,-%6 kule maliyeti,scripts/autoload/game_data/GameDataModes.gd:483
-Towers can reach tier 3,Kuleler 3. kademeye çıkabilir,scripts/autoload/game_data/GameDataModes.gd:484
-Selling a tower refunds all of it,Bir kuleyi satmak bedelinin tamamını geri verir,scripts/autoload/game_data/GameDataModes.gd:484
-Palisade,Şarampole,scripts/autoload/game_data/GameDataModes.gd:485
-+2 integrity and +20 starting supplies,+2 bütünlük ve +20 başlangıç erzakı,scripts/autoload/game_data/GameDataModes.gd:485
-Watchtower,Gözcü Kulesi,scripts/autoload/game_data/GameDataModes.gd:487
-posted heroes +6% max HP,nöbetteki kahramanlar +%6 azami can,scripts/autoload/game_data/GameDataModes.gd:487
-+1 day of warning before a rift breaks,Bir yarık taşmadan önce +1 gün uyarı,scripts/autoload/game_data/GameDataModes.gd:488
-+1 more day of warning,+1 gün daha uyarı,scripts/autoload/game_data/GameDataModes.gd:488
-Research Branch,Araştırma Dalı,scripts/autoload/game_data/GameDataModes.gd:490
-Relics & Theory,Kalıntılar ve Kuram,scripts/autoload/game_data/GameDataModes.gd:490
-Relic Vault,Kalıntı Kasası,scripts/autoload/game_data/GameDataModes.gd:491
-"Starting relic choices (2 at Lv1, 3 at Lv2, 4 at Lv4)","Başlangıç kalıntısı seçenekleri (Sv1'de 2, Sv2'de 3, Sv4'te 4)",scripts/autoload/game_data/GameDataModes.gd:491
-+1 equipped relic slot,+1 kuşanılmış kalıntı yuvası,scripts/autoload/game_data/GameDataModes.gd:492
-"+1 more relic slot, and starting relics are Rare or better",+1 kalıntı yuvası daha ve başlangıç kalıntıları Nadir ya da daha iyi,scripts/autoload/game_data/GameDataModes.gd:492
-Arcane Lab,Gizem Laboratuvarı,scripts/autoload/game_data/GameDataModes.gd:493
-+5% to every relic effect; Lv1 unlocks relic scrapping and trait/scar removal,Her kalıntı etkisine +%5; Sv1 kalıntı hurdaya çıkarmayı ve özellik/yara izi silmeyi açar,scripts/autoload/game_data/GameDataModes.gd:493
-Skill respecs and quirk treatments cost 30% less,Beceri sıfırlamaları ve huy tedavileri %30 daha ucuz,scripts/autoload/game_data/GameDataModes.gd:494
-Relic upgrades cost 25% fewer Essence,Kalıntı geliştirmeleri %25 daha az Öz tutar,scripts/autoload/game_data/GameDataModes.gd:494
-Supply Drop,İkmal Atışı,scripts/autoload/game_data/GameDataModes.gd:500
-Heal every standing hero 35% of their max HP.,Ayaktaki her kahramanı en yüksek canının %35'i kadar iyileştir.,scripts/autoload/game_data/GameDataModes.gd:500
-This round the party acts before every foe and hits 30% harder.,Bu tur ekip tüm düşmanlardan önce davranır ve %30 daha sert vurur.,scripts/autoload/game_data/GameDataModes.gd:501
-Requisition,Talep,scripts/autoload/game_data/GameDataModes.gd:502
-Reroll this fight's loot choices.,Bu dövüşün ganimet seçeneklerini yenile.,scripts/autoload/game_data/GameDataModes.gd:502
-Scout Ahead,Öncü Keşif,scripts/autoload/game_data/GameDataModes.gd:503
-Reroll the paths on the next fork.,Sonraki ayrımdaki yolları yenile.,scripts/autoload/game_data/GameDataModes.gd:503
-Founding Guild,Kurucu Lonca,scripts/autoload/game_data/GameDataModes.gd:518
-Established Guild,Yerleşik Lonca,scripts/autoload/game_data/GameDataModes.gd:519
-Renowned Guild,Ünlü Lonca,scripts/autoload/game_data/GameDataModes.gd:520
-Legendary Guild,Efsanevi Lonca,scripts/autoload/game_data/GameDataModes.gd:521
-Recruits,Adaylar,scripts/autoload/game_data/GameDataModes.gd:564
-Guild Hall,Lonca Salonu,scripts/autoload/game_data/GameDataModes.gd:565
-Heroes,Kahramanlar,scripts/autoload/game_data/GameDataModes.gd:567
-Skills,Beceriler,scripts/autoload/game_data/GameDataModes.gd:569
-Quest Board,Görev Panosu,scripts/autoload/game_data/GameDataModes.gd:571
-Rift Hall,Yarık Salonu,scripts/autoload/game_data/GameDataModes.gd:572
-Rift Gate,Yarık Kapısı,scripts/autoload/game_data/GameDataModes.gd:572
-Items,Eşyalar,scripts/autoload/game_data/GameDataModes.gd:573
-Market,Pazar,scripts/autoload/game_data/GameDataModes.gd:573
-Relics,Kalıntılar,scripts/autoload/game_data/GameDataModes.gd:574
-The Shattered Vale,Parçalanmış Vadi,scripts/autoload/game_data/GameDataModes.gd:586
-Vaelith,Vaelith,scripts/autoload/game_data/GameDataModes.gd:586
-"Vaelith, the Vale-Render",Vadi Yırtan Vaelith,scripts/autoload/game_data/GameDataModes.gd:586
-Vaelith's Breach,Vaelith'in Gediği,scripts/autoload/game_data/GameDataModes.gd:587
-Greater Rifts,Büyük Yarıklar,scripts/autoload/game_data/GameDataModes.gd:587
-"The Vale split open in a single night. Rifts bleed monsters into the farmland, and the old guilds are gone. Yours is all that stands between the villages and whatever Vaelith is pouring through the largest breach.",Vadi tek bir gecede yarıldı. Yarıklar tarlalara canavar kusuyor ve eski loncalar yok oldu. Köylerle Vaelith'in en büyük gedikten döktüğü her şey arasında yalnızca senin loncan duruyor.,scripts/autoload/game_data/GameDataModes.gd:588
-"Vaelith falls back through the Breach, and it seals behind her. The Vale breathes again — but the rifts beyond it only grow deeper. Greater Rifts are open to your guild.",Vaelith Gedik'ten geri çekiliyor ve gedik ardından kapanıyor. Vadi yeniden nefes alıyor — ama ötesindeki yarıklar gittikçe derinleşiyor. Büyük Yarıklar loncana açıldı.,scripts/autoload/game_data/GameDataModes.gd:589
-Seal 3 rifts,3 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:590
-Seal a Rank E rift,Bir Rütbe E yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:590
-The Drowned Marches,Boğulmuş Bataklıklar,scripts/autoload/game_data/GameDataModes.gd:592
-Nyxara,Nyxara,scripts/autoload/game_data/GameDataModes.gd:592
-"Nyxara, Queen of the Drowned",Boğulmuşların Kraliçesi Nyxara,scripts/autoload/game_data/GameDataModes.gd:592
-The Drowned Spire,Boğulmuş Kule,scripts/autoload/game_data/GameDataModes.gd:593
-the Endless Rift,Sonsuz Yarık,scripts/autoload/game_data/GameDataModes.gd:593
-"South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",Vadinin güneyinde bataklıklar yükseldi ve Nyxara'nın kulesi de onlarla birlikte yükseliyor. Buradaki Büyük Yarıklar daha yaşlı ve daha aç. Köyler yalnızca kendini kanıtlamış bir loncaya güvenecek.,scripts/autoload/game_data/GameDataModes.gd:594
-"The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.","Kule kara suya çöküyor, Nyxara da onunla. Altında devasa bir şey kıpırdıyor: dibi olmayan bir yarık. Sonsuz Yarık loncana açıldı.",scripts/autoload/game_data/GameDataModes.gd:595
-Seal a Rank C rift,Bir Rütbe C yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:596
-Seal 2 rifts of Rank C or higher,Rütbe C ya da daha yüksek 2 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:596
-Complete a quest,Bir görev tamamla,scripts/autoload/game_data/GameDataModes.gd:596
-The Ashen Crown,Küllü Taç,scripts/autoload/game_data/GameDataModes.gd:598
-Sythrane,Sythrane,scripts/autoload/game_data/GameDataModes.gd:598
-"Sythrane, the Ashen Crown",Küllü Taç Sythrane,scripts/autoload/game_data/GameDataModes.gd:598
-The Heart of the Rift,Yarığın Kalbi,scripts/autoload/game_data/GameDataModes.gd:599
-"Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",Mühürlediğin her yarık buraya çıkıyordu. Sythrane yarık ağının kalbinde külden bir taç takıyor ve dünyadaki her gedik onu besliyor. Bekçileri Korrath ve Drevok yolu koruyor.,scripts/autoload/game_data/GameDataModes.gd:600
-"The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the quests carry on.)","Küllü Taç paramparça oluyor. Diyardaki yarıklar birer birer susuyor ve yıllar sonra ilk kez gökyüzü yalnızca gökyüzü. Loncanın adı nesiller boyu anlatılacak. (Yarıklar asla tam kapanmaz — Sonsuz Yarık, yarık merdiveni ve görevler devam ediyor.)",scripts/autoload/game_data/GameDataModes.gd:601
-Seal a Rank B rift,Bir Rütbe B yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:602
-boss:Korrath,,scripts/autoload/game_data/GameDataModes.gd:602
-Defeat Korrath,Korrath'ı yen,scripts/autoload/game_data/GameDataModes.gd:602
-boss:Drevok,,scripts/autoload/game_data/GameDataModes.gd:602
-Defeat Drevok,Drevok'u yen,scripts/autoload/game_data/GameDataModes.gd:602
-Complete 3 quests,3 görev tamamla,scripts/autoload/game_data/GameDataModes.gd:602
-Defeat %d %s,%d %s yen,scripts/autoload/game_data/GameDataModes.gd:611
-Seal %d Rift%s,%d Yarık%s mühürle,scripts/autoload/game_data/GameDataModes.gd:612
-Win %d Elite fight%s,%d Seçkin dövüşü%s kazan,scripts/autoload/game_data/GameDataModes.gd:613
-Defeat a Boss,Bir Boss yen,scripts/autoload/game_data/GameDataModes.gd:614
-Craft %d item%s or relic%s,%d eşya%s ya da kalıntı%s üret,scripts/autoload/game_data/GameDataModes.gd:615
-Win %d fight%s without a hero going down,Hiçbir kahraman düşmeden %d dövüş%s kazan,scripts/autoload/game_data/GameDataModes.gd:616
-First Blood — seal your first Rift,İlk Kan — ilk Yarığını mühürle,scripts/autoload/game_data/GameDataModes.gd:628
-Monster Hunter — defeat 25 monsters total,Canavar Avcısı — toplam 25 canavar yen,scripts/autoload/game_data/GameDataModes.gd:629
-Elite Slayer — win 3 Elite fights,Seçkin Avcısı — 3 Seçkin dövüşü kazan,scripts/autoload/game_data/GameDataModes.gd:630
-Boss Breaker — defeat 3 Bosses,Boss Kıran — 3 Boss yen,scripts/autoload/game_data/GameDataModes.gd:631
-Artisan — craft 3 items or relics,Zanaatkâr — 3 eşya ya da kalıntı üret,scripts/autoload/game_data/GameDataModes.gd:632
-Full Roster — fill every hero slot,Dolu Kadro — her kahraman yerini doldur,scripts/autoload/game_data/GameDataModes.gd:633
-Guild of the Realm — top the Guild Standings in Renown,Diyarın Loncası — Lonca Sıralaması'nda Ün'de zirveye çık,scripts/autoload/game_data/GameDataModes.gd:634
-Renowned Guild — reach Renowned Guild tier,Ünlü Lonca — Ünlü Lonca kademesine ulaş,scripts/autoload/game_data/GameDataModes.gd:635
-Greater Threat — open the Rank C rift,Büyük Tehdit — Rütbe C yarığını aç,scripts/autoload/game_data/GameDataModes.gd:636
-The Vale Holds — complete Act I,Vadi Dayanıyor — I. Perde'yi tamamla,scripts/autoload/game_data/GameDataModes.gd:637
-Out of the Marshes — complete Act II,Bataklıklardan Çıkış — II. Perde'yi tamamla,scripts/autoload/game_data/GameDataModes.gd:638
-Crownbreaker — complete the campaign,Taç Kıran — hikâyeyi tamamla,scripts/autoload/game_data/GameDataModes.gd:639
-Rift Warden — seal 25 rifts,Yarık Bekçisi — 25 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:640
-Centurion — defeat 250 monsters,Yüzbaşı — 250 canavar yen,scripts/autoload/game_data/GameDataModes.gd:641
-Kingslayer — defeat 20 Bosses,Kral Katili — 20 Boss yen,scripts/autoload/game_data/GameDataModes.gd:642
-Untouched — seal 5 rifts with no one knocked out,Dokunulmaz — kimse bayılmadan 5 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:643
-Climber — reach floor 25 of the Tower,Tırmanıcı — Kule'nin 25. katına ulaş,scripts/autoload/game_data/GameDataModes.gd:644
-Summit — clear floor 100 of the Tower,Zirve — Kule'nin 100. katını temizle,scripts/autoload/game_data/GameDataModes.gd:645
-Beyond the Edge — survive 10 minutes in the Endless Rift,Sınırın Ötesi — Sonsuz Yarık'ta 10 dakika dayan,scripts/autoload/game_data/GameDataModes.gd:646
-Daily Duty — seal a rift with the daily twist,Günlük Görev — günün cilvesiyle bir yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:647
-Dedicated — seal the daily twist 7 days in a row,Kararlı — günün cilvesini 7 gün üst üste mühürle,scripts/autoload/game_data/GameDataModes.gd:648
-Build Complete — own a 4-piece boon set,Yapı Tamam — 4 parçalı bir lütuf setine sahip ol,scripts/autoload/game_data/GameDataModes.gd:649
-Legendary Guild — reach Legendary Guild tier,Efsanevi Lonca — Efsanevi Lonca kademesine ulaş,scripts/autoload/game_data/GameDataModes.gd:650
-Paragon — raise a hero to Level 10,Örnek — bir kahramanı 10. seviyeye çıkar,scripts/autoload/game_data/GameDataModes.gd:651
-Great Hall — have 10 heroes on the roster,Büyük Salon — kadroda 10 kahraman olsun,scripts/autoload/game_data/GameDataModes.gd:652
-Inspired,İlhamlı,scripts/autoload/game_data/GameDataModes.gd:685
-Steady,Dengeli,scripts/autoload/game_data/GameDataModes.gd:685
-Shaken,Sarsılmış,scripts/autoload/game_data/GameDataModes.gd:685
-Breaking,Kırılmak üzere,scripts/autoload/game_data/GameDataModes.gd:685
-The Iron Chorus,Demir Koro,scripts/autoload/game_data/GameDataModes.gd:701
-The Ashen Wolves,Kül Kurtları,scripts/autoload/game_data/GameDataModes.gd:701
-The Gilded Lance,Yaldızlı Mızrak,scripts/autoload/game_data/GameDataModes.gd:701
-The Last Lantern,Son Fener,scripts/autoload/game_data/GameDataModes.gd:701
-The Hollow Crown Company,Oyuk Taç Bölüğü,scripts/autoload/game_data/GameDataModes.gd:701
-Marshal Orla Venn,Mareşal Orla Venn,scripts/autoload/game_data/GameDataModes.gd:719
-Kael Ashborn,Kael Ashborn,scripts/autoload/game_data/GameDataModes.gd:720
-Ser Aldric Vane,Sör Aldric Vane,scripts/autoload/game_data/GameDataModes.gd:721
-Mother Ilse,Ana Ilse,scripts/autoload/game_data/GameDataModes.gd:722
-Captain Morrow,Kaptan Morrow,scripts/autoload/game_data/GameDataModes.gd:723
-"Seal the small rifts, %s. Leave the real ones to us.","Küçük yarıkları sen mühürle, %s. Gerçeklerini bize bırak.",scripts/autoload/game_data/GameDataModes.gd:727
-"%s pays its heroes in promises, I hear.",Duyduğuma göre %s kahramanlarına vaatle ödüyormuş.,scripts/autoload/game_data/GameDataModes.gd:728
-Our recruits ask about %s. Then they sign with us.,Acemilerimiz %s hakkında soru soruyor. Sonra bizimle imzalıyorlar.,scripts/autoload/game_data/GameDataModes.gd:729
-Tell %s the quest board isn't a charity.,"%s'e söyleyin, görev panosu bir hayır kurumu değil.",scripts/autoload/game_data/GameDataModes.gd:730
-We'll send flowers when %s closes its doors.,%s kapılarını kapattığında çiçek göndereceğiz.,scripts/autoload/game_data/GameDataModes.gd:731
-%s? I thought they'd disbanded.,%s mi? Dağıldıklarını sanıyordum.,scripts/autoload/game_data/GameDataModes.gd:732
+SS,SS,scripts/autoload/game_data/GameDataModes.gd:424
+SSS,SSS,scripts/autoload/game_data/GameDataModes.gd:425
+more elites,daha çok seçkin,scripts/autoload/game_data/GameDataModes.gd:430
+harsher hazards,daha sert tehlikeler,scripts/autoload/game_data/GameDataModes.gd:430
+fewer shops,daha az dükkân,scripts/autoload/game_data/GameDataModes.gd:430
+no rarity floor on the starting relic,başlangıç kalıntısında nadirlik alt sınırı yok,scripts/autoload/game_data/GameDataModes.gd:431
+bosses use two mechanics,bosslar iki mekanik kullanır,scripts/autoload/game_data/GameDataModes.gd:431
+Forks offer elite fights more often.,Ayrımlar daha sık seçkin dövüşü sunar.,scripts/autoload/game_data/GameDataModes.gd:437
+The mildest hazards are skipped: every hazard is at least Moderate (at least Severe at SSS).,En hafif tehlikeler atlanır: her tehlike en az Orta (SSS'de en az Ağır).,scripts/autoload/game_data/GameDataModes.gd:438
+Forks offer a shop less often.,Ayrımlar daha seyrek dükkân sunar.,scripts/autoload/game_data/GameDataModes.gd:439
+"The starting relic can be any rarity, even Common.","Başlangıç kalıntısı her nadirlikte olabilir, Sıradan bile.",scripts/autoload/game_data/GameDataModes.gd:440
+The boss uses two of its mechanics at once.,Boss iki mekaniğini aynı anda kullanır.,scripts/autoload/game_data/GameDataModes.gd:441
+Operations Branch,Operasyon Dalı,scripts/autoload/game_data/GameDataModes.gd:467
+Heroes & Combat,Kahramanlar ve Dövüş,scripts/autoload/game_data/GameDataModes.gd:467
+Barracks,Kışla,scripts/autoload/game_data/GameDataModes.gd:468
++2 hero slots,+2 kahraman yeri,scripts/autoload/game_data/GameDataModes.gd:468
+Mentors: new recruits join 1 level higher,Akıl hocaları: yeni adaylar 1 seviye yüksek katılır,scripts/autoload/game_data/GameDataModes.gd:469
+Veteran instructors: heroes earn +20% XP,Kıdemli eğitmenler: kahramanlar +%20 TP kazanır,scripts/autoload/game_data/GameDataModes.gd:469
+Infirmary,Revir,scripts/autoload/game_data/GameDataModes.gd:470
+-15% recovery time; a bed at Lv1/3/5,Toparlanma süresi -%15; Sv1/3/5'te bir yatak,scripts/autoload/game_data/GameDataModes.gd:470
+Order: Supply Drop — heal the party 35% between fights,Emir: İkmal Atışı — dövüşler arasında ekibi %35 iyileştir,scripts/autoload/game_data/GameDataModes.gd:471
+"Field Triage: once per rift, get a downed hero back up","Sahada Triyaj: yarık başına bir kez, düşmüş bir kahramanı ayağa kaldır",scripts/autoload/game_data/GameDataModes.gd:471
+Wounded heroes heal fully after every run,Yaralı kahramanlar her koşudan sonra tamamen iyileşir,scripts/autoload/game_data/GameDataModes.gd:471
+Drill Yard,Talim Alanı,scripts/autoload/game_data/GameDataModes.gd:472
+a Training Yard slot every 2 levels; +4% party damage and +4% max HP,her 2 seviyede bir Talim Alanı yeri; ekip hasarı +%4 ve en yüksek can +%4,scripts/autoload/game_data/GameDataModes.gd:472
+Order: Rally — the party acts first this round and hits 30% harder,Emir: Toparlan — ekip bu tur önce davranır ve %30 daha sert vurur,scripts/autoload/game_data/GameDataModes.gd:473
+Vanguard: a fight's first strike deals +25% damage,Öncü: dövüşün ilk vuruşu +%25 hasar verir,scripts/autoload/game_data/GameDataModes.gd:473
+Abilities are ready at the start of every fight,Yetenekler her dövüşün başında hazır,scripts/autoload/game_data/GameDataModes.gd:473
+Infrastructure Branch,Altyapı Dalı,scripts/autoload/game_data/GameDataModes.gd:475
+Rift Yield & Safety,Yarık Verimi ve Güvenlik,scripts/autoload/game_data/GameDataModes.gd:475
+Essence Amplifiers,Öz Güçlendiricileri,scripts/autoload/game_data/GameDataModes.gd:476
++8% Essence from fights,Dövüşlerden +%8 Öz,scripts/autoload/game_data/GameDataModes.gd:476
+Energy extraction: elites often drop bonus Essence,Enerji çıkarımı: seçkinler sık sık bonus Öz düşürür,scripts/autoload/game_data/GameDataModes.gd:477
+Resonance: bosses drop an Essence cache,Rezonans: bosslar bir Öz zulası düşürür,scripts/autoload/game_data/GameDataModes.gd:477
+Wardstones,Koruma Taşları,scripts/autoload/game_data/GameDataModes.gd:478
+"-12% hazard damage, +10% Essence for sealing","Tehlike hasarı -%12, mühürleme için +%10 Öz",scripts/autoload/game_data/GameDataModes.gd:478
+Anchor: the first hazard of each rift is negated,Çapa: her yarığın ilk tehlikesi etkisiz kalır,scripts/autoload/game_data/GameDataModes.gd:479
+Hazards can't knock a hero out,Tehlikeler bir kahramanı bayıltamaz,scripts/autoload/game_data/GameDataModes.gd:479
+Logistics Branch,Lojistik Dalı,scripts/autoload/game_data/GameDataModes.gd:481
+Trade & Recruiting,Ticaret ve Adaylar,scripts/autoload/game_data/GameDataModes.gd:481
+Trade Network,Ticaret Ağı,scripts/autoload/game_data/GameDataModes.gd:482
+"+1 feast seat; -6% shop prices, -2% auction fees, +5% Rift Cache chance","+1 ziyafet yeri; dükkân fiyatları -%6, müzayede ücretleri -%2, Yarık Zulası şansı +%5",scripts/autoload/game_data/GameDataModes.gd:482
+Order: Requisition — reroll a fight's loot choices,Emir: Talep — bir dövüşün ganimet seçeneklerini yenile,scripts/autoload/game_data/GameDataModes.gd:483
+Black Market: Rift Caches hold 30% more Gold,Kara Pazar: Yarık Zulaları %30 daha fazla Altın içerir,scripts/autoload/game_data/GameDataModes.gd:483
+Every rift shop stocks an Epic relic,Her yarık dükkânında bir Destansı kalıntı bulunur,scripts/autoload/game_data/GameDataModes.gd:483
+Scouts' Lodge,İzci Köşkü,scripts/autoload/game_data/GameDataModes.gd:484
+Recruit board: +1 offer at Lv1 and Lv4,Aday panosu: Sv1 ve Sv4'te +1 teklif,scripts/autoload/game_data/GameDataModes.gd:484
+Order: Scout Ahead — reroll the next fork's paths,Emir: Öncü Keşif — sonraki ayrımın yollarını yenile,scripts/autoload/game_data/GameDataModes.gd:485
+Headhunter: every recruit refresh has a Rank C+ hero,Kelle Avcısı: her aday yenilemesinde bir Rütbe C+ kahraman olur,scripts/autoload/game_data/GameDataModes.gd:485
+Recruit rerolls cost half,Aday yenilemeleri yarı fiyatına,scripts/autoload/game_data/GameDataModes.gd:485
+Defenses Branch,Savunma Dalı,scripts/autoload/game_data/GameDataModes.gd:487
+Riftbreaks (paid in Gold),Yarık Taşmaları (Altınla ödenir),scripts/autoload/game_data/GameDataModes.gd:487
+Armory,Cephanelik,scripts/autoload/game_data/GameDataModes.gd:488
++6% tower damage,+%6 kule hasarı,scripts/autoload/game_data/GameDataModes.gd:488
+Towers: Frost Totem,Kuleler: Ayaz Totemi,scripts/autoload/game_data/GameDataModes.gd:489
+Towers: Ward Stone,Kuleler: Muhafız Taşı,scripts/autoload/game_data/GameDataModes.gd:489
+Towers: Wayside Chapel,Kuleler: Yol Kenarı Şapeli,scripts/autoload/game_data/GameDataModes.gd:489
+Engineering,Mühendislik,scripts/autoload/game_data/GameDataModes.gd:490
+-6% tower costs,-%6 kule maliyeti,scripts/autoload/game_data/GameDataModes.gd:490
+Towers can reach tier 3,Kuleler 3. kademeye çıkabilir,scripts/autoload/game_data/GameDataModes.gd:491
+Selling a tower refunds all of it,Bir kuleyi satmak bedelinin tamamını geri verir,scripts/autoload/game_data/GameDataModes.gd:491
+Palisade,Şarampole,scripts/autoload/game_data/GameDataModes.gd:492
++2 integrity and +20 starting supplies,+2 bütünlük ve +20 başlangıç erzakı,scripts/autoload/game_data/GameDataModes.gd:492
+Watchtower,Gözcü Kulesi,scripts/autoload/game_data/GameDataModes.gd:494
+posted heroes +6% max HP,nöbetteki kahramanlar +%6 azami can,scripts/autoload/game_data/GameDataModes.gd:494
++1 day of warning before a rift breaks,Bir yarık taşmadan önce +1 gün uyarı,scripts/autoload/game_data/GameDataModes.gd:495
++1 more day of warning,+1 gün daha uyarı,scripts/autoload/game_data/GameDataModes.gd:495
+Research Branch,Araştırma Dalı,scripts/autoload/game_data/GameDataModes.gd:497
+Relics & Theory,Kalıntılar ve Kuram,scripts/autoload/game_data/GameDataModes.gd:497
+Relic Vault,Kalıntı Kasası,scripts/autoload/game_data/GameDataModes.gd:498
+"Starting relic choices (2 at Lv1, 3 at Lv2, 4 at Lv4)","Başlangıç kalıntısı seçenekleri (Sv1'de 2, Sv2'de 3, Sv4'te 4)",scripts/autoload/game_data/GameDataModes.gd:498
++1 equipped relic slot,+1 kuşanılmış kalıntı yuvası,scripts/autoload/game_data/GameDataModes.gd:499
+"+1 more relic slot, and starting relics are Rare or better",+1 kalıntı yuvası daha ve başlangıç kalıntıları Nadir ya da daha iyi,scripts/autoload/game_data/GameDataModes.gd:499
+Arcane Lab,Gizem Laboratuvarı,scripts/autoload/game_data/GameDataModes.gd:500
++5% to every relic effect; Lv1 unlocks relic scrapping and trait/scar removal,Her kalıntı etkisine +%5; Sv1 kalıntı hurdaya çıkarmayı ve özellik/yara izi silmeyi açar,scripts/autoload/game_data/GameDataModes.gd:500
+Skill respecs and quirk treatments cost 30% less,Beceri sıfırlamaları ve huy tedavileri %30 daha ucuz,scripts/autoload/game_data/GameDataModes.gd:501
+Relic upgrades cost 25% fewer Essence,Kalıntı geliştirmeleri %25 daha az Öz tutar,scripts/autoload/game_data/GameDataModes.gd:501
+Supply Drop,İkmal Atışı,scripts/autoload/game_data/GameDataModes.gd:507
+Heal every standing hero 35% of their max HP.,Ayaktaki her kahramanı en yüksek canının %35'i kadar iyileştir.,scripts/autoload/game_data/GameDataModes.gd:507
+This round the party acts before every foe and hits 30% harder.,Bu tur ekip tüm düşmanlardan önce davranır ve %30 daha sert vurur.,scripts/autoload/game_data/GameDataModes.gd:508
+Requisition,Talep,scripts/autoload/game_data/GameDataModes.gd:509
+Reroll this fight's loot choices.,Bu dövüşün ganimet seçeneklerini yenile.,scripts/autoload/game_data/GameDataModes.gd:509
+Scout Ahead,Öncü Keşif,scripts/autoload/game_data/GameDataModes.gd:510
+Reroll the paths on the next fork.,Sonraki ayrımdaki yolları yenile.,scripts/autoload/game_data/GameDataModes.gd:510
+Founding Guild,Kurucu Lonca,scripts/autoload/game_data/GameDataModes.gd:525
+Established Guild,Yerleşik Lonca,scripts/autoload/game_data/GameDataModes.gd:526
+Renowned Guild,Ünlü Lonca,scripts/autoload/game_data/GameDataModes.gd:527
+Legendary Guild,Efsanevi Lonca,scripts/autoload/game_data/GameDataModes.gd:528
+Recruits,Adaylar,scripts/autoload/game_data/GameDataModes.gd:571
+Guild Hall,Lonca Salonu,scripts/autoload/game_data/GameDataModes.gd:572
+Heroes,Kahramanlar,scripts/autoload/game_data/GameDataModes.gd:574
+Skills,Beceriler,scripts/autoload/game_data/GameDataModes.gd:576
+Quest Board,Görev Panosu,scripts/autoload/game_data/GameDataModes.gd:578
+Rift Hall,Yarık Salonu,scripts/autoload/game_data/GameDataModes.gd:579
+Rift Gate,Yarık Kapısı,scripts/autoload/game_data/GameDataModes.gd:579
+Items,Eşyalar,scripts/autoload/game_data/GameDataModes.gd:580
+Market,Pazar,scripts/autoload/game_data/GameDataModes.gd:580
+Relics,Kalıntılar,scripts/autoload/game_data/GameDataModes.gd:581
+The Shattered Vale,Parçalanmış Vadi,scripts/autoload/game_data/GameDataModes.gd:593
+Vaelith,Vaelith,scripts/autoload/game_data/GameDataModes.gd:593
+"Vaelith, the Vale-Render",Vadi Yırtan Vaelith,scripts/autoload/game_data/GameDataModes.gd:593
+Vaelith's Breach,Vaelith'in Gediği,scripts/autoload/game_data/GameDataModes.gd:594
+Greater Rifts,Büyük Yarıklar,scripts/autoload/game_data/GameDataModes.gd:594
+"The Vale split open in a single night. Rifts bleed monsters into the farmland, and the old guilds are gone. Yours is all that stands between the villages and whatever Vaelith is pouring through the largest breach.",Vadi tek bir gecede yarıldı. Yarıklar tarlalara canavar kusuyor ve eski loncalar yok oldu. Köylerle Vaelith'in en büyük gedikten döktüğü her şey arasında yalnızca senin loncan duruyor.,scripts/autoload/game_data/GameDataModes.gd:595
+"Vaelith falls back through the Breach, and it seals behind her. The Vale breathes again — but the rifts beyond it only grow deeper. Greater Rifts are open to your guild.",Vaelith Gedik'ten geri çekiliyor ve gedik ardından kapanıyor. Vadi yeniden nefes alıyor — ama ötesindeki yarıklar gittikçe derinleşiyor. Büyük Yarıklar loncana açıldı.,scripts/autoload/game_data/GameDataModes.gd:596
+Seal 3 rifts,3 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:597
+Seal a Rank E rift,Bir Rütbe E yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:597
+The Drowned Marches,Boğulmuş Bataklıklar,scripts/autoload/game_data/GameDataModes.gd:599
+Nyxara,Nyxara,scripts/autoload/game_data/GameDataModes.gd:599
+"Nyxara, Queen of the Drowned",Boğulmuşların Kraliçesi Nyxara,scripts/autoload/game_data/GameDataModes.gd:599
+The Drowned Spire,Boğulmuş Kule,scripts/autoload/game_data/GameDataModes.gd:600
+the Endless Rift,Sonsuz Yarık,scripts/autoload/game_data/GameDataModes.gd:600
+"South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",Vadinin güneyinde bataklıklar yükseldi ve Nyxara'nın kulesi de onlarla birlikte yükseliyor. Buradaki Büyük Yarıklar daha yaşlı ve daha aç. Köyler yalnızca kendini kanıtlamış bir loncaya güvenecek.,scripts/autoload/game_data/GameDataModes.gd:601
+"The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.","Kule kara suya çöküyor, Nyxara da onunla. Altında devasa bir şey kıpırdıyor: dibi olmayan bir yarık. Sonsuz Yarık loncana açıldı.",scripts/autoload/game_data/GameDataModes.gd:602
+Seal a Rank C rift,Bir Rütbe C yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:603
+Seal 2 rifts of Rank C or higher,Rütbe C ya da daha yüksek 2 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:603
+Complete a quest,Bir görev tamamla,scripts/autoload/game_data/GameDataModes.gd:603
+The Ashen Crown,Küllü Taç,scripts/autoload/game_data/GameDataModes.gd:605
+Sythrane,Sythrane,scripts/autoload/game_data/GameDataModes.gd:605
+"Sythrane, the Ashen Crown",Küllü Taç Sythrane,scripts/autoload/game_data/GameDataModes.gd:605
+The Heart of the Rift,Yarığın Kalbi,scripts/autoload/game_data/GameDataModes.gd:606
+"Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",Mühürlediğin her yarık buraya çıkıyordu. Sythrane yarık ağının kalbinde külden bir taç takıyor ve dünyadaki her gedik onu besliyor. Bekçileri Korrath ve Drevok yolu koruyor.,scripts/autoload/game_data/GameDataModes.gd:607
+"The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the quests carry on.)","Küllü Taç paramparça oluyor. Diyardaki yarıklar birer birer susuyor ve yıllar sonra ilk kez gökyüzü yalnızca gökyüzü. Loncanın adı nesiller boyu anlatılacak. (Yarıklar asla tam kapanmaz — Sonsuz Yarık, yarık merdiveni ve görevler devam ediyor.)",scripts/autoload/game_data/GameDataModes.gd:608
+Seal a Rank B rift,Bir Rütbe B yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:609
+boss:Korrath,,scripts/autoload/game_data/GameDataModes.gd:609
+Defeat Korrath,Korrath'ı yen,scripts/autoload/game_data/GameDataModes.gd:609
+boss:Drevok,,scripts/autoload/game_data/GameDataModes.gd:609
+Defeat Drevok,Drevok'u yen,scripts/autoload/game_data/GameDataModes.gd:609
+Complete 3 quests,3 görev tamamla,scripts/autoload/game_data/GameDataModes.gd:609
+Defeat %d %s,%d %s yen,scripts/autoload/game_data/GameDataModes.gd:618
+Seal %d Rift%s,%d Yarık%s mühürle,scripts/autoload/game_data/GameDataModes.gd:619
+Win %d Elite fight%s,%d Seçkin dövüşü%s kazan,scripts/autoload/game_data/GameDataModes.gd:620
+Defeat a Boss,Bir Boss yen,scripts/autoload/game_data/GameDataModes.gd:621
+Craft %d item%s or relic%s,%d eşya%s ya da kalıntı%s üret,scripts/autoload/game_data/GameDataModes.gd:622
+Win %d fight%s without a hero going down,Hiçbir kahraman düşmeden %d dövüş%s kazan,scripts/autoload/game_data/GameDataModes.gd:623
+First Blood — seal your first Rift,İlk Kan — ilk Yarığını mühürle,scripts/autoload/game_data/GameDataModes.gd:635
+Monster Hunter — defeat 25 monsters total,Canavar Avcısı — toplam 25 canavar yen,scripts/autoload/game_data/GameDataModes.gd:636
+Elite Slayer — win 3 Elite fights,Seçkin Avcısı — 3 Seçkin dövüşü kazan,scripts/autoload/game_data/GameDataModes.gd:637
+Boss Breaker — defeat 3 Bosses,Boss Kıran — 3 Boss yen,scripts/autoload/game_data/GameDataModes.gd:638
+Artisan — craft 3 items or relics,Zanaatkâr — 3 eşya ya da kalıntı üret,scripts/autoload/game_data/GameDataModes.gd:639
+Full Roster — fill every hero slot,Dolu Kadro — her kahraman yerini doldur,scripts/autoload/game_data/GameDataModes.gd:640
+Guild of the Realm — top the Guild Standings in Renown,Diyarın Loncası — Lonca Sıralaması'nda Ün'de zirveye çık,scripts/autoload/game_data/GameDataModes.gd:641
+Renowned Guild — reach Renowned Guild tier,Ünlü Lonca — Ünlü Lonca kademesine ulaş,scripts/autoload/game_data/GameDataModes.gd:642
+Greater Threat — open the Rank C rift,Büyük Tehdit — Rütbe C yarığını aç,scripts/autoload/game_data/GameDataModes.gd:643
+The Vale Holds — complete Act I,Vadi Dayanıyor — I. Perde'yi tamamla,scripts/autoload/game_data/GameDataModes.gd:644
+Out of the Marshes — complete Act II,Bataklıklardan Çıkış — II. Perde'yi tamamla,scripts/autoload/game_data/GameDataModes.gd:645
+Crownbreaker — complete the campaign,Taç Kıran — hikâyeyi tamamla,scripts/autoload/game_data/GameDataModes.gd:646
+Rift Warden — seal 25 rifts,Yarık Bekçisi — 25 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:647
+Centurion — defeat 250 monsters,Yüzbaşı — 250 canavar yen,scripts/autoload/game_data/GameDataModes.gd:648
+Kingslayer — defeat 20 Bosses,Kral Katili — 20 Boss yen,scripts/autoload/game_data/GameDataModes.gd:649
+Untouched — seal 5 rifts with no one knocked out,Dokunulmaz — kimse bayılmadan 5 yarık mühürle,scripts/autoload/game_data/GameDataModes.gd:650
+Climber — reach floor 25 of the Tower,Tırmanıcı — Kule'nin 25. katına ulaş,scripts/autoload/game_data/GameDataModes.gd:651
+Summit — clear floor 100 of the Tower,Zirve — Kule'nin 100. katını temizle,scripts/autoload/game_data/GameDataModes.gd:652
+Beyond the Edge — survive 10 minutes in the Endless Rift,Sınırın Ötesi — Sonsuz Yarık'ta 10 dakika dayan,scripts/autoload/game_data/GameDataModes.gd:653
+Daily Duty — seal a rift with the daily twist,Günlük Görev — günün cilvesiyle bir yarığı mühürle,scripts/autoload/game_data/GameDataModes.gd:654
+Dedicated — seal the daily twist 7 days in a row,Kararlı — günün cilvesini 7 gün üst üste mühürle,scripts/autoload/game_data/GameDataModes.gd:655
+Build Complete — own a 4-piece boon set,Yapı Tamam — 4 parçalı bir lütuf setine sahip ol,scripts/autoload/game_data/GameDataModes.gd:656
+Legendary Guild — reach Legendary Guild tier,Efsanevi Lonca — Efsanevi Lonca kademesine ulaş,scripts/autoload/game_data/GameDataModes.gd:657
+Paragon — raise a hero to Level 10,Örnek — bir kahramanı 10. seviyeye çıkar,scripts/autoload/game_data/GameDataModes.gd:658
+Great Hall — have 10 heroes on the roster,Büyük Salon — kadroda 10 kahraman olsun,scripts/autoload/game_data/GameDataModes.gd:659
+Inspired,İlhamlı,scripts/autoload/game_data/GameDataModes.gd:694
+Steady,Dengeli,scripts/autoload/game_data/GameDataModes.gd:694
+Shaken,Sarsılmış,scripts/autoload/game_data/GameDataModes.gd:694
+Breaking,Kırılmak üzere,scripts/autoload/game_data/GameDataModes.gd:694
+The Iron Chorus,Demir Koro,scripts/autoload/game_data/GameDataModes.gd:710
+The Ashen Wolves,Kül Kurtları,scripts/autoload/game_data/GameDataModes.gd:710
+The Gilded Lance,Yaldızlı Mızrak,scripts/autoload/game_data/GameDataModes.gd:710
+The Last Lantern,Son Fener,scripts/autoload/game_data/GameDataModes.gd:710
+The Hollow Crown Company,Oyuk Taç Bölüğü,scripts/autoload/game_data/GameDataModes.gd:710
+Marshal Orla Venn,Mareşal Orla Venn,scripts/autoload/game_data/GameDataModes.gd:728
+Kael Ashborn,Kael Ashborn,scripts/autoload/game_data/GameDataModes.gd:729
+Ser Aldric Vane,Sör Aldric Vane,scripts/autoload/game_data/GameDataModes.gd:730
+Mother Ilse,Ana Ilse,scripts/autoload/game_data/GameDataModes.gd:731
+Captain Morrow,Kaptan Morrow,scripts/autoload/game_data/GameDataModes.gd:732
+"Seal the small rifts, %s. Leave the real ones to us.","Küçük yarıkları sen mühürle, %s. Gerçeklerini bize bırak.",scripts/autoload/game_data/GameDataModes.gd:736
+"%s pays its heroes in promises, I hear.",Duyduğuma göre %s kahramanlarına vaatle ödüyormuş.,scripts/autoload/game_data/GameDataModes.gd:737
+Our recruits ask about %s. Then they sign with us.,Acemilerimiz %s hakkında soru soruyor. Sonra bizimle imzalıyorlar.,scripts/autoload/game_data/GameDataModes.gd:738
+Tell %s the quest board isn't a charity.,"%s'e söyleyin, görev panosu bir hayır kurumu değil.",scripts/autoload/game_data/GameDataModes.gd:739
+We'll send flowers when %s closes its doors.,%s kapılarını kapattığında çiçek göndereceğiz.,scripts/autoload/game_data/GameDataModes.gd:740
+%s? I thought they'd disbanded.,%s mi? Dağıldıklarını sanıyordum.,scripts/autoload/game_data/GameDataModes.gd:741
 Enraged,Öfkeli,scripts/autoload/game_data/GameDataMonsters.gd:14
 Strikes harder the longer the fight drags on (past round 4).,Dövüş uzadıkça daha sert vurur (4. turdan sonra).,scripts/autoload/game_data/GameDataMonsters.gd:14
 Shields and dodge cannot mitigate its first two retaliations.,Kalkanlar ve kaçınma ilk iki karşılığını hafifletemez.,scripts/autoload/game_data/GameDataMonsters.gd:15
@@ -2113,26 +2114,26 @@ No such effect,Böyle bir etki yok,scripts/autoload/game_state/GameStateItems.gd
 Already max level,Zaten en üst seviyede,scripts/autoload/game_state/GameStateItems.gd:386
 Relic awakened,Kalıntı uyandı,scripts/autoload/game_state/GameStateItems.gd:403
 %s gains a new power,%s yeni bir güç kazandı,scripts/autoload/game_state/GameStateItems.gd:403
-"Act %s complete — +%d Essence, %s","%s. Perde tamamlandı — +%d Öz, %s",scripts/autoload/game_state/GameStateModes.gd:126
- · %s unlocked, · %s açıldı,scripts/autoload/game_state/GameStateModes.gd:128
- — sealed, — mühürlendi,scripts/autoload/game_state/GameStateModes.gd:129
-A champion is freed,Bir şampiyon kurtarıldı,scripts/autoload/game_state/GameStateModes.gd:134
+"Act %s complete — +%d Essence, %s","%s. Perde tamamlandı — +%d Öz, %s",scripts/autoload/game_state/GameStateModes.gd:127
+ · %s unlocked, · %s açıldı,scripts/autoload/game_state/GameStateModes.gd:129
+ — sealed, — mühürlendi,scripts/autoload/game_state/GameStateModes.gd:130
+A champion is freed,Bir şampiyon kurtarıldı,scripts/autoload/game_state/GameStateModes.gd:135
 "Deep in %s, bound in rift-chains, your guild finds %s. %s
 
 Champions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.","%s derinliklerinde, yarık zincirleriyle bağlı hâlde loncan şununla karşılaşıyor: %s. %s
 
-Şampiyonlar yarık seferlerini gözetir (Lütuf ve Çağrı) ve Sonsuz Yarık'ta savaşır. Bkz. Kadro > Şampiyonlar.",scripts/autoload/game_state/GameStateModes.gd:135
-The End,Son,scripts/autoload/game_state/GameStateModes.gd:137
-The campaign is complete,Hikâye tamamlandı,scripts/autoload/game_state/GameStateModes.gd:137
-"Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.","Oynadığın için teşekkürler. Loncan ayakta: yarıklar açıldıkça Sonsuz Yarık'ta sınırlarını zorla, yarık merdiveninde tırman ve görevler üstlen.",scripts/autoload/game_state/GameStateModes.gd:137
-Act %s — %s,%s. Perde — %s,scripts/autoload/game_state/GameStateModes.gd:144
-Foe: %s,Düşman: %s,scripts/autoload/game_state/GameStateModes.gd:144
-II,II,scripts/autoload/game_state/GameStateModes.gd:148
-III,III,scripts/autoload/game_state/GameStateModes.gd:148
-Rank %s rift,Rütbe %s yarığı,scripts/autoload/game_state/GameStateModes.gd:200
- · daily twist, · günün cilvesi,scripts/autoload/game_state/GameStateModes.gd:200
-Act %s finale,%s. Perde finali,scripts/autoload/game_state/GameStateModes.gd:202
-Rift,Yarık,scripts/autoload/game_state/GameStateModes.gd:203
+Şampiyonlar yarık seferlerini gözetir (Lütuf ve Çağrı) ve Sonsuz Yarık'ta savaşır. Bkz. Kadro > Şampiyonlar.",scripts/autoload/game_state/GameStateModes.gd:136
+The End,Son,scripts/autoload/game_state/GameStateModes.gd:138
+The campaign is complete,Hikâye tamamlandı,scripts/autoload/game_state/GameStateModes.gd:138
+"Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.","Oynadığın için teşekkürler. Loncan ayakta: yarıklar açıldıkça Sonsuz Yarık'ta sınırlarını zorla, yarık merdiveninde tırman ve görevler üstlen.",scripts/autoload/game_state/GameStateModes.gd:138
+Act %s — %s,%s. Perde — %s,scripts/autoload/game_state/GameStateModes.gd:145
+Foe: %s,Düşman: %s,scripts/autoload/game_state/GameStateModes.gd:145
+II,II,scripts/autoload/game_state/GameStateModes.gd:149
+III,III,scripts/autoload/game_state/GameStateModes.gd:149
+Rank %s rift,Rütbe %s yarığı,scripts/autoload/game_state/GameStateModes.gd:201
+ · daily twist, · günün cilvesi,scripts/autoload/game_state/GameStateModes.gd:201
+Act %s finale,%s. Perde finali,scripts/autoload/game_state/GameStateModes.gd:203
+Rift,Yarık,scripts/autoload/game_state/GameStateModes.gd:204
 %s took the contract: %s.,Sözleşmeyi %s kaptı: %s.,scripts/autoload/game_state/GameStateQuests.gd:120
 Contract failed: %s (-%d Renown).,Sözleşme başarısız: %s (-%d Ün).,scripts/autoload/game_state/GameStateQuests.gd:134
 Contract failed,Sözleşme başarısız,scripts/autoload/game_state/GameStateQuests.gd:135

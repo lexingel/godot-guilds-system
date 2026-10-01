@@ -10,8 +10,9 @@ func _apply_rift_rank_modifiers(diff: Dictionary, rift_rank: String) -> Dictiona
 		return diff
 	var mods: Dictionary = GameData.find_rift_rank(rift_rank)
 	var out := diff.duplicate(true)
-	out["monster_hp"] = float(out["monster_hp"]) * float(mods["hp"])
-	out["monster_dmg"] = float(out["monster_dmg"]) * float(mods["dmg"])
+	var above_f := rift_rank != "F"
+	out["monster_hp"] = float(out["monster_hp"]) * float(mods["hp"]) * (GameData.RANK_THREAT_HP if above_f else 1.0)
+	out["monster_dmg"] = float(out["monster_dmg"]) * float(mods["dmg"]) * (GameData.RANK_THREAT_DMG if above_f else 1.0)
 	var rw := float(mods["reward"])
 	out["coin"] = [int(round(float(out["coin"][0]) * rw)), int(round(float(out["coin"][1]) * rw))]
 	out["crystal"] = [int(round(float(out["crystal"][0]) * rw)), int(round(float(out["crystal"][1]) * rw))]

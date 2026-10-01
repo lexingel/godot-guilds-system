@@ -406,6 +406,13 @@ const WOUND_HEAL_PER_RUN := 0.5
 ## multiplier, plus the rules it adds. "rec" is the party power that clears
 ## it about 65% of the time (balance_sim -- calibrate). Sealing a rank opens the next; C and up
 ## also need the Greater Rift (Act II).
+## Monster strength on top of each rank's own hp/dmg, above Rank F (which
+## stays gentle for a new guild). Set from the campaign sim
+## (tests/sim/campaign_sim.gd -- bold): at Recommended power a party seals
+## 3 rifts in 5, near what the Party screen says (at 1.0 it was 87%). A var so
+## the sim can sweep it.
+var RANK_THREAT_HP := 1.3
+var RANK_THREAT_DMG := 1.3
 const RIFT_RANKS := [
 	{"id": "F", "rec": 65, "base": "lesser", "hp": 0.8, "dmg": 0.85, "reward": 1.0},
 	{"id": "E", "rec": 160, "base": "lesser", "hp": 1.8, "dmg": 1.6, "reward": 1.4},
@@ -661,10 +668,12 @@ const RUN_HISTORY_MAX := 30
 
 # ---------------- Running the guild ----------------
 ## Payday comes every PAYDAY_DAYS days (a day = one rift run or a rest).
-## A hero's weekly wage: by rank, +3% per level above 1. Tuned so wages and
-## upkeep take roughly 15-25% of a week's rift income at every stage.
+## A hero's weekly wage: by rank, +3% per level above 1. Tuned with the
+## campaign sim (tests/sim/campaign_sim.gd) so a full roster of 16 costs a
+## guild that invests about 40% of its Gold, and a casual 6 about 28%:
+## a bench is worth having, a roster of stars has to pay for itself.
 const PAYDAY_DAYS := 7
-const WAGE_BY_RANK := {"F": 40, "E": 60, "D": 85, "C": 110, "B": 150, "A": 170, "S": 220}
+const WAGE_BY_RANK := {"F": 60, "E": 90, "D": 130, "C": 165, "B": 225, "A": 255, "S": 330}
 const WAGE_PER_LEVEL := 0.03
 ## Every Guild Management level costs this much Gold a week to keep running.
 ## Upkeep is paid after wages; unpaid upkeep costs Renown.
