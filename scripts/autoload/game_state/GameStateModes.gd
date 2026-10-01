@@ -136,11 +136,30 @@ func _complete_act(act_num: int) -> void:
 		unlock_champion(freed)
 		var d := GameData.champion_def(freed)
 		pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(freed),
-			"text": tr("Deep in %s, bound in rift-chains, your guild finds %s. %s\n\nChampions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.") % [tr(str(act["finale"])), GameData.champion_full_name(freed), tr(str(d.get("lore", "")))]})
+			"text": tr("Deep in %s, held in a pillar of light, your guild finds %s. %s\n\n%s\n\nChampions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.") % [tr(str(act["finale"])), GameData.champion_full_name(freed), tr(str(d.get("lore", ""))), champion_memory_line(freed)]})
 	if campaign_done():
 		pending_stories.append({"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")})
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
+
+
+## "<Name> remembers: ..." (the Broken Accord), or "" for a champion without one.
+func champion_memory_line(id: String) -> String:
+	var m := str(GameData.CHAMPION_MEMORY.get(id, ""))
+	return "" if m == "" else tr("%s remembers: %s") % [tr(str(GameData.champion_def(id)["name"])), tr(m)]
+
+
+## A sealed rift may turn up the next page of the Grandmaster's ledger (a
+## finale always does), once the campaign has reached that page's act.
+func maybe_find_ledger_page(finale: bool) -> void:
+	if accord_pages >= GameData.LEDGER_PAGES.size():
+		return
+	var page: Dictionary = GameData.LEDGER_PAGES[accord_pages]
+	if campaign_act < int(page["act"]) or (not finale and randf() >= GameData.LEDGER_PAGE_CHANCE):
+		return
+	accord_pages += 1
+	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A page of the Grandmaster's ledger"),
+		"text": tr("Page %d of %d, found in the rift. Read it in Library > Codex > Chronicle.") % [accord_pages, GameData.LEDGER_PAGES.size()]})
 
 
 func _act_intro_card(act_num: int) -> Dictionary:

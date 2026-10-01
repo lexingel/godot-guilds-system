@@ -84,7 +84,7 @@ var roster_sort: String = "power"          # "power" | "level" | "rank" — cycl
 var inv_sort: String = "rarity"            # "rarity" | "value" | "name" — cycled via the Inventory tab's Sort button
 
 
-var compendium_tab: String = "items"       # "items" | "relics" | "crafting" | "systems"
+var compendium_tab: String = "chronicle"   # "chronicle" | "items" | "relics" | "crafting" | "systems"
 
 
 var _pre_settings_screen: String = "onboard"   # where the Settings gear button returns to

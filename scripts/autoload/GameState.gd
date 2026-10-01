@@ -65,6 +65,7 @@ func reset() -> void:
 	guide_hidden = false
 	last_party = []
 	relics_found = []
+	accord_pages = 0
 	run = {}
 	monsters_seen = []
 	bosses_defeated = []
@@ -79,7 +80,7 @@ func reset() -> void:
 	day = 0
 	runs_started = 0
 	campaign_act = 1
-	pending_stories = [_act_intro_card(1)]
+	pending_stories = [GameData.PROLOGUE.duplicate(), _act_intro_card(1)]
 	features_seen = []
 	hints_seen = []
 	last_export_day = -1
@@ -263,6 +264,7 @@ func load_save() -> bool:
 	guide_hidden = data.get("guide_hidden", false)
 	last_party.assign(data.get("last_party", []))
 	relics_found = data.get("relics_found", [])
+	accord_pages = int(data.get("accord_pages", 0))
 
 	var run_data: Dictionary = data.get("run", {})
 	if run_data.get("endless", false):

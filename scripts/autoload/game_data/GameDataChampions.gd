@@ -182,3 +182,34 @@ static func champion_power(level: int) -> float:
 static func champion_portrait(id: String) -> String:
 	var own := "res://assets/champions/%s.png" % id
 	return own if ResourceLoader.exists(own) else HERO_PORTRAIT_PATH.get(str(champion_def(id).get("role", "warrior")), "")
+
+
+## What each champion remembers of the Night of Breaking (the Broken Accord):
+## told when they're freed, kept in the Codex's Chronicle. Each stands alone,
+## since a guild meets its champions in any order.
+const CHAMPION_MEMORY := {
+	"brannoch": "The Grandmaster said one night. One night, and the Hollow would be quiet for good. I counted. It was eleven years.",
+	"grell": "We drew lots for the posts. I drew a deep one. I remember thinking that was lucky.",
+	"mordrake": "When the light closed over me it didn't hurt. It felt like being told to wait, very firmly.",
+	"sigrun": "My whole shield-company walked into the light together. I came out alone. Ask the others if they're still holding.",
+	"kael": "The order was: hold until relieved. The Grandmaster said she would come back for us herself. She didn't. Why didn't she?",
+	"kaya": "I ran messages between the posts that night. The last one I carried was from the Grandmaster, and it was sealed with ash.",
+	"hesk": "The wolves knew before we did. They howled at the Hall for three days before the Night. Nobody listens to wolves.",
+	"lyra": "Some of us didn't go into the light willingly. The Grandmaster said there wasn't time to ask.",
+	"bram": "I set a snare at my post, out of habit. Caught a voice. It kept saying: the price, the price.",
+	"ossian": "I had the Grandmaster in my sights that night, on her way out. I've never missed. I didn't take the shot. I'd like to know if that was right.",
+	"vesh": "I read her proclamations aloud in the ash for years before I read one closely. It began: the Accord is dissolved.",
+	"auriel": "The new stars leaking from the rifts are the posts, going out one by one. I have counted forty dark since the Night.",
+	"morwen": "Freezing my rift was my own idea, not the Accord's. I think that's why the Hollow never got its hooks into me.",
+	"tamsin": "The Accord's engineers built the bargain like a lock. I've seen the plans. Every lock has a key.",
+	"ezra": "Each of us gave the Hollow something to seal the deal. I gave my colour. You can probably tell.",
+	"imre": "I was kept lit to read the archive by. I read all of it. The bargain has a clause about what happens when a post is abandoned.",
+	"odo": "The lamps of my city were Accord lamps, meant to lead the guilds home. The city fell before anyone came back.",
+	"seraphine": "The Grandmaster said there would be no sunrise until the price was paid. She was wrong. I went and found it.",
+	"hobb": "Half the Accord drank at my tavern the night before. The Grandmaster paid for every round. I thought it was generous. It was a goodbye.",
+	"veyla": "I signed the bargain as a witness. The mask is so the Hollow can't match my face to my name on it.",
+	"selune": "My last contract came from inside the Accord: remove a ranger who had left her post. I didn't. Vaelith owes me one.",
+	"pip": "The key I stole opened a rift, yes. It was the Grandmaster's key. I'm told that matters.",
+	"raske": "We were to ferry the last guild to its post across the Marches. The water rose too fast. I kept the coat. I kept the list of names too.",
+	"corvin": "The Accord's healers poisoned nobody, whatever the songs say. They gave the posts something to sleep. I still have the recipe.",
+}

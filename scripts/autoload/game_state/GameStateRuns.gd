@@ -795,6 +795,7 @@ func advance_node() -> void:
 
 func seal_rift() -> void:
 	_rescue_left_behind()
+	maybe_find_ledger_page(int(run.get("finale", 0)) > 0)
 	if int(run.get("finale", 0)) > 0 and int(run["finale"]) == campaign_act:
 		_complete_act(campaign_act)
 	var diff := _diff()
@@ -866,6 +867,10 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 		if not champions.has(id):
 			unlock_champion(id)
 			freed.append(GameData.champion_full_name(id))
+			var mem := champion_memory_line(id)
+			if mem != "":
+				pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(id),
+					"text": tr("The pillar of light gives way, and %s steps out of the Endless Rift. %s\n\n%s") % [GameData.champion_full_name(id), tr(str(GameData.champion_def(id).get("lore", ""))), mem]})
 	var names: Array = []
 	for h in r.heroes:
 		names.append(h["hero"].name.split(" the ")[0])

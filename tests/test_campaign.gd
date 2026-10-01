@@ -17,7 +17,7 @@ func run() -> void:
 	GameState.active_slot = 9
 	GameState.reset()
 	GameState.guild_name = "T"
-	check(GameState.campaign_act == 1 and GameState.pending_stories.size() == 1, "a new guild starts Act I with its intro card")
+	check(GameState.campaign_act == 1 and GameState.pending_stories.size() == 2 and str(GameState.pending_stories[0]["title"]) == "The Night of Breaking", "a new guild opens on the prologue, then Act I's intro")
 	check(not GameState.greater_rift_unlocked() and not GameState.endless_unlocked(), "Greater and Endless start locked")
 	check(not GameState.finale_ready(), "finale closed until objectives are met")
 	var ids := _heroes(3)
@@ -45,6 +45,8 @@ func run() -> void:
 	check(GameState.relics.size() == relics0 + 1 and GameState.relics[-1].rarity == "legendary" and GameState.crystals > cr0, "reward: crystals and a Legendary relic")
 	check(GameState.pending_stories.size() == 3 and str(GameState.pending_stories[2]["title"]).contains("Act II"), "outro card, the freed champion, then the Act II intro")
 	check(GameState.champion_unlocked(GameState.story_champion(1)), "Act I frees its champion")
+	check(str(GameState.pending_stories[1]["text"]).contains("remembers"), "and the champion says what they remember of the Night")
+	check(GameState.accord_pages == 1, "a finale always turns up a page of the Grandmaster's ledger")
 	GameState.finish_run()
 	# A normal seal doesn't complete an act.
 	GameState.start_run("lesser", ids, null)
@@ -109,3 +111,21 @@ func run() -> void:
 	GameState.import_save_text(JSON.stringify(data), 9)
 	GameState.load_save()
 	check(GameState.relics_found is Array, "an old save loads with an empty record")
+
+	# The Broken Accord's data: every champion remembers something, the
+	# ledger pages come in act order, and a page waits for its act.
+	check(GameData.CHAMPIONS.keys().all(func(id): return GameData.CHAMPION_MEMORY.has(id)), "every champion has a memory of the Night")
+	var acts_in_order := true
+	for i in range(1, GameData.LEDGER_PAGES.size()):
+		acts_in_order = acts_in_order and int(GameData.LEDGER_PAGES[i]["act"]) >= int(GameData.LEDGER_PAGES[i - 1]["act"])
+	check(acts_in_order, "ledger pages run in act order")
+	GameState.campaign_act = 1
+	GameState.accord_pages = 2
+	GameState.maybe_find_ledger_page(true)
+	check(GameState.accord_pages == 2, "an Act II page waits while the guild is in Act I")
+	GameState.campaign_act = 2
+	GameState.maybe_find_ledger_page(true)
+	check(GameState.accord_pages == 3, "and turns up once it's Act II")
+	GameState.save()
+	GameState.load_save()
+	check(GameState.accord_pages == 3, "found pages survive a reload")

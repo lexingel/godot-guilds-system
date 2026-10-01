@@ -1080,6 +1080,8 @@ func _champion_card(id: String) -> PanelContainer:
 	var times := 2 if lv >= GameData.CHAMPION_EXTRA_CALL_LEVEL else 1
 	col.add_child(_wrap_label(tr("Call: %s — %s (%s)") % [tr(str(call["name"])), tr(str(call["desc"])), tr("twice a rift") if times == 2 else tr("once a rift")], 12))
 	var lore := _wrap_label(tr(str(d.get("lore", ""))), 11, true)
+	lore.tooltip_text = GameState.champion_memory_line(id)   # the Broken Accord: what they remember (also in the Chronicle)
+	lore.mouse_filter = Control.MOUSE_FILTER_STOP
 	col.add_child(lore)
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 6)
@@ -1524,7 +1526,7 @@ func _bestiary_card(mname: String, tier: String) -> PanelContainer:
 func _compendium_tab_row(v: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	for entry in [["items", "Items"], ["relics", "Relics"], ["crafting", "Crafting"], ["systems", "Systems"]]:
+	for entry in [["chronicle", "Chronicle"], ["items", "Items"], ["relics", "Relics"], ["crafting", "Crafting"], ["systems", "Systems"]]:
 		var tid: String = entry[0]
 		var tlabel: String = entry[1]
 		var btn := _icon_button("", tlabel, func(id=tid):
@@ -1541,10 +1543,61 @@ func _render_compendium(v: VBoxContainer) -> void:
 	v.add_child(_label("Compendium", 20))
 	_compendium_tab_row(v)
 	match compendium_tab:
+		"chronicle": _render_chronicle(v)
 		"items": _render_compendium_items(v)
 		"relics": _render_compendium_relics(v)
 		"crafting": _render_compendium_crafting(v)
 		_: _render_compendium_systems(v)
+
+
+## The Broken Accord as far as the guild knows it: the world everyone knows,
+## what each sealed finale revealed, the Grandmaster's ledger pages found in
+## rifts, and what the freed champions remember.
+func _render_chronicle(v: VBoxContainer) -> void:
+	v.add_child(_label("The world", 16))
+	for e in GameData.CHRONICLE_WORLD:
+		v.add_child(_label(str(e[0]), 14))
+		v.add_child(_wrap_label(str(e[1]), 12, true))
+
+	v.add_child(_hsep())
+	v.add_child(_label("The story so far", 16))
+	for r in GameData.CHRONICLE_REVEALS:
+		var act := int(r["act"])
+		if GameState.campaign_act > act:
+			var t := _label(str(r["title"]), 14)
+			t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			v.add_child(t)
+			v.add_child(_wrap_label(str(r["text"]), 13))
+		else:
+			v.add_child(_label(tr("??? — seal Act %s's finale") % tr(GameState._roman(act)), 13, true))
+
+	var pages: Array = GameData.LEDGER_PAGES
+	v.add_child(_hsep())
+	v.add_child(_label(tr("The Grandmaster's ledger — %d/%d pages") % [GameState.accord_pages, pages.size()], 16))
+	v.add_child(_wrap_label("Pages turn up in sealed rifts as the campaign goes on; a finale always yields one.", 11, true))
+	for i in mini(GameState.accord_pages, pages.size()):
+		v.add_child(_wrap_label(str(pages[i]["text"]), 13))
+	var missing := pages.size() - GameState.accord_pages
+	if missing > 0:
+		v.add_child(_label(tr("%d page%s still missing") % [missing, tr(str(_pl(missing)))], 12, true))
+
+	var freed: Array = GameState.champion_roll.filter(func(id): return GameState.champion_unlocked(str(id)))
+	v.add_child(_hsep())
+	v.add_child(_label(tr("What the champions remember — %d/%d freed") % [freed.size(), GameState.champion_roll.size()], 16))
+	if freed.is_empty():
+		v.add_child(_wrap_label("Each act's finale frees a champion of the old guilds; more wait in the Endless Rift.", 12, true))
+	for id in freed:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var pic := _icon_trimmed(GameData.champion_portrait(str(id)), 40)
+		pic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(pic)
+		var col := _vbox(0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label(GameData.champion_full_name(str(id)), 13))
+		col.add_child(_wrap_label(tr(str(GameData.CHAMPION_MEMORY.get(str(id), ""))), 12, true))
+		row.add_child(col)
+		v.add_child(row)
 
 
 func _render_compendium_items(v: VBoxContainer) -> void:

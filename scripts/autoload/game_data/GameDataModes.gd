@@ -595,20 +595,20 @@ const RIFT_CACHE_GOLD := {"lesser": 70, "greater": 170}
 const CAMPAIGN := [
 	{"act": 1, "name": "The Shattered Vale", "foe": "Vaelith", "boss": "Vaelith, the Vale-Render",
 	 "finale": "Vaelith's Breach", "tier": "lesser", "rank": "E", "mult": 1.15, "opens": "Greater Rifts",
-	 "intro": "The Vale split open in a single night. Rifts bleed monsters into the farmland, and the old guilds are gone. Yours is all that stands between the villages and whatever Vaelith is pouring through the largest breach.",
-	 "outro": "Vaelith falls back through the Breach, and it seals behind her. The Vale breathes again — but the rifts beyond it only grow deeper. Greater Rifts are open to your guild.",
+	 "intro": "The Vale split open on the Night of Breaking, and it has not closed since. Rifts bleed monsters into the farmland. The largest breach belongs to Vaelith, and the villages say she wears the green of an Accord ranger. Seal it, and find out why.",
+	 "outro": "Vaelith falls back through the Breach, and it seals behind her. Under her cloak was an Accord badge with the oath scratched out: she was one of them, and she left her post. Whatever the old guilds did that night, someone has been undoing it. Greater Rifts are open to your guild.",
 	 "objectives": [{"type": "rifts_sealed", "target": 3, "label": "Seal 3 rifts"}, {"type": "map_rank", "target": 1, "label": "Seal a Rank E rift"}],
 	 "reward": {"crystals": 80}},
 	{"act": 2, "name": "The Drowned Marches", "foe": "Nyxara", "boss": "Nyxara, Queen of the Drowned",
 	 "finale": "The Drowned Spire", "tier": "greater", "rank": "C", "mult": 1.2, "opens": "the Endless Rift",
-	 "intro": "South of the Vale the marshes have risen, and Nyxara's spire rises with them. The Greater Rifts here are older and hungrier. The villages will only trust a guild that has proven itself.",
-	 "outro": "The Spire crumbles into the black water, and Nyxara with it. Beneath it, something vast stirs: a rift with no bottom. The Endless Rift is open to your guild.",
+	 "intro": "South of the Vale the marshes have risen, and Nyxara's spire rises with them. Before it drowned, the Spire was the Accord's archive: every contract, every name, every oath. Nyxara keeps it now, with a light burning at the bottom. The villages will only trust a guild that has proven itself.",
+	 "outro": "The Spire crumbles into the black water, and Nyxara with it. One book survived the archive, in the Grandmaster's hand, and it says the guilds did not fall that night. They made a bargain. Beneath the Spire, something vast stirs: a rift with no bottom, lit by pillars of light. The Endless Rift is open to your guild.",
 	 "objectives": [{"type": "map_rank", "target": 3, "label": "Seal a Rank C rift"}, {"type": "greater_seals", "target": 2, "label": "Seal 2 rifts of Rank C or higher"}, {"type": "quests_done", "target": 1, "label": "Complete a quest"}],
 	 "reward": {"crystals": 160}},
 	{"act": 3, "name": "The Ashen Crown", "foe": "Sythrane", "boss": "Sythrane, the Ashen Crown",
 	 "finale": "The Heart of the Rift", "tier": "greater", "rank": "B", "mult": 1.3, "opens": "",
-	 "intro": "Every rift you've sealed led here. Sythrane wears a crown of ash at the heart of the rift network, and every breach in the world feeds her. Her wardens Korrath and Drevok guard the way.",
-	 "outro": "The Ashen Crown shatters. One by one the rifts across the land fall quiet, and for the first time in years the sky is only sky. Your guild's name will be told for generations. (The rifts never fully close — Endless, the rift ladder and the quests carry on.)",
+	 "intro": "Every rift you've sealed led here. At the heart of the rift network sits Sythrane in a crown of ash, guarded by Korrath and Drevok, once her wardens. The Grandmaster's book names her plainly: Sythrane, Grandmaster of the Accord. She made the bargain. Every breach in the world is one of her guilds letting go, and every one feeds her.",
+	 "outro": "The Ashen Crown shatters. Sythrane's last words are not a threat but a warning: someone has to hold the Hollow shut, and she was tired. One by one the rifts fall quiet, and for the first time in years the sky is only sky. In the Endless Rift the pillars of light are still holding. Your guild's name will be told for generations. (The rifts never fully close: Endless, the rift ladder and the quests carry on.)",
 	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 quests"}],
 	 "reward": {"crystals": 280}},
 ]
@@ -761,3 +761,37 @@ static func morale_tier(m: int) -> Array:
 			return t
 	return MORALE_TIERS[-1]
 
+
+## The Broken Accord (the campaign's story). The game opens on this card,
+## before Act I's.
+const PROLOGUE := {"title": "The Night of Breaking", "subtitle": "The end of the Accord",
+	"text": "For three hundred years the guilds of the Accord kept the rifts shut. They swore one oath: close what opens, share what you find, never sell a rift. Then, in a single night, every rift in the Vale opened at once, and every Accord guild went in. None of them came back. By morning their halls stood empty.\n\nThe villages still need a guild. They have yours."}
+
+## The Codex's Chronicle: what everyone knows (always shown), then what the
+## campaign reveals ("act": shown once that act's finale is sealed).
+const CHRONICLE_WORLD := [
+	["The Hollow", "The world sits on a thin crust. Under it is the Hollow, where things that never got to happen pile up: unfinished storms, roads never built, beasts that almost were. A rift is a crack in the crust, and what comes through is the Hollow trying on a shape. It copies what it finds, which is why each region's monsters look like that region."],
+	["Essence", "When the Hollow touches air it hardens into crystal. Essence is unfinished possibility: put it into a hero and they grow into what they might have been, into a building and it becomes its better self, into a relic and it wakes. Gold pays people. Essence changes things."],
+	["The Accord", "The oath of the old guilds: close what opens, share what you find, never sell a rift. The villages paid the guilds that swore it, and for three hundred years the crust held. Renown is the villages' trust; the best recruits go where it is."],
+	["The Assay", "Every hero who joins a guild is measured once on the Assay stone, by how much Essence they can hold without breaking: F to S. Rifts are measured on the same scale, so a Rank C rift is one a Rank C hero can stand in. SS and SSS were added after the Night of Breaking, by clerks who had run out of letters."],
+	["The Five Paths", "The Accord trained fighters in five Paths: the Shield (warriors), the Bow (rangers), the Word (mages), the Vow (clerics) and the Knife (rogues). Below Rank B the Path is all a hero is. From Rank B there is enough Essence in them that it settles into a shape of its own, and the Path forks into a calling."],
+	["The Night of Breaking", "Every rift in the Vale opened at once, deeper than the Assay could measure, and every Accord guild answered. None came back. The new companies that took charters afterward never swore the Accord. Yours can choose to keep it."],
+]
+const CHRONICLE_REVEALS := [
+	{"act": 1, "title": "Vaelith's badge", "text": "Under Vaelith's cloak was an Accord ranger's badge with the oath scratched out. She held a post on the Night of Breaking and walked away from it. The great Breach in the Vale was the post she left."},
+	{"act": 2, "title": "The bargain", "text": "The guilds did not fall. On the Night of Breaking the Grandmaster of the Accord made a bargain with the Hollow: the strongest of the guilds would stand in the cracks and let the Hollow harden around them, and the Hollow would stay below. The pillars of light in the Endless Rift are those posts, still holding."},
+	{"act": 3, "title": "The forty-first post", "text": "Sythrane was the Grandmaster. The bargain asked for forty-one posts, and she would not take the last one herself. The Hollow crowned her instead, and every post that tired and let go fed her. With her gone the rifts are quiet. The posts are still holding, and someone will have to relieve them."},
+]
+
+## The Grandmaster's ledger: pages found in sealed rifts (a finale always
+## turns one up). A page shows once the campaign reaches its act.
+const LEDGER_PAGE_CHANCE := 0.35
+const LEDGER_PAGES := [
+	{"act": 1, "text": "Day 1. The Hollow is rising faster than we can close it. The Assay has no mark for what came through at Thornwood. I have called every guild to the Hall."},
+	{"act": 1, "text": "Day 3. A voice answered from the deepest rift. It offered terms. I wrote them down so that I could refuse them properly."},
+	{"act": 2, "text": "Day 9. Forty posts: forty of our strongest, standing in the cracks, held by the Hollow's own hardening. In return it stays below. I have not refused."},
+	{"act": 2, "text": "Day 10. Lots drawn. Brannoch asked for the deepest post and I let him. I told them all I would come back for them myself."},
+	{"act": 2, "text": "Day 11. Vaelith asked who holds the Grandmaster's post. I said the Grandmaster keeps the ledger. That was not an answer, and she knew it."},
+	{"act": 3, "text": "The Night. Every post is taken but mine. The terms say forty-one. The Hollow can count."},
+	{"act": 3, "text": "After. The Hollow came for the forty-first and found me ready to make a different bargain. It gives me a crown. I give it the posts, one at a time, as they tire. It is slower than refusing. That is all I wanted: more time."},
+]
