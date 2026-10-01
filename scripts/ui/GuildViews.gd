@@ -131,8 +131,12 @@ func _render_camp(v: VBoxContainer) -> void:
 		var hotspot := _camp_area_hotspot(rect, rect, tip, targets.get(b["id"], func(): pass), false)
 		hotspot.position = rect.position
 		scene.add_child(hotspot)
-		plaques.append([str(b["name"]), rect, b["row"] == "back", str(PLAQUE_BADGE.get(b["id"], ""))])
+		plaques.append([str(b["name"]), rect, b["row"] == "back", str(PLAQUE_BADGE.get(b["id"], "")), hotspot.get_child(1)])
 
+	# Names show on hover once the player knows the camp. They stay up for
+	# the first runs, on touch screens (no hover there), and on a building
+	# with something to do (its count badge hangs off the name).
+	var all_names := GameState.runs_started <= 3 or _compact() or DisplayServer.is_touchscreen_available()
 	for pq in plaques:
 		var prect: Rect2 = pq[1]
 		var plaque := _camp_plaque(str(pq[0]))
@@ -144,6 +148,11 @@ func _render_camp(v: VBoxContainer) -> void:
 			var chip := _count_badge(str(badge[0]), str(badge[1]))
 			chip.position = plaque.position + Vector2(plaque.size.x - 10.0, -12.0)
 			scene.add_child(chip)
+		elif not all_names:
+			plaque.modulate.a = 0.0
+			var hot: Button = pq[4]
+			hot.mouse_entered.connect(func(): create_tween().tween_property(plaque, "modulate:a", 1.0, 0.12))
+			hot.mouse_exited.connect(func(): create_tween().tween_property(plaque, "modulate:a", 0.0, 0.12))
 
 	# The night moving: stars twinkling across the sky, mist drifting past
 	# the hills, fireflies over the grass, the campfire's light flickering.
