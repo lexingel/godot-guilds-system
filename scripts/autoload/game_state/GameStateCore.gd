@@ -67,6 +67,7 @@ var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
 var last_party: Array[String] = []   # the heroes who went out last (party assembly opens on them)
+var relics_found: Array = []   # every Legendary relic id this guild has held (the Compendium's record)
 
 ## One-shot flag for a hero/Champion that just rolled Rank S from any of the
 ## blind-reroll sources (recruit-offer reroll, Champion reroll, or the free
@@ -569,6 +570,14 @@ func load_settings() -> void:
 		resolution_idx = parsed.get("resolution_idx", 0)
 
 
+## Records every Legendary relic the guild holds, so the Compendium
+## remembers one after it's sold. Runs on every save.
+func note_relics_found() -> void:
+	for r in relics:
+		if r.unique_id != "" and not relics_found.has(r.unique_id):
+			relics_found.append(r.unique_id)
+
+
 func save() -> void:
 	# No guild loaded = nothing worth saving, and writing it would clobber the
 	# active slot: render() runs its world-tick resolvers (resolve_guild_board
@@ -577,6 +586,7 @@ func save() -> void:
 	# that load_save()/slot_summary() then treat as empty.
 	if guild_name == "":
 		return
+	note_relics_found()
 	var data := {
 		"save_version": SAVE_VERSION,
 		"guild_name": guild_name, "guild_crest": guild_crest, "next_id": next_id, "coins": coins,
@@ -594,7 +604,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "contest_start": contest_start, "rival_event": rival_event, "session": session, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
-		"guide_hidden": guide_hidden, "last_party": last_party,
+		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found,
 		"run": _run_for_save(),
 		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,

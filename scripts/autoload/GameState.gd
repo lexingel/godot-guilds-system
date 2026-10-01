@@ -60,6 +60,7 @@ func reset() -> void:
 	pending_shop_boost = false
 	guide_hidden = false
 	last_party = []
+	relics_found = []
 	run = {}
 	monsters_seen = []
 	bosses_defeated = []
@@ -248,6 +249,7 @@ func load_save() -> bool:
 	pending_shop_boost = data.get("pending_shop_boost", false)
 	guide_hidden = data.get("guide_hidden", false)
 	last_party.assign(data.get("last_party", []))
+	relics_found = data.get("relics_found", [])
 
 	var run_data: Dictionary = data.get("run", {})
 	if run_data.get("endless", false):

@@ -1419,23 +1419,123 @@ func _render_compendium_items(v: VBoxContainer) -> void:
 			v.add_child(_rich_line("[b]%s[/b]%s — %s" % [tr(str(e["name"])), tr(" (Epic)") if e.get("epic", false) else "", tr(str(Combat.describe_effect(e)))], 12))
 
 
+const RELIC_DOMAIN_NAME := {"damage": "Damage", "heal": "Mending", "chance": "Chance", "defense": "Defense", "droprate": "Fortune"}
+
+
 func _render_compendium_relics(v: VBoxContainer) -> void:
-	v.add_child(_wrap_label("Relics are party-wide. Each relic has an elemental type, which nudges (60% weight) which power domain its rolled special favors.", 12, true))
+	v.add_child(_wrap_label("Relics sit on the Relic Altar (Inventory) and work for the whole party. Each adds damage and a shield, plus a special; Rare and Epic relics also carry a trigger that fires in battle. Rarity scales the numbers (a Rare's by 1.4, an Epic's by 1.9). A relic levelled to 5 awakens a second special, and any special or trigger can be rerolled for Essence.", 12, true))
+
+	v.add_child(_hsep())
+	v.add_child(_label("Types and their specials", 16))
+	v.add_child(_wrap_label("A relic's type picks its special from its own family 60% of the time (any other family otherwise). Values shown are a Common's.", 12, true))
 	for rtype in GameData.RELIC_TYPES:
-		v.add_child(_hsep())
-		var head := HBoxContainer.new()
-		head.add_theme_constant_override("separation", 8)
-		head.add_child(_icon(str(GameData.RELIC_TYPE_ICON_PATH.get(rtype, "")), 28))
 		var domain := str(GameData.TYPE_DOMAIN.get(rtype, ""))
-		head.add_child(_label(tr("%s — %s domain") % [tr(str(rtype)), tr(str(domain.capitalize()))], 15))
-		v.add_child(head)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var ic := _icon(str(GameData.RELIC_TYPE_ICON_PATH.get(rtype, "")), 28)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(ic)
+		var col := _vbox(2)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label(tr("%s — %s") % [tr(str(rtype)), tr(str(RELIC_DOMAIN_NAME.get(domain, domain)))], 14))
+		for s in GameData.RELIC_SPECIALS.filter(func(x): return x["domain"] == domain):
+			col.add_child(_wrap_label("• " + Combat.relic_special_label(str(s["kind"]), float(s["value"])), 12, true))
+		row.add_child(col)
+		v.add_child(row)
+
+	v.add_child(_hsep())
+	v.add_child(_label("Triggers (Rare and Epic)", 16))
+	v.add_child(_wrap_label("One per relic, rolled from this list. Values shown are the base; a Rare rolls them about 18% stronger, an Epic about 38%.", 12, true))
+	for t in GameData.RELIC_TRIGGERS:
+		v.add_child(_wrap_label("• " + Combat.describe_effect(t, true), 12, true))
+
+	# Legendaries: the fixed relics, each with where it comes from. Ones the
+	# guild has never held stay dark, but their source shows (a thing to chase).
+	GameState.note_relics_found()
+	var legends: Array = []
+	for u in GameData.UNIQUE_RELICS:
+		legends.append([u, "An act's finale, or a very rare drop"])
+	for f in GameData.TOWER_RELICS:
+		legends.append([GameData.TOWER_RELICS[f], tr("Tower of Trials, floor %d guardian") % int(f)])
+	for k in GameData.ENDLESS_RELICS:
+		legends.append([GameData.ENDLESS_RELICS[k], "An Endless Rift milestone"])
+	var found_n: int = legends.filter(func(e): return GameState.relics_found.has(str(e[0]["id"]))).size()
+	v.add_child(_hsep())
+	v.add_child(_label(tr("Legendaries — %d/%d found") % [found_n, legends.size()], 16))
+	var w: float = v.custom_minimum_size.x if v.custom_minimum_size.x > 0.0 else get_viewport().get_visible_rect().size.x - 80.0
+	var grid := GridContainer.new()
+	grid.columns = clampi(int(w / 280.0), 1, 4)
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	for e in legends:
+		grid.add_child(_legendary_card(e[0], str(e[1])))
+	v.add_child(grid)
+
+
+func _legendary_card(u: Dictionary, source: String) -> PanelContainer:
+	var found: bool = GameState.relics_found.has(str(u["id"]))
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var path := "res://assets/relics/u_%s.png" % str(u["id"])
+	var ic := _icon(path if ResourceLoader.exists(path) else str(GameData.RELIC_TYPE_ICON_PATH.get(str(u["type"]), "")), 40)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	if not found:
+		ic.modulate = Color(0.08, 0.07, 0.12)
+	row.add_child(ic)
+	var col := _vbox(2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nl := _label(tr(str(u["name"])) if found else "???", 13)
+	if found:
+		nl.add_theme_color_override("font_color", ITEM_RARITY_COLOR["legendary"])
+	col.add_child(nl)
+	if found:
+		col.add_child(_wrap_label(tr(str(u["desc"])), 12))
+	col.add_child(_wrap_label(tr(source), 12, true))
+	row.add_child(col)
+	card.add_child(row)
+	return card
 
 
 func _render_compendium_crafting(v: VBoxContainer) -> void:
-	v.add_child(_wrap_label("Crafting combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.", 12, true))
+	v.add_child(_wrap_label("Crafting (Arcane Lab) turns three unequipped items or relics of one kind and rarity into one of the next rarity up.", 12, true))
+	v.add_child(_hsep())
 	for rarity in GameState.CRAFT_RARITY_UP:
-		v.add_child(_wrap_label("• 3× %s → 1× %s" % [tr(str(rarity).capitalize()), tr(str(GameState.CRAFT_RARITY_UP[rarity]).capitalize())], 13))
-	v.add_child(_wrap_label("Legendary items/relics are fixed hand-authored drops — not craftable from Epics.", 12, true))
+		var up := str(GameState.CRAFT_RARITY_UP[rarity])
+		var line := _rich_line("[color=#%s]3 × %s[/color]  →  [color=#%s]1 × %s[/color]   [color=#%s](numbers × %s)[/color]" % [
+			(ITEM_RARITY_COLOR[rarity] as Color).to_html(false), tr(str(rarity).capitalize()),
+			(ITEM_RARITY_COLOR[up] as Color).to_html(false), tr(up.capitalize()),
+			Palette.MUTED.to_html(false), str(GameData.find_rarity(up)["mult"])], 14)
+		v.add_child(line)
+	for rule in [
+		"Items: three of the same category (Weapon, Armor or Focus). The new item rolls fresh stats at the best rank among the three.",
+		"Relics: three of the same type (Ember, Frost...). The new relic keeps that type and rolls fresh effects.",
+		"Equipped gear never goes in. Legendaries can't be crafted or fed in: they are fixed finds.",
+	]:
+		v.add_child(_wrap_label("• " + tr(rule), 12, true))
+
+	# What the guild could craft right now.
+	var groups := {}
+	for it in GameState.items:
+		if it.equipped_to == "" and GameState.CRAFT_RARITY_UP.has(it.rarity):
+			var k := "%s · %s" % [tr(str(GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category))), tr(str(it.rarity).capitalize())]
+			groups[k] = int(groups.get(k, 0)) + 1
+	for r in GameState.relics:
+		if not r.equipped and GameState.CRAFT_RARITY_UP.has(r.rarity):
+			var k2 := "%s %s · %s" % [tr(str(r.type)), tr("relic"), tr(str(r.rarity).capitalize())]
+			groups[k2] = int(groups.get(k2, 0)) + 1
+	var ready: Array = groups.keys().filter(func(k): return int(groups[k]) >= 3)
+	v.add_child(_hsep())
+	v.add_child(_label(tr("Ready now — %d") % ready.size(), 16))
+	if ready.is_empty():
+		v.add_child(_wrap_label("Nothing yet: no three spare pieces of one kind and rarity.", 12, true))
+	for k in ready:
+		v.add_child(_wrap_label(tr("%s: %d spare, %d craft%s") % [k, int(groups[k]), int(groups[k]) / 3, tr(str(_pl(int(groups[k]) / 3)))], 13))
+	if not ready.is_empty() and GameState.feature_unlocked("crafting"):
+		var go := _button("Open Crafting", func(): screen = "crafting_hall"; render())
+		go.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		v.add_child(go)
 
 
 func _render_compendium_systems(v: VBoxContainer) -> void:
