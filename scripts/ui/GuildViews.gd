@@ -1059,11 +1059,15 @@ func _render_champions(v: VBoxContainer) -> void:
 	v.add_child(head)
 	var freed := GameState.champion_roll.filter(func(i): return GameState.champion_unlocked(i)).size()
 	v.add_child(_wrap_label(tr("%d of %d champions found. Every new guild meets a different twelve.") % [freed, GameState.champion_roll.size()], 12, true))
-	var grid := HFlowContainer.new()
+	# A grid, so every card lines up (a flow sized each row to its own cards).
+	var grid := GridContainer.new()
+	grid.columns = 1 if _narrow() else 2
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	for id in GameState.champion_roll:
-		grid.add_child(_champion_card(id))
+		var c := _champion_card(id)
+		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(c)
 	v.add_child(grid)
 
 

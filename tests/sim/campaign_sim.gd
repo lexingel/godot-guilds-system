@@ -33,6 +33,7 @@ var gross_gold := {}     # week -> Gold earned (runs, quests, defenses)
 var bill_paid := {}      # week -> wages + upkeep paid
 var fights := {}         # rank -> [won, lost]
 var runs := {}           # rank -> [sealed, lost]
+var rounds := {}         # rank -> [fights, total rounds, fights over in round 1]
 var act_day := {}        # act finished -> day
 var notes: Array[String] = []
 
@@ -62,6 +63,7 @@ func _ready() -> void:
 	for p in (["investor", "casual"] if profile == "" else [profile]):
 		var all_fights := {}
 		var all_runs := {}
+		var all_rounds := {}
 		var ratios: Array = []
 		var acts := {2: [], 3: [], 4: []}
 		for s in seeds:
@@ -69,6 +71,9 @@ func _ready() -> void:
 			for r in fights:
 				var t: Array = all_fights.get(r, [0, 0])
 				all_fights[r] = [t[0] + fights[r][0], t[1] + fights[r][1]]
+			for r in rounds:
+				var t2: Array = all_rounds.get(r, [0, 0, 0])
+				all_rounds[r] = [t2[0] + rounds[r][0], t2[1] + rounds[r][1], t2[2] + rounds[r][2]]
 			for r in runs:
 				var t: Array = all_runs.get(r, [0, 0])
 				all_runs[r] = [t[0] + runs[r][0], t[1] + runs[r][1]]
@@ -87,6 +92,7 @@ func _ready() -> void:
 		print("   fights won: %s" % "  ".join(ranks.map(func(r): return "%s %d/%d" % [r, all_fights[r][0], all_fights[r][0] + all_fights[r][1]])))
 		if hand:
 			print("   flawless-by-hand bonus paid in %d fights" % hand_bonus)
+		print("   fight length (avg rounds, %% over in round 1): %s" % "  ".join(ranks.filter(func(r): return all_rounds.has(r)).map(func(r): return "%s %.1f/%d%%" % [r, float(all_rounds[r][1]) / maxf(1.0, all_rounds[r][0]), int(100.0 * all_rounds[r][2] / maxf(1.0, all_rounds[r][0]))])))
 		print("   runs sealed: %s" % "  ".join(ranks.filter(func(r): return all_runs.has(r)).map(func(r): return "%s %d/%d" % [r, all_runs[r][0], all_runs[r][0] + all_runs[r][1]])))
 	var ks := curve.keys()
 	ks.sort()
@@ -100,6 +106,7 @@ func _guild(p: String, s: int) -> void:
 	bill_paid = {}
 	fights = {}
 	runs = {}
+	rounds = {}
 	act_day = {}
 	notes = []
 	GameState.active_slot = 9
@@ -158,7 +165,7 @@ func _day(p: String) -> void:
 	# The number the Party screen shows: relics, synergies and bonds included.
 	_party_power = Combat.party_power(party.map(func(id): return GameState.find_hero(id)))
 	var rank := "finale"
-	if GameState.finale_ready():
+	if GameState.finale_ready() and (bold or _party_power >= GameState.finale_recommended_power() * 0.8):
 		GameState.start_finale(party, null)
 	else:
 		rank = GameState.highest_open_rank()
@@ -344,6 +351,8 @@ func _play_run(rank: String) -> String:
 				if not ns.get("tallied", false):
 					ns["tallied"] = true
 					_tally(rank, bool(result.get("won", false)))
+					var rt: Array = rounds.get(rank, [0, 0, 0])
+					rounds[rank] = [rt[0] + 1, rt[1] + int(result.get("rounds", 0)), rt[2] + (1 if int(result.get("rounds", 0)) <= 1 else 0)]
 				if not result.get("won", false):
 					GameState.finish_run()
 					return "lost at " + kind

@@ -91,7 +91,7 @@ func finale_recommended_power() -> int:
 	var act := current_act()
 	if act.is_empty():
 		return 0
-	return int(round(Combat.recommended_power(str(act["tier"])) * float(act["mult"])))
+	return int(round(Combat.recommended_power(str(act["tier"]), str(act.get("rank", ""))) * float(act["mult"])))
 
 
 ## A biome for a new rift: the Vale in Act I, the Vale or the Marshes in Act
@@ -106,9 +106,12 @@ func run_biome() -> String:
 	return str(run.get("biome", "vale"))
 
 
+## A finale is its act's gate rank (the one you seal to open it) and then
+## some: it was the bare tier x1.15-1.45, weaker than the rank before it, and
+## a quarter of finale fights ended in round 1 (campaign_sim).
 func _apply_finale(diff: Dictionary) -> Dictionary:
 	var act: Dictionary = GameData.CAMPAIGN[int(run["finale"]) - 1]
-	var out := diff.duplicate(true)
+	var out := _apply_rift_rank_modifiers(diff, str(act.get("rank", ""))).duplicate(true)
 	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(act["mult"])))
 	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(act["mult"])))
 	out["boss_name"] = str(act["boss"])
