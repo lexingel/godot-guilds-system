@@ -18,6 +18,7 @@ func run() -> void:
 	h.id = "h%d" % GameState.next_id
 	GameState.next_id += 1
 	GameState.heroes.append(h)
+	GameState.coins = 100000   # paid all along: no walkouts, no volunteers
 
 	_days(20)
 	check(not GameState.breach_active() and GameState.breach_next_day < 0, "no rifts swell in Act I")

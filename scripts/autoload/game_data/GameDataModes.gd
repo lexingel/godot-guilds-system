@@ -675,6 +675,9 @@ const UPKEEP_UNPAID_RENOWN := 3
 const TRAINING_SLOTS := 2
 ## Unpaid twice running, or paid while at rock-bottom morale, a hero walks out.
 const UNPAID_WEEKS_TO_LEAVE := 2
+## A guild below this many heroes with no Gold for a Rank F recruit gets free
+## volunteers at payday, back up to this many: a way to rebuild, not a lock.
+const VOLUNTEER_FLOOR := 3
 const MORALE_WALKOUT := 10
 
 ## Morale 0-100. Tiers by floor: [min, name, damage bonus].

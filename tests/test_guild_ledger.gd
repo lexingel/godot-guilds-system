@@ -10,6 +10,14 @@ func _hero(rank: String, level: int) -> Hero:
 	return h
 
 
+## A payday that leaves a guild of one broke brings volunteers; most checks
+## here are about the one hero, so send them home.
+func _only(keep: Hero) -> void:
+	for vh in GameState.heroes.duplicate():
+		if vh != keep:
+			GameState._release(vh)
+
+
 func run() -> void:
 	seed(3)
 	GameState.active_slot = 9
@@ -44,6 +52,8 @@ func run() -> void:
 	GameState.pass_time()
 	check(not GameState.heroes.has(b) and GameState.heroes.has(a), "unpaid twice: they walk out (never the last hero)")
 	check((GameState.payday_report["left"] as Array).size() == 1, "the payday report names who left")
+	check(GameState.heroes.size() == GameData.VOLUNTEER_FLOOR, "broke and down to one: volunteers join")
+	_only(a)
 
 	# Morale: tiers change damage; a feast lifts everyone once a week.
 	a.morale = 90
@@ -75,12 +85,14 @@ func run() -> void:
 	GameState.day = 30 * GameData.PAYDAY_DAYS - 1
 	GameState.pass_time()
 	check(GameState.coins == 0 and bool(GameState.payday_report["upkeep_paid"]), "payday pays wages and upkeep")
+	_only(a)
 	GameState.reputation = 10
 	GameState.coins = GameState.weekly_wages()
 	GameState.day = 31 * GameData.PAYDAY_DAYS - 1
 	GameState.pass_time()
 	check(not bool(GameState.payday_report["upkeep_paid"]) and GameState.reputation == 10 - GameData.UPKEEP_UNPAID_RENOWN, "unpaid upkeep costs Renown")
 	GameState.upgrades = {}
+	_only(a)
 
 	# Contracts come due and fail.
 	GameState.reputation = 20

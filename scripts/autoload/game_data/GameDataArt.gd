@@ -64,9 +64,11 @@ const FEATURE_UNLOCKS := {
 	"inventory": {"name": "Inventory", "hint": "Opens once you find your first item or relic", "news": "Loot you find is kept here — equip items on the Roster's Hero tab."},
 	"medical": {"name": "Medical Bay", "hint": "Opens after your first rift run", "news": "Wounded and downed heroes recover faster in a bed."},
 	"bestiary": {"name": "Bestiary", "hint": "Opens after your first fight", "news": "Every foe you meet is recorded here."},
-	"crafting": {"name": "Crafting", "hint": "Opens after you seal your first rift", "news": "Combine 3 spare items or relics into a better one."},
 	"quests": {"name": "Quests", "hint": "Opens after you seal your first rift", "news": "Take on quests for Gold, Essence and Renown."},
-	"management": {"name": "Management", "hint": "Opens after you seal your first rift", "news": "Spend Essence on lasting guild upgrades."},
+	"management": {"name": "Management", "hint": "Opens after you seal 2 rifts", "news": "Spend Essence on lasting guild upgrades."},
+	"crafting": {"name": "Crafting", "hint": "Opens after you seal 3 rifts", "news": "Combine 3 spare items or relics into a better one."},
+	"daily": {"name": "Daily twist", "hint": "Opens after you seal 3 rifts", "news": "Once a day a ladder rift can carry a twist: a special rule and a starting boon, for extra Essence. Tick it in the Rift Hall."},
+	"rival": {"name": "Rival moves", "hint": "Opens after you seal 3 rifts", "news": "Once a week the rival guild may court a hero, dare you, or go after a contract. Answer before payday."},
 	"tower": {"name": "Tower of Trials", "hint": "Opens when you complete Act I", "news": "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."},
 	"champions": {"name": "Champions", "hint": "Opens when you free your first champion (the end of Act I)", "news": "A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions."},
 }
@@ -110,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday.",
 	"Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt.",
 	"Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold.",
 	"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.",

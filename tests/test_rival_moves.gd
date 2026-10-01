@@ -20,6 +20,11 @@ func run() -> void:
 	for r in ["F", "F", "E", "C"]:
 		hs.append(_hero(r, 3))
 	GameState.resolve_guild_board()
+	GameState.day = GameData.RIVAL_MOVE_DAY
+	for i in 20:
+		GameState.maybe_rival_move()
+	check(GameState.rival_event.is_empty(), "no moves before the third seal")
+	GameState.rifts_sealed = 3
 
 	# A move comes only on its day of the week.
 	GameState.day = GameData.RIVAL_MOVE_DAY + 1

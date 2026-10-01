@@ -283,6 +283,24 @@ func shop_guaranteed_epic() -> bool:
 	return lvl("log.trade") >= 5
 
 
+## Whether a staged feature (GameData.FEATURE_UNLOCKS) is open yet; anything
+## not in the table is always open, and so is anything already announced. The
+## first seals open one thing at a time, so a new player meets them in turn.
+func feature_unlocked(id: String) -> bool:
+	if features_seen.has(id):
+		return true
+	match id:
+		"inventory": return not items.is_empty() or not relics.is_empty() or rifts_sealed > 0
+		"medical": return runs_started > 1 or (runs_started == 1 and run.is_empty()) or rifts_sealed > 0
+		"bestiary": return not monsters_seen.is_empty()
+		"quests": return rifts_sealed >= 1
+		"management": return rifts_sealed >= 2
+		"crafting", "daily", "rival": return rifts_sealed >= 3
+		"tower": return campaign_act >= 2
+		"champions": return not champions.is_empty()
+	return true
+
+
 func recruit_offer_count() -> int:
 	var l := lvl("log.scouts")
 	return 4 + (1 if l >= 1 else 0) + (1 if l >= 4 else 0) + rival_ahead

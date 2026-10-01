@@ -434,6 +434,14 @@ func run_payday() -> void:
 		if h.unpaid_weeks >= GameData.UNPAID_WEEKS_TO_LEAVE or h.morale <= GameData.MORALE_WALKOUT:
 			left.append(h.name.split(" the ")[0])
 			_release(h)
+	var volunteers: Array[String] = []
+	while heroes.size() < GameData.VOLUNTEER_FLOOR and coins < int(GameData.find_rank("F")["cost"]):
+		var vh := Combat.gen_hero("F", 1)
+		heroes.append(vh)
+		volunteers.append(vh.name.split(" the ")[0])
+	if not volunteers.is_empty():
+		_news(tr("Volunteers joined the guild: %s.") % ", ".join(volunteers))
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Volunteers"), "text": tr("%s joined for free. A guild short on heroes and Gold draws volunteers; Rank F rifts pay enough to rebuild.") % ", ".join(volunteers)})
 	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
 	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid}
 	var line := tr("Payday: %d Gold in wages, %s.") % [paid, tr(str((tr("%d in upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
@@ -527,7 +535,7 @@ func rival_day() -> void:
 ## strongest hero, dare you to seal a rift by payday, or go for a posted
 ## contract. Each waits in rival_event for an answer.
 func maybe_rival_move() -> void:
-	if not rival_event.is_empty() or day % GameData.PAYDAY_DAYS != GameData.RIVAL_MOVE_DAY or randf() >= GameData.RIVAL_MOVE_CHANCE:
+	if not feature_unlocked("rival") or not rival_event.is_empty() or day % GameData.PAYDAY_DAYS != GameData.RIVAL_MOVE_DAY or randf() >= GameData.RIVAL_MOVE_CHANCE:
 		return
 	var moves: Array = []
 	var target := _poach_target()

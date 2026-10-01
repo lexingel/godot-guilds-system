@@ -51,9 +51,16 @@ func run() -> void:
 	GameState.pending_toasts.clear()
 	GameState.rifts_sealed = 1
 	var fresh := GameState.check_feature_unlocks()
-	check(fresh.has("quests") and fresh.has("crafting") and fresh.has("management"), "first seal unlocks quests/crafting/management %s" % [fresh])
+	check(fresh.has("quests") and not fresh.has("management") and not fresh.has("crafting"), "the first seal opens quests only %s" % [fresh])
 	check(GameState.pending_toasts.size() == 1 and str(GameState.pending_toasts[0]["text"]).contains("Quests"), "one combined unlock toast")
 	check(GameState.check_feature_unlocks().is_empty(), "announced only once")
+	GameState.rifts_sealed = 2
+	check(GameState.check_feature_unlocks() == ["management"], "the second seal opens Management")
+	GameState.rifts_sealed = 3
+	var third := GameState.check_feature_unlocks()
+	check(third.has("crafting") and third.has("daily") and third.has("rival"), "the third opens crafting, the daily twist and rival moves %s" % [third])
+	GameState.rifts_sealed = 0
+	check(GameState.feature_unlocked("management"), "an announced feature stays open")
 	# Tips.
 	check(GameState.hint_pending("battle"), "tip pending")
 	GameState.dismiss_hint("battle")

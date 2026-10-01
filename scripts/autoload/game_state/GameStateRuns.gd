@@ -56,19 +56,6 @@ func loot_rank() -> String:
 	return "F"
 
 
-## Whether a staged feature (GameData.FEATURE_UNLOCKS) is open yet; anything
-## not in the table is always open.
-func feature_unlocked(id: String) -> bool:
-	match id:
-		"inventory": return not items.is_empty() or not relics.is_empty() or rifts_sealed > 0
-		"medical": return runs_started > 1 or (runs_started == 1 and run.is_empty()) or rifts_sealed > 0
-		"bestiary": return not monsters_seen.is_empty()
-		"crafting", "quests", "management": return rifts_sealed >= 1
-		"tower": return campaign_act >= 2
-		"champions": return not champions.is_empty()
-	return true
-
-
 ## Announces each feature the first time it unlocks (once per render, like
 ## check_milestones). Returns the ids newly announced.
 func check_feature_unlocks() -> Array:

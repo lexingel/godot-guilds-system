@@ -975,175 +975,203 @@ msgstr "İlk dövüşünden sonra açılır"
 msgid "Every foe you meet is recorded here."
 msgstr "Karşılaştığın her düşman buraya kaydedilir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:67 scripts/ui/GuildViews.gd:1261 scripts/ui/GuildViews.gd:1430
-msgid "Crafting"
-msgstr "Zanaat"
+#: scripts/autoload/game_data/GameDataArt.gd:67 scripts/autoload/game_data/GameDataModes.gd:571 scripts/ui/GuildViews.gd:1564
+msgid "Quests"
+msgstr "Görevler"
 
-#: scripts/autoload/game_data/GameDataArt.gd:67 scripts/autoload/game_data/GameDataArt.gd:68 scripts/autoload/game_data/GameDataArt.gd:69
+#: scripts/autoload/game_data/GameDataArt.gd:67
 msgid "Opens after you seal your first rift"
 msgstr "İlk yarığını mühürleyince açılır"
 
 #: scripts/autoload/game_data/GameDataArt.gd:67
-msgid "Combine 3 spare items or relics into a better one."
-msgstr "3 yedek eşyayı ya da kalıntıyı daha iyi bir taneye birleştir."
-
-#: scripts/autoload/game_data/GameDataArt.gd:68 scripts/autoload/game_data/GameDataModes.gd:571 scripts/ui/GuildViews.gd:1564
-msgid "Quests"
-msgstr "Görevler"
-
-#: scripts/autoload/game_data/GameDataArt.gd:68
 msgid "Take on quests for Gold, Essence and Renown."
 msgstr "Altın, Öz ve Ün için görevler üstlen."
 
-#: scripts/autoload/game_data/GameDataArt.gd:69 scripts/ui/GuildViews.gd:932 scripts/ui/GuildViews.gd:937
+#: scripts/autoload/game_data/GameDataArt.gd:68 scripts/ui/GuildViews.gd:932 scripts/ui/GuildViews.gd:937
 msgid "Management"
 msgstr "Yönetim"
 
-#: scripts/autoload/game_data/GameDataArt.gd:69
+#: scripts/autoload/game_data/GameDataArt.gd:68
+msgid "Opens after you seal 2 rifts"
+msgstr "2 yarık mühürleyince açılır"
+
+#: scripts/autoload/game_data/GameDataArt.gd:68
 msgid "Spend Essence on lasting guild upgrades."
 msgstr "Öz'ü kalıcı lonca geliştirmelerine harca."
 
-#: scripts/autoload/game_data/GameDataArt.gd:70 scripts/autoload/game_state/GameStateModes.gd:367 scripts/ui/GuildViews.gd:1509
+#: scripts/autoload/game_data/GameDataArt.gd:69 scripts/ui/GuildViews.gd:1261 scripts/ui/GuildViews.gd:1430
+msgid "Crafting"
+msgstr "Zanaat"
+
+#: scripts/autoload/game_data/GameDataArt.gd:69 scripts/autoload/game_data/GameDataArt.gd:70 scripts/autoload/game_data/GameDataArt.gd:71
+msgid "Opens after you seal 3 rifts"
+msgstr "3 yarık mühürleyince açılır"
+
+#: scripts/autoload/game_data/GameDataArt.gd:69
+msgid "Combine 3 spare items or relics into a better one."
+msgstr "3 yedek eşyayı ya da kalıntıyı daha iyi bir taneye birleştir."
+
+#: scripts/autoload/game_data/GameDataArt.gd:70 scripts/ui/GuildViews.gd:1490
+msgid "Daily twist"
+msgstr "Günün cilvesi"
+
+#: scripts/autoload/game_data/GameDataArt.gd:70
+msgid "Once a day a ladder rift can carry a twist: a special rule and a starting boon, for extra Essence. Tick it in the Rift Hall."
+msgstr "Günde bir kez bir merdiven yarığı bir cilve taşıyabilir: özel bir kural ve başlangıç lütfu, karşılığında ek Öz. Yarık Salonu'nda işaretle."
+
+#: scripts/autoload/game_data/GameDataArt.gd:71
+msgid "Rival moves"
+msgstr "Rakip hamleleri"
+
+#: scripts/autoload/game_data/GameDataArt.gd:71
+msgid "Once a week the rival guild may court a hero, dare you, or go after a contract. Answer before payday."
+msgstr "Rakip lonca haftada bir kahramanlarından birine göz dikebilir, sana meydan okuyabilir ya da bir sözleşmenin peşine düşebilir. Maaş gününden önce cevap ver."
+
+#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateModes.gd:367 scripts/ui/GuildViews.gd:1509
 msgid "Tower of Trials"
 msgstr "Sınav Kulesi"
 
-#: scripts/autoload/game_data/GameDataArt.gd:70 scripts/autoload/game_state/GameStateRuns.gd:1120 scripts/ui/Main.gd:1532
+#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateRuns.gd:1107 scripts/ui/Main.gd:1532
 msgid "Opens when you complete Act I"
 msgstr "I. Perde'yi bitirince açılır"
 
-#: scripts/autoload/game_data/GameDataArt.gd:70
+#: scripts/autoload/game_data/GameDataArt.gd:72
 msgid "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."
 msgstr "Yarık Salonu'nda 100 sabit kat. Her kat hep aynı dövüştür ve ilk temizlediğinde ödül verir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:71 scripts/ui/GuildViews.gd:1050 scripts/ui/GuildViews.gd:1053
+#: scripts/autoload/game_data/GameDataArt.gd:73 scripts/ui/GuildViews.gd:1050 scripts/ui/GuildViews.gd:1053
 msgid "Champions"
 msgstr "Şampiyonlar"
 
-#: scripts/autoload/game_data/GameDataArt.gd:71
+#: scripts/autoload/game_data/GameDataArt.gd:73
 msgid "Opens when you free your first champion (the end of Act I)"
 msgstr "İlk şampiyonunu kurtardığında açılır (I. Perde'nin sonu)"
 
-#: scripts/autoload/game_data/GameDataArt.gd:71
+#: scripts/autoload/game_data/GameDataArt.gd:73
 msgid "A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions."
 msgstr "Bir şampiyon yarık seferlerini gözetir: ekibe Lütfu ve Çağrısı. Kadro > Şampiyonlar'dan birini seç ve seviyesini yükselt."
 
-#: scripts/autoload/game_data/GameDataArt.gd:110
+#: scripts/autoload/game_data/GameDataArt.gd:112
 msgid "English"
 msgstr ""
 
-#: scripts/autoload/game_data/GameDataArt.gd:110
+#: scripts/autoload/game_data/GameDataArt.gd:112
 msgid "Türkçe (beta)"
 msgstr ""
 
-#: scripts/autoload/game_data/GameDataArt.gd:113
+#: scripts/autoload/game_data/GameDataArt.gd:115
+msgid "A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday."
+msgstr "Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor."
+
+#: scripts/autoload/game_data/GameDataArt.gd:116
 msgid "Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt."
 msgstr "Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük."
 
-#: scripts/autoload/game_data/GameDataArt.gd:114
+#: scripts/autoload/game_data/GameDataArt.gd:117
 msgid "Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold."
 msgstr "Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:115
+#: scripts/autoload/game_data/GameDataArt.gd:118
 msgid "A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went."
 msgstr "Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:116
+#: scripts/autoload/game_data/GameDataArt.gd:119
 msgid "Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen."
 msgstr "Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle."
 
-#: scripts/autoload/game_data/GameDataArt.gd:117
+#: scripts/autoload/game_data/GameDataArt.gd:120
 msgid "New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks."
 msgstr "Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:118
+#: scripts/autoload/game_data/GameDataArt.gd:121
 msgid "The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it."
 msgstr "Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler."
 
-#: scripts/autoload/game_data/GameDataArt.gd:119
+#: scripts/autoload/game_data/GameDataArt.gd:122
 msgid "Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead."
 msgstr "Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner."
 
-#: scripts/autoload/game_data/GameDataArt.gd:120
+#: scripts/autoload/game_data/GameDataArt.gd:123
 msgid "New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged."
 msgstr "Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez."
 
-#: scripts/autoload/game_data/GameDataArt.gd:121
+#: scripts/autoload/game_data/GameDataArt.gd:124
 msgid "Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger."
 msgstr "Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu."
 
-#: scripts/autoload/game_data/GameDataArt.gd:122
+#: scripts/autoload/game_data/GameDataArt.gd:125
 msgid "Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab."
 msgstr "Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı."
 
-#: scripts/autoload/game_data/GameDataArt.gd:123
+#: scripts/autoload/game_data/GameDataArt.gd:126
 msgid "Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel."
 msgstr "Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır."
 
-#: scripts/autoload/game_data/GameDataArt.gd:124
+#: scripts/autoload/game_data/GameDataArt.gd:127
 msgid "Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions."
 msgstr "Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda."
 
-#: scripts/autoload/game_data/GameDataArt.gd:125
+#: scripts/autoload/game_data/GameDataArt.gd:128
 msgid "Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold."
 msgstr "Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması."
 
-#: scripts/autoload/game_data/GameDataArt.gd:126
+#: scripts/autoload/game_data/GameDataArt.gd:129
 msgid "Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods."
 msgstr "Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır."
 
-#: scripts/autoload/game_data/GameDataArt.gd:127
+#: scripts/autoload/game_data/GameDataArt.gd:130
 msgid "Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength)."
 msgstr "Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir)."
 
-#: scripts/autoload/game_data/GameDataArt.gd:128
+#: scripts/autoload/game_data/GameDataArt.gd:131
 msgid "Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires."
 msgstr "Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:129
+#: scripts/autoload/game_data/GameDataArt.gd:132
 msgid "Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up."
 msgstr "Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:130
+#: scripts/autoload/game_data/GameDataArt.gd:133
 msgid "The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day."
 msgstr "Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur."
 
-#: scripts/autoload/game_data/GameDataArt.gd:131
+#: scripts/autoload/game_data/GameDataArt.gd:134
 msgid "Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish."
 msgstr "Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe."
 
-#: scripts/autoload/game_data/GameDataArt.gd:132
+#: scripts/autoload/game_data/GameDataArt.gd:135
 msgid "Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments."
 msgstr "Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner."
 
-#: scripts/autoload/game_data/GameDataArt.gd:133
+#: scripts/autoload/game_data/GameDataArt.gd:136
 msgid "Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear."
 msgstr "Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:134
+#: scripts/autoload/game_data/GameDataArt.gd:137
 msgid "Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up."
 msgstr "Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:135
+#: scripts/autoload/game_data/GameDataArt.gd:138
 msgid "New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in."
 msgstr "Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık."
 
-#: scripts/autoload/game_data/GameDataArt.gd:136
+#: scripts/autoload/game_data/GameDataArt.gd:139
 msgid "Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers."
 msgstr "Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar."
 
-#: scripts/autoload/game_data/GameDataArt.gd:137
+#: scripts/autoload/game_data/GameDataArt.gd:140
 msgid "Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold."
 msgstr "Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder."
 
-#: scripts/autoload/game_data/GameDataArt.gd:138
+#: scripts/autoload/game_data/GameDataArt.gd:141
 msgid "Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest."
 msgstr "Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma."
 
-#: scripts/autoload/game_data/GameDataArt.gd:139
+#: scripts/autoload/game_data/GameDataArt.gd:142
 msgid "New music, larger text, and rank rules shown in the rift."
 msgstr "Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları."
 
-#: scripts/autoload/game_data/GameDataArt.gd:206
+#: scripts/autoload/game_data/GameDataArt.gd:209
 msgid "1280×800 (Default)"
 msgstr "1280×800 (Varsayılan)"
 
@@ -5899,83 +5927,83 @@ msgstr "Örnek — bir kahramanı 10. seviyeye çıkar"
 msgid "Great Hall — have 10 heroes on the roster"
 msgstr "Büyük Salon — kadroda 10 kahraman olsun"
 
-#: scripts/autoload/game_data/GameDataModes.gd:682
+#: scripts/autoload/game_data/GameDataModes.gd:685
 msgid "Inspired"
 msgstr "İlhamlı"
 
-#: scripts/autoload/game_data/GameDataModes.gd:682
+#: scripts/autoload/game_data/GameDataModes.gd:685
 msgid "Steady"
 msgstr "Dengeli"
 
-#: scripts/autoload/game_data/GameDataModes.gd:682
+#: scripts/autoload/game_data/GameDataModes.gd:685
 msgid "Shaken"
 msgstr "Sarsılmış"
 
-#: scripts/autoload/game_data/GameDataModes.gd:682
+#: scripts/autoload/game_data/GameDataModes.gd:685
 msgid "Breaking"
 msgstr "Kırılmak üzere"
 
-#: scripts/autoload/game_data/GameDataModes.gd:698
+#: scripts/autoload/game_data/GameDataModes.gd:701
 msgid "The Iron Chorus"
 msgstr "Demir Koro"
 
-#: scripts/autoload/game_data/GameDataModes.gd:698
+#: scripts/autoload/game_data/GameDataModes.gd:701
 msgid "The Ashen Wolves"
 msgstr "Kül Kurtları"
 
-#: scripts/autoload/game_data/GameDataModes.gd:698
+#: scripts/autoload/game_data/GameDataModes.gd:701
 msgid "The Gilded Lance"
 msgstr "Yaldızlı Mızrak"
 
-#: scripts/autoload/game_data/GameDataModes.gd:698
+#: scripts/autoload/game_data/GameDataModes.gd:701
 msgid "The Last Lantern"
 msgstr "Son Fener"
 
-#: scripts/autoload/game_data/GameDataModes.gd:698
+#: scripts/autoload/game_data/GameDataModes.gd:701
 msgid "The Hollow Crown Company"
 msgstr "Oyuk Taç Bölüğü"
 
-#: scripts/autoload/game_data/GameDataModes.gd:716
+#: scripts/autoload/game_data/GameDataModes.gd:719
 msgid "Marshal Orla Venn"
 msgstr "Mareşal Orla Venn"
 
-#: scripts/autoload/game_data/GameDataModes.gd:717
+#: scripts/autoload/game_data/GameDataModes.gd:720
 msgid "Kael Ashborn"
 msgstr "Kael Ashborn"
 
-#: scripts/autoload/game_data/GameDataModes.gd:718
+#: scripts/autoload/game_data/GameDataModes.gd:721
 msgid "Ser Aldric Vane"
 msgstr "Sör Aldric Vane"
 
-#: scripts/autoload/game_data/GameDataModes.gd:719
+#: scripts/autoload/game_data/GameDataModes.gd:722
 msgid "Mother Ilse"
 msgstr "Ana Ilse"
 
-#: scripts/autoload/game_data/GameDataModes.gd:720
+#: scripts/autoload/game_data/GameDataModes.gd:723
 msgid "Captain Morrow"
 msgstr "Kaptan Morrow"
 
-#: scripts/autoload/game_data/GameDataModes.gd:724
+#: scripts/autoload/game_data/GameDataModes.gd:727
 msgid "Seal the small rifts, %s. Leave the real ones to us."
 msgstr "Küçük yarıkları sen mühürle, %s. Gerçeklerini bize bırak."
 
-#: scripts/autoload/game_data/GameDataModes.gd:725
+#: scripts/autoload/game_data/GameDataModes.gd:728
 msgid "%s pays its heroes in promises, I hear."
 msgstr "Duyduğuma göre %s kahramanlarına vaatle ödüyormuş."
 
-#: scripts/autoload/game_data/GameDataModes.gd:726
+#: scripts/autoload/game_data/GameDataModes.gd:729
 msgid "Our recruits ask about %s. Then they sign with us."
 msgstr "Acemilerimiz %s hakkında soru soruyor. Sonra bizimle imzalıyorlar."
 
-#: scripts/autoload/game_data/GameDataModes.gd:727
+#: scripts/autoload/game_data/GameDataModes.gd:730
 msgid "Tell %s the quest board isn't a charity."
 msgstr "%s'e söyleyin, görev panosu bir hayır kurumu değil."
 
-#: scripts/autoload/game_data/GameDataModes.gd:728
+#: scripts/autoload/game_data/GameDataModes.gd:731
 msgid "We'll send flowers when %s closes its doors."
 msgstr "%s kapılarını kapattığında çiçek göndereceğiz."
 
-#: scripts/autoload/game_data/GameDataModes.gd:729
+#: scripts/autoload/game_data/GameDataModes.gd:732
 msgid "%s? I thought they'd disbanded."
 msgstr "%s mi? Dağıldıklarını sanıyordum."
 
@@ -8263,15 +8291,15 @@ msgstr "Yeterli Altın yok"
 msgid "Not enough Essence"
 msgstr "Yeterli Öz yok"
 
-#: scripts/autoload/game_state/GameStateCore.gd:625
+#: scripts/autoload/game_state/GameStateCore.gd:643
 msgid "That doesn't look like a Guildhold save"
 msgstr "Bu bir Guildhold kaydına benzemiyor"
 
-#: scripts/autoload/game_state/GameStateCore.gd:627
+#: scripts/autoload/game_state/GameStateCore.gd:645
 msgid "That save is from a newer version of the game"
 msgstr "Bu kayıt oyunun daha yeni bir sürümünden"
 
-#: scripts/autoload/game_state/GameStateCore.gd:630
+#: scripts/autoload/game_state/GameStateCore.gd:648
 msgid "Couldn't write the save slot"
 msgstr "Kayıt yuvasına yazılamadı"
 
@@ -8331,7 +8359,7 @@ msgstr "Evrimleşti — Rütbe %s"
 msgid "%s · new passive: %s"
 msgstr "%s · yeni pasif: %s"
 
-#: scripts/autoload/game_state/GameStateHeroes.gd:424 scripts/autoload/game_state/GameStateRuns.gd:1122
+#: scripts/autoload/game_state/GameStateHeroes.gd:424 scripts/autoload/game_state/GameStateRuns.gd:1109
 msgid "Seal a Rank %s rift first"
 msgstr "Önce bir Rütbe %s yarığı mühürle"
 
@@ -8499,7 +8527,7 @@ msgstr "%s. Perde finali"
 msgid "Rift"
 msgstr "Yarık"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:120 scripts/autoload/game_state/GameStateQuests.gd:669
+#: scripts/autoload/game_state/GameStateQuests.gd:120 scripts/autoload/game_state/GameStateQuests.gd:677
 msgid "%s took the contract: %s."
 msgstr "Sözleşmeyi %s kaptı: %s."
 
@@ -8587,427 +8615,439 @@ msgstr "Talim Alanı bu hafta dolu."
 msgid "%s — no answer by payday, taken as a no."
 msgstr "%s — maaş gününe kadar cevap yok, hayır sayıldı."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:439
+#: scripts/autoload/game_state/GameStateQuests.gd:443
+msgid "Volunteers joined the guild: %s."
+msgstr "Gönüllüler loncaya katıldı: %s."
+
+#: scripts/autoload/game_state/GameStateQuests.gd:444
+msgid "Volunteers"
+msgstr "Gönüllüler"
+
+#: scripts/autoload/game_state/GameStateQuests.gd:444
+msgid "%s joined for free. A guild short on heroes and Gold draws volunteers; Rank F rifts pay enough to rebuild."
+msgstr "%s ücretsiz katıldı. Kahramanı ve Altını azalan bir lonca gönüllü çeker; Rütbe F yarıkları yeniden toparlanmaya yetecek kadar kazandırır."
+
+#: scripts/autoload/game_state/GameStateQuests.gd:447
 msgid "Payday: %d Gold in wages, %s."
 msgstr "Maaş günü: %d Altın maaş, %s."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:439
+#: scripts/autoload/game_state/GameStateQuests.gd:447
 msgid "%d in upkeep"
 msgstr "%d bakım"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:439 scripts/autoload/game_state/GameStateQuests.gd:447
+#: scripts/autoload/game_state/GameStateQuests.gd:447 scripts/autoload/game_state/GameStateQuests.gd:455
 msgid "upkeep unpaid (-%d Renown)"
 msgstr "bakım ödenmedi (-%d Ün)"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:441
+#: scripts/autoload/game_state/GameStateQuests.gd:449
 msgid " Unpaid: %s."
 msgstr " Ödenmedi: %s."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:443
+#: scripts/autoload/game_state/GameStateQuests.gd:451
 msgid " Walked out: %s."
 msgstr " Çekip gitti: %s."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid "%s the %s (Renown %d vs %d)."
 msgstr "%s: %s (Ün %d / %d)."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid "Your guild leads"
 msgstr "Loncan önde"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid "The guild trails"
 msgstr "Loncan geride"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid "Your guild is level with"
 msgstr "Loncan başa baş"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid " Recruits favor you this week: +1 offer."
 msgstr " Adaylar bu hafta seni tercih ediyor: +1 teklif."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:445
+#: scripts/autoload/game_state/GameStateQuests.gd:453
 msgid " Recruits favor them this week: -1 offer."
 msgstr " Adaylar bu hafta onları tercih ediyor: -1 teklif."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:447
+#: scripts/autoload/game_state/GameStateQuests.gd:455
 msgid "%d Gold in wages, %s"
 msgstr "%d Altın maaş, %s"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:447
+#: scripts/autoload/game_state/GameStateQuests.gd:455
 msgid "%d upkeep"
 msgstr "%d bakım"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:449
+#: scripts/autoload/game_state/GameStateQuests.gd:457
 msgid " · couldn't pay %s"
 msgstr " · ödenemedi: %s"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:451
+#: scripts/autoload/game_state/GameStateQuests.gd:459
 msgid " · %s walked out"
 msgstr " · çekip gitti: %s"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:452
+#: scripts/autoload/game_state/GameStateQuests.gd:460
 msgid "Payday"
 msgstr "Maaş günü"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:472
+#: scripts/autoload/game_state/GameStateQuests.gd:480
 msgid "They're on a rift right now"
 msgstr "Şu an bir yarıktalar"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:474
+#: scripts/autoload/game_state/GameStateQuests.gd:482
 msgid "The guild needs at least one hero"
 msgstr "Loncanın en az bir kahramana ihtiyacı var"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:476
+#: scripts/autoload/game_state/GameStateQuests.gd:484
 msgid "%s left the guild."
 msgstr "%s loncadan ayrıldı."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:493
+#: scripts/autoload/game_state/GameStateQuests.gd:501
 msgid "Already feasted this week"
 msgstr "Bu hafta zaten ziyafet verildi"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:503
+#: scripts/autoload/game_state/GameStateQuests.gd:511
 msgid "A feast in the hall: +%d morale for %d hero%s%s."
 msgstr "Salonda ziyafet: +%d moral, %d kahraman%s için%s."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:503
+#: scripts/autoload/game_state/GameStateQuests.gd:511
 msgid " (no seats for %d)"
 msgstr " (%d kişiye yer yok)"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:516
+#: scripts/autoload/game_state/GameStateQuests.gd:524
 msgid "%s of %s: \"%s\""
 msgstr "%s (%s): \"%s\""
 
-#: scripts/autoload/game_state/GameStateQuests.gd:576
+#: scripts/autoload/game_state/GameStateQuests.gd:584
 msgid "%s is courting %s"
 msgstr "%s, %s adlı kahramanına göz dikti"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:576 scripts/autoload/game_state/GameStateQuests.gd:589
+#: scripts/autoload/game_state/GameStateQuests.gd:584 scripts/autoload/game_state/GameStateQuests.gd:597
 msgid "a hero"
 msgstr "bir kahraman"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:578
+#: scripts/autoload/game_state/GameStateQuests.gd:586
 msgid "%s dares you to seal a Rank %s rift by payday"
 msgstr "%s maaş gününe kadar Rütbe %s bir yarığı mühürlemen için meydan okuyor"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:580
+#: scripts/autoload/game_state/GameStateQuests.gd:588
 msgid "%s is after one of your posted contracts"
 msgstr "%s ilandaki sözleşmelerinden birinin peşinde"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:585
+#: scripts/autoload/game_state/GameStateQuests.gd:593
 msgid "%s of %s"
 msgstr "%s (%s)"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:590
+#: scripts/autoload/game_state/GameStateQuests.gd:598
 msgid "%s has offered %s a place, and better pay. Match it, or let %s choose: a hero stays at morale %d or above (now %d)."
 msgstr "%s, %s için bir yer ve daha iyi maaş teklif etti. Teklifi karşıla ya da seçimi %s yapsın: bir kahraman %d ve üstü moralde kalır (şu an %d)."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:593
+#: scripts/autoload/game_state/GameStateQuests.gd:601
 msgid "You took the dare. Seal a Rank %s rift (or higher) before payday: +%d Renown and they lose %d. Miss it and they gain %d."
 msgstr "Meydan okumayı kabul ettin. Maaş gününden önce Rütbe %s (ya da daha yüksek) bir yarığı mühürle: +%d Ün, onlar %d kaybeder. Kaçırırsan onlar %d kazanır."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:594
+#: scripts/autoload/game_state/GameStateQuests.gd:602
 msgid "%s says your guild can't seal a Rank %s rift before payday, and says it in every tavern."
 msgstr "%s, loncanın maaş gününden önce Rütbe %s bir yarığı mühürleyemeyeceğini söylüyor, hem de her meyhanede."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:597
+#: scripts/autoload/game_state/GameStateQuests.gd:605
 msgid "%s means to take the contract \"%s\" off the board. Take it on now, or let it go."
 msgstr "%s, \"%s\" sözleşmesini panodan almaya niyetli. Şimdi üstlen ya da bırak gitsin."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:611
+#: scripts/autoload/game_state/GameStateQuests.gd:619
 msgid "Counter-offer: %d Gold, +%d morale"
 msgstr "Karşı teklif: %d Altın, +%d moral"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:612
+#: scripts/autoload/game_state/GameStateQuests.gd:620
 msgid "Let them choose (they'd %s)"
 msgstr "Seçimi kendisi yapsın (%s)"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:612
+#: scripts/autoload/game_state/GameStateQuests.gd:620
 msgid "stay"
 msgstr "kalırdı"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:612
+#: scripts/autoload/game_state/GameStateQuests.gd:620
 msgid "leave"
 msgstr "giderdi"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:616
+#: scripts/autoload/game_state/GameStateQuests.gd:624
 msgid "Accept: +%d Renown if you do it, they gain %d if not"
 msgstr "Kabul et: başarırsan +%d Ün, başaramazsan onlar %d kazanır"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:617
+#: scripts/autoload/game_state/GameStateQuests.gd:625
 msgid "Decline: they gain %d Renown"
 msgstr "Reddet: onlar %d Ün kazanır"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:621
+#: scripts/autoload/game_state/GameStateQuests.gd:629
 msgid "Take it on now (due in %d days)"
 msgstr "Şimdi üstlen (%d gün süre)"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:621
+#: scripts/autoload/game_state/GameStateQuests.gd:629
 msgid "You already have %d contracts."
 msgstr "Zaten %d sözleşmen var."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:622
+#: scripts/autoload/game_state/GameStateQuests.gd:630
 msgid "Let them have it"
 msgstr "Onların olsun"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:629
+#: scripts/autoload/game_state/GameStateQuests.gd:637
 msgid "Nothing to answer."
 msgstr "Cevaplanacak bir şey yok."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:641
+#: scripts/autoload/game_state/GameStateQuests.gd:649
 msgid "You matched %s's offer; %s stays."
 msgstr "%s teklifini karşıladın; %s kalıyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:645
+#: scripts/autoload/game_state/GameStateQuests.gd:653
 msgid "%s turned down %s and stays with the guild."
 msgstr "%s, %s teklifini geri çevirdi ve loncada kalıyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:648
+#: scripts/autoload/game_state/GameStateQuests.gd:656
 msgid "%s left to join %s."
 msgstr "%s, %s saflarına katılmak için ayrıldı."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:649
+#: scripts/autoload/game_state/GameStateQuests.gd:657
 msgid "A hero left"
 msgstr "Bir kahraman ayrıldı"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:649
+#: scripts/autoload/game_state/GameStateQuests.gd:657
 msgid "%s joined %s."
 msgstr "%s, %s saflarına katıldı."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:654
+#: scripts/autoload/game_state/GameStateQuests.gd:662
 msgid "You took %s's dare: a Rank %s rift by payday."
 msgstr "%s meydan okumasını kabul ettin: maaş gününe kadar Rütbe %s bir yarık."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:659
+#: scripts/autoload/game_state/GameStateQuests.gd:667
 msgid "You turned down %s's dare; they crow about it (+%d Renown to them)."
 msgstr "%s meydan okumasını reddettin; bununla övünüyorlar (onlara +%d Ün)."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:682
+#: scripts/autoload/game_state/GameStateQuests.gd:690
 msgid "Dare won: a Rank %s rift sealed. +%d Renown, and %s loses %d."
 msgstr "Meydan okuma kazanıldı: Rütbe %s bir yarık mühürlendi. +%d Ün, %s %d kaybediyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:683
+#: scripts/autoload/game_state/GameStateQuests.gd:691
 msgid "Dare won"
 msgstr "Meydan okuma kazanıldı"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:683
+#: scripts/autoload/game_state/GameStateQuests.gd:691
 msgid "+%d Renown; %s loses %d."
 msgstr "+%d Ün; %s %d kaybediyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:694
+#: scripts/autoload/game_state/GameStateQuests.gd:702
 msgid "Dare lost: no Rank %s rift by payday. %s gains %d Renown."
 msgstr "Meydan okuma kaybedildi: maaş gününe kadar Rütbe %s yarık yok. %s %d Ün kazanıyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:695
+#: scripts/autoload/game_state/GameStateQuests.gd:703
 msgid "Dare lost"
 msgstr "Meydan okuma kaybedildi"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:695
+#: scripts/autoload/game_state/GameStateQuests.gd:703
 msgid "%s gains %d Renown."
 msgstr "%s %d Ün kazanıyor."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:698
+#: scripts/autoload/game_state/GameStateQuests.gd:706
 msgid "%s — no answer by payday."
 msgstr "%s — maaş gününe kadar cevap yok."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:724
+#: scripts/autoload/game_state/GameStateQuests.gd:732
 msgid "You won the month's contest, %d Renown to %d: +%d Gold, +%d Renown."
 msgstr "Ayın yarışmasını kazandın, %d Üne karşı %d: +%d Altın, +%d Ün."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:725
+#: scripts/autoload/game_state/GameStateQuests.gd:733
 msgid "Contest won"
 msgstr "Yarışma kazanıldı"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:725
+#: scripts/autoload/game_state/GameStateQuests.gd:733
 msgid "%d Renown gained to %s's %d. +%d Gold, +%d Renown."
 msgstr "%d Ün kazandın, %s ise %d. +%d Altın, +%d Ün."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:728
+#: scripts/autoload/game_state/GameStateQuests.gd:736
 msgid "%s won the month's contest, %d Renown to your %d."
 msgstr "%s ayın yarışmasını kazandı, %d Üne karşı senin %d."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:729
+#: scripts/autoload/game_state/GameStateQuests.gd:737
 msgid "Contest lost"
 msgstr "Yarışma kaybedildi"
 
-#: scripts/autoload/game_state/GameStateQuests.gd:729
+#: scripts/autoload/game_state/GameStateQuests.gd:737
 msgid "%s gained %d Renown to your %d and takes the prize."
 msgstr "%s %d Ün kazandı, sen %d; ödül onların."
 
-#: scripts/autoload/game_state/GameStateQuests.gd:731
+#: scripts/autoload/game_state/GameStateQuests.gd:739
 msgid "The month's contest ends level at %d Renown each."
 msgstr "Ayın yarışması berabere bitti: ikiniz de %d Ün."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:82
+#: scripts/autoload/game_state/GameStateRuns.gd:69
 msgid "New: %s"
 msgstr "Yeni: %s"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:85
+#: scripts/autoload/game_state/GameStateRuns.gd:72
 msgid "New at camp"
 msgstr "Kampta yeni"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:85
+#: scripts/autoload/game_state/GameStateRuns.gd:72
 msgid " — check the tabs above."
 msgstr " — yukarıdaki sekmelere bak."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:367
+#: scripts/autoload/game_state/GameStateRuns.gd:354
 msgid "The party rests by the fire and recovers %d%% HP."
 msgstr "Ekip ateşin başında dinleniyor ve canının %%%d'ini geri kazanıyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:371
+#: scripts/autoload/game_state/GameStateRuns.gd:358
 msgid "The party drills together: +%d XP each."
 msgstr "Ekip birlikte talim yapıyor: her birine +%d TP."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:374
+#: scripts/autoload/game_state/GameStateRuns.gd:361
 msgid "Weapons sharpened, focus restored — the next fight starts with +4 Momentum."
 msgstr "Silahlar bilendi, odak yerine geldi — sonraki dövüş +4 İvme ile başlıyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:423
+#: scripts/autoload/game_state/GameStateRuns.gd:410
 msgid "%s check (%s, %d vs %d): %s."
 msgstr "%s sınaması (%s, %d / %d): %s."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:428
+#: scripts/autoload/game_state/GameStateRuns.gd:415
 msgid "Luck is with you."
 msgstr "Şans senden yana."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:428
+#: scripts/autoload/game_state/GameStateRuns.gd:415
 msgid "Luck is not with you."
 msgstr "Şans senden yana değil."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:433
+#: scripts/autoload/game_state/GameStateRuns.gd:420
 msgid "You move on."
 msgstr "Yoluna devam ediyorsun."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:470
+#: scripts/autoload/game_state/GameStateRuns.gd:457
 msgid "+%d Gold."
 msgstr "+%d Altın."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:474
+#: scripts/autoload/game_state/GameStateRuns.gd:461
 msgid "+%d Essence."
 msgstr "+%d Öz."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:478
+#: scripts/autoload/game_state/GameStateRuns.gd:465
 msgid "%+d Renown."
 msgstr "%+d Ün."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:482
+#: scripts/autoload/game_state/GameStateRuns.gd:469
 msgid "Every hero gains %d XP."
 msgstr "Her kahraman %d TP kazanıyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:486
+#: scripts/autoload/game_state/GameStateRuns.gd:473
 msgid "The party heals %d%% HP."
 msgstr "Ekip canının %%%d'ini iyileştiriyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:490
+#: scripts/autoload/game_state/GameStateRuns.gd:477
 msgid "Everyone loses %d%% HP."
 msgstr "Herkes canının %%%d'ini kaybediyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:493
+#: scripts/autoload/game_state/GameStateRuns.gd:480
 msgid "The next fight starts with +3 Momentum."
 msgstr "Sonraki dövüş +3 İvme ile başlıyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:496
+#: scripts/autoload/game_state/GameStateRuns.gd:483
 msgid "+%d Healing Tonic."
 msgstr "+%d Şifa Toniği."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:496
+#: scripts/autoload/game_state/GameStateRuns.gd:483
 msgid "You can't carry another tonic."
 msgstr "Bir tonik daha taşıyamazsın."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:499
+#: scripts/autoload/game_state/GameStateRuns.gd:486
 msgid "A %d-point shield against hazards."
 msgstr "Tehlikelere karşı %d puanlık kalkan."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:507 scripts/autoload/game_state/GameStateRuns.gd:514
+#: scripts/autoload/game_state/GameStateRuns.gd:494 scripts/autoload/game_state/GameStateRuns.gd:501
 msgid "You receive: %s (%s)."
 msgstr "Aldın: %s (%s)."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:618
+#: scripts/autoload/game_state/GameStateRuns.gd:605
 msgid "The Anchor Artifact snuffs the hazard before it strikes."
 msgstr "Çapa Eseri tehlikeyi vurmadan söndürüyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:623
+#: scripts/autoload/game_state/GameStateRuns.gd:610
 msgid "Relic wards absorb %d of the hazard."
 msgstr "Kalıntı korumaları tehlikenin %d kadarını emiyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:631
+#: scripts/autoload/game_state/GameStateRuns.gd:618
 msgid "The hazard deals %d damage across the party."
 msgstr "Tehlike ekibe toplam %d hasar veriyor."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:638
+#: scripts/autoload/game_state/GameStateRuns.gd:625
 msgid "You scavenge %d stray Gold."
 msgstr "Ortalıktan %d Altın topluyorsun."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:641
+#: scripts/autoload/game_state/GameStateRuns.gd:628
 msgid "Stray Essence found in the rubble: +%d."
 msgstr "Molozun içinde başıboş Öz bulundu: +%d."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:672
+#: scripts/autoload/game_state/GameStateRuns.gd:659
 msgid "You pay %d Essence and bypass the hazard entirely."
 msgstr "%d Öz ödüyor ve tehlikeyi tamamen atlatıyorsun."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:802
+#: scripts/autoload/game_state/GameStateRuns.gd:789
 msgid " %s and %s's bond deepens (Lv%d)."
 msgstr " %s ile %s arasındaki bağ derinleşiyor (Sv%d)."
 
-#: scripts/autoload/game_state/GameStateRuns.gd:803
+#: scripts/autoload/game_state/GameStateRuns.gd:790
 msgid "Bond deepened — Lv%d"
 msgstr "Bağ derinleşti — Sv%d"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:803
+#: scripts/autoload/game_state/GameStateRuns.gd:790
 msgid "%s & %s: +%d%% party damage while both stand"
 msgstr "%s & %s: ikisi de ayaktayken +%%%d ekip hasarı"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:855
+#: scripts/autoload/game_state/GameStateRuns.gd:842
 msgid "%s: %s+%d essence"
 msgstr "%s: %s+%d öz"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:855
+#: scripts/autoload/game_state/GameStateRuns.gd:842
 msgid "+%d gold, "
 msgstr "+%d altın, "
 
-#: scripts/autoload/game_state/GameStateRuns.gd:860
+#: scripts/autoload/game_state/GameStateRuns.gd:847
 msgid ", the relic %s"
 msgstr ", %s kalıntısı"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:862
+#: scripts/autoload/game_state/GameStateRuns.gd:849
 msgid ", the title \"%s\""
 msgstr ", \"%s\" unvanı"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:936
+#: scripts/autoload/game_state/GameStateRuns.gd:923
 msgid "Field Triage"
 msgstr "Sahada Triyaj"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:960
+#: scripts/autoload/game_state/GameStateRuns.gd:947
 msgid "Needs %d idle hero%s at camp"
 msgstr "Kampta %d boşta kahraman%s gerekir"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:973
+#: scripts/autoload/game_state/GameStateRuns.gd:960
 msgid "No healer can do it"
 msgstr "Bunu yapabilecek şifacı yok"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:989
+#: scripts/autoload/game_state/GameStateRuns.gd:976
 msgid "A new guild can't leave anyone behind"
 msgstr "Yeni bir lonca kimseyi geride bırakamaz"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:1004
+#: scripts/autoload/game_state/GameStateRuns.gd:991
 msgid "Found alive"
 msgstr "Sağ bulundu"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:1004
+#: scripts/autoload/game_state/GameStateRuns.gd:991
 msgid "%s is carried home from the sealed rift"
 msgstr "%s mühürlenen yarıktan eve taşınıyor"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:1019
+#: scripts/autoload/game_state/GameStateRuns.gd:1006
 msgid "Lost in the rift"
 msgstr "Yarıkta kayboldu"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:1019
+#: scripts/autoload/game_state/GameStateRuns.gd:1006
 msgid "%s was left behind and never came back"
 msgstr "%s geride bırakıldı ve bir daha dönmedi"
 
-#: scripts/autoload/game_state/GameStateRuns.gd:1020
+#: scripts/autoload/game_state/GameStateRuns.gd:1007
 msgid "Left behind in a %s"
 msgstr "Bir %s içinde geride bırakıldı"
 
@@ -11338,10 +11378,6 @@ msgstr "Lonca Yönetimi"
 #: scripts/ui/GuildViews.gd:1489
 msgid "Spend Essence on 9 upgrades across 4 branches, and Gold on the Defenses branch (Armory, Engineering, Palisade, Watchtower) for Riftbreaks. Every level adds its effect; some levels unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots, tier 3 towers…). Guild Tier tracks total levels. A building damaged in a Riftbreak works a level lower until you repair it with Gold."
 msgstr "9 geliştirmeye (4 dal) Öz, Yarık Taşmaları için Savunma dalına (Cephanelik, Mühendislik, Şarampole, Gözcü Kulesi) Altın harca. Her seviye etkisini ekler; bazı seviyeler bir ayrıcalık açar (ilk vuruş bonusu, boss Öz sandığı, ek emanet yuvası, 3. kademe kuleler…). Lonca Kademesi toplam seviyeleri izler. Bir Yarık Taşmasında hasar gören yapı, Altınla onarılana dek bir seviye düşük çalışır."
-
-#: scripts/ui/GuildViews.gd:1490
-msgid "Daily twist"
-msgstr "Günün cilvesi"
 
 #: scripts/ui/GuildViews.gd:1490
 msgid "Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."

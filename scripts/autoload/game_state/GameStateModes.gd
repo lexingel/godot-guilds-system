@@ -169,7 +169,7 @@ func daily_info(day: int = -1) -> Dictionary:
 
 
 func daily_available() -> bool:
-	return rifts_sealed >= 1 and daily_attempt_day != daily_id()
+	return feature_unlocked("daily") and daily_attempt_day != daily_id()
 
 
 func _apply_daily(diff: Dictionary) -> Dictionary:

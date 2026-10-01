@@ -1656,7 +1656,7 @@ func _ladder_card(best: int, go: Callable) -> Control:
 	cv.add_child(go_row)
 	var foes := tr("Foes: base") if float(rank["hp"]) == 1.0 else tr("Foes: ×%s health, ×%s damage") % [tr(str(rank["hp"])), tr(str(rank["dmg"]))]
 	cv.add_child(_wrap_label(tr("%s%s · Rewards ×%s%s") % [tr(str(base["name"])) + " · ", tr(str(foes)), tr(str(rank["reward"])), tr(str((" · " + ", ".join(rules)) if not rules.is_empty() else ""))], 12, true))
-	if GameState.rifts_sealed >= 1:
+	if GameState.feature_unlocked("daily"):
 		cv.add_child(_daily_twist_row())
 	if next_locked != "":
 		cv.add_child(_label(next_locked, 12, true))

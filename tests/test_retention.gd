@@ -31,9 +31,10 @@ func run() -> void:
 			differs = true
 	check(differs, "other days differ")
 	check(not a["rule"].has("party_cap"), "no party-cap rules on the Daily")
-	check(not GameState.daily_available(), "locked before the first seal")
-	GameState.rifts_sealed = 1
-	check(GameState.daily_available(), "open after a seal")
+	GameState.rifts_sealed = 2
+	check(not GameState.daily_available(), "locked before the third seal")
+	GameState.rifts_sealed = 3
+	check(GameState.daily_available(), "open after three seals")
 	GameState.start_daily("E", ids, null)
 	check(int(GameState.run.get("daily", -1)) == today and GameState.run["boons"] == [a["boon"]] and str(GameState.run["rift_rank"]) == "E", "the twist rides a ladder rift, with its boon")
 	var layers1: Array = (GameState.run["layers"] as Array).duplicate(true)
