@@ -2689,334 +2689,335 @@ Welcome to your guild,Loncana hoş geldin,scripts/ui/GuildViews.gd:19
 "Rifts are tearing open across the land. Your first three heroes have signed on (Roster, key 1). Head to the Rift Hall (key 3) to seal a rift.","Diyarın dört bir yanında yarıklar açılıyor. İlk üç kahramanın loncaya katıldı (Kadro, tuş 1). Bir yarığı mühürlemek için Yarık Salonu'na git (tuş 3).",scripts/ui/GuildViews.gd:19
 Back at camp,Kampa dönüş,scripts/ui/GuildViews.gd:21
 "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.","Bulduklarını Kadro'nun Kahraman sekmesinde kuşan (tuş 1), beceri puanlarını Beceriler'de harca ve paran yettikçe yeni kahramanlar işe al. Her yarık koşusu ya da dinlenme bir gün sürer.",scripts/ui/GuildViews.gd:21
- — the %s, — %s,scripts/ui/GuildViews.gd:126
- — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5), — kademe %d/3 (%s Sv%d; Sv3 ve Sv5'te büyür),scripts/ui/GuildViews.gd:128
- — grows with your guild tier, — lonca kademenle büyür,scripts/ui/GuildViews.gd:130
- — grows with the campaign, — hikâyeyle büyür,scripts/ui/GuildViews.gd:132
-Guild status,Lonca durumu,scripts/ui/GuildViews.gd:222
-All quiet. The rifts are waiting.,Her şey sakin. Yarıklar bekliyor.,scripts/ui/GuildViews.gd:229
-This week · payday in %d day%s,Bu hafta · maaş gününe %d gün%s,scripts/ui/GuildViews.gd:258
-Bill %d (wages %d + upkeep %d) · %s,Fatura %d (maaş %d + bakım %d) · %s,scripts/ui/GuildViews.gd:273
-short %d,%d eksik,scripts/ui/GuildViews.gd:273
-Since last payday: %s%d Gold,Son maaş gününden beri: %s%d Altın,scripts/ui/GuildViews.gd:278
-"Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger.","Maaşlar her %d günde bir ödenir: önce kadro sırasıyla kahramanlar, sonra tesis bakımı. Maaşı ödenmeyen kahramanlar moral kaybeder; ödenmeyen bakım Ün'e mal olur. Defter için tıkla.",scripts/ui/GuildViews.gd:280
-Hire your first hero in Recruits,İlk kahramanını Adaylar'dan işe al,scripts/ui/GuildViews.gd:294
-The rift has broken! Defend near %s,Yarık taştı! %s yakınında savun,scripts/ui/GuildViews.gd:296
-A Rank %s rift breaks in %d day%s,%s rütbeli bir yarık %d gün%s içinde taşacak,scripts/ui/GuildViews.gd:299
-%d building%s damaged: repair in Manage,%d yapı%s hasarlı: Yönetim'den onar,scripts/ui/GuildViews.gd:301
-Finale open: %s,Final açık: %s,scripts/ui/GuildViews.gd:305
-Act %s: %s%s,%s. Perde: %s%s,scripts/ui/GuildViews.gd:310
- — answer before payday, — maaş gününden önce cevap ver,scripts/ui/GuildViews.gd:314
- — by payday, — maaş gününe kadar,scripts/ui/GuildViews.gd:316
-%d hero%s with low morale,Morali düşük %d kahraman%s,scripts/ui/GuildViews.gd:319
-%d contract%s due within 2 days,2 gün içinde bitmesi gereken %d sözleşme%s,scripts/ui/GuildViews.gd:322
-%d quest%s ready to claim,Ödülü alınabilir %d görev%s,scripts/ui/GuildViews.gd:325
-%d recovering,%d toparlanıyor,scripts/ui/GuildViews.gd:331
-%d wounded,%d yaralı,scripts/ui/GuildViews.gd:333
-%s · %d bed%s free,%s · %d yatak%s boş,scripts/ui/GuildViews.gd:335
-%d hero%s with points to spend,Harcayacak puanı olan %d kahraman%s,scripts/ui/GuildViews.gd:338
-%s Lv%d,%s Sv%d,scripts/ui/GuildViews.gd:350
-Upgrade ready: %s (%d Essence),Geliştirme hazır: %s (%d Öz),scripts/ui/GuildViews.gd:352
-Tower of Trials: floor %d next,Sınav Kulesi: sıradaki kat %d,scripts/ui/GuildViews.gd:356
-Records,Kayıtlar,scripts/ui/GuildViews.gd:363
-Achievements %d/%d,Başarımlar %d/%d,scripts/ui/GuildViews.gd:367
-Statistics,İstatistikler,scripts/ui/GuildViews.gd:367
-Run history,Koşu geçmişi,scripts/ui/GuildViews.gd:367
-Renown,Ün,scripts/ui/GuildViews.gd:401
-Done,Tamam,scripts/ui/GuildViews.gd:402
-%s (power %d),%s (güç %d),scripts/ui/GuildViews.gd:422
-Days passed,Geçen günler,scripts/ui/GuildViews.gd:424
-Runs finished,Biten koşular,scripts/ui/GuildViews.gd:425
-Rifts sealed,Mühürlenen yarıklar,scripts/ui/GuildViews.gd:426
-Monsters defeated,Yenilen canavarlar,scripts/ui/GuildViews.gd:427
-Elites / Bosses defeated,Yenilen seçkinler / bosslar,scripts/ui/GuildViews.gd:428
-Flawless fights,Kusursuz dövüşler,scripts/ui/GuildViews.gd:429
-Campaign,Hikâye,scripts/ui/GuildViews.gd:1469
-Act %s,%s. Perde,scripts/ui/GuildViews.gd:430
-"Tower of Trials, best floor","Sınav Kulesi, en iyi kat",scripts/ui/GuildViews.gd:431
-"Endless Rift, best time","Sonsuz Yarık, en iyi süre",scripts/ui/GuildViews.gd:432
-Daily twists sealed,Mühürlenen günlük cilveler,scripts/ui/GuildViews.gd:433
-%d (streak %d),%d (seri %d),scripts/ui/GuildViews.gd:433
-Items and relics crafted,Üretilen eşya ve kalıntılar,scripts/ui/GuildViews.gd:434
-Heroes lost,Kaybedilen kahramanlar,scripts/ui/GuildViews.gd:436
-Strongest hero,En güçlü kahraman,scripts/ui/GuildViews.gd:437
-Most-defeated foe,En çok yenilen düşman,scripts/ui/GuildViews.gd:438
-No runs yet. Your last %d runs will be listed here.,Henüz koşu yok. Son %d koşun burada listelenecek.,scripts/ui/GuildViews.gd:452
-Day %d · %s · floor %s,Gün %d · %s · kat %s,scripts/ui/GuildViews.gd:462
-Day %d · %s · %d:%02d · %d kills,Gün %d · %s · %d:%02d · %d öldürme,scripts/ui/GuildViews.gd:464
-%+d Gold  %+d Essence,%+d Altın  %+d Öz,scripts/ui/GuildViews.gd:468
-Party: ,Ekip: ,scripts/ui/GuildViews.gd:469
+ — the %s, — %s,scripts/ui/GuildViews.gd:124
+ — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5), — kademe %d/3 (%s Sv%d; Sv3 ve Sv5'te büyür),scripts/ui/GuildViews.gd:126
+ — grows with your guild tier, — lonca kademenle büyür,scripts/ui/GuildViews.gd:128
+ — grows with the campaign, — hikâyeyle büyür,scripts/ui/GuildViews.gd:130
+Guild status,Lonca durumu,scripts/ui/GuildViews.gd:207
+Getting started — %d/%d,Başlarken — %d/%d,scripts/ui/GuildViews.gd:220
+Hide,Gizle,scripts/ui/GuildViews.gd:227
+Hide the getting-started steps,Başlarken adımlarını gizle,scripts/ui/GuildViews.gd:231
+All quiet. The rifts are waiting.,Her şey sakin. Yarıklar bekliyor.,scripts/ui/GuildViews.gd:240
+This week · payday in %d day%s,Bu hafta · maaş gününe %d gün%s,scripts/ui/GuildViews.gd:269
+Bill %d (wages %d + upkeep %d) · %s,Fatura %d (maaş %d + bakım %d) · %s,scripts/ui/GuildViews.gd:284
+short %d,%d eksik,scripts/ui/GuildViews.gd:284
+Since last payday: %s%d Gold,Son maaş gününden beri: %s%d Altın,scripts/ui/GuildViews.gd:289
+"Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger.","Maaşlar her %d günde bir ödenir: önce kadro sırasıyla kahramanlar, sonra tesis bakımı. Maaşı ödenmeyen kahramanlar moral kaybeder; ödenmeyen bakım Ün'e mal olur. Defter için tıkla.",scripts/ui/GuildViews.gd:291
+Hire your first hero in Recruits,İlk kahramanını Adaylar'dan işe al,scripts/ui/GuildViews.gd:305
+The rift has broken! Defend near %s,Yarık taştı! %s yakınında savun,scripts/ui/GuildViews.gd:307
+A Rank %s rift breaks in %d day%s,%s rütbeli bir yarık %d gün%s içinde taşacak,scripts/ui/GuildViews.gd:310
+%d building%s damaged: repair in Manage,%d yapı%s hasarlı: Yönetim'den onar,scripts/ui/GuildViews.gd:312
+Finale open: %s,Final açık: %s,scripts/ui/GuildViews.gd:316
+Act %s: %s%s,%s. Perde: %s%s,scripts/ui/GuildViews.gd:321
+ — answer before payday, — maaş gününden önce cevap ver,scripts/ui/GuildViews.gd:325
+ — by payday, — maaş gününe kadar,scripts/ui/GuildViews.gd:327
+%d hero%s with low morale,Morali düşük %d kahraman%s,scripts/ui/GuildViews.gd:330
+%d contract%s due within 2 days,2 gün içinde bitmesi gereken %d sözleşme%s,scripts/ui/GuildViews.gd:333
+%d quest%s ready to claim,Ödülü alınabilir %d görev%s,scripts/ui/GuildViews.gd:336
+%d recovering,%d toparlanıyor,scripts/ui/GuildViews.gd:342
+%d wounded,%d yaralı,scripts/ui/GuildViews.gd:344
+%s · %d bed%s free,%s · %d yatak%s boş,scripts/ui/GuildViews.gd:346
+%d hero%s with points to spend,Harcayacak puanı olan %d kahraman%s,scripts/ui/GuildViews.gd:349
+%s Lv%d,%s Sv%d,scripts/ui/GuildViews.gd:361
+Upgrade ready: %s (%d Essence),Geliştirme hazır: %s (%d Öz),scripts/ui/GuildViews.gd:363
+Tower of Trials: floor %d next,Sınav Kulesi: sıradaki kat %d,scripts/ui/GuildViews.gd:367
+Records,Kayıtlar,scripts/ui/GuildViews.gd:374
+Achievements %d/%d,Başarımlar %d/%d,scripts/ui/GuildViews.gd:378
+Statistics,İstatistikler,scripts/ui/GuildViews.gd:378
+Run history,Koşu geçmişi,scripts/ui/GuildViews.gd:378
+Renown,Ün,scripts/ui/GuildViews.gd:412
+Done,Tamam,scripts/ui/GuildViews.gd:413
+%s (power %d),%s (güç %d),scripts/ui/GuildViews.gd:433
+Days passed,Geçen günler,scripts/ui/GuildViews.gd:435
+Runs finished,Biten koşular,scripts/ui/GuildViews.gd:436
+Rifts sealed,Mühürlenen yarıklar,scripts/ui/GuildViews.gd:437
+Monsters defeated,Yenilen canavarlar,scripts/ui/GuildViews.gd:438
+Elites / Bosses defeated,Yenilen seçkinler / bosslar,scripts/ui/GuildViews.gd:439
+Flawless fights,Kusursuz dövüşler,scripts/ui/GuildViews.gd:440
+Campaign,Hikâye,scripts/ui/GuildViews.gd:1456
+Act %s,%s. Perde,scripts/ui/GuildViews.gd:441
+"Tower of Trials, best floor","Sınav Kulesi, en iyi kat",scripts/ui/GuildViews.gd:442
+"Endless Rift, best time","Sonsuz Yarık, en iyi süre",scripts/ui/GuildViews.gd:443
+Daily twists sealed,Mühürlenen günlük cilveler,scripts/ui/GuildViews.gd:444
+%d (streak %d),%d (seri %d),scripts/ui/GuildViews.gd:444
+Items and relics crafted,Üretilen eşya ve kalıntılar,scripts/ui/GuildViews.gd:445
+Heroes lost,Kaybedilen kahramanlar,scripts/ui/GuildViews.gd:447
+Strongest hero,En güçlü kahraman,scripts/ui/GuildViews.gd:448
+Most-defeated foe,En çok yenilen düşman,scripts/ui/GuildViews.gd:449
+No runs yet. Your last %d runs will be listed here.,Henüz koşu yok. Son %d koşun burada listelenecek.,scripts/ui/GuildViews.gd:463
+Day %d · %s · floor %s,Gün %d · %s · kat %s,scripts/ui/GuildViews.gd:473
+Day %d · %s · %d:%02d · %d kills,Gün %d · %s · %d:%02d · %d öldürme,scripts/ui/GuildViews.gd:475
+%+d Gold  %+d Essence,%+d Altın  %+d Öz,scripts/ui/GuildViews.gd:479
+Party: ,Ekip: ,scripts/ui/GuildViews.gd:480
 "
 Boons: ","
-Lütuflar: ",scripts/ui/GuildViews.gd:471
-Memorial,Anıt,scripts/ui/GuildViews.gd:478
-Heroes lost for good. Their names stay with the guild.,Sonsuza dek kaybedilen kahramanlar. İsimleri loncada yaşar.,scripts/ui/GuildViews.gd:479
-No one has fallen. May it stay that way.,Kimse düşmedi. Öyle kalsın.,scripts/ui/GuildViews.gd:481
-"%s — Rank %s, Level %d","%s — Rütbe %s, Seviye %d",scripts/ui/GuildViews.gd:492
-"%s, on day %d. %d rift%s sealed, %d foe%s felled.","%s, %d. günde. %d yarık%s mühürledi, %d düşman%s devirdi.",scripts/ui/GuildViews.gd:493
-No answer by payday counts as a no.,Maaş gününe kadar cevap verilmezse hayır sayılır.,scripts/ui/GuildViews.gd:530
-No answer by payday: they choose for themselves.,Maaş gününe kadar cevap yoksa: kendisi seçer.,scripts/ui/GuildViews.gd:543
-No answer by payday counts as declining.,Maaş gününe kadar cevap yoksa reddetmiş sayılırsın.,scripts/ui/GuildViews.gd:543
-No answer by payday: they take it.,Maaş gününe kadar cevap yoksa: onlar alır.,scripts/ui/GuildViews.gd:544
-%d day%s to payday.,Maaş gününe %d gün%s.,scripts/ui/GuildViews.gd:546
-Decide later,Sonra karar ver,scripts/ui/GuildViews.gd:570
- Answer in Guild > Ledger., Lonca > Defter'den cevap ver.,scripts/ui/GuildViews.gd:579
-Payday · %d Gold,Maaş günü · %d Altın,scripts/ui/GuildViews.gd:606
-Wages %d + upkeep %d Gold; you have %d.,Maaş %d + bakım %d Altın; sende %d var.,scripts/ui/GuildViews.gd:607
-Request closes,İstek kapanır,scripts/ui/GuildViews.gd:609
-Dare due,Meydan okuma biter,scripts/ui/GuildViews.gd:611
-Rival waits,Rakip bekliyor,scripts/ui/GuildViews.gd:611
-Contract due,Sözleşme süresi,scripts/ui/GuildViews.gd:614
-Rift breaks,Yarık taşar,scripts/ui/GuildViews.gd:616
-A Rank %s rift breaks near %s.,%s rütbeli bir yarık %s yakınında taşar.,scripts/ui/GuildViews.gd:616
-Contest ends,Yarışma biter,scripts/ui/GuildViews.gd:618
-The month's Renown contest with %s ends.,%s ile ayın Ün yarışması biter.,scripts/ui/GuildViews.gd:618
-Today,,scripts/ui/GuildViews.gd:628
-Day %d,Gün %d,scripts/ui/GuildViews.gd:628
-in %d day%s,%d gün%s sonra,scripts/ui/GuildViews.gd:639
-A day passes with every rift run or rest.,Her yarık seferi ya da dinlenmeyle bir gün geçer.,scripts/ui/GuildViews.gd:643
-Guild Ledger,Lonca Defteri,scripts/ui/GuildViews.gd:653
-Paying the guild,Loncayı ödemek,scripts/ui/GuildViews.gd:654
-"A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep.",Her yarık seferi ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman ayrılır. Her Lonca Yönetimi seviyesi ayrıca haftada %d Altın bakım ister.,scripts/ui/GuildViews.gd:654
-Payday in %d day%s · wages %d + upkeep %d Gold · you have %d,Maaş gününe %d gün%s · maaş %d + bakım %d Altın · sende %d,scripts/ui/GuildViews.gd:667
-"A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out.",Her yarık koşusu ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman çekip gider.,scripts/ui/GuildViews.gd:669
-%d Gold paid,%d Altın ödendi,scripts/ui/GuildViews.gd:675
-unpaid: %s,ödenmedi: %s,scripts/ui/GuildViews.gd:677
-walked out: %s,çekip gitti: %s,scripts/ui/GuildViews.gd:679
-Last payday (day %d): %s.,Son maaş günü (gün %d): %s.,scripts/ui/GuildViews.gd:680
-Training Yard: %d of %d trainings left this week,Talim Alanı: bu hafta %d / %d eğitim kaldı,scripts/ui/GuildViews.gd:681
-"Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown.",Bakım: her Lonca Yönetimi seviyesi haftada %d Altın ister; maaşlardan sonra ödenemezse lonca %d Ün kaybeder.,scripts/ui/GuildViews.gd:682
-"Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first","Ziyafet ver (%d Altın): +%d moral, en fazla %d kahramana, en düşükten başlayarak",scripts/ui/GuildViews.gd:685
-Once a week.,Haftada bir.,scripts/ui/GuildViews.gd:692
-Already feasted this week — the next one after payday.,Bu hafta zaten ziyafet verildi — bir sonraki maaş gününden sonra.,scripts/ui/GuildViews.gd:692
-Rival: %s,Rakip: %s,scripts/ui/GuildViews.gd:707
-Led by %s,Lideri: %s,scripts/ui/GuildViews.gd:708
-Renown — you %d · them %d (%s),Ün — sen %d · onlar %d (%s),scripts/ui/GuildViews.gd:712
-you lead by %d,%d öndesin,scripts/ui/GuildViews.gd:712
-they lead by %d,onlar %d önde,scripts/ui/GuildViews.gd:712
-level,eşit,scripts/ui/GuildViews.gd:712
-"Renown is the one race with the rival. They gain it every day and sometimes take a posted contract before you do. At payday the leader gets the pick of next week's recruits (one more offer for you, or one fewer); every 20 you earn arms an Epic relic at your next Shop. Seal rifts and finish contracts to gain it; failed contracts and unpaid upkeep cost it.","Rakiple tek yarışın Ün. Onlar her gün Ün kazanır ve bazen ilandaki bir sözleşmeyi senden önce kapar. Maaş gününde önde olan, gelecek haftanın acemilerinden ilk seçimi yapar (sana bir teklif fazla ya da eksik); kazandığın her 20 Ün, bir sonraki Dükkânda Destansı bir kalıntı garantiler. Yarık mühürleyerek ve sözleşme bitirerek kazanılır; başarısız sözleşmeler ve ödenmeyen bakım masrafı kaybettirir.",scripts/ui/GuildViews.gd:714
-"This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.","Bu ay kazanılan Ün — sen %d · onlar %d · %d gün%s kaldı. Ödül: %d Altın, %d Ün.",scripts/ui/GuildViews.gd:718
-Guild Standings,Lonca Sıralaması,scripts/ui/GuildViews.gd:724
-Guild,Lonca,scripts/ui/GuildViews.gd:729
-Tower floor,Kule katı,scripts/ui/GuildViews.gd:729
-Endless best,Sonsuz en iyi,scripts/ui/GuildViews.gd:729
- (you), (sen),scripts/ui/GuildViews.gd:735
- — rival, — rakip,scripts/ui/GuildViews.gd:735
-The other guilds' records grow every day. Top the Renown column for an achievement.,Diğer loncaların kayıtları her gün büyür. Bir başarım için Ün sütununda zirveye çık.,scripts/ui/GuildViews.gd:741
-Heroes — wages and morale,Kahramanlar — maaş ve moral,scripts/ui/GuildViews.gd:743
-"%s — Rank %s, Lv%d · wage %d Gold/week","%s — Rütbe %s, Sv%d · maaş %d Altın/hafta",scripts/ui/GuildViews.gd:754
-Morale %d · %s%s%s,Moral %d · %s%s%s,scripts/ui/GuildViews.gd:756
- (%+d%% damage), (%+d%% hasar),scripts/ui/GuildViews.gd:756
- · unpaid %d week%s, · %d hafta%s ödenmedi,scripts/ui/GuildViews.gd:756
-Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d,Yarık mühürlemek +%d · kaybedilen yarık %d · bayılmak %d · maaş ödenmemesi %d · yarıksız bir hafta %d · başarısız sözleşme %d · ziyafet +%d,scripts/ui/GuildViews.gd:758
-Confirm: let them go,Onayla: gitmesine izin ver,scripts/ui/GuildViews.gd:764
-Dismiss,Görevden al,scripts/ui/GuildViews.gd:764
-They leave the guild for good; their gear goes back to the stockpile. No more wages.,Loncadan kalıcı olarak ayrılır; teçhizatı depoya döner. Artık maaş yok.,scripts/ui/GuildViews.gd:774
-Guild news,Lonca haberleri,scripts/ui/GuildViews.gd:781
-Assemble a party in the Rift Hall and enter a rift,Yarık Salonu'nda bir ekip kur ve bir yarığa gir,scripts/ui/GuildViews.gd:793
-Equip an item on a hero (Roster > Heroes),Bir kahramana eşya kuşandır (Kadro > Kahramanlar),scripts/ui/GuildViews.gd:794
-Spend a skill point (Roster > Heroes > Skills),Bir beceri puanı harca (Kadro > Kahramanlar > Beceriler),scripts/ui/GuildViews.gd:795
-Seal your first rift by beating its boss,Boss'unu yenerek ilk yarığını mühürle,scripts/ui/GuildViews.gd:796
-Getting started — %d/%d,Başlarken — %d/%d,scripts/ui/GuildViews.gd:805
-Hide,Gizle,scripts/ui/GuildViews.gd:809
-%d SP,%d BP,scripts/ui/GuildViews.gd:839
-can evolve,evrimleşebilir,scripts/ui/GuildViews.gd:845
-empty %s slot,boş %s yuvası,scripts/ui/GuildViews.gd:848
-%d hero(es) wounded or downed,%d kahraman yaralı ya da düşmüş,scripts/ui/GuildViews.gd:856
-%d recruit(s) you can afford,Paranın yettiği %d aday,scripts/ui/GuildViews.gd:860
-%d craft(s) ready in Crafting,Zanaat'ta %d üretim hazır,scripts/ui/GuildViews.gd:874
-%d relic slot(s) empty — equip a relic under Items > Relics,%d kalıntı yuvası boş — Eşyalar > Kalıntılar'dan bir kalıntı kuşan,scripts/ui/GuildViews.gd:878
-%d quest(s) ready to claim,Ödülü alınabilir %d görev,scripts/ui/GuildViews.gd:881
-Command Tent,Komuta Çadırı,scripts/ui/GuildViews.gd:893
-Ledger,Defter,scripts/ui/GuildViews.gd:902
-Codex,Kodeks,scripts/ui/GuildViews.gd:903
-Trading Post,Ticaret Karakolu,scripts/ui/GuildViews.gd:914
-Scholar's Lodge,Bilgin Köşkü,scripts/ui/GuildViews.gd:920
-%s (locked),%s (kilitli),scripts/ui/GuildViews.gd:933
-Freed at the end of Act %s.,%s. Perde'nin sonunda kurtarılır.,scripts/ui/GuildViews.gd:963
-Lost in the Endless Rift: survive past %d:%02d to find their light.,Sonsuz Yarık'ta kayıp: ışığını bulmak için %d:%02d sonrasına kadar dayan.,scripts/ui/GuildViews.gd:967
-%s · Level %d/%d,%s · Seviye %d/%d,scripts/ui/GuildViews.gd:976
-Boon: ,Lütuf: ,scripts/ui/GuildViews.gd:977
-Call: %s — %s (%s),Çağrı: %s — %s (%s),scripts/ui/GuildViews.gd:982
-twice a rift,yarık başına iki kez,scripts/ui/GuildViews.gd:982
-once a rift,yarık başına bir kez,scripts/ui/GuildViews.gd:982
-Overseeing,Gözetiyor,scripts/ui/GuildViews.gd:987
-Oversee rifts,Yarıkları gözet,scripts/ui/GuildViews.gd:987
-"The overseer's Boon lifts the whole party in every rift run, and any hero can spend their turn on the Call.",Gözetmenin Lütfu her yarık seferinde tüm ekibi güçlendirir; herhangi bir kahraman sırasını Çağrı'ya harcayabilir.,scripts/ui/GuildViews.gd:992
-Level up — %d Essence,Seviye atla — %d Öz,scripts/ui/GuildViews.gd:996
-%s reaches level %d,%s %d. seviyeye ulaştı,scripts/ui/GuildViews.gd:1002
-Boon and Call grow stronger,Lütuf ve Çağrı güçlenir,scripts/ui/GuildViews.gd:1002
-"Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift.","Her seviye: Lütuf ve Çağrı +%%%d, Sonsuz Yarık'ta +%%%d can ve hasar. %d. seviyede Çağrı yarık başına iki kez kullanılır.",scripts/ui/GuildViews.gd:1005
-"Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party. Spend Essence here to level them up.",Şampiyonlar hikâyede özgürleşir ve Sonsuz Yarık'ta kurtarılır. Biri yarık seferlerini gözetir: tüm grup onun Lütfunu alır ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. Sonsuz Yarık'ta grup şampiyonlarının kendisidir. Seviye atlatmak için burada Öz harca.,scripts/ui/GuildViews.gd:1014
-Essence: %d,Öz: %d,scripts/ui/GuildViews.gd:1018
-Spend it to level up champions. The Endless Rift pays the most.,Şampiyonların seviyesini yükseltmek için harca. En çok Sonsuz Yarık öder.,scripts/ui/GuildViews.gd:1020
-%d of %d champions found. Every new guild meets a different twelve.,%d/%d şampiyon bulundu. Her yeni lonca farklı on iki şampiyonla karşılaşır.,scripts/ui/GuildViews.gd:1025
-Hiring heroes,Kahraman işe almak,scripts/ui/GuildViews.gd:1039
-Recruit heroes below; higher ranks are stronger.,Aşağıdan kahraman işe al; yüksek rütbeler daha güçlüdür.,scripts/ui/GuildViews.gd:1039
-Rank odds: %s%s,Rütbe olasılıkları: %s%s,scripts/ui/GuildViews.gd:1040
-  ·  Scouts' Lodge: a C+ recruit is assured each refresh,  ·  İzci Köşkü: her yenilemede bir C+ aday garanti,scripts/ui/GuildViews.gd:1040
-Hero Recruits — %d/%d roster slots,Kahraman Adayları — %d/%d kadro yeri,scripts/ui/GuildViews.gd:1043
-Your roster is full. The Barracks (Guild > Manage > Operations) adds 2 slots a level; you can also let a hero go from the Ledger.,Kadron dolu. Kışla (Lonca > Yönetim > Operasyon) her seviyede 2 yer ekler; bir kahramanı Defter'den de gönderebilirsin.,scripts/ui/GuildViews.gd:1045
-No one is looking for work right now. New recruits arrive every payday.,Şu an iş arayan kimse yok. Yeni adaylar her maaş gününde gelir.,scripts/ui/GuildViews.gd:1049
-Commission a recruit (%d Gold):,Bir acemi ısmarla (%d Altın):,scripts/ui/GuildViews.gd:1054
-A %s joins the offers at the usual rank odds (the last offer leaves).,Teklifler arasına olağan rütbe ihtimalleriyle bir %s katılır (son teklif gider).,scripts/ui/GuildViews.gd:1065
-Rank %s %s · %d Gold · Power %d · %d HP · wage %d/week,Rütbe %s %s · %d Altın · Güç %d · %d Can · maaş %d/hafta,scripts/ui/GuildViews.gd:1088
-Passive — ,Pasif — ,scripts/ui/GuildViews.gd:1089
-Reroll (%d Gold),Yenile (%d Altın),scripts/ui/GuildViews.gd:1091
-Recruit,İşe al,scripts/ui/GuildViews.gd:1097
-%s joins the guild!,%s loncaya katıldı!,scripts/ui/GuildViews.gd:1103
-Medical Bay — %d/%d beds occupied,Revir — %d/%d yatak dolu,scripts/ui/GuildViews.gd:1114
-"Field Triage: once per rift, get a downed hero back up mid-rift.","Sahada Triyaj: yarık başına bir kez, düşmüş bir kahramanı yarığın ortasında ayağa kaldır.",scripts/ui/GuildViews.gd:1116
-%d/%d HP · %s,%d/%d Can · %s,scripts/ui/GuildViews.gd:1142
-Empty bed,Boş yatak,scripts/ui/GuildViews.gd:1145
-Recovering without a bed (slower):,Yataksız iyileşenler (daha yavaş):,scripts/ui/GuildViews.gd:1152
-%s — %d/%d HP (%s) · %s,%s — %d/%d Can (%s) · %s,scripts/ui/GuildViews.gd:1156
-downed,yere serilmiş,scripts/ui/GuildViews.gd:1156
-wounded,yaralı,scripts/ui/GuildViews.gd:1156
-Put in a bed,Yatağa yatır,scripts/ui/GuildViews.gd:1160
-Every bed is taken,Bütün yataklar dolu,scripts/ui/GuildViews.gd:1165
-A downed hero comes back a run sooner; a wounded one is fully healed after the next run.,Yere serilmiş bir kahraman bir koşu erken döner; yaralı biri sonraki koşudan sonra tamamen iyileşir.,scripts/ui/GuildViews.gd:1165
-Rest the guild (pass one run's time),Loncayı dinlendir (bir koşu süresi geçir),scripts/ui/GuildViews.gd:1171
-Heroes recover as if a run had ended.,Kahramanlar bir koşu bitmiş gibi toparlanır.,scripts/ui/GuildViews.gd:1175
-"Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed).",Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d'ini geri kazanır (yatakta hepsini).,scripts/ui/GuildViews.gd:1178
-back in %d run%s,%d koşu%s sonra döner,scripts/ui/GuildViews.gd:1184
-full after next run,sonraki koşudan sonra tam,scripts/ui/GuildViews.gd:1186
-+%d%% HP per run,Koşu başına +%%%d Can,scripts/ui/GuildViews.gd:1187
-%d/3 — need %d more,%d/3 — %d tane daha gerek,scripts/ui/GuildViews.gd:1214
-%d owned — ready to craft%s,%d adet var — üretime hazır%s,scripts/ui/GuildViews.gd:1215
-Combine 3 of the same kind and rarity into 1 of the next rarity up.,Aynı türden ve nadirlikten 3 tanesini bir üst nadirlikte 1 taneye birleştir.,scripts/ui/GuildViews.gd:1220
-No craftable (unequipped Common/Rare) items.,Üretilebilir (kuşanılmamış Sıradan/Nadir) eşya yok.,scripts/ui/GuildViews.gd:1236
-Craft → %s,Üret → %s,scripts/ui/GuildViews.gd:1243
-No craftable (unequipped Common/Rare) relics.,Üretilebilir (kuşanılmamış Sıradan/Nadir) kalıntı yok.,scripts/ui/GuildViews.gd:1268
-poisons its target for a few rounds,hedefini birkaç tur zehirler,scripts/ui/GuildViews.gd:1300
-heals its allies each round,her tur müttefiklerini iyileştirir,scripts/ui/GuildViews.gd:1301
-starts the fight behind a ward,dövüşe bir korumanın ardında başlar,scripts/ui/GuildViews.gd:1302
-hits harder when badly hurt,ağır yaralıyken daha sert vurur,scripts/ui/GuildViews.gd:1303
-heals itself from the damage it deals,verdiği hasardan kendini iyileştirir,scripts/ui/GuildViews.gd:1304
-reflects part of the damage it takes,aldığı hasarın bir kısmını yansıtır,scripts/ui/GuildViews.gd:1305
-Monsters,Canavarlar,scripts/ui/GuildViews.gd:1314
-Monster,Canavar,scripts/ui/GuildViews.gd:1314
-Elites,Seçkinler,scripts/ui/GuildViews.gd:1315
-Rift Wardens,Yarık Bekçileri,scripts/ui/GuildViews.gd:1316
-%s — %d/%d met,%s — %d/%d karşılaşıldı,scripts/ui/GuildViews.gd:1321
-Hazards — %d/%d met,Tehlikeler — %d/%d karşılaşıldı,scripts/ui/GuildViews.gd:1330
-%s · finds %s,%s · bulur: %s,scripts/ui/GuildViews.gd:1346
-Telegraphs: %s,Önceden belli eder: %s,scripts/ui/GuildViews.gd:1377
-Brings a random warden mechanic each fight. %s,Her dövüşe rastgele bir bekçi mekaniği getirir. %s,scripts/ui/GuildViews.gd:1380
-Defeated.,Yenildi.,scripts/ui/GuildViews.gd:1380
-Not yet defeated.,Henüz yenilmedi.,scripts/ui/GuildViews.gd:1380
-Systems,Sistemler,scripts/ui/GuildViews.gd:1388
-Compendium,Derleme,scripts/ui/GuildViews.gd:1402
-"Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one ""gear"" slot pool that grows with hero rank. A Common rolls one stat, a Rare one bigger stat and a named effect, an Epic two stats and a stronger effect (some effects only come on Epics). Legendaries are unique.","Eşyalar kahramana bağlı teçhizattır. Silahlar kahramanın silah yuvalarını doldurur (1, çift silahlı sınıflarda 2); Zırh ve Odak eşyaları, kahraman rütbesiyle büyüyen tek bir ""teçhizat"" yuva havuzunu paylaşır. Sıradan eşya bir nitelik, Nadir daha büyük bir nitelik ve adlı bir etki, Destansı iki nitelik ve daha güçlü bir etki taşır (bazı etkiler yalnızca Destansılarda çıkar). Efsaneviler eşsizdir.",scripts/ui/GuildViews.gd:1412
-Stats: %s,Nitelikler: %s,scripts/ui/GuildViews.gd:1421
- (Epic), (Destansı),scripts/ui/GuildViews.gd:1423
-"Relics are party-wide. Each relic has an elemental type, which nudges (60% weight) which power domain its rolled special favors.","Kalıntılar tüm ekibi etkiler. Her kalıntının bir element türü vardır; bu, rastgele gelen özel gücünün hangi alanı kayıracağını (%60 ağırlıkla) yönlendirir.",scripts/ui/GuildViews.gd:1427
-%s — %s domain,%s — %s alanı,scripts/ui/GuildViews.gd:1434
-Crafting combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.,"Zanaat, aynı kategori/tür ve nadirlikteki 3 kuşanılmamış eşya ya da kalıntıyı bir üst nadirlikte 1 taneye birleştirir.",scripts/ui/GuildViews.gd:1439
-Legendary items/relics are fixed hand-authored drops — not craftable from Epics.,Efsanevi eşyalar/kalıntılar elle tasarlanmış sabit ganimetlerdir — Destansılardan üretilemez.,scripts/ui/GuildViews.gd:1442
-Guild Management,Lonca Yönetimi,scripts/ui/GuildViews.gd:1447
-"Spend Essence on 9 upgrades across 4 branches, and Gold on the Defenses branch (Armory, Engineering, Palisade, Watchtower) for Riftbreaks. Every level adds its effect; some levels unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots, tier 3 towers…). Guild Tier tracks total levels. A building damaged in a Riftbreak works a level lower until you repair it with Gold.","9 geliştirmeye (4 dal) Öz, Yarık Taşmaları için Savunma dalına (Cephanelik, Mühendislik, Şarampole, Gözcü Kulesi) Altın harca. Her seviye etkisini ekler; bazı seviyeler bir ayrıcalık açar (ilk vuruş bonusu, boss Öz sandığı, ek emanet yuvası, 3. kademe kuleler…). Lonca Kademesi toplam seviyeleri izler. Bir Yarık Taşmasında hasar gören yapı, Altınla onarılana dek bir seviye düşük çalışır.",scripts/ui/GuildViews.gd:1447
-"Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good.","İlk yarığını mühürledikten sonra Yarık Merdiveni her gün bir cilve sunar: tarihe göre belirlenen bir kural ve başlangıç lütfu, böylece her lonca aynısıyla karşılaşır. İşaretlersen bir sonraki merdiven yarığın (herhangi bir rütbe) onu taşır; günde bir deneme. Mühürlemek ek Öz kazandırır ve serini uzatır. Kayıtlar (Lonca Salonu'nda) başarıları, genel istatistikleri ve son 30 seferini tutar; Anıt, sonsuza dek kaybedilen kahramanları anar.",scripts/ui/GuildViews.gd:1448
-Endless Rift,Sonsuz Yarık,scripts/ui/GuildViews.gd:1449
-"A real-time survival run in the region you pick, and only champions go in (up to 4). You steer the first (WASD, arrows, drag or stick); the rest follow and fight on their own, and each fires their signature move on a timer (the ring over their head fills as it recharges). Your equipped relics come along. Every five minutes the rift runs the same cycle: the horde, a swarm, an elite pack (its leader carries a chest), archers and casters, then a lull with a chest nearby, and a warden at the end of it. At 20:00 the Rift Warden comes: beat it to seal the rift. The rift's strength (shown before you enter) starts gentle and grows with every champion you free and every act you pass. A run pays Essence and a little Gold, and costs the guild a day.","Seçtiğin bölgede gerçek zamanlı bir hayatta kalma seferi; içeri yalnızca şampiyonlar girer (en fazla 4). İlkini sen yönetirsin (WASD, oklar, sürükleme ya da çubuk); diğerleri onu izler ve kendi başlarına savaşır, her biri imza hareketini belli aralıklarla kullanır (başlarının üstündeki halka dolunca hazırdır). Takılı kalıntıların da seninle gelir. Yarık her beş dakikada aynı döngüyü işletir: sürü, bir akın, seçkin bir takım (lideri bir sandık taşır), okçular ve büyücüler, ardından yakınında bir sandıkla bir durgunluk ve sonunda bir muhafız. 20:00'de Yarık Muhafızı gelir: onu yenip yarığı mühürle. Yarığın gücü (girmeden önce gösterilir) hafif başlar ve özgürleştirdiğin her şampiyonla ve geçtiğin her perdeyle artar. Bir sefer Öz ve biraz Altın kazandırır, loncaya bir güne mal olur.",scripts/ui/GuildViews.gd:1449
-Endless picks,Sonsuz seçimleri,scripts/ui/GuildViews.gd:1450
-"Collect shards to level up and pick 1 of 3; one card is always a signature pick while any are left. Party upgrades (damage, speed, health…), a champion's role skill, a rank in their signature (up to 3: sooner and harder), or one of their two signature mods once it has a rank (Aftershock, Kindled, Frostbite, Expose, Stagger, Leech, Shrapnel, Radiance, Bulwark, Fervor, Renewal, Smokescreen). From level 10, two champions whose signatures are rank 2 can fuse: they fire together, 25% harder, and carry each other's mods. Max an upgrade and the matching role's attack can evolve (Whirlwind, Thousand Cuts, Arrow Storm, Starfall, Sanctum). Chests give one of three rift relics for the run.","Seviye atlamak için kırıkları topla ve 3 seçenekten birini al; kalan varken kartlardan biri hep bir imza seçimidir. Ekip geliştirmeleri (hasar, hız, can…), bir şampiyonun rol becerisi, imzasında bir rütbe (en fazla 3: daha erken ve daha sert) ya da imzanın bir rütbesi olunca iki imza güçlendirmesinden biri (Artçı Sarsıntı, Tutuşmuş, Soğuk Isırığı, Açığa Çıkar, Sersemlet, Sülük, Şarapnel, Nur, Siper, Coşku, Yenilenme, Sis Perdesi). 10. seviyeden itibaren imzaları 2. rütbede olan iki şampiyon kaynaşabilir: birlikte ateşlenir, %25 daha sert vurur ve birbirlerinin güçlendirmelerini taşırlar. Bir geliştirmeyi en üste çıkar, eşleşen rolün saldırısı evrilebilir (Kasırga Dönüşü, Bin Kesik, Ok Fırtınası, Yıldız Yağmuru, Kutsal Oda). Sandıklar koşu boyunca üç yarık emanetinden birini verir.",scripts/ui/GuildViews.gd:1450
-Endless ground,Sonsuz arazisi,scripts/ui/GuildViews.gd:1451
-"The Vale has pillars that block foes, the Marches have pools that slow everyone, the Wastes have lava that burns foes and your lead. Braziers break when you walk into or hit them, dropping a heal, a magnet for shards or a bomb. Elites and wardens slam: step out of the red circle before it fills. Your first 5, 10 and 15 minutes and your first sealed rift each pay once, with two Endless relics and guild titles.","Vadide düşmanları durduran sütunlar, Bataklıklarda herkesi yavaşlatan göletler, Çorak Topraklarda düşmanları ve önderini yakan lav var. Mangallar üstüne yürüyünce ya da vurunca kırılır ve bir iyileşme, parçalar için bir mıknatıs ya da bir bomba düşürür. Seçkinler ve bekçiler yere vurur: kırmızı daire dolmadan dışına çık. İlk 5, 10 ve 15 dakikan ve ilk mühürlediğin yarık birer kez ödül verir; iki Sonsuz kalıntısı ve lonca unvanlarıyla.",scripts/ui/GuildViews.gd:1451
-Hero voices,Kahraman sesleri,scripts/ui/GuildViews.gd:1452
-"A hero's born quirk sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win.","Bir kahramanın doğuştan huyu kişiliğini belirler (Cesur, Çevik, Soğukkanlı, Tedirgin, Dindar ya da Bilgin); sayfasında görünür. Büyük bir öldürme yaptıklarında, az canla dayandıklarında ya da bir müttefik düştüğünde savaşta konuşurlar ve her zaferi biri özetler.",scripts/ui/GuildViews.gd:1452
-Boss phases,Boss evreleri,scripts/ui/GuildViews.gd:1453
-"Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn.","Her boss canı yarıya inince değişir: Sürüyü Çağır (iki düşman katılır), Hiddet (%20 daha sert vurur ve daha sık güç toplar) ya da Son Burç (canının %12'si değerinde bir koruma). Plakası hangisi olduğunu gösterir, uyarı çubuğu yaklaşınca haber verir; en güçlü saldırılarını ve Savun'u o tur için sakla.",scripts/ui/GuildViews.gd:1453
-Elite affixes,Seçkin ekleri,scripts/ui/GuildViews.gd:1454
-"Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Rank B+ rifts give them two. Hover the badges on their plate to read them.","Seçkinler bir ek alır: Vampirik, Dikenli, Kalkanlı, Zehirli, Durdurulamaz, Alevli, Hızlandırılmış (iki kez davranır) ya da Komutan (iki muhafız getirir). Rütbe B+ yarıklarda iki ek alırlar. Okumak için plakalarındaki rozetlerin üstüne gel.",scripts/ui/GuildViews.gd:1454
-Boons,Lütuflar,scripts/ui/GuildViews.gd:1455
-"Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower.","Bir yarıkta seçkin yenmek, o yarık bitene kadar süren 3 lütuftan 1'ini sunar. Lütuflar yedi aileden gelir (Kor, Ayaz, Kan, Çelik, Fırtına, Gölge, Kutsal); bir aileden 2 tanesi set bonusu, 4 tanesi güçlü bir zirve verir; böylece bir koşu bir yapıya dönüşebilir. Kule'de sunulmaz.",scripts/ui/GuildViews.gd:1455
-Guild Orders,Lonca Emirleri,scripts/ui/GuildViews.gd:1456
-"Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary.","Revir, Talim Alanı, Ticaret Ağı ve İzci Köşkü'nün Sv2'si, yarık içinde verebileceğin bir emir açar: İkmal Atışı (dövüşler arasında %35 iyileş), Toparlan (bu tur önce davran ve %30 daha sert vur), Talep (bir dövüşün ganimetini yenile) ve Öncü Keşif (bir ayrımı yenile). Yarık başına 1 emir, Ünlü kademede 2, Efsanevide 3.",scripts/ui/GuildViews.gd:1456
-Rift Ladder,Yarık Merdiveni,scripts/ui/GuildViews.gd:1457
-"Rifts come in ranks, F to SSS. F-D are Lesser rifts, C and up Greater rifts (open after Act I). Each rank hits harder than the last and pays more; from B up they add rules (more elites, harsher hazards, fewer shops, bosses with two mechanics). Seal a rank to open the next. Gear drops at the rank of the rift it came from.","Yarıklar F'den SSS'ye rütbelere ayrılır. F-D Küçük yarıklar, C ve üstü Büyük yarıklardır (I. Perde'den sonra açılır). Her rütbe öncekinden sert vurur ve daha çok öder; B'den itibaren kurallar eklenir (daha çok seçkin, daha sert tehlikeler, daha az dükkân, iki mekanikli bosslar). Bir rütbeyi mühürlemek bir sonrakini açar. Teçhizat, geldiği yarığın rütbesinde düşer.",scripts/ui/GuildViews.gd:1457
-Bonds,Bağlar,scripts/ui/GuildViews.gd:1458
-"Heroes who seal rifts together grow a bond: level 1, 2 and 3 after 2, 5 and 10 rifts. Each level adds 2% party damage while both stand in a fight (up to the cap). Bonds show on the hero sheet's History tab.","Birlikte yarık mühürleyen kahramanlar bağ kurar: 2, 5 ve 10 yarıktan sonra seviye 1, 2 ve 3. Her seviye, ikisi de dövüşte ayaktayken ekip hasarına %2 ekler (üst sınıra kadar). Bağlar kahraman sayfasının Geçmiş sekmesinde görünür.",scripts/ui/GuildViews.gd:1458
-Ability Awakening,Yetenek Uyanışı,scripts/ui/GuildViews.gd:1459
-"Spend Skill Points once to give a hero's Ability a secondary effect (by ability: +2 Momentum back, a lingering debuff, a party dodge boost, a self-shield, or a small damage stack).","Bir kahramanın Yeteneğine ikincil bir etki vermek için bir kez Beceri Puanı harca (yeteneğe göre: +2 İvme geri, kalıcı bir zayıflatma, ekibe kaçınma artışı, kendine kalkan ya da küçük bir hasar birikimi).",scripts/ui/GuildViews.gd:1459
-"Heroes stand in the front or back row. Foes aim most attacks at the front row; Snipes hunt the back. Warriors and rogues hit at half strength with a basic attack from the back row, and some skills need a row. Move (7) switches rows for a turn. Back-row foes take less damage from attacks.",Kahramanlar ön ya da arka sırada durur. Düşmanlar saldırıların çoğunu ön sıraya yöneltir; Nişanlar arkayı avlar. Savaşçılar ve haydutlar arka sıradan temel saldırıyla yarı güçle vurur ve bazı beceriler belli bir sıra ister. Yer Değiştir (7) bir sıra karşılığında sıranı değiştirir. Arka sıradaki düşmanlar saldırılardan daha az hasar alır.,scripts/ui/GuildViews.gd:1460
-Controls,Kontroller,scripts/ui/GuildViews.gd:1461
-"Keyboard: 1-5 switch camp tabs; in a fight 1 Attack, 2-4 skills, 5 Defend, M opens More (6 Guard, 7 Move, 8 Tonics, 9 Call; their keys work either way), Space repeats the last action, Tab cycles targets, A toggles Auto, Esc goes back. Endless Rift: WASD or arrows (or drag), Esc pauses. Riftbreak defense: click a pad to build, the ground to send your champion, Space calls the next wave, Esc pauses. Gamepad: D-pad and A work every menu, B goes back, LB/RB switch camp tabs. In a fight A repeats the last action, X Defends, Y uses the Ability, LB/RB the two skills, Start opens More (Guard, Move, Tonics, Call), the D-pad cycles targets, Select toggles Auto. Endless Rift: left stick or D-pad steer, Start pauses.","Klavye: 1-5 kamp sekmelerini değiştirir; savaşta 1 Saldırı, 2-4 beceriler, 5 Savunma, M Diğer'i açar (6 Koru, 7 Yer Değiştir, 8 İksirler, 9 Çağrı; tuşları her iki durumda da çalışır), Boşluk son eylemi tekrarlar, Tab hedefler arasında geçer, A Otomatik'i açıp kapar, Esc geri gider. Sonsuz Yarık: WASD ya da oklar (ya da sürükle), Esc duraklatır. Yarık Taşması savunması: kurmak için bir kaideye, şampiyonunu göndermek için yere tıkla, Boşluk sonraki dalgayı çağırır, Esc duraklatır. Oyun kolu: yön tuşları ve A her menüde çalışır, B geri gider, LB/RB kamp sekmelerini değiştirir. Savaşta A son eylemi tekrarlar, X Savunur, Y Yeteneği kullanır, LB/RB iki beceri, Start Diğer'i açar (Koru, Yer Değiştir, İksirler, Çağrı), yön tuşları hedefler arasında geçer, Select Otomatik'i açıp kapar. Sonsuz Yarık: sol çubuk ya da yön tuşları yönlendirir, Start duraklatır.",scripts/ui/GuildViews.gd:1461
-Momentum and skills,İvme ve beceriler,scripts/ui/GuildViews.gd:1462
-"Momentum is the party's shared pool (up to 10, starting at 3). Each basic attack adds 1, each kill 1, and each hit taken while Defending or Guarding 1 (2 for a heavy blow). Every hero has two role skills (Lv1 and Lv6) and their subclass Ability (Lv3). Skills cost 2-4 Momentum, Abilities 4.","İvme ekibin ortak havuzudur (en fazla 10, 3 ile başlar). Her temel saldırı 1, her öldürme 1 ve Savunurken ya da Korurken alınan her darbe 1 ekler (ağır darbe için 2). Her kahramanın iki rol becerisi (Sv1 ve Sv6) ve alt sınıf Yeteneği (Sv3) vardır. Beceriler 2-4 İvme, Yetenekler 4 İvme harcar.",scripts/ui/GuildViews.gd:1462
-Enemy moves,Düşman hamleleri,scripts/ui/GuildViews.gd:1463
-"Each round a foe shows its next move above its health bar: an attack on a hero, a wind-up (a heavy blow next round), or a special move: Sweep (hits everyone), Snipe (the most-hurt back-row hero), Curse (40% less damage for 2 rounds), Ward, Mend or Roar. Shield Bash stuns a foe; Shield Bash and Frost Nova break wind-ups.","Her tur bir düşman sonraki hamlesini can çubuğunun üstünde gösterir: bir kahramana saldırı, güç toplama (sonraki tur ağır darbe) ya da özel bir hamle: Süpürme (herkese vurur), Nişan (arka sıradaki en yaralı kahraman), Lanet (2 tur %40 daha az hasar), Koruma, İyileştirme ya da Kükreme. Kalkan Darbesi bir düşmanı sersemletir; Kalkan Darbesi ve Buz Novası güç toplamaları bozar.",scripts/ui/GuildViews.gd:1463
-Designed encounters,Tasarlanmış karşılaşmalar,scripts/ui/GuildViews.gd:1464
-"About six regular fights in ten are one of a region's named encounters (Scarecrow Line, Reed Snipers, Forge Guard...), groups whose members play off each other: a warder shielding a brute, a healer behind a wall, snipers behind a tank. The name and a tactical hint open the fight log; hover the round label to read the hint again.","Her on normal dövüşten yaklaşık altısı bir bölgenin adlı karşılaşmalarından biridir (Korkuluk Hattı, Kamış Nişancıları, Demirhane Muhafızı...); üyeleri birbirini tamamlayan gruplar: bir zorbayı koruyan bir bekçi, bir duvarın ardında bir şifacı, bir tankın ardında nişancılar. Ad ve bir taktik ipucu dövüş kaydını açar; ipucunu yeniden okumak için tur etiketinin üstüne gel.",scripts/ui/GuildViews.gd:1464
-Rift bosses,Yarık bossları,scripts/ui/GuildViews.gd:1465
-"Each boss is always the same fight. Vaelith's Harvest hits everyone and heals her, and she calls a Crier and a Warden at half health. Nyxara's Drowning Tide chills and weakens the party. Korrath's Sunder tears the wards off the front row. Drevok Brands a hero to take 50% more damage and calls fire cultists. Sythrane Immolates the party while she regenerates and enrages. Their signature moves are telegraphed like any other.",Her boss hep aynı dövüştür. Vaelith'in Hasadı herkese vurur ve onu iyileştirir; yarı canda bir Çığırtkan ve bir Bekçi çağırır. Nyxara'nın Boğan Dalgası ekibi üşütür ve zayıflatır. Korrath'ın Parçala'sı ön sıranın korumalarını söker. Drevok bir kahramanı %50 daha fazla hasar alacak şekilde Damgalar ve ateş tarikatçılarını çağırır. Sythrane yenilenip öfkelenirken ekibi Yakıp Kavurur. İmza hamleleri de diğerleri gibi önceden belli olur.,scripts/ui/GuildViews.gd:1465
-"Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion.","Karşılaştığın her canavar, boss ve tehlike, siluetten tam renge açılarak kaydedilir — sadece kayıt tutma, tamamlamaya bağlı ödül yok.",scripts/ui/GuildViews.gd:1466
-"Opens with Act II, in the Rift Hall. 100 fixed floors, one fight each: a floor is always the same fight, so a loss is something to plan around. Heroes fight at full HP and leave as they came (no downing, scars or days passing). Most floors carry a rule (armored or burning foes, a swarm, a party cap). Every 10th floor is a guardian that gives a unique relic, and floors 10/25/50/75/100 earn guild titles. Only a first clear pays; floors 91-100 reshuffle their rules every week and pay half for a re-clear.","II. Perde ile Yarık Salonu'nda açılır. 100 sabit kat, her biri tek dövüş: bir kat hep aynı dövüştür, yani bir kayıp planlanacak bir şeydir. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır (düşme, yara izi ya da gün geçmesi yok). Çoğu katın bir kuralı vardır (zırhlı ya da yanan düşmanlar, kalabalık, ekip sınırı). Her 10. kat benzersiz bir kalıntı veren bir muhafızdır ve 10/25/50/75/100. katlar lonca unvanı kazandırır. Yalnızca ilk temizleme ödül verir; 91-100. katlar her hafta kurallarını değiştirir ve tekrar temizlemede yarısını öder.",scripts/ui/GuildViews.gd:1467
-Foes & regions,Düşmanlar ve bölgeler,scripts/ui/GuildViews.gd:1468
-"Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun.","Her yarık kendi düşmanları olan bir bölgededir (Vadi, Bataklıklar, Küllü Çorak Topraklar). Bazı düşmanlar ağır bir darbe için bir tur önceden güç toplar (x2,5, hedef Savunmazsa sersemletir); zırhlı düşmanlar her temel saldırının bir kısmını savuşturur (her darbe zırhı aşındırır; yetenekler yok sayar); ateş düşmanları yakabilir, ayaz düşmanları üşütebilir (geç davranır). Saha Toniği yanma, üşüme, zehir ve sersemliği temizler.",scripts/ui/GuildViews.gd:1468
-"Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift.","Üç perde; her biri adlı bir düşmana karşı final yarığıyla biter. Finali açmak için perdenin hedeflerini tamamla (Yarık Salonu'nda gösterilir); mühürlemek bir ödül ve Efsanevi bir kalıntı verir. I. Perde Büyük Yarıkları, II. Perde Sonsuz Yarık'ı açar.",scripts/ui/GuildViews.gd:1469
-"Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers.","Kalıntılar Kalıntı Sunağı'nda (Envanter) durur ve tüm ekibi güçlendirir. Her kalıntının bir özel gücü vardır; nadir ve destansı olanların ayrıca savaşta tetiklenen bir etkisi olur (öldürünce, her üç turda bir, bir müttefik düşünce...). Yeni bir etki uyandırmak için bir kalıntıyı 5. seviyeye çıkar ya da herhangi bir etkiyi Öz karşılığında yenile. Efsanevi kalıntıların eşsiz güçleri vardır.",scripts/ui/GuildViews.gd:1470
-Quirks,Huylar,scripts/ui/GuildViews.gd:1471
-"Everything personal about a hero beyond class, skills and gear: at most one born quirk (it sets their voice), up to 2 scars from being knocked out (a wound with a small upside), and quirks earned by what they've done. Bad born quirks and scars can be treated for Gold at the Arcane Lab.","Bir kahramanın sınıfı, becerileri ve teçhizatı dışındaki her şey: en fazla bir doğuştan huy (sesini belirler), bayılmaktan kalan en fazla 2 yara izi (küçük bir artısı olan bir yara) ve yaptıklarıyla kazandığı huylar. Kötü doğuştan huylar ve yara izleri Gizem Laboratuvarı'nda Altınla tedavi edilebilir.",scripts/ui/GuildViews.gd:1471
-Riftbreaks,Yarık Taşmaları,scripts/ui/GuildViews.gd:1472
-"From Act II a rift swells every so often: a rank, a place and a countdown in days (Rift Hall and the camp's status board). Seal a rift of that rank or higher before it runs out to close it, for a little Essence. Otherwise it breaks, and every rift run waits until your guild defends. Ranks below S break out in a region; from S up they break at your camp. Holding pays Gold and Essence. Losing costs a share of your Essence and of the Gold beyond the coming payday's wages, damages a building (two at the camp) and wounds the posted heroes who fell.","II. Perde'den itibaren ara sıra bir yarık kabarır: bir rütbe, bir yer ve günlerle bir geri sayım (Yarık Salonu ve kampın durum panosu). Süre bitmeden o rütbede ya da daha yüksek bir yarığı mühürlersen kapanır ve biraz Öz kazanırsın. Yoksa taşar ve loncan savunana dek her yarık seferi bekler. S'nin altındaki rütbeler bir bölgede taşar; S ve üstü kampında taşar. Dayanmak Altın ve Öz kazandırır. Kaybetmek Özünden ve yaklaşan maaş gününün ücretleri dışındaki Altınından bir pay alır, bir yapıya (kampta ikisine) hasar verir ve düşen nöbetçi kahramanları yaralar.",scripts/ui/GuildViews.gd:1472
-Defending,Savunma,scripts/ui/GuildViews.gd:1473
-"Foes walk the roads toward the goal. Build towers on the round pads with supplies (you start with some and earn more for every kill); click a tower to upgrade or sell it. Ballistas shoot far, Fire Braziers splash and burn, Frost Totems slow, Ward Stones shield nearby heroes, Chapels mend them; research in the Defenses branch opens the last three and tier 3. Idle heroes stand at posts: warriors and rogues hold foes in place, rangers and mages shoot. Steer one champion by clicking where to go. Every foe that gets through costs integrity (an elite 3, a warden 10); at 0 the defense is lost. Call a wave early for bonus supplies.","Düşmanlar yollardan hedefe doğru yürür. Yuvarlak kaidelere erzakla kuleler kur (bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın); geliştirmek ya da satmak için bir kuleye tıkla. Balistalar uzağa atar, Ateş Mangalları sıçrar ve yakar, Ayaz Totemleri yavaşlatır, Muhafız Taşları yakındaki kahramanları korur, Şapeller onları iyileştirir; Savunma dalındaki araştırma son üçünü ve 3. kademeyi açar. Boştaki kahramanlar nöbet yerlerinde durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Bir şampiyonu gideceği yere tıklayarak yönet. Geçen her düşman bütünlüğe mal olur (bir seçkin 3, bir muhafız 10); 0'da savunma kaybedilir. Ek erzak için bir dalgayı erken çağır.",scripts/ui/GuildViews.gd:1473
-"Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Essence levels them up (to 5).","Her yeni lonca, yirmi dörtlük bir havuzdan çekilen on iki şampiyonla tanışır: üçü I., II. ve III. Perdenin sonunda özgürleşir, dokuzu Sonsuz Yarık'ta kayıptır ve her birini bir ışık sütunu işaret eder (özgürleştirmek için içinde dur). Şampiyonlar kadroya katılmaz. Yarık seferlerinde biri grubu gözetir: Lütfu herkesi güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir (yarık başına bir, 3. seviyeden itibaren iki kez). Sonsuz Yarık'ta grup şampiyonlarının kendisidir ve her birinin Çağrısı imza hareketidir. Öz ile seviye atlarlar (en fazla 5).",scripts/ui/GuildViews.gd:1474
-Attributes,Nitelikler,scripts/ui/GuildViews.gd:1475
-"Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off).","Kudret (hasar, can), Çeviklik (hız, kaçınma, ilk vuruş) ve Odak (yetenek gücü, iyileşme). Kahramanlar seviye başına Kadro'nun Kahraman sekmesinde harcanacak 3 puan kazanır; teçhizat daha fazlasını ekler ve daha iyi teçhizat kuşanmak için niteliğinde bir alt sınır ister. Altınla en fazla 8 ek puan eğit ya da bir kahramanın puanlarını seviye başına 5 Öz karşılığında sıfırla (artık uygun olmadığı teçhizat çıkarılır).",scripts/ui/GuildViews.gd:1475
-Quests & Milestones,Görevler ve Kilometre Taşları,scripts/ui/GuildViews.gd:1476
-"The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus.","Görev panosu 6 görev asar (avlar, boss ödülleri, yarık mühürleri, sınavlar); aynı anda en fazla 3 tane al. Kabul edilmeyen ilanlar her 3 günde bir değişir (her yarık koşusu ya da dinlenmeyle bir gün geçer). Kilometre taşları sabit bir listedir, karşılandıkları an kendiliğinden verilir. Ün ara sıra sonraki Dükkânda garanti bir Destansı kalıntı hazırlar. Nadiren bir eşlik edilen kişi de bir dövüşe katılabilir — hayatta kalırsa küçük bir bonus öder.",scripts/ui/GuildViews.gd:1476
-"Wages, morale and the rival","Maaş, moral ve rakip",scripts/ui/GuildViews.gd:1477
-"Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, and once a week it may make a move you answer before payday: court one of your heroes (match their offer, or they choose, staying only at morale 50 or above), dare you to seal a rift by payday (Renown rides on it), or go for a posted contract (take it on or lose it). Requests and the rival's moves pop up at camp and wait in the Ledger, whose week board shows each day to payday. At payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize.","Her 7 günde bir (bir gün = bir yarık seferi ya da dinlenme) kahramanlar rütbe ve seviyeye göre maaş alır ve her Lonca Yönetimi seviyesinin bakım masrafı vardır; bkz. Lonca > Defter. Ödenmeyen bakım Üne mal olur. Eğitim Sahası haftada yalnızca birkaç nitelik puanı çalıştırır (Talim Sahası ile daha fazla) ve bir ziyafet sınırlı sayıda kahramanı, en düşük morallilerden başlayarak ağırlar (Ticaret Ağı ile daha fazla). Maaşı ödenmeyenlerin morali düşer; üst üste iki kez ödenmeyen ya da maaş gününde morali dipteki kahraman ayrılır. Moral (0-100) mühürlenen yarıklar ve ziyafetlerle yükselir; yenilgiler, bayılmalar, boş haftalar ve başarısız sözleşmelerle düşer: Coşkulu kahramanlar +%10 hasar verir, Sarsılmış -%10, Çöken -%20. Alınan sözleşmelerin süresi 6-10 gündür. Rakip bir lonca her gün Ün kazanır ve haftada bir, maaş gününden önce cevaplaman gereken bir hamle yapabilir: kahramanlarından birine göz diker (teklifi karşıla ya da kendisi seçsin; yalnızca 50 ve üstü moralde kalır), maaş gününe kadar bir yarığı mühürlemen için meydan okur (Ün ortaya konur) ya da ilandaki bir sözleşmenin peşine düşer (üstlen ya da kaybet). İstekler ve rakibin hamleleri kampta açılır ve Defter'de bekler; Defter'in hafta panosu maaş gününe kadar her günü gösterir. Maaş gününde Ünde önde olan daha iyi acemileri alır. Her 28 günde bir, daha çok Ün kazanan lonca ödül kazanır.",scripts/ui/GuildViews.gd:1477
-Hero requests,Kahraman istekleri,scripts/ui/GuildViews.gd:1478
-"Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no.","Hafta ortasında bir kahraman bir şey isteyebilir: izin (birkaç gün uzakta), zam (kalıcı olarak daha yüksek maaş), teçhizat için Altın, bir Talim Alanı yeri ya da başka bir kahramanla kavgasında senin desteğin. Evet demek bir şeye mal olur; hayır demek morale mal olur. Maaş gününden önce Defter'de cevap ver, yoksa hayır sayılır.",scripts/ui/GuildViews.gd:1478
-Hunt,Av,scripts/ui/GuildViews.gd:1489
-Wanted,Aranan,scripts/ui/GuildViews.gd:1489
-Seal the Rift,Yarığı Mühürle,scripts/ui/GuildViews.gd:1489
-Trial,Sınav,scripts/ui/GuildViews.gd:1490
-Supply,İkmal,scripts/ui/GuildViews.gd:1490
-Day %d  ·  Taken %d/%d  ·  new postings in %d day%s,Gün %d  ·  Alınan %d/%d  ·  yeni ilanlara %d gün%s,scripts/ui/GuildViews.gd:1526
-A day passes with every rift run or rest. Unaccepted postings are replaced when the board refreshes; quests you've taken stay.,Her yarık koşusu ya da dinlenmeyle bir gün geçer. Kabul edilmeyen ilanlar pano yenilenince değişir; aldığın görevler kalır.,scripts/ui/GuildViews.gd:1531
-Nothing posted — new postings in %d day%s.,İlan yok — yeni ilanlara %d gün%s.,scripts/ui/GuildViews.gd:1543
-Every 20 Renown arms a guaranteed Epic relic at your next Shop.,"Her 20 Ün, sonraki Dükkânında garanti bir Destansı kalıntı hazırlar.",scripts/ui/GuildViews.gd:1547
-Milestones,Kilometre taşları,scripts/ui/GuildViews.gd:1550
-Claimed,Alındı,scripts/ui/GuildViews.gd:1556
-Quest,Görev,scripts/ui/GuildViews.gd:1582
-Due in %d day%s,%d gün%s içinde,scripts/ui/GuildViews.gd:1603
-Due today,Bugün bitiyor,scripts/ui/GuildViews.gd:1603
-%d days once taken,Alınınca %d gün,scripts/ui/GuildViews.gd:1608
-Difficulty,Zorluk,scripts/ui/GuildViews.gd:1615
-Reward: ,Ödül: ,scripts/ui/GuildViews.gd:1618
-Take on,Üstlen,scripts/ui/GuildViews.gd:1628
-You already have %d quests — finish or abandon one first,Zaten %d görevin var — önce birini bitir ya da bırak,scripts/ui/GuildViews.gd:1635
-Only progress made after taking it counts,Yalnızca görevi aldıktan sonraki ilerleme sayılır,scripts/ui/GuildViews.gd:1635
-Claim reward,Ödülü al,scripts/ui/GuildViews.gd:1640
-Abandon,Bırak,scripts/ui/GuildViews.gd:1654
-Take it down,İndir,scripts/ui/GuildViews.gd:1662
-DONE,BİTTİ,scripts/ui/GuildViews.gd:1686
-TAKEN,ALINDI,scripts/ui/GuildViews.gd:1686
-FAILED,BAŞARISIZ,scripts/ui/GuildViews.gd:1686
- Branch, Dalı,scripts/ui/GuildViews.gd:1707
-Click again to confirm reset,Sıfırlamayı onaylamak için tekrar tıkla,scripts/ui/GuildViews.gd:1727
-Reset Guild,Loncayı Sıfırla,scripts/ui/GuildViews.gd:1727
-Lv %d/%d,Sv %d/%d,scripts/ui/GuildViews.gd:1772
-Damaged in a Riftbreak: works at Lv %d until repaired.,Bir Yarık Taşmasında hasar gördü: onarılana dek Sv %d olarak çalışır.,scripts/ui/GuildViews.gd:1795
-Repair a level — %d Gold,Bir seviye onar — %d Altın,scripts/ui/GuildViews.gd:1798
-%s repaired,%s onarıldı,scripts/ui/GuildViews.gd:1801
-Works at Lv %d,Sv %d düzeyinde çalışıyor,scripts/ui/GuildViews.gd:1801
-Each level: %s · upkeep +%d Gold a week,Her seviye: %s · bakım haftada +%d Altın,scripts/ui/GuildViews.gd:1804
-%s Lv%d — %s,%s Sv%d — %s,scripts/ui/GuildViews.gd:1809
-⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3),⌂ Kamp: %s Sv3 ve Sv5'te yeniden yapılır (şu an kademe %d/3),scripts/ui/GuildViews.gd:1815
-⌂ Camp: every level grows the Guild Hall (guild tier),⌂ Kamp: her seviye Lonca Salonu'nu büyütür (lonca kademesi),scripts/ui/GuildViews.gd:1817
-Upgrade to Lv%d — %d Gold,Sv%d'ye geliştir — %d Altın,scripts/ui/GuildViews.gd:1822
-Upgrade to Lv%d — %d Essence,Yükselt: Sv%d — %d Öz,scripts/ui/GuildViews.gd:1822
-%s — Lv%d,%s — Sv%d,scripts/ui/GuildViews.gd:1829
-Next: %s%s,Sonraki: %s%s,scripts/ui/GuildViews.gd:1832
+Lütuflar: ",scripts/ui/GuildViews.gd:482
+Memorial,Anıt,scripts/ui/GuildViews.gd:489
+Heroes lost for good. Their names stay with the guild.,Sonsuza dek kaybedilen kahramanlar. İsimleri loncada yaşar.,scripts/ui/GuildViews.gd:490
+No one has fallen. May it stay that way.,Kimse düşmedi. Öyle kalsın.,scripts/ui/GuildViews.gd:492
+"%s — Rank %s, Level %d","%s — Rütbe %s, Seviye %d",scripts/ui/GuildViews.gd:503
+"%s, on day %d. %d rift%s sealed, %d foe%s felled.","%s, %d. günde. %d yarık%s mühürledi, %d düşman%s devirdi.",scripts/ui/GuildViews.gd:504
+No answer by payday counts as a no.,Maaş gününe kadar cevap verilmezse hayır sayılır.,scripts/ui/GuildViews.gd:541
+No answer by payday: they choose for themselves.,Maaş gününe kadar cevap yoksa: kendisi seçer.,scripts/ui/GuildViews.gd:554
+No answer by payday counts as declining.,Maaş gününe kadar cevap yoksa reddetmiş sayılırsın.,scripts/ui/GuildViews.gd:554
+No answer by payday: they take it.,Maaş gününe kadar cevap yoksa: onlar alır.,scripts/ui/GuildViews.gd:555
+%d day%s to payday.,Maaş gününe %d gün%s.,scripts/ui/GuildViews.gd:557
+Decide later,Sonra karar ver,scripts/ui/GuildViews.gd:581
+ Answer in Guild > Ledger., Lonca > Defter'den cevap ver.,scripts/ui/GuildViews.gd:590
+Payday · %d Gold,Maaş günü · %d Altın,scripts/ui/GuildViews.gd:617
+Wages %d + upkeep %d Gold; you have %d.,Maaş %d + bakım %d Altın; sende %d var.,scripts/ui/GuildViews.gd:618
+Request closes,İstek kapanır,scripts/ui/GuildViews.gd:620
+Dare due,Meydan okuma biter,scripts/ui/GuildViews.gd:622
+Rival waits,Rakip bekliyor,scripts/ui/GuildViews.gd:622
+Contract due,Sözleşme süresi,scripts/ui/GuildViews.gd:625
+Rift breaks,Yarık taşar,scripts/ui/GuildViews.gd:627
+A Rank %s rift breaks near %s.,%s rütbeli bir yarık %s yakınında taşar.,scripts/ui/GuildViews.gd:627
+Contest ends,Yarışma biter,scripts/ui/GuildViews.gd:629
+The month's Renown contest with %s ends.,%s ile ayın Ün yarışması biter.,scripts/ui/GuildViews.gd:629
+Today,,scripts/ui/GuildViews.gd:639
+Day %d,Gün %d,scripts/ui/GuildViews.gd:639
+in %d day%s,%d gün%s sonra,scripts/ui/GuildViews.gd:650
+A day passes with every rift run or rest.,Her yarık seferi ya da dinlenmeyle bir gün geçer.,scripts/ui/GuildViews.gd:654
+Guild Ledger,Lonca Defteri,scripts/ui/GuildViews.gd:664
+Paying the guild,Loncayı ödemek,scripts/ui/GuildViews.gd:665
+"A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep.",Her yarık seferi ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman ayrılır. Her Lonca Yönetimi seviyesi ayrıca haftada %d Altın bakım ister.,scripts/ui/GuildViews.gd:665
+Payday in %d day%s · wages %d + upkeep %d Gold · you have %d,Maaş gününe %d gün%s · maaş %d + bakım %d Altın · sende %d,scripts/ui/GuildViews.gd:678
+"A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out.",Her yarık koşusu ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman çekip gider.,scripts/ui/GuildViews.gd:680
+%d Gold paid,%d Altın ödendi,scripts/ui/GuildViews.gd:686
+unpaid: %s,ödenmedi: %s,scripts/ui/GuildViews.gd:688
+walked out: %s,çekip gitti: %s,scripts/ui/GuildViews.gd:690
+Last payday (day %d): %s.,Son maaş günü (gün %d): %s.,scripts/ui/GuildViews.gd:691
+Training Yard: %d of %d trainings left this week,Talim Alanı: bu hafta %d / %d eğitim kaldı,scripts/ui/GuildViews.gd:692
+"Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown.",Bakım: her Lonca Yönetimi seviyesi haftada %d Altın ister; maaşlardan sonra ödenemezse lonca %d Ün kaybeder.,scripts/ui/GuildViews.gd:693
+"Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first","Ziyafet ver (%d Altın): +%d moral, en fazla %d kahramana, en düşükten başlayarak",scripts/ui/GuildViews.gd:696
+Once a week.,Haftada bir.,scripts/ui/GuildViews.gd:703
+Already feasted this week — the next one after payday.,Bu hafta zaten ziyafet verildi — bir sonraki maaş gününden sonra.,scripts/ui/GuildViews.gd:703
+Rival: %s,Rakip: %s,scripts/ui/GuildViews.gd:718
+Led by %s,Lideri: %s,scripts/ui/GuildViews.gd:719
+Renown — you %d · them %d (%s),Ün — sen %d · onlar %d (%s),scripts/ui/GuildViews.gd:723
+you lead by %d,%d öndesin,scripts/ui/GuildViews.gd:723
+they lead by %d,onlar %d önde,scripts/ui/GuildViews.gd:723
+level,eşit,scripts/ui/GuildViews.gd:723
+"Renown is the one race with the rival. They gain it every day and sometimes take a posted contract before you do. At payday the leader gets the pick of next week's recruits (one more offer for you, or one fewer); every 20 you earn arms an Epic relic at your next Shop. Seal rifts and finish contracts to gain it; failed contracts and unpaid upkeep cost it.","Rakiple tek yarışın Ün. Onlar her gün Ün kazanır ve bazen ilandaki bir sözleşmeyi senden önce kapar. Maaş gününde önde olan, gelecek haftanın acemilerinden ilk seçimi yapar (sana bir teklif fazla ya da eksik); kazandığın her 20 Ün, bir sonraki Dükkânda Destansı bir kalıntı garantiler. Yarık mühürleyerek ve sözleşme bitirerek kazanılır; başarısız sözleşmeler ve ödenmeyen bakım masrafı kaybettirir.",scripts/ui/GuildViews.gd:725
+"This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.","Bu ay kazanılan Ün — sen %d · onlar %d · %d gün%s kaldı. Ödül: %d Altın, %d Ün.",scripts/ui/GuildViews.gd:729
+Guild Standings,Lonca Sıralaması,scripts/ui/GuildViews.gd:735
+Guild,Lonca,scripts/ui/GuildViews.gd:740
+Tower floor,Kule katı,scripts/ui/GuildViews.gd:740
+Endless best,Sonsuz en iyi,scripts/ui/GuildViews.gd:740
+ (you), (sen),scripts/ui/GuildViews.gd:746
+ — rival, — rakip,scripts/ui/GuildViews.gd:746
+The other guilds' records grow every day. Top the Renown column for an achievement.,Diğer loncaların kayıtları her gün büyür. Bir başarım için Ün sütununda zirveye çık.,scripts/ui/GuildViews.gd:752
+Heroes — wages and morale,Kahramanlar — maaş ve moral,scripts/ui/GuildViews.gd:754
+"%s — Rank %s, Lv%d · wage %d Gold/week","%s — Rütbe %s, Sv%d · maaş %d Altın/hafta",scripts/ui/GuildViews.gd:765
+Morale %d · %s%s%s,Moral %d · %s%s%s,scripts/ui/GuildViews.gd:767
+ (%+d%% damage), (%+d%% hasar),scripts/ui/GuildViews.gd:767
+ · unpaid %d week%s, · %d hafta%s ödenmedi,scripts/ui/GuildViews.gd:767
+Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d,Yarık mühürlemek +%d · kaybedilen yarık %d · bayılmak %d · maaş ödenmemesi %d · yarıksız bir hafta %d · başarısız sözleşme %d · ziyafet +%d,scripts/ui/GuildViews.gd:769
+Confirm: let them go,Onayla: gitmesine izin ver,scripts/ui/GuildViews.gd:775
+Dismiss,Görevden al,scripts/ui/GuildViews.gd:775
+They leave the guild for good; their gear goes back to the stockpile. No more wages.,Loncadan kalıcı olarak ayrılır; teçhizatı depoya döner. Artık maaş yok.,scripts/ui/GuildViews.gd:785
+Guild news,Lonca haberleri,scripts/ui/GuildViews.gd:792
+Assemble a party in the Rift Hall and enter a rift,Yarık Salonu'nda bir ekip kur ve bir yarığa gir,scripts/ui/GuildViews.gd:807
+Equip an item on a hero (Roster > Heroes),Bir kahramana eşya kuşandır (Kadro > Kahramanlar),scripts/ui/GuildViews.gd:808
+Spend a skill point (Roster > Heroes > Skills),Bir beceri puanı harca (Kadro > Kahramanlar > Beceriler),scripts/ui/GuildViews.gd:809
+Seal your first rift by beating its boss,Boss'unu yenerek ilk yarığını mühürle,scripts/ui/GuildViews.gd:810
+%d SP,%d BP,scripts/ui/GuildViews.gd:826
+can evolve,evrimleşebilir,scripts/ui/GuildViews.gd:832
+empty %s slot,boş %s yuvası,scripts/ui/GuildViews.gd:835
+%d hero(es) wounded or downed,%d kahraman yaralı ya da düşmüş,scripts/ui/GuildViews.gd:843
+%d recruit(s) you can afford,Paranın yettiği %d aday,scripts/ui/GuildViews.gd:847
+%d craft(s) ready in Crafting,Zanaat'ta %d üretim hazır,scripts/ui/GuildViews.gd:861
+%d relic slot(s) empty — equip a relic under Items > Relics,%d kalıntı yuvası boş — Eşyalar > Kalıntılar'dan bir kalıntı kuşan,scripts/ui/GuildViews.gd:865
+%d quest(s) ready to claim,Ödülü alınabilir %d görev,scripts/ui/GuildViews.gd:868
+Command Tent,Komuta Çadırı,scripts/ui/GuildViews.gd:880
+Ledger,Defter,scripts/ui/GuildViews.gd:889
+Codex,Kodeks,scripts/ui/GuildViews.gd:890
+Trading Post,Ticaret Karakolu,scripts/ui/GuildViews.gd:901
+Scholar's Lodge,Bilgin Köşkü,scripts/ui/GuildViews.gd:907
+%s (locked),%s (kilitli),scripts/ui/GuildViews.gd:920
+Freed at the end of Act %s.,%s. Perde'nin sonunda kurtarılır.,scripts/ui/GuildViews.gd:950
+Lost in the Endless Rift: survive past %d:%02d to find their light.,Sonsuz Yarık'ta kayıp: ışığını bulmak için %d:%02d sonrasına kadar dayan.,scripts/ui/GuildViews.gd:954
+%s · Level %d/%d,%s · Seviye %d/%d,scripts/ui/GuildViews.gd:963
+Boon: ,Lütuf: ,scripts/ui/GuildViews.gd:964
+Call: %s — %s (%s),Çağrı: %s — %s (%s),scripts/ui/GuildViews.gd:969
+twice a rift,yarık başına iki kez,scripts/ui/GuildViews.gd:969
+once a rift,yarık başına bir kez,scripts/ui/GuildViews.gd:969
+Overseeing,Gözetiyor,scripts/ui/GuildViews.gd:974
+Oversee rifts,Yarıkları gözet,scripts/ui/GuildViews.gd:974
+"The overseer's Boon lifts the whole party in every rift run, and any hero can spend their turn on the Call.",Gözetmenin Lütfu her yarık seferinde tüm ekibi güçlendirir; herhangi bir kahraman sırasını Çağrı'ya harcayabilir.,scripts/ui/GuildViews.gd:979
+Level up — %d Essence,Seviye atla — %d Öz,scripts/ui/GuildViews.gd:983
+%s reaches level %d,%s %d. seviyeye ulaştı,scripts/ui/GuildViews.gd:989
+Boon and Call grow stronger,Lütuf ve Çağrı güçlenir,scripts/ui/GuildViews.gd:989
+"Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift.","Her seviye: Lütuf ve Çağrı +%%%d, Sonsuz Yarık'ta +%%%d can ve hasar. %d. seviyede Çağrı yarık başına iki kez kullanılır.",scripts/ui/GuildViews.gd:992
+"Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party. Spend Essence here to level them up.",Şampiyonlar hikâyede özgürleşir ve Sonsuz Yarık'ta kurtarılır. Biri yarık seferlerini gözetir: tüm grup onun Lütfunu alır ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. Sonsuz Yarık'ta grup şampiyonlarının kendisidir. Seviye atlatmak için burada Öz harca.,scripts/ui/GuildViews.gd:1001
+Essence: %d,Öz: %d,scripts/ui/GuildViews.gd:1005
+Spend it to level up champions. The Endless Rift pays the most.,Şampiyonların seviyesini yükseltmek için harca. En çok Sonsuz Yarık öder.,scripts/ui/GuildViews.gd:1007
+%d of %d champions found. Every new guild meets a different twelve.,%d/%d şampiyon bulundu. Her yeni lonca farklı on iki şampiyonla karşılaşır.,scripts/ui/GuildViews.gd:1012
+Hiring heroes,Kahraman işe almak,scripts/ui/GuildViews.gd:1026
+Recruit heroes below; higher ranks are stronger.,Aşağıdan kahraman işe al; yüksek rütbeler daha güçlüdür.,scripts/ui/GuildViews.gd:1026
+Rank odds: %s%s,Rütbe olasılıkları: %s%s,scripts/ui/GuildViews.gd:1027
+  ·  Scouts' Lodge: a C+ recruit is assured each refresh,  ·  İzci Köşkü: her yenilemede bir C+ aday garanti,scripts/ui/GuildViews.gd:1027
+Hero Recruits — %d/%d roster slots,Kahraman Adayları — %d/%d kadro yeri,scripts/ui/GuildViews.gd:1030
+Your roster is full. The Barracks (Guild > Manage > Operations) adds 2 slots a level; you can also let a hero go from the Ledger.,Kadron dolu. Kışla (Lonca > Yönetim > Operasyon) her seviyede 2 yer ekler; bir kahramanı Defter'den de gönderebilirsin.,scripts/ui/GuildViews.gd:1032
+No one is looking for work right now. New recruits arrive every payday.,Şu an iş arayan kimse yok. Yeni adaylar her maaş gününde gelir.,scripts/ui/GuildViews.gd:1036
+Commission a recruit (%d Gold):,Bir acemi ısmarla (%d Altın):,scripts/ui/GuildViews.gd:1041
+A %s joins the offers at the usual rank odds (the last offer leaves).,Teklifler arasına olağan rütbe ihtimalleriyle bir %s katılır (son teklif gider).,scripts/ui/GuildViews.gd:1052
+Rank %s %s · %d Gold · Power %d · %d HP · wage %d/week,Rütbe %s %s · %d Altın · Güç %d · %d Can · maaş %d/hafta,scripts/ui/GuildViews.gd:1075
+Passive — ,Pasif — ,scripts/ui/GuildViews.gd:1076
+Reroll (%d Gold),Yenile (%d Altın),scripts/ui/GuildViews.gd:1078
+Recruit,İşe al,scripts/ui/GuildViews.gd:1084
+%s joins the guild!,%s loncaya katıldı!,scripts/ui/GuildViews.gd:1090
+Medical Bay — %d/%d beds occupied,Revir — %d/%d yatak dolu,scripts/ui/GuildViews.gd:1101
+"Field Triage: once per rift, get a downed hero back up mid-rift.","Sahada Triyaj: yarık başına bir kez, düşmüş bir kahramanı yarığın ortasında ayağa kaldır.",scripts/ui/GuildViews.gd:1103
+%d/%d HP · %s,%d/%d Can · %s,scripts/ui/GuildViews.gd:1129
+Empty bed,Boş yatak,scripts/ui/GuildViews.gd:1132
+Recovering without a bed (slower):,Yataksız iyileşenler (daha yavaş):,scripts/ui/GuildViews.gd:1139
+%s — %d/%d HP (%s) · %s,%s — %d/%d Can (%s) · %s,scripts/ui/GuildViews.gd:1143
+downed,yere serilmiş,scripts/ui/GuildViews.gd:1143
+wounded,yaralı,scripts/ui/GuildViews.gd:1143
+Put in a bed,Yatağa yatır,scripts/ui/GuildViews.gd:1147
+Every bed is taken,Bütün yataklar dolu,scripts/ui/GuildViews.gd:1152
+A downed hero comes back a run sooner; a wounded one is fully healed after the next run.,Yere serilmiş bir kahraman bir koşu erken döner; yaralı biri sonraki koşudan sonra tamamen iyileşir.,scripts/ui/GuildViews.gd:1152
+Rest the guild (pass one run's time),Loncayı dinlendir (bir koşu süresi geçir),scripts/ui/GuildViews.gd:1158
+Heroes recover as if a run had ended.,Kahramanlar bir koşu bitmiş gibi toparlanır.,scripts/ui/GuildViews.gd:1162
+"Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed).",Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d'ini geri kazanır (yatakta hepsini).,scripts/ui/GuildViews.gd:1165
+back in %d run%s,%d koşu%s sonra döner,scripts/ui/GuildViews.gd:1171
+full after next run,sonraki koşudan sonra tam,scripts/ui/GuildViews.gd:1173
++%d%% HP per run,Koşu başına +%%%d Can,scripts/ui/GuildViews.gd:1174
+%d/3 — need %d more,%d/3 — %d tane daha gerek,scripts/ui/GuildViews.gd:1201
+%d owned — ready to craft%s,%d adet var — üretime hazır%s,scripts/ui/GuildViews.gd:1202
+Combine 3 of the same kind and rarity into 1 of the next rarity up.,Aynı türden ve nadirlikten 3 tanesini bir üst nadirlikte 1 taneye birleştir.,scripts/ui/GuildViews.gd:1207
+No craftable (unequipped Common/Rare) items.,Üretilebilir (kuşanılmamış Sıradan/Nadir) eşya yok.,scripts/ui/GuildViews.gd:1223
+Craft → %s,Üret → %s,scripts/ui/GuildViews.gd:1230
+No craftable (unequipped Common/Rare) relics.,Üretilebilir (kuşanılmamış Sıradan/Nadir) kalıntı yok.,scripts/ui/GuildViews.gd:1255
+poisons its target for a few rounds,hedefini birkaç tur zehirler,scripts/ui/GuildViews.gd:1287
+heals its allies each round,her tur müttefiklerini iyileştirir,scripts/ui/GuildViews.gd:1288
+starts the fight behind a ward,dövüşe bir korumanın ardında başlar,scripts/ui/GuildViews.gd:1289
+hits harder when badly hurt,ağır yaralıyken daha sert vurur,scripts/ui/GuildViews.gd:1290
+heals itself from the damage it deals,verdiği hasardan kendini iyileştirir,scripts/ui/GuildViews.gd:1291
+reflects part of the damage it takes,aldığı hasarın bir kısmını yansıtır,scripts/ui/GuildViews.gd:1292
+Monsters,Canavarlar,scripts/ui/GuildViews.gd:1301
+Monster,Canavar,scripts/ui/GuildViews.gd:1301
+Elites,Seçkinler,scripts/ui/GuildViews.gd:1302
+Rift Wardens,Yarık Bekçileri,scripts/ui/GuildViews.gd:1303
+%s — %d/%d met,%s — %d/%d karşılaşıldı,scripts/ui/GuildViews.gd:1308
+Hazards — %d/%d met,Tehlikeler — %d/%d karşılaşıldı,scripts/ui/GuildViews.gd:1317
+%s · finds %s,%s · bulur: %s,scripts/ui/GuildViews.gd:1333
+Telegraphs: %s,Önceden belli eder: %s,scripts/ui/GuildViews.gd:1364
+Brings a random warden mechanic each fight. %s,Her dövüşe rastgele bir bekçi mekaniği getirir. %s,scripts/ui/GuildViews.gd:1367
+Defeated.,Yenildi.,scripts/ui/GuildViews.gd:1367
+Not yet defeated.,Henüz yenilmedi.,scripts/ui/GuildViews.gd:1367
+Systems,Sistemler,scripts/ui/GuildViews.gd:1375
+Compendium,Derleme,scripts/ui/GuildViews.gd:1389
+"Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one ""gear"" slot pool that grows with hero rank. A Common rolls one stat, a Rare one bigger stat and a named effect, an Epic two stats and a stronger effect (some effects only come on Epics). Legendaries are unique.","Eşyalar kahramana bağlı teçhizattır. Silahlar kahramanın silah yuvalarını doldurur (1, çift silahlı sınıflarda 2); Zırh ve Odak eşyaları, kahraman rütbesiyle büyüyen tek bir ""teçhizat"" yuva havuzunu paylaşır. Sıradan eşya bir nitelik, Nadir daha büyük bir nitelik ve adlı bir etki, Destansı iki nitelik ve daha güçlü bir etki taşır (bazı etkiler yalnızca Destansılarda çıkar). Efsaneviler eşsizdir.",scripts/ui/GuildViews.gd:1399
+Stats: %s,Nitelikler: %s,scripts/ui/GuildViews.gd:1408
+ (Epic), (Destansı),scripts/ui/GuildViews.gd:1410
+"Relics are party-wide. Each relic has an elemental type, which nudges (60% weight) which power domain its rolled special favors.","Kalıntılar tüm ekibi etkiler. Her kalıntının bir element türü vardır; bu, rastgele gelen özel gücünün hangi alanı kayıracağını (%60 ağırlıkla) yönlendirir.",scripts/ui/GuildViews.gd:1414
+%s — %s domain,%s — %s alanı,scripts/ui/GuildViews.gd:1421
+Crafting combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up.,"Zanaat, aynı kategori/tür ve nadirlikteki 3 kuşanılmamış eşya ya da kalıntıyı bir üst nadirlikte 1 taneye birleştirir.",scripts/ui/GuildViews.gd:1426
+Legendary items/relics are fixed hand-authored drops — not craftable from Epics.,Efsanevi eşyalar/kalıntılar elle tasarlanmış sabit ganimetlerdir — Destansılardan üretilemez.,scripts/ui/GuildViews.gd:1429
+Guild Management,Lonca Yönetimi,scripts/ui/GuildViews.gd:1434
+"Spend Essence on 9 upgrades across 4 branches, and Gold on the Defenses branch (Armory, Engineering, Palisade, Watchtower) for Riftbreaks. Every level adds its effect; some levels unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots, tier 3 towers…). Guild Tier tracks total levels. A building damaged in a Riftbreak works a level lower until you repair it with Gold.","9 geliştirmeye (4 dal) Öz, Yarık Taşmaları için Savunma dalına (Cephanelik, Mühendislik, Şarampole, Gözcü Kulesi) Altın harca. Her seviye etkisini ekler; bazı seviyeler bir ayrıcalık açar (ilk vuruş bonusu, boss Öz sandığı, ek emanet yuvası, 3. kademe kuleler…). Lonca Kademesi toplam seviyeleri izler. Bir Yarık Taşmasında hasar gören yapı, Altınla onarılana dek bir seviye düşük çalışır.",scripts/ui/GuildViews.gd:1434
+"Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good.","İlk yarığını mühürledikten sonra Yarık Merdiveni her gün bir cilve sunar: tarihe göre belirlenen bir kural ve başlangıç lütfu, böylece her lonca aynısıyla karşılaşır. İşaretlersen bir sonraki merdiven yarığın (herhangi bir rütbe) onu taşır; günde bir deneme. Mühürlemek ek Öz kazandırır ve serini uzatır. Kayıtlar (Lonca Salonu'nda) başarıları, genel istatistikleri ve son 30 seferini tutar; Anıt, sonsuza dek kaybedilen kahramanları anar.",scripts/ui/GuildViews.gd:1435
+Endless Rift,Sonsuz Yarık,scripts/ui/GuildViews.gd:1436
+"A real-time survival run in the region you pick, and only champions go in (up to 4). You steer the first (WASD, arrows, drag or stick); the rest follow and fight on their own, and each fires their signature move on a timer (the ring over their head fills as it recharges). Your equipped relics come along. Every five minutes the rift runs the same cycle: the horde, a swarm, an elite pack (its leader carries a chest), archers and casters, then a lull with a chest nearby, and a warden at the end of it. At 20:00 the Rift Warden comes: beat it to seal the rift. The rift's strength (shown before you enter) starts gentle and grows with every champion you free and every act you pass. A run pays Essence and a little Gold, and costs the guild a day.","Seçtiğin bölgede gerçek zamanlı bir hayatta kalma seferi; içeri yalnızca şampiyonlar girer (en fazla 4). İlkini sen yönetirsin (WASD, oklar, sürükleme ya da çubuk); diğerleri onu izler ve kendi başlarına savaşır, her biri imza hareketini belli aralıklarla kullanır (başlarının üstündeki halka dolunca hazırdır). Takılı kalıntıların da seninle gelir. Yarık her beş dakikada aynı döngüyü işletir: sürü, bir akın, seçkin bir takım (lideri bir sandık taşır), okçular ve büyücüler, ardından yakınında bir sandıkla bir durgunluk ve sonunda bir muhafız. 20:00'de Yarık Muhafızı gelir: onu yenip yarığı mühürle. Yarığın gücü (girmeden önce gösterilir) hafif başlar ve özgürleştirdiğin her şampiyonla ve geçtiğin her perdeyle artar. Bir sefer Öz ve biraz Altın kazandırır, loncaya bir güne mal olur.",scripts/ui/GuildViews.gd:1436
+Endless picks,Sonsuz seçimleri,scripts/ui/GuildViews.gd:1437
+"Collect shards to level up and pick 1 of 3; one card is always a signature pick while any are left. Party upgrades (damage, speed, health…), a champion's role skill, a rank in their signature (up to 3: sooner and harder), or one of their two signature mods once it has a rank (Aftershock, Kindled, Frostbite, Expose, Stagger, Leech, Shrapnel, Radiance, Bulwark, Fervor, Renewal, Smokescreen). From level 10, two champions whose signatures are rank 2 can fuse: they fire together, 25% harder, and carry each other's mods. Max an upgrade and the matching role's attack can evolve (Whirlwind, Thousand Cuts, Arrow Storm, Starfall, Sanctum). Chests give one of three rift relics for the run.","Seviye atlamak için kırıkları topla ve 3 seçenekten birini al; kalan varken kartlardan biri hep bir imza seçimidir. Ekip geliştirmeleri (hasar, hız, can…), bir şampiyonun rol becerisi, imzasında bir rütbe (en fazla 3: daha erken ve daha sert) ya da imzanın bir rütbesi olunca iki imza güçlendirmesinden biri (Artçı Sarsıntı, Tutuşmuş, Soğuk Isırığı, Açığa Çıkar, Sersemlet, Sülük, Şarapnel, Nur, Siper, Coşku, Yenilenme, Sis Perdesi). 10. seviyeden itibaren imzaları 2. rütbede olan iki şampiyon kaynaşabilir: birlikte ateşlenir, %25 daha sert vurur ve birbirlerinin güçlendirmelerini taşırlar. Bir geliştirmeyi en üste çıkar, eşleşen rolün saldırısı evrilebilir (Kasırga Dönüşü, Bin Kesik, Ok Fırtınası, Yıldız Yağmuru, Kutsal Oda). Sandıklar koşu boyunca üç yarık emanetinden birini verir.",scripts/ui/GuildViews.gd:1437
+Endless ground,Sonsuz arazisi,scripts/ui/GuildViews.gd:1438
+"The Vale has pillars that block foes, the Marches have pools that slow everyone, the Wastes have lava that burns foes and your lead. Braziers break when you walk into or hit them, dropping a heal, a magnet for shards or a bomb. Elites and wardens slam: step out of the red circle before it fills. Your first 5, 10 and 15 minutes and your first sealed rift each pay once, with two Endless relics and guild titles.","Vadide düşmanları durduran sütunlar, Bataklıklarda herkesi yavaşlatan göletler, Çorak Topraklarda düşmanları ve önderini yakan lav var. Mangallar üstüne yürüyünce ya da vurunca kırılır ve bir iyileşme, parçalar için bir mıknatıs ya da bir bomba düşürür. Seçkinler ve bekçiler yere vurur: kırmızı daire dolmadan dışına çık. İlk 5, 10 ve 15 dakikan ve ilk mühürlediğin yarık birer kez ödül verir; iki Sonsuz kalıntısı ve lonca unvanlarıyla.",scripts/ui/GuildViews.gd:1438
+Hero voices,Kahraman sesleri,scripts/ui/GuildViews.gd:1439
+"A hero's born quirk sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win.","Bir kahramanın doğuştan huyu kişiliğini belirler (Cesur, Çevik, Soğukkanlı, Tedirgin, Dindar ya da Bilgin); sayfasında görünür. Büyük bir öldürme yaptıklarında, az canla dayandıklarında ya da bir müttefik düştüğünde savaşta konuşurlar ve her zaferi biri özetler.",scripts/ui/GuildViews.gd:1439
+Boss phases,Boss evreleri,scripts/ui/GuildViews.gd:1440
+"Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn.","Her boss canı yarıya inince değişir: Sürüyü Çağır (iki düşman katılır), Hiddet (%20 daha sert vurur ve daha sık güç toplar) ya da Son Burç (canının %12'si değerinde bir koruma). Plakası hangisi olduğunu gösterir, uyarı çubuğu yaklaşınca haber verir; en güçlü saldırılarını ve Savun'u o tur için sakla.",scripts/ui/GuildViews.gd:1440
+Elite affixes,Seçkin ekleri,scripts/ui/GuildViews.gd:1441
+"Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Rank B+ rifts give them two. Hover the badges on their plate to read them.","Seçkinler bir ek alır: Vampirik, Dikenli, Kalkanlı, Zehirli, Durdurulamaz, Alevli, Hızlandırılmış (iki kez davranır) ya da Komutan (iki muhafız getirir). Rütbe B+ yarıklarda iki ek alırlar. Okumak için plakalarındaki rozetlerin üstüne gel.",scripts/ui/GuildViews.gd:1441
+Boons,Lütuflar,scripts/ui/GuildViews.gd:1442
+"Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower.","Bir yarıkta seçkin yenmek, o yarık bitene kadar süren 3 lütuftan 1'ini sunar. Lütuflar yedi aileden gelir (Kor, Ayaz, Kan, Çelik, Fırtına, Gölge, Kutsal); bir aileden 2 tanesi set bonusu, 4 tanesi güçlü bir zirve verir; böylece bir koşu bir yapıya dönüşebilir. Kule'de sunulmaz.",scripts/ui/GuildViews.gd:1442
+Guild Orders,Lonca Emirleri,scripts/ui/GuildViews.gd:1443
+"Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary.","Revir, Talim Alanı, Ticaret Ağı ve İzci Köşkü'nün Sv2'si, yarık içinde verebileceğin bir emir açar: İkmal Atışı (dövüşler arasında %35 iyileş), Toparlan (bu tur önce davran ve %30 daha sert vur), Talep (bir dövüşün ganimetini yenile) ve Öncü Keşif (bir ayrımı yenile). Yarık başına 1 emir, Ünlü kademede 2, Efsanevide 3.",scripts/ui/GuildViews.gd:1443
+Rift Ladder,Yarık Merdiveni,scripts/ui/GuildViews.gd:1444
+"Rifts come in ranks, F to SSS. F-D are Lesser rifts, C and up Greater rifts (open after Act I). Each rank hits harder than the last and pays more; from B up they add rules (more elites, harsher hazards, fewer shops, bosses with two mechanics). Seal a rank to open the next. Gear drops at the rank of the rift it came from.","Yarıklar F'den SSS'ye rütbelere ayrılır. F-D Küçük yarıklar, C ve üstü Büyük yarıklardır (I. Perde'den sonra açılır). Her rütbe öncekinden sert vurur ve daha çok öder; B'den itibaren kurallar eklenir (daha çok seçkin, daha sert tehlikeler, daha az dükkân, iki mekanikli bosslar). Bir rütbeyi mühürlemek bir sonrakini açar. Teçhizat, geldiği yarığın rütbesinde düşer.",scripts/ui/GuildViews.gd:1444
+Bonds,Bağlar,scripts/ui/GuildViews.gd:1445
+"Heroes who seal rifts together grow a bond: level 1, 2 and 3 after 2, 5 and 10 rifts. Each level adds 2% party damage while both stand in a fight (up to the cap). Bonds show on the hero sheet's History tab.","Birlikte yarık mühürleyen kahramanlar bağ kurar: 2, 5 ve 10 yarıktan sonra seviye 1, 2 ve 3. Her seviye, ikisi de dövüşte ayaktayken ekip hasarına %2 ekler (üst sınıra kadar). Bağlar kahraman sayfasının Geçmiş sekmesinde görünür.",scripts/ui/GuildViews.gd:1445
+Ability Awakening,Yetenek Uyanışı,scripts/ui/GuildViews.gd:1446
+"Spend Skill Points once to give a hero's Ability a secondary effect (by ability: +2 Momentum back, a lingering debuff, a party dodge boost, a self-shield, or a small damage stack).","Bir kahramanın Yeteneğine ikincil bir etki vermek için bir kez Beceri Puanı harca (yeteneğe göre: +2 İvme geri, kalıcı bir zayıflatma, ekibe kaçınma artışı, kendine kalkan ya da küçük bir hasar birikimi).",scripts/ui/GuildViews.gd:1446
+"Heroes stand in the front or back row. Foes aim most attacks at the front row; Snipes hunt the back. Warriors and rogues hit at half strength with a basic attack from the back row, and some skills need a row. Move (7) switches rows for a turn. Back-row foes take less damage from attacks.",Kahramanlar ön ya da arka sırada durur. Düşmanlar saldırıların çoğunu ön sıraya yöneltir; Nişanlar arkayı avlar. Savaşçılar ve haydutlar arka sıradan temel saldırıyla yarı güçle vurur ve bazı beceriler belli bir sıra ister. Yer Değiştir (7) bir sıra karşılığında sıranı değiştirir. Arka sıradaki düşmanlar saldırılardan daha az hasar alır.,scripts/ui/GuildViews.gd:1447
+Controls,Kontroller,scripts/ui/GuildViews.gd:1448
+"Keyboard: 1-5 switch camp tabs; in a fight 1 Attack, 2-4 skills, 5 Defend, M opens More (6 Guard, 7 Move, 8 Tonics, 9 Call; their keys work either way), Space repeats the last action, Tab cycles targets, A toggles Auto, Esc goes back. Endless Rift: WASD or arrows (or drag), Esc pauses. Riftbreak defense: click a pad to build, the ground to send your champion, Space calls the next wave, Esc pauses. Gamepad: D-pad and A work every menu, B goes back, LB/RB switch camp tabs. In a fight A repeats the last action, X Defends, Y uses the Ability, LB/RB the two skills, Start opens More (Guard, Move, Tonics, Call), the D-pad cycles targets, Select toggles Auto. Endless Rift: left stick or D-pad steer, Start pauses.","Klavye: 1-5 kamp sekmelerini değiştirir; savaşta 1 Saldırı, 2-4 beceriler, 5 Savunma, M Diğer'i açar (6 Koru, 7 Yer Değiştir, 8 İksirler, 9 Çağrı; tuşları her iki durumda da çalışır), Boşluk son eylemi tekrarlar, Tab hedefler arasında geçer, A Otomatik'i açıp kapar, Esc geri gider. Sonsuz Yarık: WASD ya da oklar (ya da sürükle), Esc duraklatır. Yarık Taşması savunması: kurmak için bir kaideye, şampiyonunu göndermek için yere tıkla, Boşluk sonraki dalgayı çağırır, Esc duraklatır. Oyun kolu: yön tuşları ve A her menüde çalışır, B geri gider, LB/RB kamp sekmelerini değiştirir. Savaşta A son eylemi tekrarlar, X Savunur, Y Yeteneği kullanır, LB/RB iki beceri, Start Diğer'i açar (Koru, Yer Değiştir, İksirler, Çağrı), yön tuşları hedefler arasında geçer, Select Otomatik'i açıp kapar. Sonsuz Yarık: sol çubuk ya da yön tuşları yönlendirir, Start duraklatır.",scripts/ui/GuildViews.gd:1448
+Momentum and skills,İvme ve beceriler,scripts/ui/GuildViews.gd:1449
+"Momentum is the party's shared pool (up to 10, starting at 3). Each basic attack adds 1, each kill 1, and each hit taken while Defending or Guarding 1 (2 for a heavy blow). Every hero has two role skills (Lv1 and Lv6) and their subclass Ability (Lv3). Skills cost 2-4 Momentum, Abilities 4.","İvme ekibin ortak havuzudur (en fazla 10, 3 ile başlar). Her temel saldırı 1, her öldürme 1 ve Savunurken ya da Korurken alınan her darbe 1 ekler (ağır darbe için 2). Her kahramanın iki rol becerisi (Sv1 ve Sv6) ve alt sınıf Yeteneği (Sv3) vardır. Beceriler 2-4 İvme, Yetenekler 4 İvme harcar.",scripts/ui/GuildViews.gd:1449
+Enemy moves,Düşman hamleleri,scripts/ui/GuildViews.gd:1450
+"Each round a foe shows its next move above its health bar: an attack on a hero, a wind-up (a heavy blow next round), or a special move: Sweep (hits everyone), Snipe (the most-hurt back-row hero), Curse (40% less damage for 2 rounds), Ward, Mend or Roar. Shield Bash stuns a foe; Shield Bash and Frost Nova break wind-ups.","Her tur bir düşman sonraki hamlesini can çubuğunun üstünde gösterir: bir kahramana saldırı, güç toplama (sonraki tur ağır darbe) ya da özel bir hamle: Süpürme (herkese vurur), Nişan (arka sıradaki en yaralı kahraman), Lanet (2 tur %40 daha az hasar), Koruma, İyileştirme ya da Kükreme. Kalkan Darbesi bir düşmanı sersemletir; Kalkan Darbesi ve Buz Novası güç toplamaları bozar.",scripts/ui/GuildViews.gd:1450
+Designed encounters,Tasarlanmış karşılaşmalar,scripts/ui/GuildViews.gd:1451
+"About six regular fights in ten are one of a region's named encounters (Scarecrow Line, Reed Snipers, Forge Guard...), groups whose members play off each other: a warder shielding a brute, a healer behind a wall, snipers behind a tank. The name and a tactical hint open the fight log; hover the round label to read the hint again.","Her on normal dövüşten yaklaşık altısı bir bölgenin adlı karşılaşmalarından biridir (Korkuluk Hattı, Kamış Nişancıları, Demirhane Muhafızı...); üyeleri birbirini tamamlayan gruplar: bir zorbayı koruyan bir bekçi, bir duvarın ardında bir şifacı, bir tankın ardında nişancılar. Ad ve bir taktik ipucu dövüş kaydını açar; ipucunu yeniden okumak için tur etiketinin üstüne gel.",scripts/ui/GuildViews.gd:1451
+Rift bosses,Yarık bossları,scripts/ui/GuildViews.gd:1452
+"Each boss is always the same fight. Vaelith's Harvest hits everyone and heals her, and she calls a Crier and a Warden at half health. Nyxara's Drowning Tide chills and weakens the party. Korrath's Sunder tears the wards off the front row. Drevok Brands a hero to take 50% more damage and calls fire cultists. Sythrane Immolates the party while she regenerates and enrages. Their signature moves are telegraphed like any other.",Her boss hep aynı dövüştür. Vaelith'in Hasadı herkese vurur ve onu iyileştirir; yarı canda bir Çığırtkan ve bir Bekçi çağırır. Nyxara'nın Boğan Dalgası ekibi üşütür ve zayıflatır. Korrath'ın Parçala'sı ön sıranın korumalarını söker. Drevok bir kahramanı %50 daha fazla hasar alacak şekilde Damgalar ve ateş tarikatçılarını çağırır. Sythrane yenilenip öfkelenirken ekibi Yakıp Kavurur. İmza hamleleri de diğerleri gibi önceden belli olur.,scripts/ui/GuildViews.gd:1452
+"Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion.","Karşılaştığın her canavar, boss ve tehlike, siluetten tam renge açılarak kaydedilir — sadece kayıt tutma, tamamlamaya bağlı ödül yok.",scripts/ui/GuildViews.gd:1453
+"Opens with Act II, in the Rift Hall. 100 fixed floors, one fight each: a floor is always the same fight, so a loss is something to plan around. Heroes fight at full HP and leave as they came (no downing, scars or days passing). Most floors carry a rule (armored or burning foes, a swarm, a party cap). Every 10th floor is a guardian that gives a unique relic, and floors 10/25/50/75/100 earn guild titles. Only a first clear pays; floors 91-100 reshuffle their rules every week and pay half for a re-clear.","II. Perde ile Yarık Salonu'nda açılır. 100 sabit kat, her biri tek dövüş: bir kat hep aynı dövüştür, yani bir kayıp planlanacak bir şeydir. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır (düşme, yara izi ya da gün geçmesi yok). Çoğu katın bir kuralı vardır (zırhlı ya da yanan düşmanlar, kalabalık, ekip sınırı). Her 10. kat benzersiz bir kalıntı veren bir muhafızdır ve 10/25/50/75/100. katlar lonca unvanı kazandırır. Yalnızca ilk temizleme ödül verir; 91-100. katlar her hafta kurallarını değiştirir ve tekrar temizlemede yarısını öder.",scripts/ui/GuildViews.gd:1454
+Foes & regions,Düşmanlar ve bölgeler,scripts/ui/GuildViews.gd:1455
+"Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun.","Her yarık kendi düşmanları olan bir bölgededir (Vadi, Bataklıklar, Küllü Çorak Topraklar). Bazı düşmanlar ağır bir darbe için bir tur önceden güç toplar (x2,5, hedef Savunmazsa sersemletir); zırhlı düşmanlar her temel saldırının bir kısmını savuşturur (her darbe zırhı aşındırır; yetenekler yok sayar); ateş düşmanları yakabilir, ayaz düşmanları üşütebilir (geç davranır). Saha Toniği yanma, üşüme, zehir ve sersemliği temizler.",scripts/ui/GuildViews.gd:1455
+"Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift.","Üç perde; her biri adlı bir düşmana karşı final yarığıyla biter. Finali açmak için perdenin hedeflerini tamamla (Yarık Salonu'nda gösterilir); mühürlemek bir ödül ve Efsanevi bir kalıntı verir. I. Perde Büyük Yarıkları, II. Perde Sonsuz Yarık'ı açar.",scripts/ui/GuildViews.gd:1456
+"Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers.","Kalıntılar Kalıntı Sunağı'nda (Envanter) durur ve tüm ekibi güçlendirir. Her kalıntının bir özel gücü vardır; nadir ve destansı olanların ayrıca savaşta tetiklenen bir etkisi olur (öldürünce, her üç turda bir, bir müttefik düşünce...). Yeni bir etki uyandırmak için bir kalıntıyı 5. seviyeye çıkar ya da herhangi bir etkiyi Öz karşılığında yenile. Efsanevi kalıntıların eşsiz güçleri vardır.",scripts/ui/GuildViews.gd:1457
+Quirks,Huylar,scripts/ui/GuildViews.gd:1458
+"Everything personal about a hero beyond class, skills and gear: at most one born quirk (it sets their voice), up to 2 scars from being knocked out (a wound with a small upside), and quirks earned by what they've done. Bad born quirks and scars can be treated for Gold at the Arcane Lab.","Bir kahramanın sınıfı, becerileri ve teçhizatı dışındaki her şey: en fazla bir doğuştan huy (sesini belirler), bayılmaktan kalan en fazla 2 yara izi (küçük bir artısı olan bir yara) ve yaptıklarıyla kazandığı huylar. Kötü doğuştan huylar ve yara izleri Gizem Laboratuvarı'nda Altınla tedavi edilebilir.",scripts/ui/GuildViews.gd:1458
+Riftbreaks,Yarık Taşmaları,scripts/ui/GuildViews.gd:1459
+"From Act II a rift swells every so often: a rank, a place and a countdown in days (Rift Hall and the camp's status board). Seal a rift of that rank or higher before it runs out to close it, for a little Essence. Otherwise it breaks, and every rift run waits until your guild defends. Ranks below S break out in a region; from S up they break at your camp. Holding pays Gold and Essence. Losing costs a share of your Essence and of the Gold beyond the coming payday's wages, damages a building (two at the camp) and wounds the posted heroes who fell.","II. Perde'den itibaren ara sıra bir yarık kabarır: bir rütbe, bir yer ve günlerle bir geri sayım (Yarık Salonu ve kampın durum panosu). Süre bitmeden o rütbede ya da daha yüksek bir yarığı mühürlersen kapanır ve biraz Öz kazanırsın. Yoksa taşar ve loncan savunana dek her yarık seferi bekler. S'nin altındaki rütbeler bir bölgede taşar; S ve üstü kampında taşar. Dayanmak Altın ve Öz kazandırır. Kaybetmek Özünden ve yaklaşan maaş gününün ücretleri dışındaki Altınından bir pay alır, bir yapıya (kampta ikisine) hasar verir ve düşen nöbetçi kahramanları yaralar.",scripts/ui/GuildViews.gd:1459
+Defending,Savunma,scripts/ui/GuildViews.gd:1460
+"Foes walk the roads toward the goal. Build towers on the round pads with supplies (you start with some and earn more for every kill); click a tower to upgrade or sell it. Ballistas shoot far, Fire Braziers splash and burn, Frost Totems slow, Ward Stones shield nearby heroes, Chapels mend them; research in the Defenses branch opens the last three and tier 3. Idle heroes stand at posts: warriors and rogues hold foes in place, rangers and mages shoot. Steer one champion by clicking where to go. Every foe that gets through costs integrity (an elite 3, a warden 10); at 0 the defense is lost. Call a wave early for bonus supplies.","Düşmanlar yollardan hedefe doğru yürür. Yuvarlak kaidelere erzakla kuleler kur (bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın); geliştirmek ya da satmak için bir kuleye tıkla. Balistalar uzağa atar, Ateş Mangalları sıçrar ve yakar, Ayaz Totemleri yavaşlatır, Muhafız Taşları yakındaki kahramanları korur, Şapeller onları iyileştirir; Savunma dalındaki araştırma son üçünü ve 3. kademeyi açar. Boştaki kahramanlar nöbet yerlerinde durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Bir şampiyonu gideceği yere tıklayarak yönet. Geçen her düşman bütünlüğe mal olur (bir seçkin 3, bir muhafız 10); 0'da savunma kaybedilir. Ek erzak için bir dalgayı erken çağır.",scripts/ui/GuildViews.gd:1460
+"Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Essence levels them up (to 5).","Her yeni lonca, yirmi dörtlük bir havuzdan çekilen on iki şampiyonla tanışır: üçü I., II. ve III. Perdenin sonunda özgürleşir, dokuzu Sonsuz Yarık'ta kayıptır ve her birini bir ışık sütunu işaret eder (özgürleştirmek için içinde dur). Şampiyonlar kadroya katılmaz. Yarık seferlerinde biri grubu gözetir: Lütfu herkesi güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir (yarık başına bir, 3. seviyeden itibaren iki kez). Sonsuz Yarık'ta grup şampiyonlarının kendisidir ve her birinin Çağrısı imza hareketidir. Öz ile seviye atlarlar (en fazla 5).",scripts/ui/GuildViews.gd:1461
+Attributes,Nitelikler,scripts/ui/GuildViews.gd:1462
+"Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off).","Kudret (hasar, can), Çeviklik (hız, kaçınma, ilk vuruş) ve Odak (yetenek gücü, iyileşme). Kahramanlar seviye başına Kadro'nun Kahraman sekmesinde harcanacak 3 puan kazanır; teçhizat daha fazlasını ekler ve daha iyi teçhizat kuşanmak için niteliğinde bir alt sınır ister. Altınla en fazla 8 ek puan eğit ya da bir kahramanın puanlarını seviye başına 5 Öz karşılığında sıfırla (artık uygun olmadığı teçhizat çıkarılır).",scripts/ui/GuildViews.gd:1462
+Quests & Milestones,Görevler ve Kilometre Taşları,scripts/ui/GuildViews.gd:1463
+"The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus.","Görev panosu 6 görev asar (avlar, boss ödülleri, yarık mühürleri, sınavlar); aynı anda en fazla 3 tane al. Kabul edilmeyen ilanlar her 3 günde bir değişir (her yarık koşusu ya da dinlenmeyle bir gün geçer). Kilometre taşları sabit bir listedir, karşılandıkları an kendiliğinden verilir. Ün ara sıra sonraki Dükkânda garanti bir Destansı kalıntı hazırlar. Nadiren bir eşlik edilen kişi de bir dövüşe katılabilir — hayatta kalırsa küçük bir bonus öder.",scripts/ui/GuildViews.gd:1463
+"Wages, morale and the rival","Maaş, moral ve rakip",scripts/ui/GuildViews.gd:1464
+"Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, and once a week it may make a move you answer before payday: court one of your heroes (match their offer, or they choose, staying only at morale 50 or above), dare you to seal a rift by payday (Renown rides on it), or go for a posted contract (take it on or lose it). Requests and the rival's moves pop up at camp and wait in the Ledger, whose week board shows each day to payday. At payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize.","Her 7 günde bir (bir gün = bir yarık seferi ya da dinlenme) kahramanlar rütbe ve seviyeye göre maaş alır ve her Lonca Yönetimi seviyesinin bakım masrafı vardır; bkz. Lonca > Defter. Ödenmeyen bakım Üne mal olur. Eğitim Sahası haftada yalnızca birkaç nitelik puanı çalıştırır (Talim Sahası ile daha fazla) ve bir ziyafet sınırlı sayıda kahramanı, en düşük morallilerden başlayarak ağırlar (Ticaret Ağı ile daha fazla). Maaşı ödenmeyenlerin morali düşer; üst üste iki kez ödenmeyen ya da maaş gününde morali dipteki kahraman ayrılır. Moral (0-100) mühürlenen yarıklar ve ziyafetlerle yükselir; yenilgiler, bayılmalar, boş haftalar ve başarısız sözleşmelerle düşer: Coşkulu kahramanlar +%10 hasar verir, Sarsılmış -%10, Çöken -%20. Alınan sözleşmelerin süresi 6-10 gündür. Rakip bir lonca her gün Ün kazanır ve haftada bir, maaş gününden önce cevaplaman gereken bir hamle yapabilir: kahramanlarından birine göz diker (teklifi karşıla ya da kendisi seçsin; yalnızca 50 ve üstü moralde kalır), maaş gününe kadar bir yarığı mühürlemen için meydan okur (Ün ortaya konur) ya da ilandaki bir sözleşmenin peşine düşer (üstlen ya da kaybet). İstekler ve rakibin hamleleri kampta açılır ve Defter'de bekler; Defter'in hafta panosu maaş gününe kadar her günü gösterir. Maaş gününde Ünde önde olan daha iyi acemileri alır. Her 28 günde bir, daha çok Ün kazanan lonca ödül kazanır.",scripts/ui/GuildViews.gd:1464
+Hero requests,Kahraman istekleri,scripts/ui/GuildViews.gd:1465
+"Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no.","Hafta ortasında bir kahraman bir şey isteyebilir: izin (birkaç gün uzakta), zam (kalıcı olarak daha yüksek maaş), teçhizat için Altın, bir Talim Alanı yeri ya da başka bir kahramanla kavgasında senin desteğin. Evet demek bir şeye mal olur; hayır demek morale mal olur. Maaş gününden önce Defter'de cevap ver, yoksa hayır sayılır.",scripts/ui/GuildViews.gd:1465
+Hunt,Av,scripts/ui/GuildViews.gd:1476
+Wanted,Aranan,scripts/ui/GuildViews.gd:1476
+Seal the Rift,Yarığı Mühürle,scripts/ui/GuildViews.gd:1476
+Trial,Sınav,scripts/ui/GuildViews.gd:1477
+Supply,İkmal,scripts/ui/GuildViews.gd:1477
+Day %d  ·  Taken %d/%d  ·  new postings in %d day%s,Gün %d  ·  Alınan %d/%d  ·  yeni ilanlara %d gün%s,scripts/ui/GuildViews.gd:1513
+A day passes with every rift run or rest. Unaccepted postings are replaced when the board refreshes; quests you've taken stay.,Her yarık koşusu ya da dinlenmeyle bir gün geçer. Kabul edilmeyen ilanlar pano yenilenince değişir; aldığın görevler kalır.,scripts/ui/GuildViews.gd:1518
+Nothing posted — new postings in %d day%s.,İlan yok — yeni ilanlara %d gün%s.,scripts/ui/GuildViews.gd:1530
+Every 20 Renown arms a guaranteed Epic relic at your next Shop.,"Her 20 Ün, sonraki Dükkânında garanti bir Destansı kalıntı hazırlar.",scripts/ui/GuildViews.gd:1534
+Milestones,Kilometre taşları,scripts/ui/GuildViews.gd:1537
+Claimed,Alındı,scripts/ui/GuildViews.gd:1543
+Quest,Görev,scripts/ui/GuildViews.gd:1569
+Due in %d day%s,%d gün%s içinde,scripts/ui/GuildViews.gd:1590
+Due today,Bugün bitiyor,scripts/ui/GuildViews.gd:1590
+%d days once taken,Alınınca %d gün,scripts/ui/GuildViews.gd:1595
+Difficulty,Zorluk,scripts/ui/GuildViews.gd:1602
+Reward: ,Ödül: ,scripts/ui/GuildViews.gd:1605
+Take on,Üstlen,scripts/ui/GuildViews.gd:1615
+You already have %d quests — finish or abandon one first,Zaten %d görevin var — önce birini bitir ya da bırak,scripts/ui/GuildViews.gd:1622
+Only progress made after taking it counts,Yalnızca görevi aldıktan sonraki ilerleme sayılır,scripts/ui/GuildViews.gd:1622
+Claim reward,Ödülü al,scripts/ui/GuildViews.gd:1627
+Abandon,Bırak,scripts/ui/GuildViews.gd:1641
+Take it down,İndir,scripts/ui/GuildViews.gd:1649
+DONE,BİTTİ,scripts/ui/GuildViews.gd:1673
+TAKEN,ALINDI,scripts/ui/GuildViews.gd:1673
+FAILED,BAŞARISIZ,scripts/ui/GuildViews.gd:1673
+ Branch, Dalı,scripts/ui/GuildViews.gd:1694
+Click again to confirm reset,Sıfırlamayı onaylamak için tekrar tıkla,scripts/ui/GuildViews.gd:1714
+Reset Guild,Loncayı Sıfırla,scripts/ui/GuildViews.gd:1714
+Lv %d/%d,Sv %d/%d,scripts/ui/GuildViews.gd:1759
+Damaged in a Riftbreak: works at Lv %d until repaired.,Bir Yarık Taşmasında hasar gördü: onarılana dek Sv %d olarak çalışır.,scripts/ui/GuildViews.gd:1782
+Repair a level — %d Gold,Bir seviye onar — %d Altın,scripts/ui/GuildViews.gd:1785
+%s repaired,%s onarıldı,scripts/ui/GuildViews.gd:1788
+Works at Lv %d,Sv %d düzeyinde çalışıyor,scripts/ui/GuildViews.gd:1788
+Each level: %s · upkeep +%d Gold a week,Her seviye: %s · bakım haftada +%d Altın,scripts/ui/GuildViews.gd:1791
+%s Lv%d — %s,%s Sv%d — %s,scripts/ui/GuildViews.gd:1796
+⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3),⌂ Kamp: %s Sv3 ve Sv5'te yeniden yapılır (şu an kademe %d/3),scripts/ui/GuildViews.gd:1802
+⌂ Camp: every level grows the Guild Hall (guild tier),⌂ Kamp: her seviye Lonca Salonu'nu büyütür (lonca kademesi),scripts/ui/GuildViews.gd:1804
+Upgrade to Lv%d — %d Gold,Sv%d'ye geliştir — %d Altın,scripts/ui/GuildViews.gd:1809
+Upgrade to Lv%d — %d Essence,Yükselt: Sv%d — %d Öz,scripts/ui/GuildViews.gd:1809
+%s — Lv%d,%s — Sv%d,scripts/ui/GuildViews.gd:1816
+Next: %s%s,Sonraki: %s%s,scripts/ui/GuildViews.gd:1819
 "
 Unlocks: ","
-Açar: ",scripts/ui/GuildViews.gd:1832
+Açar: ",scripts/ui/GuildViews.gd:1819
 navigator.storage && navigator.storage.persist && navigator.storage.persist();,,scripts/ui/Main.gd:34
 Click to dismiss,Kapatmak için tıkla,scripts/ui/Main.gd:226
 "%d achievements, see Records","%d başarım, Kayıtlar'a bak",scripts/ui/Main.gd:294

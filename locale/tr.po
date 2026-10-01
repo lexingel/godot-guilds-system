@@ -971,7 +971,7 @@ msgstr "İlk yarık koşundan sonra açılır"
 msgid "Wounded and downed heroes recover faster in a bed."
 msgstr "Yaralı ve düşmüş kahramanlar yatakta daha hızlı toparlanır."
 
-#: scripts/autoload/game_data/GameDataArt.gd:66 scripts/ui/GuildViews.gd:1312 scripts/ui/GuildViews.gd:1466
+#: scripts/autoload/game_data/GameDataArt.gd:66 scripts/ui/GuildViews.gd:1299 scripts/ui/GuildViews.gd:1453
 msgid "Bestiary"
 msgstr "Canavar Kitabı"
 
@@ -983,7 +983,7 @@ msgstr "İlk dövüşünden sonra açılır"
 msgid "Every foe you meet is recorded here."
 msgstr "Karşılaştığın her düşman buraya kaydedilir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:67 scripts/autoload/game_data/GameDataModes.gd:581 scripts/ui/GuildViews.gd:1519
+#: scripts/autoload/game_data/GameDataArt.gd:67 scripts/autoload/game_data/GameDataModes.gd:581 scripts/ui/GuildViews.gd:1506
 msgid "Quests"
 msgstr "Görevler"
 
@@ -995,7 +995,7 @@ msgstr "İlk yarığını mühürleyince açılır"
 msgid "Take on quests for Gold, Essence and Renown."
 msgstr "Altın, Öz ve Ün için görevler üstlen."
 
-#: scripts/autoload/game_data/GameDataArt.gd:68 scripts/ui/GuildViews.gd:896 scripts/ui/GuildViews.gd:901
+#: scripts/autoload/game_data/GameDataArt.gd:68 scripts/ui/GuildViews.gd:883 scripts/ui/GuildViews.gd:888
 msgid "Management"
 msgstr "Yönetim"
 
@@ -1007,7 +1007,7 @@ msgstr "2 yarık mühürleyince açılır"
 msgid "Spend Essence on lasting guild upgrades."
 msgstr "Öz'ü kalıcı lonca geliştirmelerine harca."
 
-#: scripts/autoload/game_data/GameDataArt.gd:69 scripts/ui/GuildViews.gd:1219 scripts/ui/GuildViews.gd:1388
+#: scripts/autoload/game_data/GameDataArt.gd:69 scripts/ui/GuildViews.gd:1206 scripts/ui/GuildViews.gd:1375
 msgid "Crafting"
 msgstr "Zanaat"
 
@@ -1019,7 +1019,7 @@ msgstr "3 yarık mühürleyince açılır"
 msgid "Combine 3 spare items or relics into a better one."
 msgstr "3 yedek eşyayı ya da kalıntıyı daha iyi bir taneye birleştir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:70 scripts/ui/GuildViews.gd:1448
+#: scripts/autoload/game_data/GameDataArt.gd:70 scripts/ui/GuildViews.gd:1435
 msgid "Daily twist"
 msgstr "Günün cilvesi"
 
@@ -1035,7 +1035,7 @@ msgstr "Rakip hamleleri"
 msgid "Once a week the rival guild may court a hero, dare you, or go after a contract. Answer before payday."
 msgstr "Rakip lonca haftada bir kahramanlarından birine göz dikebilir, sana meydan okuyabilir ya da bir sözleşmenin peşine düşebilir. Maaş gününden önce cevap ver."
 
-#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateModes.gd:371 scripts/ui/GuildViews.gd:1467
+#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateModes.gd:371 scripts/ui/GuildViews.gd:1454
 msgid "Tower of Trials"
 msgstr "Sınav Kulesi"
 
@@ -1047,7 +1047,7 @@ msgstr "I. Perde'yi bitirince açılır"
 msgid "100 fixed floors in the Rift Hall. Each floor is always the same fight, and pays the first time you clear it."
 msgstr "Yarık Salonu'nda 100 sabit kat. Her kat hep aynı dövüştür ve ilk temizlediğinde ödül verir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:73 scripts/ui/GuildViews.gd:1014 scripts/ui/GuildViews.gd:1017
+#: scripts/autoload/game_data/GameDataArt.gd:73 scripts/ui/GuildViews.gd:1001 scripts/ui/GuildViews.gd:1004
 msgid "Champions"
 msgstr "Şampiyonlar"
 
@@ -2667,7 +2667,7 @@ msgstr "her tur sırayı belirler, hızlı olan önce davranır"
 msgid "front row|back row"
 msgstr "ön sıra\\w*|arka sıra\\w*"
 
-#: scripts/autoload/game_data/GameDataHeroes.gd:292 scripts/ui/GuildViews.gd:1460
+#: scripts/autoload/game_data/GameDataHeroes.gd:292 scripts/ui/GuildViews.gd:1447
 msgid "Formation"
 msgstr "Diziliş"
 
@@ -5623,7 +5623,7 @@ msgstr "+1 kuşanılmış kalıntı yuvası"
 msgid "+1 more relic slot, and starting relics are Rare or better"
 msgstr "+1 kalıntı yuvası daha ve başlangıç kalıntıları Nadir ya da daha iyi"
 
-#: scripts/autoload/game_data/GameDataModes.gd:503 scripts/autoload/game_data/GameDataModes.gd:576 scripts/ui/GuildViews.gd:908
+#: scripts/autoload/game_data/GameDataModes.gd:503 scripts/autoload/game_data/GameDataModes.gd:576 scripts/ui/GuildViews.gd:895
 msgid "Arcane Lab"
 msgstr "Gizem Laboratuvarı"
 
@@ -5687,11 +5687,11 @@ msgstr "Efsanevi Lonca"
 msgid "Recruits"
 msgstr "Adaylar"
 
-#: scripts/autoload/game_data/GameDataModes.gd:575 scripts/ui/GuildViews.gd:899
+#: scripts/autoload/game_data/GameDataModes.gd:575 scripts/ui/GuildViews.gd:886
 msgid "Guild Hall"
 msgstr "Lonca Salonu"
 
-#: scripts/autoload/game_data/GameDataModes.gd:577 scripts/ui/GuildViews.gd:895 scripts/ui/Main.gd:550
+#: scripts/autoload/game_data/GameDataModes.gd:577 scripts/ui/GuildViews.gd:882 scripts/ui/Main.gd:550
 msgid "Heroes"
 msgstr "Kahramanlar"
 
@@ -5711,7 +5711,7 @@ msgstr "Yarık Salonu"
 msgid "Rift Gate"
 msgstr "Yarık Kapısı"
 
-#: scripts/autoload/game_data/GameDataModes.gd:583 scripts/ui/GuildViews.gd:1228 scripts/ui/GuildViews.gd:1388
+#: scripts/autoload/game_data/GameDataModes.gd:583 scripts/ui/GuildViews.gd:1215 scripts/ui/GuildViews.gd:1375
 msgid "Items"
 msgstr "Eşyalar"
 
@@ -5719,7 +5719,7 @@ msgstr "Eşyalar"
 msgid "Market"
 msgstr "Pazar"
 
-#: scripts/autoload/game_data/GameDataModes.gd:584 scripts/ui/GuildViews.gd:1260 scripts/ui/GuildViews.gd:1388
+#: scripts/autoload/game_data/GameDataModes.gd:584 scripts/ui/GuildViews.gd:1247 scripts/ui/GuildViews.gd:1375
 msgid "Relics"
 msgstr "Kalıntılar"
 
@@ -8499,7 +8499,7 @@ msgstr "%d Altın gerekir"
 msgid "No %s answered; try another role"
 msgstr "Hiçbir %s yanıt vermedi; başka bir rol dene"
 
-#: scripts/autoload/game_state/GameStateHeroes.gd:176 scripts/ui/GuildViews.gd:1105
+#: scripts/autoload/game_state/GameStateHeroes.gd:176 scripts/ui/GuildViews.gd:1092
 msgid "Roster is full."
 msgstr "Kadro dolu."
 
@@ -9263,7 +9263,7 @@ msgstr "Burada bir yapı yok"
 msgid "Research raises the tier cap"
 msgstr "Araştırma kademe sınırını yükseltir"
 
-#: scripts/defense/DefenseRun.gd:390 scripts/defense/DefenseView.gd:377 scripts/ui/GuildViews.gd:1835
+#: scripts/defense/DefenseRun.gd:390 scripts/defense/DefenseView.gd:377 scripts/ui/GuildViews.gd:1822
 msgid "Fully upgraded"
 msgstr "Tamamen geliştirildi"
 
@@ -9999,11 +9999,11 @@ msgstr "[Ağır darbe: %s]"
 msgid "Auto paused: %s is about to fall. Defend, Guard or heal, then turn Auto back on."
 msgstr "Oto durdu: %s düşmek üzere. Savun, Koru ya da iyileştir, sonra Oto'yu yeniden aç."
 
-#: scripts/ui/BattleView.gd:1033 scripts/ui/GuildViews.gd:1316
+#: scripts/ui/BattleView.gd:1033 scripts/ui/GuildViews.gd:1303
 msgid "Boss"
 msgstr "Boss"
 
-#: scripts/ui/BattleView.gd:1033 scripts/ui/BattleView.gd:2604 scripts/ui/GuildViews.gd:1315
+#: scripts/ui/BattleView.gd:1033 scripts/ui/BattleView.gd:2604 scripts/ui/GuildViews.gd:1302
 msgid "Elite"
 msgstr "Seçkin"
 
@@ -10179,11 +10179,11 @@ msgstr " — sıradaki kat %d"
 msgid "Floor %d/%d"
 msgstr "Kat %d/%d"
 
-#: scripts/ui/BattleView.gd:1426 scripts/ui/GuildViews.gd:1346 scripts/ui/GuildViews.gd:401
+#: scripts/ui/BattleView.gd:1426 scripts/ui/GuildViews.gd:1333 scripts/ui/GuildViews.gd:412
 msgid "Gold"
 msgstr "Altın"
 
-#: scripts/ui/BattleView.gd:1426 scripts/ui/GuildViews.gd:1346 scripts/ui/GuildViews.gd:401
+#: scripts/ui/BattleView.gd:1426 scripts/ui/GuildViews.gd:1333 scripts/ui/GuildViews.gd:412
 msgid "Essence"
 msgstr "Öz"
 
@@ -10367,7 +10367,7 @@ msgstr " — ağır bir darbe, Savunmayı düşün"
 msgid "Round %d%s"
 msgstr "Tur %d%s"
 
-#: scripts/ui/BattleView.gd:1942 scripts/ui/GuildViews.gd:1103 scripts/ui/RiftRunView.gd:287
+#: scripts/ui/BattleView.gd:1942 scripts/ui/GuildViews.gd:1090 scripts/ui/RiftRunView.gd:287
 msgid "Rank %s"
 msgstr "Rütbe %s"
 
@@ -10711,1299 +10711,1303 @@ msgstr "Kampa dönüş"
 msgid "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day."
 msgstr "Bulduklarını Kadro'nun Kahraman sekmesinde kuşan (tuş 1), beceri puanlarını Beceriler'de harca ve paran yettikçe yeni kahramanlar işe al. Her yarık koşusu ya da dinlenme bir gün sürer."
 
-#: scripts/ui/GuildViews.gd:126
+#: scripts/ui/GuildViews.gd:124
 msgid " — the %s"
 msgstr " — %s"
 
-#: scripts/ui/GuildViews.gd:128
+#: scripts/ui/GuildViews.gd:126
 msgid " — tier %d/3 (%s Lv%d; grows at Lv3 and Lv5)"
 msgstr " — kademe %d/3 (%s Sv%d; Sv3 ve Sv5'te büyür)"
 
-#: scripts/ui/GuildViews.gd:130
+#: scripts/ui/GuildViews.gd:128
 msgid " — grows with your guild tier"
 msgstr " — lonca kademenle büyür"
 
-#: scripts/ui/GuildViews.gd:132
+#: scripts/ui/GuildViews.gd:130
 msgid " — grows with the campaign"
 msgstr " — hikâyeyle büyür"
 
-#: scripts/ui/GuildViews.gd:222
+#: scripts/ui/GuildViews.gd:207
 msgid "Guild status"
 msgstr "Lonca durumu"
 
-#: scripts/ui/GuildViews.gd:229
-msgid "All quiet. The rifts are waiting."
-msgstr "Her şey sakin. Yarıklar bekliyor."
-
-#: scripts/ui/GuildViews.gd:258
-msgid "This week · payday in %d day%s"
-msgstr "Bu hafta · maaş gününe %d gün%s"
-
-#: scripts/ui/GuildViews.gd:273
-msgid "Bill %d (wages %d + upkeep %d) · %s"
-msgstr "Fatura %d (maaş %d + bakım %d) · %s"
-
-#: scripts/ui/GuildViews.gd:273
-msgid "short %d"
-msgstr "%d eksik"
-
-#: scripts/ui/GuildViews.gd:278
-msgid "Since last payday: %s%d Gold"
-msgstr "Son maaş gününden beri: %s%d Altın"
-
-#: scripts/ui/GuildViews.gd:280
-msgid "Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger."
-msgstr "Maaşlar her %d günde bir ödenir: önce kadro sırasıyla kahramanlar, sonra tesis bakımı. Maaşı ödenmeyen kahramanlar moral kaybeder; ödenmeyen bakım Ün'e mal olur. Defter için tıkla."
-
-#: scripts/ui/GuildViews.gd:294
-msgid "Hire your first hero in Recruits"
-msgstr "İlk kahramanını Adaylar'dan işe al"
-
-#: scripts/ui/GuildViews.gd:296
-msgid "The rift has broken! Defend near %s"
-msgstr "Yarık taştı! %s yakınında savun"
-
-#: scripts/ui/GuildViews.gd:299
-msgid "A Rank %s rift breaks in %d day%s"
-msgstr "%s rütbeli bir yarık %d gün%s içinde taşacak"
-
-#: scripts/ui/GuildViews.gd:301
-msgid "%d building%s damaged: repair in Manage"
-msgstr "%d yapı%s hasarlı: Yönetim'den onar"
-
-#: scripts/ui/GuildViews.gd:305
-msgid "Finale open: %s"
-msgstr "Final açık: %s"
-
-#: scripts/ui/GuildViews.gd:310
-msgid "Act %s: %s%s"
-msgstr "%s. Perde: %s%s"
-
-#: scripts/ui/GuildViews.gd:314 scripts/ui/GuildViews.gd:316
-msgid " — answer before payday"
-msgstr " — maaş gününden önce cevap ver"
-
-#: scripts/ui/GuildViews.gd:316
-msgid " — by payday"
-msgstr " — maaş gününe kadar"
-
-#: scripts/ui/GuildViews.gd:319
-msgid "%d hero%s with low morale"
-msgstr "Morali düşük %d kahraman%s"
-
-#: scripts/ui/GuildViews.gd:322
-msgid "%d contract%s due within 2 days"
-msgstr "2 gün içinde bitmesi gereken %d sözleşme%s"
-
-#: scripts/ui/GuildViews.gd:325
-msgid "%d quest%s ready to claim"
-msgstr "Ödülü alınabilir %d görev%s"
-
-#: scripts/ui/GuildViews.gd:331
-msgid "%d recovering"
-msgstr "%d toparlanıyor"
-
-#: scripts/ui/GuildViews.gd:333
-msgid "%d wounded"
-msgstr "%d yaralı"
-
-#: scripts/ui/GuildViews.gd:335
-msgid "%s · %d bed%s free"
-msgstr "%s · %d yatak%s boş"
-
-#: scripts/ui/GuildViews.gd:338
-msgid "%d hero%s with points to spend"
-msgstr "Harcayacak puanı olan %d kahraman%s"
-
-#: scripts/ui/GuildViews.gd:350
-msgid "%s Lv%d"
-msgstr "%s Sv%d"
-
-#: scripts/ui/GuildViews.gd:352
-msgid "Upgrade ready: %s (%d Essence)"
-msgstr "Geliştirme hazır: %s (%d Öz)"
-
-#: scripts/ui/GuildViews.gd:356
-msgid "Tower of Trials: floor %d next"
-msgstr "Sınav Kulesi: sıradaki kat %d"
-
-#: scripts/ui/GuildViews.gd:363 scripts/ui/GuildViews.gd:904 scripts/ui/Main.gd:675
-msgid "Records"
-msgstr "Kayıtlar"
-
-#: scripts/ui/GuildViews.gd:367
-msgid "Achievements %d/%d"
-msgstr "Başarımlar %d/%d"
-
-#: scripts/ui/GuildViews.gd:367
-msgid "Statistics"
-msgstr "İstatistikler"
-
-#: scripts/ui/GuildViews.gd:367
-msgid "Run history"
-msgstr "Koşu geçmişi"
-
-#: scripts/ui/GuildViews.gd:401 scripts/ui/GuildViews.gd:435 scripts/ui/GuildViews.gd:729
-msgid "Renown"
-msgstr "Ün"
-
-#: scripts/ui/GuildViews.gd:402
-msgid "Done"
-msgstr "Tamam"
-
-#: scripts/ui/GuildViews.gd:422
-msgid "%s (power %d)"
-msgstr "%s (güç %d)"
-
-#: scripts/ui/GuildViews.gd:424
-msgid "Days passed"
-msgstr "Geçen günler"
-
-#: scripts/ui/GuildViews.gd:425
-msgid "Runs finished"
-msgstr "Biten koşular"
-
-#: scripts/ui/GuildViews.gd:426
-msgid "Rifts sealed"
-msgstr "Mühürlenen yarıklar"
-
-#: scripts/ui/GuildViews.gd:427
-msgid "Monsters defeated"
-msgstr "Yenilen canavarlar"
-
-#: scripts/ui/GuildViews.gd:428
-msgid "Elites / Bosses defeated"
-msgstr "Yenilen seçkinler / bosslar"
-
-#: scripts/ui/GuildViews.gd:429
-msgid "Flawless fights"
-msgstr "Kusursuz dövüşler"
-
-#: scripts/ui/GuildViews.gd:1469 scripts/ui/GuildViews.gd:430
-msgid "Campaign"
-msgstr "Hikâye"
-
-#: scripts/ui/GuildViews.gd:430
-msgid "Act %s"
-msgstr "%s. Perde"
-
-#: scripts/ui/GuildViews.gd:431
-msgid "Tower of Trials, best floor"
-msgstr "Sınav Kulesi, en iyi kat"
-
-#: scripts/ui/GuildViews.gd:432
-msgid "Endless Rift, best time"
-msgstr "Sonsuz Yarık, en iyi süre"
-
-#: scripts/ui/GuildViews.gd:433
-msgid "Daily twists sealed"
-msgstr "Mühürlenen günlük cilveler"
-
-#: scripts/ui/GuildViews.gd:433
-msgid "%d (streak %d)"
-msgstr "%d (seri %d)"
-
-#: scripts/ui/GuildViews.gd:434
-msgid "Items and relics crafted"
-msgstr "Üretilen eşya ve kalıntılar"
-
-#: scripts/ui/GuildViews.gd:436
-msgid "Heroes lost"
-msgstr "Kaybedilen kahramanlar"
-
-#: scripts/ui/GuildViews.gd:437
-msgid "Strongest hero"
-msgstr "En güçlü kahraman"
-
-#: scripts/ui/GuildViews.gd:438
-msgid "Most-defeated foe"
-msgstr "En çok yenilen düşman"
-
-#: scripts/ui/GuildViews.gd:452
-msgid "No runs yet. Your last %d runs will be listed here."
-msgstr "Henüz koşu yok. Son %d koşun burada listelenecek."
-
-#: scripts/ui/GuildViews.gd:462
-msgid "Day %d · %s · floor %s"
-msgstr "Gün %d · %s · kat %s"
-
-#: scripts/ui/GuildViews.gd:464
-msgid "Day %d · %s · %d:%02d · %d kills"
-msgstr "Gün %d · %s · %d:%02d · %d öldürme"
-
-#: scripts/ui/GuildViews.gd:468
-msgid "%+d Gold  %+d Essence"
-msgstr "%+d Altın  %+d Öz"
-
-#: scripts/ui/GuildViews.gd:469
-msgid "Party: "
-msgstr "Ekip: "
-
-#: scripts/ui/GuildViews.gd:471
-msgid "\nBoons: "
-msgstr "\nLütuflar: "
-
-#: scripts/ui/GuildViews.gd:478 scripts/ui/GuildViews.gd:905 scripts/ui/Main.gd:675
-msgid "Memorial"
-msgstr "Anıt"
-
-#: scripts/ui/GuildViews.gd:479
-msgid "Heroes lost for good. Their names stay with the guild."
-msgstr "Sonsuza dek kaybedilen kahramanlar. İsimleri loncada yaşar."
-
-#: scripts/ui/GuildViews.gd:481
-msgid "No one has fallen. May it stay that way."
-msgstr "Kimse düşmedi. Öyle kalsın."
-
-#: scripts/ui/GuildViews.gd:492
-msgid "%s — Rank %s, Level %d"
-msgstr "%s — Rütbe %s, Seviye %d"
-
-#: scripts/ui/GuildViews.gd:493
-msgid "%s, on day %d. %d rift%s sealed, %d foe%s felled."
-msgstr "%s, %d. günde. %d yarık%s mühürledi, %d düşman%s devirdi."
-
-#: scripts/ui/GuildViews.gd:530
-msgid "No answer by payday counts as a no."
-msgstr "Maaş gününe kadar cevap verilmezse hayır sayılır."
-
-#: scripts/ui/GuildViews.gd:543
-msgid "No answer by payday: they choose for themselves."
-msgstr "Maaş gününe kadar cevap yoksa: kendisi seçer."
-
-#: scripts/ui/GuildViews.gd:543
-msgid "No answer by payday counts as declining."
-msgstr "Maaş gününe kadar cevap yoksa reddetmiş sayılırsın."
-
-#: scripts/ui/GuildViews.gd:544
-msgid "No answer by payday: they take it."
-msgstr "Maaş gününe kadar cevap yoksa: onlar alır."
-
-#: scripts/ui/GuildViews.gd:546
-msgid "%d day%s to payday."
-msgstr "Maaş gününe %d gün%s."
-
-#: scripts/ui/GuildViews.gd:570
-msgid "Decide later"
-msgstr "Sonra karar ver"
-
-#: scripts/ui/GuildViews.gd:579
-msgid " Answer in Guild > Ledger."
-msgstr " Lonca > Defter'den cevap ver."
-
-#: scripts/ui/GuildViews.gd:606
-msgid "Payday · %d Gold"
-msgstr "Maaş günü · %d Altın"
-
-#: scripts/ui/GuildViews.gd:607
-msgid "Wages %d + upkeep %d Gold; you have %d."
-msgstr "Maaş %d + bakım %d Altın; sende %d var."
-
-#: scripts/ui/GuildViews.gd:609
-msgid "Request closes"
-msgstr "İstek kapanır"
-
-#: scripts/ui/GuildViews.gd:611
-msgid "Dare due"
-msgstr "Meydan okuma biter"
-
-#: scripts/ui/GuildViews.gd:611
-msgid "Rival waits"
-msgstr "Rakip bekliyor"
-
-#: scripts/ui/GuildViews.gd:614
-msgid "Contract due"
-msgstr "Sözleşme süresi"
-
-#: scripts/ui/GuildViews.gd:616
-msgid "Rift breaks"
-msgstr "Yarık taşar"
-
-#: scripts/ui/GuildViews.gd:616
-msgid "A Rank %s rift breaks near %s."
-msgstr "%s rütbeli bir yarık %s yakınında taşar."
-
-#: scripts/ui/GuildViews.gd:618
-msgid "Contest ends"
-msgstr "Yarışma biter"
-
-#: scripts/ui/GuildViews.gd:618
-msgid "The month's Renown contest with %s ends."
-msgstr "%s ile ayın Ün yarışması biter."
-
-#: scripts/ui/GuildViews.gd:628
-msgid "Today"
-msgstr ""
-
-#: scripts/ui/GuildViews.gd:628
-msgid "Day %d"
-msgstr "Gün %d"
-
-#: scripts/ui/GuildViews.gd:639
-msgid "in %d day%s"
-msgstr "%d gün%s sonra"
-
-#: scripts/ui/GuildViews.gd:643
-msgid "A day passes with every rift run or rest."
-msgstr "Her yarık seferi ya da dinlenmeyle bir gün geçer."
-
-#: scripts/ui/GuildViews.gd:653
-msgid "Guild Ledger"
-msgstr "Lonca Defteri"
-
-#: scripts/ui/GuildViews.gd:654
-msgid "Paying the guild"
-msgstr "Loncayı ödemek"
-
-#: scripts/ui/GuildViews.gd:654
-msgid "A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep."
-msgstr "Her yarık seferi ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman ayrılır. Her Lonca Yönetimi seviyesi ayrıca haftada %d Altın bakım ister."
-
-#: scripts/ui/GuildViews.gd:667
-msgid "Payday in %d day%s · wages %d + upkeep %d Gold · you have %d"
-msgstr "Maaş gününe %d gün%s · maaş %d + bakım %d Altın · sende %d"
-
-#: scripts/ui/GuildViews.gd:669
-msgid "A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out."
-msgstr "Her yarık koşusu ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman çekip gider."
-
-#: scripts/ui/GuildViews.gd:675
-msgid "%d Gold paid"
-msgstr "%d Altın ödendi"
-
-#: scripts/ui/GuildViews.gd:677
-msgid "unpaid: %s"
-msgstr "ödenmedi: %s"
-
-#: scripts/ui/GuildViews.gd:679
-msgid "walked out: %s"
-msgstr "çekip gitti: %s"
-
-#: scripts/ui/GuildViews.gd:680
-msgid "Last payday (day %d): %s."
-msgstr "Son maaş günü (gün %d): %s."
-
-#: scripts/ui/GuildViews.gd:681
-msgid "Training Yard: %d of %d trainings left this week"
-msgstr "Talim Alanı: bu hafta %d / %d eğitim kaldı"
-
-#: scripts/ui/GuildViews.gd:682
-msgid "Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown."
-msgstr "Bakım: her Lonca Yönetimi seviyesi haftada %d Altın ister; maaşlardan sonra ödenemezse lonca %d Ün kaybeder."
-
-#: scripts/ui/GuildViews.gd:685
-msgid "Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first"
-msgstr "Ziyafet ver (%d Altın): +%d moral, en fazla %d kahramana, en düşükten başlayarak"
-
-#: scripts/ui/GuildViews.gd:692
-msgid "Once a week."
-msgstr "Haftada bir."
-
-#: scripts/ui/GuildViews.gd:692
-msgid "Already feasted this week — the next one after payday."
-msgstr "Bu hafta zaten ziyafet verildi — bir sonraki maaş gününden sonra."
-
-#: scripts/ui/GuildViews.gd:707
-msgid "Rival: %s"
-msgstr "Rakip: %s"
-
-#: scripts/ui/GuildViews.gd:708
-msgid "Led by %s"
-msgstr "Lideri: %s"
-
-#: scripts/ui/GuildViews.gd:712
-msgid "Renown — you %d · them %d (%s)"
-msgstr "Ün — sen %d · onlar %d (%s)"
-
-#: scripts/ui/GuildViews.gd:712
-msgid "you lead by %d"
-msgstr "%d öndesin"
-
-#: scripts/ui/GuildViews.gd:712
-msgid "they lead by %d"
-msgstr "onlar %d önde"
-
-#: scripts/ui/GuildViews.gd:712
-msgid "level"
-msgstr "eşit"
-
-#: scripts/ui/GuildViews.gd:714
-msgid "Renown is the one race with the rival. They gain it every day and sometimes take a posted contract before you do. At payday the leader gets the pick of next week's recruits (one more offer for you, or one fewer); every 20 you earn arms an Epic relic at your next Shop. Seal rifts and finish contracts to gain it; failed contracts and unpaid upkeep cost it."
-msgstr "Rakiple tek yarışın Ün. Onlar her gün Ün kazanır ve bazen ilandaki bir sözleşmeyi senden önce kapar. Maaş gününde önde olan, gelecek haftanın acemilerinden ilk seçimi yapar (sana bir teklif fazla ya da eksik); kazandığın her 20 Ün, bir sonraki Dükkânda Destansı bir kalıntı garantiler. Yarık mühürleyerek ve sözleşme bitirerek kazanılır; başarısız sözleşmeler ve ödenmeyen bakım masrafı kaybettirir."
-
-#: scripts/ui/GuildViews.gd:718
-msgid "This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown."
-msgstr "Bu ay kazanılan Ün — sen %d · onlar %d · %d gün%s kaldı. Ödül: %d Altın, %d Ün."
-
-#: scripts/ui/GuildViews.gd:724
-msgid "Guild Standings"
-msgstr "Lonca Sıralaması"
-
-#: scripts/ui/GuildViews.gd:729 scripts/ui/Main.gd:675
-msgid "Guild"
-msgstr "Lonca"
-
-#: scripts/ui/GuildViews.gd:729
-msgid "Tower floor"
-msgstr "Kule katı"
-
-#: scripts/ui/GuildViews.gd:729
-msgid "Endless best"
-msgstr "Sonsuz en iyi"
-
-#: scripts/ui/GuildViews.gd:735
-msgid " (you)"
-msgstr " (sen)"
-
-#: scripts/ui/GuildViews.gd:735
-msgid " — rival"
-msgstr " — rakip"
-
-#: scripts/ui/GuildViews.gd:741
-msgid "The other guilds' records grow every day. Top the Renown column for an achievement."
-msgstr "Diğer loncaların kayıtları her gün büyür. Bir başarım için Ün sütununda zirveye çık."
-
-#: scripts/ui/GuildViews.gd:743
-msgid "Heroes — wages and morale"
-msgstr "Kahramanlar — maaş ve moral"
-
-#: scripts/ui/GuildViews.gd:754
-msgid "%s — Rank %s, Lv%d · wage %d Gold/week"
-msgstr "%s — Rütbe %s, Sv%d · maaş %d Altın/hafta"
-
-#: scripts/ui/GuildViews.gd:756
-msgid "Morale %d · %s%s%s"
-msgstr "Moral %d · %s%s%s"
-
-#: scripts/ui/GuildViews.gd:756
-msgid " (%+d%% damage)"
-msgstr " (%+d%% hasar)"
-
-#: scripts/ui/GuildViews.gd:756
-msgid " · unpaid %d week%s"
-msgstr " · %d hafta%s ödenmedi"
-
-#: scripts/ui/GuildViews.gd:758
-msgid "Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d"
-msgstr "Yarık mühürlemek +%d · kaybedilen yarık %d · bayılmak %d · maaş ödenmemesi %d · yarıksız bir hafta %d · başarısız sözleşme %d · ziyafet +%d"
-
-#: scripts/ui/GuildViews.gd:764
-msgid "Confirm: let them go"
-msgstr "Onayla: gitmesine izin ver"
-
-#: scripts/ui/GuildViews.gd:764
-msgid "Dismiss"
-msgstr "Görevden al"
-
-#: scripts/ui/GuildViews.gd:774
-msgid "They leave the guild for good; their gear goes back to the stockpile. No more wages."
-msgstr "Loncadan kalıcı olarak ayrılır; teçhizatı depoya döner. Artık maaş yok."
-
-#: scripts/ui/GuildViews.gd:781
-msgid "Guild news"
-msgstr "Lonca haberleri"
-
-#: scripts/ui/GuildViews.gd:793
-msgid "Assemble a party in the Rift Hall and enter a rift"
-msgstr "Yarık Salonu'nda bir ekip kur ve bir yarığa gir"
-
-#: scripts/ui/GuildViews.gd:794
-msgid "Equip an item on a hero (Roster > Heroes)"
-msgstr "Bir kahramana eşya kuşandır (Kadro > Kahramanlar)"
-
-#: scripts/ui/GuildViews.gd:795
-msgid "Spend a skill point (Roster > Heroes > Skills)"
-msgstr "Bir beceri puanı harca (Kadro > Kahramanlar > Beceriler)"
-
-#: scripts/ui/GuildViews.gd:796
-msgid "Seal your first rift by beating its boss"
-msgstr "Boss'unu yenerek ilk yarığını mühürle"
-
-#: scripts/ui/GuildViews.gd:805
+#: scripts/ui/GuildViews.gd:220
 msgid "Getting started — %d/%d"
 msgstr "Başlarken — %d/%d"
 
-#: scripts/ui/GuildViews.gd:809
+#: scripts/ui/GuildViews.gd:227
 msgid "Hide"
 msgstr "Gizle"
 
-#: scripts/ui/GuildViews.gd:839 scripts/ui/RosterView.gd:622
+#: scripts/ui/GuildViews.gd:231
+msgid "Hide the getting-started steps"
+msgstr "Başlarken adımlarını gizle"
+
+#: scripts/ui/GuildViews.gd:240
+msgid "All quiet. The rifts are waiting."
+msgstr "Her şey sakin. Yarıklar bekliyor."
+
+#: scripts/ui/GuildViews.gd:269
+msgid "This week · payday in %d day%s"
+msgstr "Bu hafta · maaş gününe %d gün%s"
+
+#: scripts/ui/GuildViews.gd:284
+msgid "Bill %d (wages %d + upkeep %d) · %s"
+msgstr "Fatura %d (maaş %d + bakım %d) · %s"
+
+#: scripts/ui/GuildViews.gd:284
+msgid "short %d"
+msgstr "%d eksik"
+
+#: scripts/ui/GuildViews.gd:289
+msgid "Since last payday: %s%d Gold"
+msgstr "Son maaş gününden beri: %s%d Altın"
+
+#: scripts/ui/GuildViews.gd:291
+msgid "Wages go out every %d days, heroes in roster order, then facility upkeep. Unpaid heroes lose morale; unpaid upkeep costs Renown. Click for the Ledger."
+msgstr "Maaşlar her %d günde bir ödenir: önce kadro sırasıyla kahramanlar, sonra tesis bakımı. Maaşı ödenmeyen kahramanlar moral kaybeder; ödenmeyen bakım Ün'e mal olur. Defter için tıkla."
+
+#: scripts/ui/GuildViews.gd:305
+msgid "Hire your first hero in Recruits"
+msgstr "İlk kahramanını Adaylar'dan işe al"
+
+#: scripts/ui/GuildViews.gd:307
+msgid "The rift has broken! Defend near %s"
+msgstr "Yarık taştı! %s yakınında savun"
+
+#: scripts/ui/GuildViews.gd:310
+msgid "A Rank %s rift breaks in %d day%s"
+msgstr "%s rütbeli bir yarık %d gün%s içinde taşacak"
+
+#: scripts/ui/GuildViews.gd:312
+msgid "%d building%s damaged: repair in Manage"
+msgstr "%d yapı%s hasarlı: Yönetim'den onar"
+
+#: scripts/ui/GuildViews.gd:316
+msgid "Finale open: %s"
+msgstr "Final açık: %s"
+
+#: scripts/ui/GuildViews.gd:321
+msgid "Act %s: %s%s"
+msgstr "%s. Perde: %s%s"
+
+#: scripts/ui/GuildViews.gd:325 scripts/ui/GuildViews.gd:327
+msgid " — answer before payday"
+msgstr " — maaş gününden önce cevap ver"
+
+#: scripts/ui/GuildViews.gd:327
+msgid " — by payday"
+msgstr " — maaş gününe kadar"
+
+#: scripts/ui/GuildViews.gd:330
+msgid "%d hero%s with low morale"
+msgstr "Morali düşük %d kahraman%s"
+
+#: scripts/ui/GuildViews.gd:333
+msgid "%d contract%s due within 2 days"
+msgstr "2 gün içinde bitmesi gereken %d sözleşme%s"
+
+#: scripts/ui/GuildViews.gd:336
+msgid "%d quest%s ready to claim"
+msgstr "Ödülü alınabilir %d görev%s"
+
+#: scripts/ui/GuildViews.gd:342
+msgid "%d recovering"
+msgstr "%d toparlanıyor"
+
+#: scripts/ui/GuildViews.gd:344
+msgid "%d wounded"
+msgstr "%d yaralı"
+
+#: scripts/ui/GuildViews.gd:346
+msgid "%s · %d bed%s free"
+msgstr "%s · %d yatak%s boş"
+
+#: scripts/ui/GuildViews.gd:349
+msgid "%d hero%s with points to spend"
+msgstr "Harcayacak puanı olan %d kahraman%s"
+
+#: scripts/ui/GuildViews.gd:361
+msgid "%s Lv%d"
+msgstr "%s Sv%d"
+
+#: scripts/ui/GuildViews.gd:363
+msgid "Upgrade ready: %s (%d Essence)"
+msgstr "Geliştirme hazır: %s (%d Öz)"
+
+#: scripts/ui/GuildViews.gd:367
+msgid "Tower of Trials: floor %d next"
+msgstr "Sınav Kulesi: sıradaki kat %d"
+
+#: scripts/ui/GuildViews.gd:374 scripts/ui/GuildViews.gd:891 scripts/ui/Main.gd:675
+msgid "Records"
+msgstr "Kayıtlar"
+
+#: scripts/ui/GuildViews.gd:378
+msgid "Achievements %d/%d"
+msgstr "Başarımlar %d/%d"
+
+#: scripts/ui/GuildViews.gd:378
+msgid "Statistics"
+msgstr "İstatistikler"
+
+#: scripts/ui/GuildViews.gd:378
+msgid "Run history"
+msgstr "Koşu geçmişi"
+
+#: scripts/ui/GuildViews.gd:412 scripts/ui/GuildViews.gd:446 scripts/ui/GuildViews.gd:740
+msgid "Renown"
+msgstr "Ün"
+
+#: scripts/ui/GuildViews.gd:413
+msgid "Done"
+msgstr "Tamam"
+
+#: scripts/ui/GuildViews.gd:433
+msgid "%s (power %d)"
+msgstr "%s (güç %d)"
+
+#: scripts/ui/GuildViews.gd:435
+msgid "Days passed"
+msgstr "Geçen günler"
+
+#: scripts/ui/GuildViews.gd:436
+msgid "Runs finished"
+msgstr "Biten koşular"
+
+#: scripts/ui/GuildViews.gd:437
+msgid "Rifts sealed"
+msgstr "Mühürlenen yarıklar"
+
+#: scripts/ui/GuildViews.gd:438
+msgid "Monsters defeated"
+msgstr "Yenilen canavarlar"
+
+#: scripts/ui/GuildViews.gd:439
+msgid "Elites / Bosses defeated"
+msgstr "Yenilen seçkinler / bosslar"
+
+#: scripts/ui/GuildViews.gd:440
+msgid "Flawless fights"
+msgstr "Kusursuz dövüşler"
+
+#: scripts/ui/GuildViews.gd:1456 scripts/ui/GuildViews.gd:441
+msgid "Campaign"
+msgstr "Hikâye"
+
+#: scripts/ui/GuildViews.gd:441
+msgid "Act %s"
+msgstr "%s. Perde"
+
+#: scripts/ui/GuildViews.gd:442
+msgid "Tower of Trials, best floor"
+msgstr "Sınav Kulesi, en iyi kat"
+
+#: scripts/ui/GuildViews.gd:443
+msgid "Endless Rift, best time"
+msgstr "Sonsuz Yarık, en iyi süre"
+
+#: scripts/ui/GuildViews.gd:444
+msgid "Daily twists sealed"
+msgstr "Mühürlenen günlük cilveler"
+
+#: scripts/ui/GuildViews.gd:444
+msgid "%d (streak %d)"
+msgstr "%d (seri %d)"
+
+#: scripts/ui/GuildViews.gd:445
+msgid "Items and relics crafted"
+msgstr "Üretilen eşya ve kalıntılar"
+
+#: scripts/ui/GuildViews.gd:447
+msgid "Heroes lost"
+msgstr "Kaybedilen kahramanlar"
+
+#: scripts/ui/GuildViews.gd:448
+msgid "Strongest hero"
+msgstr "En güçlü kahraman"
+
+#: scripts/ui/GuildViews.gd:449
+msgid "Most-defeated foe"
+msgstr "En çok yenilen düşman"
+
+#: scripts/ui/GuildViews.gd:463
+msgid "No runs yet. Your last %d runs will be listed here."
+msgstr "Henüz koşu yok. Son %d koşun burada listelenecek."
+
+#: scripts/ui/GuildViews.gd:473
+msgid "Day %d · %s · floor %s"
+msgstr "Gün %d · %s · kat %s"
+
+#: scripts/ui/GuildViews.gd:475
+msgid "Day %d · %s · %d:%02d · %d kills"
+msgstr "Gün %d · %s · %d:%02d · %d öldürme"
+
+#: scripts/ui/GuildViews.gd:479
+msgid "%+d Gold  %+d Essence"
+msgstr "%+d Altın  %+d Öz"
+
+#: scripts/ui/GuildViews.gd:480
+msgid "Party: "
+msgstr "Ekip: "
+
+#: scripts/ui/GuildViews.gd:482
+msgid "\nBoons: "
+msgstr "\nLütuflar: "
+
+#: scripts/ui/GuildViews.gd:489 scripts/ui/GuildViews.gd:892 scripts/ui/Main.gd:675
+msgid "Memorial"
+msgstr "Anıt"
+
+#: scripts/ui/GuildViews.gd:490
+msgid "Heroes lost for good. Their names stay with the guild."
+msgstr "Sonsuza dek kaybedilen kahramanlar. İsimleri loncada yaşar."
+
+#: scripts/ui/GuildViews.gd:492
+msgid "No one has fallen. May it stay that way."
+msgstr "Kimse düşmedi. Öyle kalsın."
+
+#: scripts/ui/GuildViews.gd:503
+msgid "%s — Rank %s, Level %d"
+msgstr "%s — Rütbe %s, Seviye %d"
+
+#: scripts/ui/GuildViews.gd:504
+msgid "%s, on day %d. %d rift%s sealed, %d foe%s felled."
+msgstr "%s, %d. günde. %d yarık%s mühürledi, %d düşman%s devirdi."
+
+#: scripts/ui/GuildViews.gd:541
+msgid "No answer by payday counts as a no."
+msgstr "Maaş gününe kadar cevap verilmezse hayır sayılır."
+
+#: scripts/ui/GuildViews.gd:554
+msgid "No answer by payday: they choose for themselves."
+msgstr "Maaş gününe kadar cevap yoksa: kendisi seçer."
+
+#: scripts/ui/GuildViews.gd:554
+msgid "No answer by payday counts as declining."
+msgstr "Maaş gününe kadar cevap yoksa reddetmiş sayılırsın."
+
+#: scripts/ui/GuildViews.gd:555
+msgid "No answer by payday: they take it."
+msgstr "Maaş gününe kadar cevap yoksa: onlar alır."
+
+#: scripts/ui/GuildViews.gd:557
+msgid "%d day%s to payday."
+msgstr "Maaş gününe %d gün%s."
+
+#: scripts/ui/GuildViews.gd:581
+msgid "Decide later"
+msgstr "Sonra karar ver"
+
+#: scripts/ui/GuildViews.gd:590
+msgid " Answer in Guild > Ledger."
+msgstr " Lonca > Defter'den cevap ver."
+
+#: scripts/ui/GuildViews.gd:617
+msgid "Payday · %d Gold"
+msgstr "Maaş günü · %d Altın"
+
+#: scripts/ui/GuildViews.gd:618
+msgid "Wages %d + upkeep %d Gold; you have %d."
+msgstr "Maaş %d + bakım %d Altın; sende %d var."
+
+#: scripts/ui/GuildViews.gd:620
+msgid "Request closes"
+msgstr "İstek kapanır"
+
+#: scripts/ui/GuildViews.gd:622
+msgid "Dare due"
+msgstr "Meydan okuma biter"
+
+#: scripts/ui/GuildViews.gd:622
+msgid "Rival waits"
+msgstr "Rakip bekliyor"
+
+#: scripts/ui/GuildViews.gd:625
+msgid "Contract due"
+msgstr "Sözleşme süresi"
+
+#: scripts/ui/GuildViews.gd:627
+msgid "Rift breaks"
+msgstr "Yarık taşar"
+
+#: scripts/ui/GuildViews.gd:627
+msgid "A Rank %s rift breaks near %s."
+msgstr "%s rütbeli bir yarık %s yakınında taşar."
+
+#: scripts/ui/GuildViews.gd:629
+msgid "Contest ends"
+msgstr "Yarışma biter"
+
+#: scripts/ui/GuildViews.gd:629
+msgid "The month's Renown contest with %s ends."
+msgstr "%s ile ayın Ün yarışması biter."
+
+#: scripts/ui/GuildViews.gd:639
+msgid "Today"
+msgstr ""
+
+#: scripts/ui/GuildViews.gd:639
+msgid "Day %d"
+msgstr "Gün %d"
+
+#: scripts/ui/GuildViews.gd:650
+msgid "in %d day%s"
+msgstr "%d gün%s sonra"
+
+#: scripts/ui/GuildViews.gd:654
+msgid "A day passes with every rift run or rest."
+msgstr "Her yarık seferi ya da dinlenmeyle bir gün geçer."
+
+#: scripts/ui/GuildViews.gd:664
+msgid "Guild Ledger"
+msgstr "Lonca Defteri"
+
+#: scripts/ui/GuildViews.gd:665
+msgid "Paying the guild"
+msgstr "Loncayı ödemek"
+
+#: scripts/ui/GuildViews.gd:665
+msgid "A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Every Guild Management level also costs %d Gold a week in upkeep."
+msgstr "Her yarık seferi ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman ayrılır. Her Lonca Yönetimi seviyesi ayrıca haftada %d Altın bakım ister."
+
+#: scripts/ui/GuildViews.gd:678
+msgid "Payday in %d day%s · wages %d + upkeep %d Gold · you have %d"
+msgstr "Maaş gününe %d gün%s · maaş %d + bakım %d Altın · sende %d"
+
+#: scripts/ui/GuildViews.gd:680
+msgid "A day passes with every rift run or rest; wages are due every %d days. An unpaid hero loses %d morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out."
+msgstr "Her yarık koşusu ya da dinlenmeyle bir gün geçer; maaşlar her %d günde bir ödenir. Maaşı ödenmeyen kahraman %d moral kaybeder; üst üste iki kez ödenmeyen ya da maaş gününde morali dipte olan kahraman çekip gider."
+
+#: scripts/ui/GuildViews.gd:686
+msgid "%d Gold paid"
+msgstr "%d Altın ödendi"
+
+#: scripts/ui/GuildViews.gd:688
+msgid "unpaid: %s"
+msgstr "ödenmedi: %s"
+
+#: scripts/ui/GuildViews.gd:690
+msgid "walked out: %s"
+msgstr "çekip gitti: %s"
+
+#: scripts/ui/GuildViews.gd:691
+msgid "Last payday (day %d): %s."
+msgstr "Son maaş günü (gün %d): %s."
+
+#: scripts/ui/GuildViews.gd:692
+msgid "Training Yard: %d of %d trainings left this week"
+msgstr "Talim Alanı: bu hafta %d / %d eğitim kaldı"
+
+#: scripts/ui/GuildViews.gd:693
+msgid "Upkeep: every Guild Management level costs %d Gold a week; if it can't be paid after wages, the guild loses %d Renown."
+msgstr "Bakım: her Lonca Yönetimi seviyesi haftada %d Altın ister; maaşlardan sonra ödenemezse lonca %d Ün kaybeder."
+
+#: scripts/ui/GuildViews.gd:696
+msgid "Hold a feast (%d Gold): +%d morale for up to %d heroes, lowest first"
+msgstr "Ziyafet ver (%d Altın): +%d moral, en fazla %d kahramana, en düşükten başlayarak"
+
+#: scripts/ui/GuildViews.gd:703
+msgid "Once a week."
+msgstr "Haftada bir."
+
+#: scripts/ui/GuildViews.gd:703
+msgid "Already feasted this week — the next one after payday."
+msgstr "Bu hafta zaten ziyafet verildi — bir sonraki maaş gününden sonra."
+
+#: scripts/ui/GuildViews.gd:718
+msgid "Rival: %s"
+msgstr "Rakip: %s"
+
+#: scripts/ui/GuildViews.gd:719
+msgid "Led by %s"
+msgstr "Lideri: %s"
+
+#: scripts/ui/GuildViews.gd:723
+msgid "Renown — you %d · them %d (%s)"
+msgstr "Ün — sen %d · onlar %d (%s)"
+
+#: scripts/ui/GuildViews.gd:723
+msgid "you lead by %d"
+msgstr "%d öndesin"
+
+#: scripts/ui/GuildViews.gd:723
+msgid "they lead by %d"
+msgstr "onlar %d önde"
+
+#: scripts/ui/GuildViews.gd:723
+msgid "level"
+msgstr "eşit"
+
+#: scripts/ui/GuildViews.gd:725
+msgid "Renown is the one race with the rival. They gain it every day and sometimes take a posted contract before you do. At payday the leader gets the pick of next week's recruits (one more offer for you, or one fewer); every 20 you earn arms an Epic relic at your next Shop. Seal rifts and finish contracts to gain it; failed contracts and unpaid upkeep cost it."
+msgstr "Rakiple tek yarışın Ün. Onlar her gün Ün kazanır ve bazen ilandaki bir sözleşmeyi senden önce kapar. Maaş gününde önde olan, gelecek haftanın acemilerinden ilk seçimi yapar (sana bir teklif fazla ya da eksik); kazandığın her 20 Ün, bir sonraki Dükkânda Destansı bir kalıntı garantiler. Yarık mühürleyerek ve sözleşme bitirerek kazanılır; başarısız sözleşmeler ve ödenmeyen bakım masrafı kaybettirir."
+
+#: scripts/ui/GuildViews.gd:729
+msgid "This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown."
+msgstr "Bu ay kazanılan Ün — sen %d · onlar %d · %d gün%s kaldı. Ödül: %d Altın, %d Ün."
+
+#: scripts/ui/GuildViews.gd:735
+msgid "Guild Standings"
+msgstr "Lonca Sıralaması"
+
+#: scripts/ui/GuildViews.gd:740 scripts/ui/Main.gd:675
+msgid "Guild"
+msgstr "Lonca"
+
+#: scripts/ui/GuildViews.gd:740
+msgid "Tower floor"
+msgstr "Kule katı"
+
+#: scripts/ui/GuildViews.gd:740
+msgid "Endless best"
+msgstr "Sonsuz en iyi"
+
+#: scripts/ui/GuildViews.gd:746
+msgid " (you)"
+msgstr " (sen)"
+
+#: scripts/ui/GuildViews.gd:746
+msgid " — rival"
+msgstr " — rakip"
+
+#: scripts/ui/GuildViews.gd:752
+msgid "The other guilds' records grow every day. Top the Renown column for an achievement."
+msgstr "Diğer loncaların kayıtları her gün büyür. Bir başarım için Ün sütununda zirveye çık."
+
+#: scripts/ui/GuildViews.gd:754
+msgid "Heroes — wages and morale"
+msgstr "Kahramanlar — maaş ve moral"
+
+#: scripts/ui/GuildViews.gd:765
+msgid "%s — Rank %s, Lv%d · wage %d Gold/week"
+msgstr "%s — Rütbe %s, Sv%d · maaş %d Altın/hafta"
+
+#: scripts/ui/GuildViews.gd:767
+msgid "Morale %d · %s%s%s"
+msgstr "Moral %d · %s%s%s"
+
+#: scripts/ui/GuildViews.gd:767
+msgid " (%+d%% damage)"
+msgstr " (%+d%% hasar)"
+
+#: scripts/ui/GuildViews.gd:767
+msgid " · unpaid %d week%s"
+msgstr " · %d hafta%s ödenmedi"
+
+#: scripts/ui/GuildViews.gd:769
+msgid "Sealing a rift +%d · a lost rift %d · knocked out %d · unpaid %d · a week without a rift %d · a failed contract %d · a feast +%d"
+msgstr "Yarık mühürlemek +%d · kaybedilen yarık %d · bayılmak %d · maaş ödenmemesi %d · yarıksız bir hafta %d · başarısız sözleşme %d · ziyafet +%d"
+
+#: scripts/ui/GuildViews.gd:775
+msgid "Confirm: let them go"
+msgstr "Onayla: gitmesine izin ver"
+
+#: scripts/ui/GuildViews.gd:775
+msgid "Dismiss"
+msgstr "Görevden al"
+
+#: scripts/ui/GuildViews.gd:785
+msgid "They leave the guild for good; their gear goes back to the stockpile. No more wages."
+msgstr "Loncadan kalıcı olarak ayrılır; teçhizatı depoya döner. Artık maaş yok."
+
+#: scripts/ui/GuildViews.gd:792
+msgid "Guild news"
+msgstr "Lonca haberleri"
+
+#: scripts/ui/GuildViews.gd:807
+msgid "Assemble a party in the Rift Hall and enter a rift"
+msgstr "Yarık Salonu'nda bir ekip kur ve bir yarığa gir"
+
+#: scripts/ui/GuildViews.gd:808
+msgid "Equip an item on a hero (Roster > Heroes)"
+msgstr "Bir kahramana eşya kuşandır (Kadro > Kahramanlar)"
+
+#: scripts/ui/GuildViews.gd:809
+msgid "Spend a skill point (Roster > Heroes > Skills)"
+msgstr "Bir beceri puanı harca (Kadro > Kahramanlar > Beceriler)"
+
+#: scripts/ui/GuildViews.gd:810
+msgid "Seal your first rift by beating its boss"
+msgstr "Boss'unu yenerek ilk yarığını mühürle"
+
+#: scripts/ui/GuildViews.gd:826 scripts/ui/RosterView.gd:622
 msgid "%d SP"
 msgstr "%d BP"
 
-#: scripts/ui/GuildViews.gd:845
+#: scripts/ui/GuildViews.gd:832
 msgid "can evolve"
 msgstr "evrimleşebilir"
 
-#: scripts/ui/GuildViews.gd:848
+#: scripts/ui/GuildViews.gd:835
 msgid "empty %s slot"
 msgstr "boş %s yuvası"
 
-#: scripts/ui/GuildViews.gd:856
+#: scripts/ui/GuildViews.gd:843
 msgid "%d hero(es) wounded or downed"
 msgstr "%d kahraman yaralı ya da düşmüş"
 
-#: scripts/ui/GuildViews.gd:860
+#: scripts/ui/GuildViews.gd:847
 msgid "%d recruit(s) you can afford"
 msgstr "Paranın yettiği %d aday"
 
-#: scripts/ui/GuildViews.gd:874
+#: scripts/ui/GuildViews.gd:861
 msgid "%d craft(s) ready in Crafting"
 msgstr "Zanaat'ta %d üretim hazır"
 
-#: scripts/ui/GuildViews.gd:878
+#: scripts/ui/GuildViews.gd:865
 msgid "%d relic slot(s) empty — equip a relic under Items > Relics"
 msgstr "%d kalıntı yuvası boş — Eşyalar > Kalıntılar'dan bir kalıntı kuşan"
 
-#: scripts/ui/GuildViews.gd:881
+#: scripts/ui/GuildViews.gd:868
 msgid "%d quest(s) ready to claim"
 msgstr "Ödülü alınabilir %d görev"
 
-#: scripts/ui/GuildViews.gd:893
+#: scripts/ui/GuildViews.gd:880
 msgid "Command Tent"
 msgstr "Komuta Çadırı"
 
-#: scripts/ui/GuildViews.gd:902 scripts/ui/Main.gd:675
+#: scripts/ui/GuildViews.gd:889 scripts/ui/Main.gd:675
 msgid "Ledger"
 msgstr "Defter"
 
-#: scripts/ui/GuildViews.gd:903 scripts/ui/GuildViews.gd:923 scripts/ui/Main.gd:550
+#: scripts/ui/GuildViews.gd:890 scripts/ui/GuildViews.gd:910 scripts/ui/Main.gd:550
 msgid "Codex"
 msgstr "Kodeks"
 
-#: scripts/ui/GuildViews.gd:914
+#: scripts/ui/GuildViews.gd:901
 msgid "Trading Post"
 msgstr "Ticaret Karakolu"
 
-#: scripts/ui/GuildViews.gd:920
+#: scripts/ui/GuildViews.gd:907
 msgid "Scholar's Lodge"
 msgstr "Bilgin Köşkü"
 
-#: scripts/ui/GuildViews.gd:933
+#: scripts/ui/GuildViews.gd:920
 msgid "%s (locked)"
 msgstr "%s (kilitli)"
 
-#: scripts/ui/GuildViews.gd:963
+#: scripts/ui/GuildViews.gd:950
 msgid "Freed at the end of Act %s."
 msgstr "%s. Perde'nin sonunda kurtarılır."
 
-#: scripts/ui/GuildViews.gd:967
+#: scripts/ui/GuildViews.gd:954
 msgid "Lost in the Endless Rift: survive past %d:%02d to find their light."
 msgstr "Sonsuz Yarık'ta kayıp: ışığını bulmak için %d:%02d sonrasına kadar dayan."
 
-#: scripts/ui/GuildViews.gd:976
+#: scripts/ui/GuildViews.gd:963
 msgid "%s · Level %d/%d"
 msgstr "%s · Seviye %d/%d"
 
-#: scripts/ui/GuildViews.gd:977
+#: scripts/ui/GuildViews.gd:964
 msgid "Boon: "
 msgstr "Lütuf: "
 
-#: scripts/ui/GuildViews.gd:982
+#: scripts/ui/GuildViews.gd:969
 msgid "Call: %s — %s (%s)"
 msgstr "Çağrı: %s — %s (%s)"
 
-#: scripts/ui/GuildViews.gd:982
+#: scripts/ui/GuildViews.gd:969
 msgid "twice a rift"
 msgstr "yarık başına iki kez"
 
-#: scripts/ui/GuildViews.gd:982
+#: scripts/ui/GuildViews.gd:969
 msgid "once a rift"
 msgstr "yarık başına bir kez"
 
-#: scripts/ui/GuildViews.gd:987
+#: scripts/ui/GuildViews.gd:974
 msgid "Overseeing"
 msgstr "Gözetiyor"
 
-#: scripts/ui/GuildViews.gd:987
+#: scripts/ui/GuildViews.gd:974
 msgid "Oversee rifts"
 msgstr "Yarıkları gözet"
 
-#: scripts/ui/GuildViews.gd:992
+#: scripts/ui/GuildViews.gd:979
 msgid "The overseer's Boon lifts the whole party in every rift run, and any hero can spend their turn on the Call."
 msgstr "Gözetmenin Lütfu her yarık seferinde tüm ekibi güçlendirir; herhangi bir kahraman sırasını Çağrı'ya harcayabilir."
 
-#: scripts/ui/GuildViews.gd:996
+#: scripts/ui/GuildViews.gd:983
 msgid "Level up — %d Essence"
 msgstr "Seviye atla — %d Öz"
 
-#: scripts/ui/GuildViews.gd:1002
+#: scripts/ui/GuildViews.gd:989
 msgid "%s reaches level %d"
 msgstr "%s %d. seviyeye ulaştı"
 
-#: scripts/ui/GuildViews.gd:1002
+#: scripts/ui/GuildViews.gd:989
 msgid "Boon and Call grow stronger"
 msgstr "Lütuf ve Çağrı güçlenir"
 
-#: scripts/ui/GuildViews.gd:1005
+#: scripts/ui/GuildViews.gd:992
 msgid "Each level: Boon and Call +%d%%, and +%d%% HP and damage in the Endless Rift. At level %d the Call works twice a rift."
 msgstr "Her seviye: Lütuf ve Çağrı +%%%d, Sonsuz Yarık'ta +%%%d can ve hasar. %d. seviyede Çağrı yarık başına iki kez kullanılır."
 
-#: scripts/ui/GuildViews.gd:1014
+#: scripts/ui/GuildViews.gd:1001
 msgid "Champions are freed by the story and rescued in the Endless Rift. One oversees your rift runs: the whole party gets their Boon, and any hero can spend a turn on their Call. In the Endless Rift your champions are the party. Spend Essence here to level them up."
 msgstr "Şampiyonlar hikâyede özgürleşir ve Sonsuz Yarık'ta kurtarılır. Biri yarık seferlerini gözetir: tüm grup onun Lütfunu alır ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. Sonsuz Yarık'ta grup şampiyonlarının kendisidir. Seviye atlatmak için burada Öz harca."
 
-#: scripts/ui/GuildViews.gd:1018
+#: scripts/ui/GuildViews.gd:1005
 msgid "Essence: %d"
 msgstr "Öz: %d"
 
-#: scripts/ui/GuildViews.gd:1020
+#: scripts/ui/GuildViews.gd:1007
 msgid "Spend it to level up champions. The Endless Rift pays the most."
 msgstr "Şampiyonların seviyesini yükseltmek için harca. En çok Sonsuz Yarık öder."
 
-#: scripts/ui/GuildViews.gd:1025
+#: scripts/ui/GuildViews.gd:1012
 msgid "%d of %d champions found. Every new guild meets a different twelve."
 msgstr "%d/%d şampiyon bulundu. Her yeni lonca farklı on iki şampiyonla karşılaşır."
 
-#: scripts/ui/GuildViews.gd:1039
+#: scripts/ui/GuildViews.gd:1026
 msgid "Hiring heroes"
 msgstr "Kahraman işe almak"
 
-#: scripts/ui/GuildViews.gd:1039
+#: scripts/ui/GuildViews.gd:1026
 msgid "Recruit heroes below; higher ranks are stronger."
 msgstr "Aşağıdan kahraman işe al; yüksek rütbeler daha güçlüdür."
 
-#: scripts/ui/GuildViews.gd:1040
+#: scripts/ui/GuildViews.gd:1027
 msgid "Rank odds: %s%s"
 msgstr "Rütbe olasılıkları: %s%s"
 
-#: scripts/ui/GuildViews.gd:1040
+#: scripts/ui/GuildViews.gd:1027
 msgid "  ·  Scouts' Lodge: a C+ recruit is assured each refresh"
 msgstr "  ·  İzci Köşkü: her yenilemede bir C+ aday garanti"
 
-#: scripts/ui/GuildViews.gd:1043
+#: scripts/ui/GuildViews.gd:1030
 msgid "Hero Recruits — %d/%d roster slots"
 msgstr "Kahraman Adayları — %d/%d kadro yeri"
 
-#: scripts/ui/GuildViews.gd:1045
+#: scripts/ui/GuildViews.gd:1032
 msgid "Your roster is full. The Barracks (Guild > Manage > Operations) adds 2 slots a level; you can also let a hero go from the Ledger."
 msgstr "Kadron dolu. Kışla (Lonca > Yönetim > Operasyon) her seviyede 2 yer ekler; bir kahramanı Defter'den de gönderebilirsin."
 
-#: scripts/ui/GuildViews.gd:1049
+#: scripts/ui/GuildViews.gd:1036
 msgid "No one is looking for work right now. New recruits arrive every payday."
 msgstr "Şu an iş arayan kimse yok. Yeni adaylar her maaş gününde gelir."
 
-#: scripts/ui/GuildViews.gd:1054
+#: scripts/ui/GuildViews.gd:1041
 msgid "Commission a recruit (%d Gold):"
 msgstr "Bir acemi ısmarla (%d Altın):"
 
-#: scripts/ui/GuildViews.gd:1065
+#: scripts/ui/GuildViews.gd:1052
 msgid "A %s joins the offers at the usual rank odds (the last offer leaves)."
 msgstr "Teklifler arasına olağan rütbe ihtimalleriyle bir %s katılır (son teklif gider)."
 
-#: scripts/ui/GuildViews.gd:1088
+#: scripts/ui/GuildViews.gd:1075
 msgid "Rank %s %s · %d Gold · Power %d · %d HP · wage %d/week"
 msgstr "Rütbe %s %s · %d Altın · Güç %d · %d Can · maaş %d/hafta"
 
-#: scripts/ui/GuildViews.gd:1089 scripts/ui/RosterView.gd:126
+#: scripts/ui/GuildViews.gd:1076 scripts/ui/RosterView.gd:126
 msgid "Passive — "
 msgstr "Pasif — "
 
-#: scripts/ui/GuildViews.gd:1091
+#: scripts/ui/GuildViews.gd:1078
 msgid "Reroll (%d Gold)"
 msgstr "Yenile (%d Altın)"
 
-#: scripts/ui/GuildViews.gd:1097
+#: scripts/ui/GuildViews.gd:1084
 msgid "Recruit"
 msgstr "İşe al"
 
-#: scripts/ui/GuildViews.gd:1103
+#: scripts/ui/GuildViews.gd:1090
 msgid "%s joins the guild!"
 msgstr "%s loncaya katıldı!"
 
-#: scripts/ui/GuildViews.gd:1114
+#: scripts/ui/GuildViews.gd:1101
 msgid "Medical Bay — %d/%d beds occupied"
 msgstr "Revir — %d/%d yatak dolu"
 
-#: scripts/ui/GuildViews.gd:1116
+#: scripts/ui/GuildViews.gd:1103
 msgid "Field Triage: once per rift, get a downed hero back up mid-rift."
 msgstr "Sahada Triyaj: yarık başına bir kez, düşmüş bir kahramanı yarığın ortasında ayağa kaldır."
 
-#: scripts/ui/GuildViews.gd:1142
+#: scripts/ui/GuildViews.gd:1129
 msgid "%d/%d HP · %s"
 msgstr "%d/%d Can · %s"
 
-#: scripts/ui/GuildViews.gd:1145
+#: scripts/ui/GuildViews.gd:1132
 msgid "Empty bed"
 msgstr "Boş yatak"
 
-#: scripts/ui/GuildViews.gd:1152
+#: scripts/ui/GuildViews.gd:1139
 msgid "Recovering without a bed (slower):"
 msgstr "Yataksız iyileşenler (daha yavaş):"
 
-#: scripts/ui/GuildViews.gd:1156
+#: scripts/ui/GuildViews.gd:1143
 msgid "%s — %d/%d HP (%s) · %s"
 msgstr "%s — %d/%d Can (%s) · %s"
 
-#: scripts/ui/GuildViews.gd:1156
+#: scripts/ui/GuildViews.gd:1143
 msgid "downed"
 msgstr "yere serilmiş"
 
-#: scripts/ui/GuildViews.gd:1156
+#: scripts/ui/GuildViews.gd:1143
 msgid "wounded"
 msgstr "yaralı"
 
-#: scripts/ui/GuildViews.gd:1160
+#: scripts/ui/GuildViews.gd:1147
 msgid "Put in a bed"
 msgstr "Yatağa yatır"
 
-#: scripts/ui/GuildViews.gd:1165
+#: scripts/ui/GuildViews.gd:1152
 msgid "Every bed is taken"
 msgstr "Bütün yataklar dolu"
 
-#: scripts/ui/GuildViews.gd:1165
+#: scripts/ui/GuildViews.gd:1152
 msgid "A downed hero comes back a run sooner; a wounded one is fully healed after the next run."
 msgstr "Yere serilmiş bir kahraman bir koşu erken döner; yaralı biri sonraki koşudan sonra tamamen iyileşir."
 
-#: scripts/ui/GuildViews.gd:1171
+#: scripts/ui/GuildViews.gd:1158
 msgid "Rest the guild (pass one run's time)"
 msgstr "Loncayı dinlendir (bir koşu süresi geçir)"
 
-#: scripts/ui/GuildViews.gd:1175
+#: scripts/ui/GuildViews.gd:1162
 msgid "Heroes recover as if a run had ended."
 msgstr "Kahramanlar bir koşu bitmiş gibi toparlanır."
 
-#: scripts/ui/GuildViews.gd:1178
+#: scripts/ui/GuildViews.gd:1165
 msgid "Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed)."
 msgstr "Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d'ini geri kazanır (yatakta hepsini)."
 
-#: scripts/ui/GuildViews.gd:1184
+#: scripts/ui/GuildViews.gd:1171
 msgid "back in %d run%s"
 msgstr "%d koşu%s sonra döner"
 
-#: scripts/ui/GuildViews.gd:1186
+#: scripts/ui/GuildViews.gd:1173
 msgid "full after next run"
 msgstr "sonraki koşudan sonra tam"
 
-#: scripts/ui/GuildViews.gd:1187
+#: scripts/ui/GuildViews.gd:1174
 msgid "+%d%% HP per run"
 msgstr "Koşu başına +%%%d Can"
 
-#: scripts/ui/GuildViews.gd:1214
+#: scripts/ui/GuildViews.gd:1201
 msgid "%d/3 — need %d more"
 msgstr "%d/3 — %d tane daha gerek"
 
-#: scripts/ui/GuildViews.gd:1215
+#: scripts/ui/GuildViews.gd:1202
 msgid "%d owned — ready to craft%s"
 msgstr "%d adet var — üretime hazır%s"
 
-#: scripts/ui/GuildViews.gd:1220
+#: scripts/ui/GuildViews.gd:1207
 msgid "Combine 3 of the same kind and rarity into 1 of the next rarity up."
 msgstr "Aynı türden ve nadirlikten 3 tanesini bir üst nadirlikte 1 taneye birleştir."
 
-#: scripts/ui/GuildViews.gd:1236
+#: scripts/ui/GuildViews.gd:1223
 msgid "No craftable (unequipped Common/Rare) items."
 msgstr "Üretilebilir (kuşanılmamış Sıradan/Nadir) eşya yok."
 
-#: scripts/ui/GuildViews.gd:1243 scripts/ui/GuildViews.gd:1275
+#: scripts/ui/GuildViews.gd:1230 scripts/ui/GuildViews.gd:1262
 msgid "Craft → %s"
 msgstr "Üret → %s"
 
-#: scripts/ui/GuildViews.gd:1268
+#: scripts/ui/GuildViews.gd:1255
 msgid "No craftable (unequipped Common/Rare) relics."
 msgstr "Üretilebilir (kuşanılmamış Sıradan/Nadir) kalıntı yok."
 
-#: scripts/ui/GuildViews.gd:1300
+#: scripts/ui/GuildViews.gd:1287
 msgid "poisons its target for a few rounds"
 msgstr "hedefini birkaç tur zehirler"
 
-#: scripts/ui/GuildViews.gd:1301
+#: scripts/ui/GuildViews.gd:1288
 msgid "heals its allies each round"
 msgstr "her tur müttefiklerini iyileştirir"
 
-#: scripts/ui/GuildViews.gd:1302
+#: scripts/ui/GuildViews.gd:1289
 msgid "starts the fight behind a ward"
 msgstr "dövüşe bir korumanın ardında başlar"
 
-#: scripts/ui/GuildViews.gd:1303
+#: scripts/ui/GuildViews.gd:1290
 msgid "hits harder when badly hurt"
 msgstr "ağır yaralıyken daha sert vurur"
 
-#: scripts/ui/GuildViews.gd:1304
+#: scripts/ui/GuildViews.gd:1291
 msgid "heals itself from the damage it deals"
 msgstr "verdiği hasardan kendini iyileştirir"
 
-#: scripts/ui/GuildViews.gd:1305
+#: scripts/ui/GuildViews.gd:1292
 msgid "reflects part of the damage it takes"
 msgstr "aldığı hasarın bir kısmını yansıtır"
 
-#: scripts/ui/GuildViews.gd:1314
+#: scripts/ui/GuildViews.gd:1301
 msgid "Monsters"
 msgstr "Canavarlar"
 
-#: scripts/ui/GuildViews.gd:1314
+#: scripts/ui/GuildViews.gd:1301
 msgid "Monster"
 msgstr "Canavar"
 
-#: scripts/ui/GuildViews.gd:1315
+#: scripts/ui/GuildViews.gd:1302
 msgid "Elites"
 msgstr "Seçkinler"
 
-#: scripts/ui/GuildViews.gd:1316
+#: scripts/ui/GuildViews.gd:1303
 msgid "Rift Wardens"
 msgstr "Yarık Bekçileri"
 
-#: scripts/ui/GuildViews.gd:1321
+#: scripts/ui/GuildViews.gd:1308
 msgid "%s — %d/%d met"
 msgstr "%s — %d/%d karşılaşıldı"
 
-#: scripts/ui/GuildViews.gd:1330
+#: scripts/ui/GuildViews.gd:1317
 msgid "Hazards — %d/%d met"
 msgstr "Tehlikeler — %d/%d karşılaşıldı"
 
-#: scripts/ui/GuildViews.gd:1346
+#: scripts/ui/GuildViews.gd:1333
 msgid "%s · finds %s"
 msgstr "%s · bulur: %s"
 
-#: scripts/ui/GuildViews.gd:1377
+#: scripts/ui/GuildViews.gd:1364
 msgid "Telegraphs: %s"
 msgstr "Önceden belli eder: %s"
 
-#: scripts/ui/GuildViews.gd:1380
+#: scripts/ui/GuildViews.gd:1367
 msgid "Brings a random warden mechanic each fight. %s"
 msgstr "Her dövüşe rastgele bir bekçi mekaniği getirir. %s"
 
-#: scripts/ui/GuildViews.gd:1380
+#: scripts/ui/GuildViews.gd:1367
 msgid "Defeated."
 msgstr "Yenildi."
 
-#: scripts/ui/GuildViews.gd:1380
+#: scripts/ui/GuildViews.gd:1367
 msgid "Not yet defeated."
 msgstr "Henüz yenilmedi."
 
-#: scripts/ui/GuildViews.gd:1388
+#: scripts/ui/GuildViews.gd:1375
 msgid "Systems"
 msgstr "Sistemler"
 
-#: scripts/ui/GuildViews.gd:1402
+#: scripts/ui/GuildViews.gd:1389
 msgid "Compendium"
 msgstr "Derleme"
 
-#: scripts/ui/GuildViews.gd:1412
+#: scripts/ui/GuildViews.gd:1399
 msgid "Items are hero-bound gear. Weapon items fill a hero's weapon slots (1, or 2 for a dual-wield class); Armor and Focus items share one \"gear\" slot pool that grows with hero rank. A Common rolls one stat, a Rare one bigger stat and a named effect, an Epic two stats and a stronger effect (some effects only come on Epics). Legendaries are unique."
 msgstr "Eşyalar kahramana bağlı teçhizattır. Silahlar kahramanın silah yuvalarını doldurur (1, çift silahlı sınıflarda 2); Zırh ve Odak eşyaları, kahraman rütbesiyle büyüyen tek bir \"teçhizat\" yuva havuzunu paylaşır. Sıradan eşya bir nitelik, Nadir daha büyük bir nitelik ve adlı bir etki, Destansı iki nitelik ve daha güçlü bir etki taşır (bazı etkiler yalnızca Destansılarda çıkar). Efsaneviler eşsizdir."
 
-#: scripts/ui/GuildViews.gd:1421
+#: scripts/ui/GuildViews.gd:1408
 msgid "Stats: %s"
 msgstr "Nitelikler: %s"
 
-#: scripts/ui/GuildViews.gd:1423
+#: scripts/ui/GuildViews.gd:1410
 msgid " (Epic)"
 msgstr " (Destansı)"
 
-#: scripts/ui/GuildViews.gd:1427
+#: scripts/ui/GuildViews.gd:1414
 msgid "Relics are party-wide. Each relic has an elemental type, which nudges (60% weight) which power domain its rolled special favors."
 msgstr "Kalıntılar tüm ekibi etkiler. Her kalıntının bir element türü vardır; bu, rastgele gelen özel gücünün hangi alanı kayıracağını (%60 ağırlıkla) yönlendirir."
 
-#: scripts/ui/GuildViews.gd:1434
+#: scripts/ui/GuildViews.gd:1421
 msgid "%s — %s domain"
 msgstr "%s — %s alanı"
 
-#: scripts/ui/GuildViews.gd:1439
+#: scripts/ui/GuildViews.gd:1426
 msgid "Crafting combines 3 unequipped items or relics of the same category/type and rarity into 1 of the next rarity up."
 msgstr "Zanaat, aynı kategori/tür ve nadirlikteki 3 kuşanılmamış eşya ya da kalıntıyı bir üst nadirlikte 1 taneye birleştirir."
 
-#: scripts/ui/GuildViews.gd:1442
+#: scripts/ui/GuildViews.gd:1429
 msgid "Legendary items/relics are fixed hand-authored drops — not craftable from Epics."
 msgstr "Efsanevi eşyalar/kalıntılar elle tasarlanmış sabit ganimetlerdir — Destansılardan üretilemez."
 
-#: scripts/ui/GuildViews.gd:1447
+#: scripts/ui/GuildViews.gd:1434
 msgid "Guild Management"
 msgstr "Lonca Yönetimi"
 
-#: scripts/ui/GuildViews.gd:1447
+#: scripts/ui/GuildViews.gd:1434
 msgid "Spend Essence on 9 upgrades across 4 branches, and Gold on the Defenses branch (Armory, Engineering, Palisade, Watchtower) for Riftbreaks. Every level adds its effect; some levels unlock a perk (a first-strike bonus, a boss Essence cache, extra relic slots, tier 3 towers…). Guild Tier tracks total levels. A building damaged in a Riftbreak works a level lower until you repair it with Gold."
 msgstr "9 geliştirmeye (4 dal) Öz, Yarık Taşmaları için Savunma dalına (Cephanelik, Mühendislik, Şarampole, Gözcü Kulesi) Altın harca. Her seviye etkisini ekler; bazı seviyeler bir ayrıcalık açar (ilk vuruş bonusu, boss Öz sandığı, ek emanet yuvası, 3. kademe kuleler…). Lonca Kademesi toplam seviyeleri izler. Bir Yarık Taşmasında hasar gören yapı, Altınla onarılana dek bir seviye düşük çalışır."
 
-#: scripts/ui/GuildViews.gd:1448
+#: scripts/ui/GuildViews.gd:1435
 msgid "Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."
 msgstr "İlk yarığını mühürledikten sonra Yarık Merdiveni her gün bir cilve sunar: tarihe göre belirlenen bir kural ve başlangıç lütfu, böylece her lonca aynısıyla karşılaşır. İşaretlersen bir sonraki merdiven yarığın (herhangi bir rütbe) onu taşır; günde bir deneme. Mühürlemek ek Öz kazandırır ve serini uzatır. Kayıtlar (Lonca Salonu'nda) başarıları, genel istatistikleri ve son 30 seferini tutar; Anıt, sonsuza dek kaybedilen kahramanları anar."
 
-#: scripts/ui/GuildViews.gd:1449 scripts/ui/Main.gd:1436 scripts/ui/Main.gd:1569
+#: scripts/ui/GuildViews.gd:1436 scripts/ui/Main.gd:1436 scripts/ui/Main.gd:1569
 msgid "Endless Rift"
 msgstr "Sonsuz Yarık"
 
-#: scripts/ui/GuildViews.gd:1449
+#: scripts/ui/GuildViews.gd:1436
 msgid "A real-time survival run in the region you pick, and only champions go in (up to 4). You steer the first (WASD, arrows, drag or stick); the rest follow and fight on their own, and each fires their signature move on a timer (the ring over their head fills as it recharges). Your equipped relics come along. Every five minutes the rift runs the same cycle: the horde, a swarm, an elite pack (its leader carries a chest), archers and casters, then a lull with a chest nearby, and a warden at the end of it. At 20:00 the Rift Warden comes: beat it to seal the rift. The rift's strength (shown before you enter) starts gentle and grows with every champion you free and every act you pass. A run pays Essence and a little Gold, and costs the guild a day."
 msgstr "Seçtiğin bölgede gerçek zamanlı bir hayatta kalma seferi; içeri yalnızca şampiyonlar girer (en fazla 4). İlkini sen yönetirsin (WASD, oklar, sürükleme ya da çubuk); diğerleri onu izler ve kendi başlarına savaşır, her biri imza hareketini belli aralıklarla kullanır (başlarının üstündeki halka dolunca hazırdır). Takılı kalıntıların da seninle gelir. Yarık her beş dakikada aynı döngüyü işletir: sürü, bir akın, seçkin bir takım (lideri bir sandık taşır), okçular ve büyücüler, ardından yakınında bir sandıkla bir durgunluk ve sonunda bir muhafız. 20:00'de Yarık Muhafızı gelir: onu yenip yarığı mühürle. Yarığın gücü (girmeden önce gösterilir) hafif başlar ve özgürleştirdiğin her şampiyonla ve geçtiğin her perdeyle artar. Bir sefer Öz ve biraz Altın kazandırır, loncaya bir güne mal olur."
 
-#: scripts/ui/GuildViews.gd:1450
+#: scripts/ui/GuildViews.gd:1437
 msgid "Endless picks"
 msgstr "Sonsuz seçimleri"
 
-#: scripts/ui/GuildViews.gd:1450
+#: scripts/ui/GuildViews.gd:1437
 msgid "Collect shards to level up and pick 1 of 3; one card is always a signature pick while any are left. Party upgrades (damage, speed, health…), a champion's role skill, a rank in their signature (up to 3: sooner and harder), or one of their two signature mods once it has a rank (Aftershock, Kindled, Frostbite, Expose, Stagger, Leech, Shrapnel, Radiance, Bulwark, Fervor, Renewal, Smokescreen). From level 10, two champions whose signatures are rank 2 can fuse: they fire together, 25% harder, and carry each other's mods. Max an upgrade and the matching role's attack can evolve (Whirlwind, Thousand Cuts, Arrow Storm, Starfall, Sanctum). Chests give one of three rift relics for the run."
 msgstr "Seviye atlamak için kırıkları topla ve 3 seçenekten birini al; kalan varken kartlardan biri hep bir imza seçimidir. Ekip geliştirmeleri (hasar, hız, can…), bir şampiyonun rol becerisi, imzasında bir rütbe (en fazla 3: daha erken ve daha sert) ya da imzanın bir rütbesi olunca iki imza güçlendirmesinden biri (Artçı Sarsıntı, Tutuşmuş, Soğuk Isırığı, Açığa Çıkar, Sersemlet, Sülük, Şarapnel, Nur, Siper, Coşku, Yenilenme, Sis Perdesi). 10. seviyeden itibaren imzaları 2. rütbede olan iki şampiyon kaynaşabilir: birlikte ateşlenir, %25 daha sert vurur ve birbirlerinin güçlendirmelerini taşırlar. Bir geliştirmeyi en üste çıkar, eşleşen rolün saldırısı evrilebilir (Kasırga Dönüşü, Bin Kesik, Ok Fırtınası, Yıldız Yağmuru, Kutsal Oda). Sandıklar koşu boyunca üç yarık emanetinden birini verir."
 
-#: scripts/ui/GuildViews.gd:1451
+#: scripts/ui/GuildViews.gd:1438
 msgid "Endless ground"
 msgstr "Sonsuz arazisi"
 
-#: scripts/ui/GuildViews.gd:1451
+#: scripts/ui/GuildViews.gd:1438
 msgid "The Vale has pillars that block foes, the Marches have pools that slow everyone, the Wastes have lava that burns foes and your lead. Braziers break when you walk into or hit them, dropping a heal, a magnet for shards or a bomb. Elites and wardens slam: step out of the red circle before it fills. Your first 5, 10 and 15 minutes and your first sealed rift each pay once, with two Endless relics and guild titles."
 msgstr "Vadide düşmanları durduran sütunlar, Bataklıklarda herkesi yavaşlatan göletler, Çorak Topraklarda düşmanları ve önderini yakan lav var. Mangallar üstüne yürüyünce ya da vurunca kırılır ve bir iyileşme, parçalar için bir mıknatıs ya da bir bomba düşürür. Seçkinler ve bekçiler yere vurur: kırmızı daire dolmadan dışına çık. İlk 5, 10 ve 15 dakikan ve ilk mühürlediğin yarık birer kez ödül verir; iki Sonsuz kalıntısı ve lonca unvanlarıyla."
 
-#: scripts/ui/GuildViews.gd:1452
+#: scripts/ui/GuildViews.gd:1439
 msgid "Hero voices"
 msgstr "Kahraman sesleri"
 
-#: scripts/ui/GuildViews.gd:1452
+#: scripts/ui/GuildViews.gd:1439
 msgid "A hero's born quirk sets their personality (Bold, Quick, Stoic, Nervous, Devout or Scholarly), shown on their sheet. They speak up in fights when they land a big kill, hang on at low health or see an ally fall, and one of them sums up every win."
 msgstr "Bir kahramanın doğuştan huyu kişiliğini belirler (Cesur, Çevik, Soğukkanlı, Tedirgin, Dindar ya da Bilgin); sayfasında görünür. Büyük bir öldürme yaptıklarında, az canla dayandıklarında ya da bir müttefik düştüğünde savaşta konuşurlar ve her zaferi biri özetler."
 
-#: scripts/ui/GuildViews.gd:1453
+#: scripts/ui/GuildViews.gd:1440
 msgid "Boss phases"
 msgstr "Boss evreleri"
 
-#: scripts/ui/GuildViews.gd:1453
+#: scripts/ui/GuildViews.gd:1440
 msgid "Every boss changes once it drops to half health: Call the Horde (two foes join), Fury (hits 20% harder and winds up more often) or Last Bastion (a ward worth 12% of its health). Its plate shows which, and the warning bar calls it out as it gets close, so save burst and Defend for the turn."
 msgstr "Her boss canı yarıya inince değişir: Sürüyü Çağır (iki düşman katılır), Hiddet (%20 daha sert vurur ve daha sık güç toplar) ya da Son Burç (canının %12'si değerinde bir koruma). Plakası hangisi olduğunu gösterir, uyarı çubuğu yaklaşınca haber verir; en güçlü saldırılarını ve Savun'u o tur için sakla."
 
-#: scripts/ui/GuildViews.gd:1454
+#: scripts/ui/GuildViews.gd:1441
 msgid "Elite affixes"
 msgstr "Seçkin ekleri"
 
-#: scripts/ui/GuildViews.gd:1454
+#: scripts/ui/GuildViews.gd:1441
 msgid "Elites roll an affix: Vampiric, Thorned, Shielded, Venomous, Juggernaut, Blazing, Hasted (acts twice) or Commander (brings two escorts). Rank B+ rifts give them two. Hover the badges on their plate to read them."
 msgstr "Seçkinler bir ek alır: Vampirik, Dikenli, Kalkanlı, Zehirli, Durdurulamaz, Alevli, Hızlandırılmış (iki kez davranır) ya da Komutan (iki muhafız getirir). Rütbe B+ yarıklarda iki ek alırlar. Okumak için plakalarındaki rozetlerin üstüne gel."
 
-#: scripts/ui/GuildViews.gd:1455 scripts/ui/RiftRunView.gd:403
+#: scripts/ui/GuildViews.gd:1442 scripts/ui/RiftRunView.gd:403
 msgid "Boons"
 msgstr "Lütuflar"
 
-#: scripts/ui/GuildViews.gd:1455
+#: scripts/ui/GuildViews.gd:1442
 msgid "Beating an elite in a rift offers 1 of 3 boons that last until that rift ends. Boons come in seven families (Ember, Frost, Blood, Steel, Storm, Shadow, Holy); owning 2 of a family adds a set bonus and 4 a strong capstone, so a run can grow into a build. Not offered in the Tower."
 msgstr "Bir yarıkta seçkin yenmek, o yarık bitene kadar süren 3 lütuftan 1'ini sunar. Lütuflar yedi aileden gelir (Kor, Ayaz, Kan, Çelik, Fırtına, Gölge, Kutsal); bir aileden 2 tanesi set bonusu, 4 tanesi güçlü bir zirve verir; böylece bir koşu bir yapıya dönüşebilir. Kule'de sunulmaz."
 
-#: scripts/ui/GuildViews.gd:1456
+#: scripts/ui/GuildViews.gd:1443
 msgid "Guild Orders"
 msgstr "Lonca Emirleri"
 
-#: scripts/ui/GuildViews.gd:1456
+#: scripts/ui/GuildViews.gd:1443
 msgid "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."
 msgstr "Revir, Talim Alanı, Ticaret Ağı ve İzci Köşkü'nün Sv2'si, yarık içinde verebileceğin bir emir açar: İkmal Atışı (dövüşler arasında %35 iyileş), Toparlan (bu tur önce davran ve %30 daha sert vur), Talep (bir dövüşün ganimetini yenile) ve Öncü Keşif (bir ayrımı yenile). Yarık başına 1 emir, Ünlü kademede 2, Efsanevide 3."
 
-#: scripts/ui/GuildViews.gd:1457 scripts/ui/Main.gd:1648
+#: scripts/ui/GuildViews.gd:1444 scripts/ui/Main.gd:1648
 msgid "Rift Ladder"
 msgstr "Yarık Merdiveni"
 
-#: scripts/ui/GuildViews.gd:1457
+#: scripts/ui/GuildViews.gd:1444
 msgid "Rifts come in ranks, F to SSS. F-D are Lesser rifts, C and up Greater rifts (open after Act I). Each rank hits harder than the last and pays more; from B up they add rules (more elites, harsher hazards, fewer shops, bosses with two mechanics). Seal a rank to open the next. Gear drops at the rank of the rift it came from."
 msgstr "Yarıklar F'den SSS'ye rütbelere ayrılır. F-D Küçük yarıklar, C ve üstü Büyük yarıklardır (I. Perde'den sonra açılır). Her rütbe öncekinden sert vurur ve daha çok öder; B'den itibaren kurallar eklenir (daha çok seçkin, daha sert tehlikeler, daha az dükkân, iki mekanikli bosslar). Bir rütbeyi mühürlemek bir sonrakini açar. Teçhizat, geldiği yarığın rütbesinde düşer."
 
-#: scripts/ui/GuildViews.gd:1458
+#: scripts/ui/GuildViews.gd:1445
 msgid "Bonds"
 msgstr "Bağlar"
 
-#: scripts/ui/GuildViews.gd:1458
+#: scripts/ui/GuildViews.gd:1445
 msgid "Heroes who seal rifts together grow a bond: level 1, 2 and 3 after 2, 5 and 10 rifts. Each level adds 2% party damage while both stand in a fight (up to the cap). Bonds show on the hero sheet's History tab."
 msgstr "Birlikte yarık mühürleyen kahramanlar bağ kurar: 2, 5 ve 10 yarıktan sonra seviye 1, 2 ve 3. Her seviye, ikisi de dövüşte ayaktayken ekip hasarına %2 ekler (üst sınıra kadar). Bağlar kahraman sayfasının Geçmiş sekmesinde görünür."
 
-#: scripts/ui/GuildViews.gd:1459
+#: scripts/ui/GuildViews.gd:1446
 msgid "Ability Awakening"
 msgstr "Yetenek Uyanışı"
 
-#: scripts/ui/GuildViews.gd:1459
+#: scripts/ui/GuildViews.gd:1446
 msgid "Spend Skill Points once to give a hero's Ability a secondary effect (by ability: +2 Momentum back, a lingering debuff, a party dodge boost, a self-shield, or a small damage stack)."
 msgstr "Bir kahramanın Yeteneğine ikincil bir etki vermek için bir kez Beceri Puanı harca (yeteneğe göre: +2 İvme geri, kalıcı bir zayıflatma, ekibe kaçınma artışı, kendine kalkan ya da küçük bir hasar birikimi)."
 
-#: scripts/ui/GuildViews.gd:1460
+#: scripts/ui/GuildViews.gd:1447
 msgid "Heroes stand in the front or back row. Foes aim most attacks at the front row; Snipes hunt the back. Warriors and rogues hit at half strength with a basic attack from the back row, and some skills need a row. Move (7) switches rows for a turn. Back-row foes take less damage from attacks."
 msgstr "Kahramanlar ön ya da arka sırada durur. Düşmanlar saldırıların çoğunu ön sıraya yöneltir; Nişanlar arkayı avlar. Savaşçılar ve haydutlar arka sıradan temel saldırıyla yarı güçle vurur ve bazı beceriler belli bir sıra ister. Yer Değiştir (7) bir sıra karşılığında sıranı değiştirir. Arka sıradaki düşmanlar saldırılardan daha az hasar alır."
 
-#: scripts/ui/GuildViews.gd:1461
+#: scripts/ui/GuildViews.gd:1448
 msgid "Controls"
 msgstr "Kontroller"
 
-#: scripts/ui/GuildViews.gd:1461
+#: scripts/ui/GuildViews.gd:1448
 msgid "Keyboard: 1-5 switch camp tabs; in a fight 1 Attack, 2-4 skills, 5 Defend, M opens More (6 Guard, 7 Move, 8 Tonics, 9 Call; their keys work either way), Space repeats the last action, Tab cycles targets, A toggles Auto, Esc goes back. Endless Rift: WASD or arrows (or drag), Esc pauses. Riftbreak defense: click a pad to build, the ground to send your champion, Space calls the next wave, Esc pauses. Gamepad: D-pad and A work every menu, B goes back, LB/RB switch camp tabs. In a fight A repeats the last action, X Defends, Y uses the Ability, LB/RB the two skills, Start opens More (Guard, Move, Tonics, Call), the D-pad cycles targets, Select toggles Auto. Endless Rift: left stick or D-pad steer, Start pauses."
 msgstr "Klavye: 1-5 kamp sekmelerini değiştirir; savaşta 1 Saldırı, 2-4 beceriler, 5 Savunma, M Diğer'i açar (6 Koru, 7 Yer Değiştir, 8 İksirler, 9 Çağrı; tuşları her iki durumda da çalışır), Boşluk son eylemi tekrarlar, Tab hedefler arasında geçer, A Otomatik'i açıp kapar, Esc geri gider. Sonsuz Yarık: WASD ya da oklar (ya da sürükle), Esc duraklatır. Yarık Taşması savunması: kurmak için bir kaideye, şampiyonunu göndermek için yere tıkla, Boşluk sonraki dalgayı çağırır, Esc duraklatır. Oyun kolu: yön tuşları ve A her menüde çalışır, B geri gider, LB/RB kamp sekmelerini değiştirir. Savaşta A son eylemi tekrarlar, X Savunur, Y Yeteneği kullanır, LB/RB iki beceri, Start Diğer'i açar (Koru, Yer Değiştir, İksirler, Çağrı), yön tuşları hedefler arasında geçer, Select Otomatik'i açıp kapar. Sonsuz Yarık: sol çubuk ya da yön tuşları yönlendirir, Start duraklatır."
 
-#: scripts/ui/GuildViews.gd:1462
+#: scripts/ui/GuildViews.gd:1449
 msgid "Momentum and skills"
 msgstr "İvme ve beceriler"
 
-#: scripts/ui/GuildViews.gd:1462
+#: scripts/ui/GuildViews.gd:1449
 msgid "Momentum is the party's shared pool (up to 10, starting at 3). Each basic attack adds 1, each kill 1, and each hit taken while Defending or Guarding 1 (2 for a heavy blow). Every hero has two role skills (Lv1 and Lv6) and their subclass Ability (Lv3). Skills cost 2-4 Momentum, Abilities 4."
 msgstr "İvme ekibin ortak havuzudur (en fazla 10, 3 ile başlar). Her temel saldırı 1, her öldürme 1 ve Savunurken ya da Korurken alınan her darbe 1 ekler (ağır darbe için 2). Her kahramanın iki rol becerisi (Sv1 ve Sv6) ve alt sınıf Yeteneği (Sv3) vardır. Beceriler 2-4 İvme, Yetenekler 4 İvme harcar."
 
-#: scripts/ui/GuildViews.gd:1463
+#: scripts/ui/GuildViews.gd:1450
 msgid "Enemy moves"
 msgstr "Düşman hamleleri"
 
-#: scripts/ui/GuildViews.gd:1463
+#: scripts/ui/GuildViews.gd:1450
 msgid "Each round a foe shows its next move above its health bar: an attack on a hero, a wind-up (a heavy blow next round), or a special move: Sweep (hits everyone), Snipe (the most-hurt back-row hero), Curse (40% less damage for 2 rounds), Ward, Mend or Roar. Shield Bash stuns a foe; Shield Bash and Frost Nova break wind-ups."
 msgstr "Her tur bir düşman sonraki hamlesini can çubuğunun üstünde gösterir: bir kahramana saldırı, güç toplama (sonraki tur ağır darbe) ya da özel bir hamle: Süpürme (herkese vurur), Nişan (arka sıradaki en yaralı kahraman), Lanet (2 tur %40 daha az hasar), Koruma, İyileştirme ya da Kükreme. Kalkan Darbesi bir düşmanı sersemletir; Kalkan Darbesi ve Buz Novası güç toplamaları bozar."
 
-#: scripts/ui/GuildViews.gd:1464
+#: scripts/ui/GuildViews.gd:1451
 msgid "Designed encounters"
 msgstr "Tasarlanmış karşılaşmalar"
 
-#: scripts/ui/GuildViews.gd:1464
+#: scripts/ui/GuildViews.gd:1451
 msgid "About six regular fights in ten are one of a region's named encounters (Scarecrow Line, Reed Snipers, Forge Guard...), groups whose members play off each other: a warder shielding a brute, a healer behind a wall, snipers behind a tank. The name and a tactical hint open the fight log; hover the round label to read the hint again."
 msgstr "Her on normal dövüşten yaklaşık altısı bir bölgenin adlı karşılaşmalarından biridir (Korkuluk Hattı, Kamış Nişancıları, Demirhane Muhafızı...); üyeleri birbirini tamamlayan gruplar: bir zorbayı koruyan bir bekçi, bir duvarın ardında bir şifacı, bir tankın ardında nişancılar. Ad ve bir taktik ipucu dövüş kaydını açar; ipucunu yeniden okumak için tur etiketinin üstüne gel."
 
-#: scripts/ui/GuildViews.gd:1465
+#: scripts/ui/GuildViews.gd:1452
 msgid "Rift bosses"
 msgstr "Yarık bossları"
 
-#: scripts/ui/GuildViews.gd:1465
+#: scripts/ui/GuildViews.gd:1452
 msgid "Each boss is always the same fight. Vaelith's Harvest hits everyone and heals her, and she calls a Crier and a Warden at half health. Nyxara's Drowning Tide chills and weakens the party. Korrath's Sunder tears the wards off the front row. Drevok Brands a hero to take 50% more damage and calls fire cultists. Sythrane Immolates the party while she regenerates and enrages. Their signature moves are telegraphed like any other."
 msgstr "Her boss hep aynı dövüştür. Vaelith'in Hasadı herkese vurur ve onu iyileştirir; yarı canda bir Çığırtkan ve bir Bekçi çağırır. Nyxara'nın Boğan Dalgası ekibi üşütür ve zayıflatır. Korrath'ın Parçala'sı ön sıranın korumalarını söker. Drevok bir kahramanı %50 daha fazla hasar alacak şekilde Damgalar ve ateş tarikatçılarını çağırır. Sythrane yenilenip öfkelenirken ekibi Yakıp Kavurur. İmza hamleleri de diğerleri gibi önceden belli olur."
 
-#: scripts/ui/GuildViews.gd:1466
+#: scripts/ui/GuildViews.gd:1453
 msgid "Every monster, boss, and hazard you've encountered is tracked as a silhouette-to-full-color reveal — pure record-keeping, no reward tied to completion."
 msgstr "Karşılaştığın her canavar, boss ve tehlike, siluetten tam renge açılarak kaydedilir — sadece kayıt tutma, tamamlamaya bağlı ödül yok."
 
-#: scripts/ui/GuildViews.gd:1467
+#: scripts/ui/GuildViews.gd:1454
 msgid "Opens with Act II, in the Rift Hall. 100 fixed floors, one fight each: a floor is always the same fight, so a loss is something to plan around. Heroes fight at full HP and leave as they came (no downing, scars or days passing). Most floors carry a rule (armored or burning foes, a swarm, a party cap). Every 10th floor is a guardian that gives a unique relic, and floors 10/25/50/75/100 earn guild titles. Only a first clear pays; floors 91-100 reshuffle their rules every week and pay half for a re-clear."
 msgstr "II. Perde ile Yarık Salonu'nda açılır. 100 sabit kat, her biri tek dövüş: bir kat hep aynı dövüştür, yani bir kayıp planlanacak bir şeydir. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır (düşme, yara izi ya da gün geçmesi yok). Çoğu katın bir kuralı vardır (zırhlı ya da yanan düşmanlar, kalabalık, ekip sınırı). Her 10. kat benzersiz bir kalıntı veren bir muhafızdır ve 10/25/50/75/100. katlar lonca unvanı kazandırır. Yalnızca ilk temizleme ödül verir; 91-100. katlar her hafta kurallarını değiştirir ve tekrar temizlemede yarısını öder."
 
-#: scripts/ui/GuildViews.gd:1468
+#: scripts/ui/GuildViews.gd:1455
 msgid "Foes & regions"
 msgstr "Düşmanlar ve bölgeler"
 
-#: scripts/ui/GuildViews.gd:1468
+#: scripts/ui/GuildViews.gd:1455
 msgid "Each rift is in a region (the Vale, the Marshes, the Ashen Wastes) with its own foes. Some foes wind up a heavy blow a turn ahead (x2.5, stuns unless the target Defends); armored foes shrug off part of every basic attack (each hit chips the armor; abilities ignore it); fire foes can burn and frost foes can chill (act late). A Field Tonic cleanses burn, chill, poison and stun."
 msgstr "Her yarık kendi düşmanları olan bir bölgededir (Vadi, Bataklıklar, Küllü Çorak Topraklar). Bazı düşmanlar ağır bir darbe için bir tur önceden güç toplar (x2,5, hedef Savunmazsa sersemletir); zırhlı düşmanlar her temel saldırının bir kısmını savuşturur (her darbe zırhı aşındırır; yetenekler yok sayar); ateş düşmanları yakabilir, ayaz düşmanları üşütebilir (geç davranır). Saha Toniği yanma, üşüme, zehir ve sersemliği temizler."
 
-#: scripts/ui/GuildViews.gd:1469
+#: scripts/ui/GuildViews.gd:1456
 msgid "Three acts, each ending in a finale rift against a named foe. Meet an act\'s objectives (shown in the Rift Hall) to open its finale; sealing it pays a reward and a Legendary relic. Act I opens Greater Rifts, Act II the Endless Rift."
 msgstr "Üç perde; her biri adlı bir düşmana karşı final yarığıyla biter. Finali açmak için perdenin hedeflerini tamamla (Yarık Salonu'nda gösterilir); mühürlemek bir ödül ve Efsanevi bir kalıntı verir. I. Perde Büyük Yarıkları, II. Perde Sonsuz Yarık'ı açar."
 
-#: scripts/ui/GuildViews.gd:1470
+#: scripts/ui/GuildViews.gd:1457
 msgid "Relics sit on the Relic Altar (Inventory) and empower the whole party. Every relic has a special; rare and epic ones also have a trigger that fires in battle (on a kill, every third round, when an ally falls...). Level a relic to 5 to awaken a new effect, or reroll any effect for Essence. Legendary relics have unique powers."
 msgstr "Kalıntılar Kalıntı Sunağı'nda (Envanter) durur ve tüm ekibi güçlendirir. Her kalıntının bir özel gücü vardır; nadir ve destansı olanların ayrıca savaşta tetiklenen bir etkisi olur (öldürünce, her üç turda bir, bir müttefik düşünce...). Yeni bir etki uyandırmak için bir kalıntıyı 5. seviyeye çıkar ya da herhangi bir etkiyi Öz karşılığında yenile. Efsanevi kalıntıların eşsiz güçleri vardır."
 
-#: scripts/ui/GuildViews.gd:1471
+#: scripts/ui/GuildViews.gd:1458
 msgid "Quirks"
 msgstr "Huylar"
 
-#: scripts/ui/GuildViews.gd:1471
+#: scripts/ui/GuildViews.gd:1458
 msgid "Everything personal about a hero beyond class, skills and gear: at most one born quirk (it sets their voice), up to 2 scars from being knocked out (a wound with a small upside), and quirks earned by what they've done. Bad born quirks and scars can be treated for Gold at the Arcane Lab."
 msgstr "Bir kahramanın sınıfı, becerileri ve teçhizatı dışındaki her şey: en fazla bir doğuştan huy (sesini belirler), bayılmaktan kalan en fazla 2 yara izi (küçük bir artısı olan bir yara) ve yaptıklarıyla kazandığı huylar. Kötü doğuştan huylar ve yara izleri Gizem Laboratuvarı'nda Altınla tedavi edilebilir."
 
-#: scripts/ui/GuildViews.gd:1472
+#: scripts/ui/GuildViews.gd:1459
 msgid "Riftbreaks"
 msgstr "Yarık Taşmaları"
 
-#: scripts/ui/GuildViews.gd:1472
+#: scripts/ui/GuildViews.gd:1459
 msgid "From Act II a rift swells every so often: a rank, a place and a countdown in days (Rift Hall and the camp's status board). Seal a rift of that rank or higher before it runs out to close it, for a little Essence. Otherwise it breaks, and every rift run waits until your guild defends. Ranks below S break out in a region; from S up they break at your camp. Holding pays Gold and Essence. Losing costs a share of your Essence and of the Gold beyond the coming payday's wages, damages a building (two at the camp) and wounds the posted heroes who fell."
 msgstr "II. Perde'den itibaren ara sıra bir yarık kabarır: bir rütbe, bir yer ve günlerle bir geri sayım (Yarık Salonu ve kampın durum panosu). Süre bitmeden o rütbede ya da daha yüksek bir yarığı mühürlersen kapanır ve biraz Öz kazanırsın. Yoksa taşar ve loncan savunana dek her yarık seferi bekler. S'nin altındaki rütbeler bir bölgede taşar; S ve üstü kampında taşar. Dayanmak Altın ve Öz kazandırır. Kaybetmek Özünden ve yaklaşan maaş gününün ücretleri dışındaki Altınından bir pay alır, bir yapıya (kampta ikisine) hasar verir ve düşen nöbetçi kahramanları yaralar."
 
-#: scripts/ui/GuildViews.gd:1473 scripts/ui/Main.gd:2328
+#: scripts/ui/GuildViews.gd:1460 scripts/ui/Main.gd:2328
 msgid "Defending"
 msgstr "Savunma"
 
-#: scripts/ui/GuildViews.gd:1473
+#: scripts/ui/GuildViews.gd:1460
 msgid "Foes walk the roads toward the goal. Build towers on the round pads with supplies (you start with some and earn more for every kill); click a tower to upgrade or sell it. Ballistas shoot far, Fire Braziers splash and burn, Frost Totems slow, Ward Stones shield nearby heroes, Chapels mend them; research in the Defenses branch opens the last three and tier 3. Idle heroes stand at posts: warriors and rogues hold foes in place, rangers and mages shoot. Steer one champion by clicking where to go. Every foe that gets through costs integrity (an elite 3, a warden 10); at 0 the defense is lost. Call a wave early for bonus supplies."
 msgstr "Düşmanlar yollardan hedefe doğru yürür. Yuvarlak kaidelere erzakla kuleler kur (bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın); geliştirmek ya da satmak için bir kuleye tıkla. Balistalar uzağa atar, Ateş Mangalları sıçrar ve yakar, Ayaz Totemleri yavaşlatır, Muhafız Taşları yakındaki kahramanları korur, Şapeller onları iyileştirir; Savunma dalındaki araştırma son üçünü ve 3. kademeyi açar. Boştaki kahramanlar nöbet yerlerinde durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Bir şampiyonu gideceği yere tıklayarak yönet. Geçen her düşman bütünlüğe mal olur (bir seçkin 3, bir muhafız 10); 0'da savunma kaybedilir. Ek erzak için bir dalgayı erken çağır."
 
-#: scripts/ui/GuildViews.gd:1474
+#: scripts/ui/GuildViews.gd:1461
 msgid "Each new guild meets twelve champions, drawn from a pool of twenty-four: three are freed at the end of Acts I, II and III, and nine are lost in the Endless Rift, where a pillar of light marks each one (stand in it to free them). A champion never joins the roster. In rift runs one oversees the party: their Boon lifts everyone, and any hero can spend a turn on their Call (once a rift, twice from level 3). In the Endless Rift your champions are the party, each with their Call as a signature move. Essence levels them up (to 5)."
 msgstr "Her yeni lonca, yirmi dörtlük bir havuzdan çekilen on iki şampiyonla tanışır: üçü I., II. ve III. Perdenin sonunda özgürleşir, dokuzu Sonsuz Yarık'ta kayıptır ve her birini bir ışık sütunu işaret eder (özgürleştirmek için içinde dur). Şampiyonlar kadroya katılmaz. Yarık seferlerinde biri grubu gözetir: Lütfu herkesi güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir (yarık başına bir, 3. seviyeden itibaren iki kez). Sonsuz Yarık'ta grup şampiyonlarının kendisidir ve her birinin Çağrısı imza hareketidir. Öz ile seviye atlarlar (en fazla 5)."
 
-#: scripts/ui/GuildViews.gd:1475 scripts/ui/RosterView.gd:402
+#: scripts/ui/GuildViews.gd:1462 scripts/ui/RosterView.gd:402
 msgid "Attributes"
 msgstr "Nitelikler"
 
-#: scripts/ui/GuildViews.gd:1475
+#: scripts/ui/GuildViews.gd:1462
 msgid "Might (damage, HP), Agility (speed, dodge, first strike) and Focus (ability power, mend). Heroes gain 3 points per level to spend on the Roster's Hero tab; gear adds more, and better gear needs a minimum in its attribute to equip. Train up to 8 extra points with Gold, or reset a hero's points for 5 Essence per level (gear they no longer qualify for comes off)."
 msgstr "Kudret (hasar, can), Çeviklik (hız, kaçınma, ilk vuruş) ve Odak (yetenek gücü, iyileşme). Kahramanlar seviye başına Kadro'nun Kahraman sekmesinde harcanacak 3 puan kazanır; teçhizat daha fazlasını ekler ve daha iyi teçhizat kuşanmak için niteliğinde bir alt sınır ister. Altınla en fazla 8 ek puan eğit ya da bir kahramanın puanlarını seviye başına 5 Öz karşılığında sıfırla (artık uygun olmadığı teçhizat çıkarılır)."
 
-#: scripts/ui/GuildViews.gd:1476
+#: scripts/ui/GuildViews.gd:1463
 msgid "Quests & Milestones"
 msgstr "Görevler ve Kilometre Taşları"
 
-#: scripts/ui/GuildViews.gd:1476
+#: scripts/ui/GuildViews.gd:1463
 msgid "The quest board posts 6 quests (hunts, boss bounties, rift seals, trials); take up to 3 at a time. Unaccepted postings are replaced every 3 days (a day passes with each rift run or rest). Milestones are a static checklist, auto-granted the moment they're met. Renown occasionally arms a guaranteed Epic relic at the next Shop. A rare escort NPC can also tag along on a fight — surviving pays a small bonus."
 msgstr "Görev panosu 6 görev asar (avlar, boss ödülleri, yarık mühürleri, sınavlar); aynı anda en fazla 3 tane al. Kabul edilmeyen ilanlar her 3 günde bir değişir (her yarık koşusu ya da dinlenmeyle bir gün geçer). Kilometre taşları sabit bir listedir, karşılandıkları an kendiliğinden verilir. Ün ara sıra sonraki Dükkânda garanti bir Destansı kalıntı hazırlar. Nadiren bir eşlik edilen kişi de bir dövüşe katılabilir — hayatta kalırsa küçük bir bonus öder."
 
-#: scripts/ui/GuildViews.gd:1477
+#: scripts/ui/GuildViews.gd:1464
 msgid "Wages, morale and the rival"
 msgstr "Maaş, moral ve rakip"
 
-#: scripts/ui/GuildViews.gd:1477
+#: scripts/ui/GuildViews.gd:1464
 msgid "Every 7 days (a day = one rift run or rest) heroes draw wages by rank and level, and every Guild Management level costs upkeep; see Guild > Ledger. Unpaid upkeep costs Renown. The Training Yard trains only a few attribute points a week (more with the Drill Yard), and a feast seats a limited number of heroes, lowest morale first (more with the Trade Network). The unpaid lose morale, and a hero unpaid twice in a row, or at rock-bottom morale on payday, walks out. Morale (0-100) rises with sealed rifts and feasts and falls with defeats, knockouts, idle weeks and failed contracts: Inspired heroes deal +10% damage, Shaken -10%, Breaking -20%. Taken contracts are due in 6-10 days. A rival guild gains Renown daily, and once a week it may make a move you answer before payday: court one of your heroes (match their offer, or they choose, staying only at morale 50 or above), dare you to seal a rift by payday (Renown rides on it), or go for a posted contract (take it on or lose it). Requests and the rival's moves pop up at camp and wait in the Ledger, whose week board shows each day to payday. At payday, the leader on Renown gets the better recruits. Every 28 days, whichever guild gained more Renown wins a prize."
 msgstr "Her 7 günde bir (bir gün = bir yarık seferi ya da dinlenme) kahramanlar rütbe ve seviyeye göre maaş alır ve her Lonca Yönetimi seviyesinin bakım masrafı vardır; bkz. Lonca > Defter. Ödenmeyen bakım Üne mal olur. Eğitim Sahası haftada yalnızca birkaç nitelik puanı çalıştırır (Talim Sahası ile daha fazla) ve bir ziyafet sınırlı sayıda kahramanı, en düşük morallilerden başlayarak ağırlar (Ticaret Ağı ile daha fazla). Maaşı ödenmeyenlerin morali düşer; üst üste iki kez ödenmeyen ya da maaş gününde morali dipteki kahraman ayrılır. Moral (0-100) mühürlenen yarıklar ve ziyafetlerle yükselir; yenilgiler, bayılmalar, boş haftalar ve başarısız sözleşmelerle düşer: Coşkulu kahramanlar +%10 hasar verir, Sarsılmış -%10, Çöken -%20. Alınan sözleşmelerin süresi 6-10 gündür. Rakip bir lonca her gün Ün kazanır ve haftada bir, maaş gününden önce cevaplaman gereken bir hamle yapabilir: kahramanlarından birine göz diker (teklifi karşıla ya da kendisi seçsin; yalnızca 50 ve üstü moralde kalır), maaş gününe kadar bir yarığı mühürlemen için meydan okur (Ün ortaya konur) ya da ilandaki bir sözleşmenin peşine düşer (üstlen ya da kaybet). İstekler ve rakibin hamleleri kampta açılır ve Defter'de bekler; Defter'in hafta panosu maaş gününe kadar her günü gösterir. Maaş gününde Ünde önde olan daha iyi acemileri alır. Her 28 günde bir, daha çok Ün kazanan lonca ödül kazanır."
 
-#: scripts/ui/GuildViews.gd:1478
+#: scripts/ui/GuildViews.gd:1465
 msgid "Hero requests"
 msgstr "Kahraman istekleri"
 
-#: scripts/ui/GuildViews.gd:1478
+#: scripts/ui/GuildViews.gd:1465
 msgid "Mid-week a hero may ask for something: time off (away a few days), a raise (a bigger wage for good), Gold for kit, a Training Yard slot, or your side in a feud with another hero. Saying yes costs something; saying no costs morale. Answer in the Ledger before payday, or it counts as a no."
 msgstr "Hafta ortasında bir kahraman bir şey isteyebilir: izin (birkaç gün uzakta), zam (kalıcı olarak daha yüksek maaş), teçhizat için Altın, bir Talim Alanı yeri ya da başka bir kahramanla kavgasında senin desteğin. Evet demek bir şeye mal olur; hayır demek morale mal olur. Maaş gününden önce Defter'de cevap ver, yoksa hayır sayılır."
 
-#: scripts/ui/GuildViews.gd:1489
+#: scripts/ui/GuildViews.gd:1476
 msgid "Hunt"
 msgstr "Av"
 
-#: scripts/ui/GuildViews.gd:1489
+#: scripts/ui/GuildViews.gd:1476
 msgid "Wanted"
 msgstr "Aranan"
 
-#: scripts/ui/GuildViews.gd:1489 scripts/ui/GuildViews.gd:1490
+#: scripts/ui/GuildViews.gd:1476 scripts/ui/GuildViews.gd:1477
 msgid "Seal the Rift"
 msgstr "Yarığı Mühürle"
 
-#: scripts/ui/GuildViews.gd:1490
+#: scripts/ui/GuildViews.gd:1477
 msgid "Trial"
 msgstr "Sınav"
 
-#: scripts/ui/GuildViews.gd:1490
+#: scripts/ui/GuildViews.gd:1477
 msgid "Supply"
 msgstr "İkmal"
 
-#: scripts/ui/GuildViews.gd:1526
+#: scripts/ui/GuildViews.gd:1513
 msgid "Day %d  ·  Taken %d/%d  ·  new postings in %d day%s"
 msgstr "Gün %d  ·  Alınan %d/%d  ·  yeni ilanlara %d gün%s"
 
-#: scripts/ui/GuildViews.gd:1531
+#: scripts/ui/GuildViews.gd:1518
 msgid "A day passes with every rift run or rest. Unaccepted postings are replaced when the board refreshes; quests you've taken stay."
 msgstr "Her yarık koşusu ya da dinlenmeyle bir gün geçer. Kabul edilmeyen ilanlar pano yenilenince değişir; aldığın görevler kalır."
 
-#: scripts/ui/GuildViews.gd:1543
+#: scripts/ui/GuildViews.gd:1530
 msgid "Nothing posted — new postings in %d day%s."
 msgstr "İlan yok — yeni ilanlara %d gün%s."
 
-#: scripts/ui/GuildViews.gd:1547
+#: scripts/ui/GuildViews.gd:1534
 msgid "Every 20 Renown arms a guaranteed Epic relic at your next Shop."
 msgstr "Her 20 Ün, sonraki Dükkânında garanti bir Destansı kalıntı hazırlar."
 
-#: scripts/ui/GuildViews.gd:1550
+#: scripts/ui/GuildViews.gd:1537
 msgid "Milestones"
 msgstr "Kilometre taşları"
 
-#: scripts/ui/GuildViews.gd:1556
+#: scripts/ui/GuildViews.gd:1543
 msgid "Claimed"
 msgstr "Alındı"
 
-#: scripts/ui/GuildViews.gd:1582
+#: scripts/ui/GuildViews.gd:1569
 msgid "Quest"
 msgstr "Görev"
 
-#: scripts/ui/GuildViews.gd:1603
+#: scripts/ui/GuildViews.gd:1590
 msgid "Due in %d day%s"
 msgstr "%d gün%s içinde"
 
-#: scripts/ui/GuildViews.gd:1603
+#: scripts/ui/GuildViews.gd:1590
 msgid "Due today"
 msgstr "Bugün bitiyor"
 
-#: scripts/ui/GuildViews.gd:1608
+#: scripts/ui/GuildViews.gd:1595
 msgid "%d days once taken"
 msgstr "Alınınca %d gün"
 
-#: scripts/ui/GuildViews.gd:1615
+#: scripts/ui/GuildViews.gd:1602
 msgid "Difficulty"
 msgstr "Zorluk"
 
-#: scripts/ui/GuildViews.gd:1618
+#: scripts/ui/GuildViews.gd:1605
 msgid "Reward: "
 msgstr "Ödül: "
 
-#: scripts/ui/GuildViews.gd:1628
+#: scripts/ui/GuildViews.gd:1615
 msgid "Take on"
 msgstr "Üstlen"
 
-#: scripts/ui/GuildViews.gd:1635
+#: scripts/ui/GuildViews.gd:1622
 msgid "You already have %d quests — finish or abandon one first"
 msgstr "Zaten %d görevin var — önce birini bitir ya da bırak"
 
-#: scripts/ui/GuildViews.gd:1635
+#: scripts/ui/GuildViews.gd:1622
 msgid "Only progress made after taking it counts"
 msgstr "Yalnızca görevi aldıktan sonraki ilerleme sayılır"
 
-#: scripts/ui/GuildViews.gd:1640
+#: scripts/ui/GuildViews.gd:1627
 msgid "Claim reward"
 msgstr "Ödülü al"
 
-#: scripts/ui/GuildViews.gd:1654
+#: scripts/ui/GuildViews.gd:1641
 msgid "Abandon"
 msgstr "Bırak"
 
-#: scripts/ui/GuildViews.gd:1662
+#: scripts/ui/GuildViews.gd:1649
 msgid "Take it down"
 msgstr "İndir"
 
-#: scripts/ui/GuildViews.gd:1686
+#: scripts/ui/GuildViews.gd:1673
 msgid "DONE"
 msgstr "BİTTİ"
 
-#: scripts/ui/GuildViews.gd:1686
+#: scripts/ui/GuildViews.gd:1673
 msgid "TAKEN"
 msgstr "ALINDI"
 
-#: scripts/ui/GuildViews.gd:1686
+#: scripts/ui/GuildViews.gd:1673
 msgid "FAILED"
 msgstr "BAŞARISIZ"
 
-#: scripts/ui/GuildViews.gd:1707
+#: scripts/ui/GuildViews.gd:1694
 msgid " Branch"
 msgstr " Dalı"
 
-#: scripts/ui/GuildViews.gd:1727
+#: scripts/ui/GuildViews.gd:1714
 msgid "Click again to confirm reset"
 msgstr "Sıfırlamayı onaylamak için tekrar tıkla"
 
-#: scripts/ui/GuildViews.gd:1727
+#: scripts/ui/GuildViews.gd:1714
 msgid "Reset Guild"
 msgstr "Loncayı Sıfırla"
 
-#: scripts/ui/GuildViews.gd:1772
+#: scripts/ui/GuildViews.gd:1759
 msgid "Lv %d/%d"
 msgstr "Sv %d/%d"
 
-#: scripts/ui/GuildViews.gd:1795
+#: scripts/ui/GuildViews.gd:1782
 msgid "Damaged in a Riftbreak: works at Lv %d until repaired."
 msgstr "Bir Yarık Taşmasında hasar gördü: onarılana dek Sv %d olarak çalışır."
 
-#: scripts/ui/GuildViews.gd:1798
+#: scripts/ui/GuildViews.gd:1785
 msgid "Repair a level — %d Gold"
 msgstr "Bir seviye onar — %d Altın"
 
-#: scripts/ui/GuildViews.gd:1801
+#: scripts/ui/GuildViews.gd:1788
 msgid "%s repaired"
 msgstr "%s onarıldı"
 
-#: scripts/ui/GuildViews.gd:1801
+#: scripts/ui/GuildViews.gd:1788
 msgid "Works at Lv %d"
 msgstr "Sv %d düzeyinde çalışıyor"
 
-#: scripts/ui/GuildViews.gd:1804
+#: scripts/ui/GuildViews.gd:1791
 msgid "Each level: %s · upkeep +%d Gold a week"
 msgstr "Her seviye: %s · bakım haftada +%d Altın"
 
-#: scripts/ui/GuildViews.gd:1809
+#: scripts/ui/GuildViews.gd:1796
 msgid "%s Lv%d — %s"
 msgstr "%s Sv%d — %s"
 
-#: scripts/ui/GuildViews.gd:1815
+#: scripts/ui/GuildViews.gd:1802
 msgid "⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3)"
 msgstr "⌂ Kamp: %s Sv3 ve Sv5'te yeniden yapılır (şu an kademe %d/3)"
 
-#: scripts/ui/GuildViews.gd:1817
+#: scripts/ui/GuildViews.gd:1804
 msgid "⌂ Camp: every level grows the Guild Hall (guild tier)"
 msgstr "⌂ Kamp: her seviye Lonca Salonu'nu büyütür (lonca kademesi)"
 
-#: scripts/ui/GuildViews.gd:1822
+#: scripts/ui/GuildViews.gd:1809
 msgid "Upgrade to Lv%d — %d Gold"
 msgstr "Sv%d'ye geliştir — %d Altın"
 
-#: scripts/ui/GuildViews.gd:1822
+#: scripts/ui/GuildViews.gd:1809
 msgid "Upgrade to Lv%d — %d Essence"
 msgstr "Yükselt: Sv%d — %d Öz"
 
-#: scripts/ui/GuildViews.gd:1829
+#: scripts/ui/GuildViews.gd:1816
 msgid "%s — Lv%d"
 msgstr "%s — Sv%d"
 
-#: scripts/ui/GuildViews.gd:1832
+#: scripts/ui/GuildViews.gd:1819
 msgid "Next: %s%s"
 msgstr "Sonraki: %s%s"
 
-#: scripts/ui/GuildViews.gd:1832
+#: scripts/ui/GuildViews.gd:1819
 msgid "\nUnlocks: "
 msgstr "\nAçar: "
 

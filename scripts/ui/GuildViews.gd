@@ -20,8 +20,6 @@ func _render_camp_screen(v: VBoxContainer) -> void:
 		elif GameState.runs_started >= 1 and GameState.run.is_empty():
 			_coach(v, "after_first_run", "Back at camp", "Equip what you found on the Roster's Hero tab (key 1), spend skill points under Skills, and hire more heroes when you can afford them. Every rift run or rest is one day.")
 		_render_camp(v)
-		if not _bleed_ui():
-			_render_getting_started(v)
 		return
 	var tab_feature: String = {"inventory": "inventory", "medical": "medical", "bestiary": "bestiary", "quests": "quests", "management": "management", "champions": "champions"}.get(term_tab, "")
 	if tab_feature != "" and not GameState.feature_unlocked(tab_feature):
@@ -157,27 +155,14 @@ func _render_camp(v: VBoxContainer) -> void:
 	var fire: Vector2 = GameData.HAMLET_BUILDINGS.filter(func(b): return b["id"] == "campfire")[0]["pos"]
 	_glow(art_host, Vector2(fire.x, fire.y - 14.0) * whole, 34.0 * whole, Color(1.0, 0.55, 0.2, 0.3), "flicker")
 
-	# Guild tier banner in the sky's top-right; the status board top-left
-	# (below the scene on a narrow screen). Full-window: both stand at the
-	# top under the menus, and the getting-started card under the banner.
+	# The status board (with the getting-started steps) top-left over the
+	# scene; below it on a narrow screen. Full-window: under the menus.
 	if bleed:
-		var top_row := HBoxContainer.new()
-		top_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var board_w := _guild_status_board()
 		board_w.custom_minimum_size.x = 360
+		board_w.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		board_w.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		top_row.add_child(board_w)
-		var gap := Control.new()
-		gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		top_row.add_child(gap)
-		var right := _vbox(8)
-		right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		right.custom_minimum_size.x = 340
-		right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		_render_getting_started(right)
-		top_row.add_child(right)
-		v.add_child(top_row)
+		v.add_child(board_w)
 		return
 	var board := _guild_status_board()
 	if _narrow():
@@ -224,13 +209,39 @@ func _guild_status_board() -> PanelContainer:
 	col.add_child(head)
 	if not GameState.heroes.is_empty():
 		col.add_child(_week_strip())
-	var lines := _guild_status_lines()
+	# The first-guild checklist rides here (it was a second card): the next
+	# step still to do, opening where to do it.
+	var guide := _getting_started_steps()
+	if not guide.is_empty():
+		var gap := Control.new()
+		gap.custom_minimum_size.y = 4
+		col.add_child(gap)
+		var gh := HBoxContainer.new()
+		var gl := _label(tr("Getting started — %d/%d") % [int(guide["done"]), int(guide["total"])], 12)
+		gl.tooltip_text = "\n".join((guide["steps"] as Array).map(func(s): return "○ " + tr(str(s[0]))))
+		gl.mouse_filter = Control.MOUSE_FILTER_STOP
+		gl.add_theme_color_override("font_color", Palette.MUTED)
+		gl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gh.add_child(gl)
+		var hide := LinkButton.new()
+		hide.text = tr("Hide")
+		hide.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
+		hide.add_theme_font_size_override("font_size", 12)
+		hide.add_theme_color_override("font_color", Palette.MUTED)
+		hide.tooltip_text = tr("Hide the getting-started steps")
+		hide.pressed.connect(func():
+			GameState.guide_hidden = true
+			GameState.save()
+			render())
+		gh.add_child(hide)
+		col.add_child(gh)
+	var lines: Array = (guide.get("steps", []) as Array).slice(0, 1) + _guild_status_lines()
 	if lines.is_empty():
 		col.add_child(_label("All quiet. The rifts are waiting.", 12, true))
-	for ln in lines.slice(0, 6):
+	for ln in lines.slice(0, 7 if not guide.is_empty() else 6):
 		var b := Button.new()
 		b.flat = true
-		b.text = "›  " + tr(str(ln[0]))
+		b.text = ("○  " if ln.size() > 3 else "›  ") + tr(str(ln[0]))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_size_override("font_size", 14)
 		# One colour for the list, red only for what's urgent (it used five).
@@ -783,49 +794,25 @@ func _render_ledger(v: VBoxContainer) -> void:
 			v.add_child(_wrap_label(str(line), 12, true))
 
 
-## A short first-guild checklist under the camp scene, each step ticking off
-## from real game state. Gone once every step is done, the guild has sealed
-## a few rifts, or the player hides it.
-func _render_getting_started(v: VBoxContainer) -> void:
+## The first-guild checklist for the status board, each step ticking off
+## from real game state: {done, total, steps: [text, colour, action, true]}
+## for the steps still to do. Empty once every step is done, the guild has
+## sealed a few rifts, or the player hides it.
+func _getting_started_steps() -> Dictionary:
 	if GameState.guide_hidden or GameState.rifts_sealed >= 3:
-		return
+		return {}
+	var go := func(tab: String, sub: String): return func(): term_tab = tab; roster_tab = sub; render()
+	var hall := func(): screen = "rift_hall"; render()
 	var steps := [
-		["Assemble a party in the Rift Hall and enter a rift", not GameState.monsters_seen.is_empty()],
-		["Equip an item on a hero (Roster > Heroes)", GameState.items.any(func(it): return it.equipped_to != "")],
-		["Spend a skill point (Roster > Heroes > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true))],
-		["Seal your first rift by beating its boss", GameState.rifts_sealed >= 1],
+		["Assemble a party in the Rift Hall and enter a rift", not GameState.monsters_seen.is_empty(), hall],
+		["Equip an item on a hero (Roster > Heroes)", GameState.items.any(func(it): return it.equipped_to != ""), go.call("roster", "hero")],
+		["Spend a skill point (Roster > Heroes > Skills)", GameState.heroes.any(func(h): return h.skills.values().has(true)), go.call("roster", "skills")],
+		["Seal your first rift by beating its boss", GameState.rifts_sealed >= 1, hall],
 	]
-	var done: int = steps.filter(func(s): return s[1]).size()
-	if done == steps.size():
-		return
-	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"CardPanelViolet"
-	var cv := _vbox(4)
-	var head := HBoxContainer.new()
-	head.add_child(_label(tr("Getting started — %d/%d") % [done, steps.size()], 15))
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(spacer)
-	head.add_child(_button("Hide", func():
-		GameState.guide_hidden = true
-		GameState.save()
-		render()
-	))
-	cv.add_child(head)
-	for s in steps:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		if s[1]:
-			row.add_child(_icon(GameData.BUTTON_ICON_PATH["confirm"], 14))
-		else:
-			var dot := _label("•", 13)
-			dot.custom_minimum_size.x = 14
-			dot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			row.add_child(dot)
-		row.add_child(_label(str(s[0]), 13, s[1]))
-		cv.add_child(row)
-	panel.add_child(cv)
-	v.add_child(panel)
+	var todo := steps.filter(func(s): return not s[1]).map(func(s): return [s[0], Palette.TEXT, s[2], true])
+	if todo.is_empty():
+		return {}
+	return {"done": steps.size() - todo.size(), "total": steps.size(), "steps": todo}
 
 
 ## Notification counts per camp building: {building label: [badge text,
