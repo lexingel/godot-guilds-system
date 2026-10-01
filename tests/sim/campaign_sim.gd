@@ -9,6 +9,7 @@ extends Node
 ##   ... -- bold                  always enter the highest open rank (no
 ##                                stepping down when it reads Deadly)
 ##   ... -- hp=1.2 dmg=1.2        try a RANK_THREAT without editing the data
+##   ... -- attr=agility          every attribute point into one attribute
 ##   ... -- hand                  fight like a careful player (see _hand_action)
 ##                                instead of Quick fight
 ## Profiles: "investor" spends like a player who reads the tooltips (quests,
@@ -24,6 +25,7 @@ var profile := ""
 var log_days := false
 var bold := false
 var hand := false
+var force_attr := ""
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -47,6 +49,8 @@ func _ready() -> void:
 			GameData.RANK_THREAT_HP = float(a.substr(3))
 		elif a.begins_with("dmg="):
 			GameData.RANK_THREAT_DMG = float(a.substr(4))
+		elif a.begins_with("attr="):
+			force_attr = a.substr(5)
 		elif a == "hand":
 			hand = true
 		elif a == "bold":
@@ -73,7 +77,7 @@ func _ready() -> void:
 					ratios.append(float(bill_paid.get(w, 0)) / float(gross_gold[w]))
 			for a in acts:
 				acts[a].append(int(act_day.get(a, -1)))
-		print("== %s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", seeds, days])
+		print("== %s%s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", (" all points in " + force_attr) if force_attr != "" else "", seeds, days])
 		print("   Act I done on days %s · Act II %s · Act III %s   (-1 = not reached)" % [acts[2], acts[3], acts[4]])
 		ratios.sort()
 		if not ratios.is_empty():
@@ -191,7 +195,7 @@ func _answer_matters() -> void:
 
 func _idle_spend() -> void:
 	for h in GameState.heroes:
-		Combat.auto_spend_attrs(h)
+		_spend_attrs(h)
 		_learn_all(h)
 		GameState.equip_best(h.id)
 	var bill := GameState.weekly_wages() + GameState.upkeep()
@@ -218,7 +222,7 @@ func _quests() -> void:
 ## to the cap (keeping next payday's bill in hand), a champion level.
 func _invest() -> void:
 	for h in GameState.heroes:
-		Combat.auto_spend_attrs(h)
+		_spend_attrs(h)
 		_learn_all(h)
 		if h.level >= 10:
 			var cls := GameData.find_class(h.pool_id)
@@ -254,7 +258,7 @@ func _invest() -> void:
 	for h in GameState.heroes:
 		if GameState.training_left() > 0 and GameState.coins - GameState.attr_train_cost(h) > bill + 200:
 			GameState.train_attr(h.id)
-			Combat.auto_spend_attrs(h)
+			_spend_attrs(h)
 	for id in GameState.champions:
 		var c := GameState.champion_level_cost(str(id))
 		if c > 0 and GameState.crystals > c + 200:
@@ -263,6 +267,14 @@ func _invest() -> void:
 		GameState.hold_feast()
 	for h in GameState.heroes:
 		GameState.equip_best(h.id)
+
+
+func _spend_attrs(h: Hero) -> void:
+	if force_attr == "":
+		Combat.auto_spend_attrs(h)
+		return
+	for i in h.attr_points:
+		GameState.spend_attr_point(h.id, force_attr)
 
 
 ## Skill points: the hero's own tree first, in order.

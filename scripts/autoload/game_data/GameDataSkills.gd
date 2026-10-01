@@ -560,6 +560,8 @@ static func awakening_bonus_text(pool_id: String) -> String:
 # Recruitment-screen reroll fee. Flat rather than rank-scaled, so a bad
 # opening pull is always cheap to retry (below even the F-rank recruit cost).
 const RECRUIT_REROLL_COST := 20
+## Commissioning a recruit of a chosen role costs this many rerolls.
+const COMMISSION_COST_MULT := 3
 
 
 ## Compact "F 43% · E 26% · ..." odds line for the recruit/Champion rank

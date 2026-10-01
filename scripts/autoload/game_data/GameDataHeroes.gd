@@ -493,12 +493,12 @@ const ATTR_POINTS_PER_LEVEL := 3
 const LEVEL_GROWTH := 0.05   # base HP and damage per level (was 8% with no attributes)
 const ATTR_EFFECTS := {
 	"might": {"dmg_pct": 0.02, "hp_pct": 0.015},
-	"agility": {"speed_pct": 0.02, "dodge_pct": 0.008, "first_round_pct": 0.02},
+	"agility": {"speed_pct": 0.02, "dodge_pct": 0.015, "first_round_pct": 0.02},   # dodge was 0.8%: agility trailed might and focus (campaign_sim -- attr=)
 	"focus": {"ability_power": 0.04, "mend_pct": 0.002},
 }
 const ATTR_DESC := {
 	"might": "+2% damage and +1.5% HP per point above 5",
-	"agility": "+2% speed, +0.8% dodge and +2% first-strike per point above 5",
+	"agility": "+2% speed, +1.5% dodge and +2% first-strike per point above 5",
 	"focus": "+4% ability power and +0.2% mend per point above 5",
 }
 

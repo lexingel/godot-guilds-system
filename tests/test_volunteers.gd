@@ -24,3 +24,12 @@ func run() -> void:
 	GameState.coins = int(GameData.find_rank("F")["cost"]) + 1000
 	GameState.run_payday()
 	check(GameState.heroes.size() == 2, "a guild that can afford a recruit hires its own")
+
+	# Commissioning a recruit: the role you ask for, for 3 rerolls' Gold.
+	GameState.refresh_recruit_pool()
+	var n := GameState.recruit_pool.size()
+	GameState.coins = 1000
+	check(GameState.commission_recruit("cleric") == "" and GameData.hero_role(GameState.recruit_pool[0]) == "cleric", "a commissioned cleric heads the offers")
+	check(GameState.recruit_pool.size() == n and GameState.coins == 1000 - GameState.commission_cost(), "the board keeps its size; it cost %d Gold" % GameState.commission_cost())
+	GameState.coins = 0
+	check(GameState.commission_recruit("mage") != "", "not without the Gold")

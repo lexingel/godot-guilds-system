@@ -1079,6 +1079,24 @@ func _render_recruits(v: VBoxContainer) -> void:
 		v.add_child(full)
 	elif GameState.recruit_pool.is_empty():
 		v.add_child(_wrap_label(tr("No one is looking for work right now. New recruits arrive every payday."), 13, true))
+	# Ask for a role instead of rerolling until one turns up.
+	var com := HFlowContainer.new()
+	com.add_theme_constant_override("h_separation", 6)
+	com.add_theme_constant_override("v_separation", 6)
+	var cl := _label(tr("Commission a recruit (%d Gold):") % GameState.commission_cost(), 12, true)
+	cl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	com.add_child(cl)
+	for role in ["warrior", "rogue", "ranger", "mage", "cleric"]:
+		var cb := _button(tr(role.capitalize()), func(r=role):
+			var err := GameState.commission_recruit(r)
+			if err != "":
+				push_warning(err)
+			render()
+		)
+		cb.disabled = GameState.coins < GameState.commission_cost()
+		cb.tooltip_text = tr("A %s joins the offers at the usual rank odds (the last offer leaves).") % tr(role)
+		com.add_child(cb)
+	v.add_child(com)
 	for h in GameState.recruit_pool:
 		var rank := GameData.find_rank(h.rank)
 		var card := PanelContainer.new()
@@ -1104,7 +1122,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		var mid := _vbox(2)
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
-		mid.add_child(_label(tr("Rank %s %s · %d Gold") % [tr(str(h.rank)), tr(str(h.cls_id.capitalize())), int(rank["cost"])], 11, true))
+		mid.add_child(_label(tr("Rank %s %s · %d Gold · Power %d · %d HP · wage %d/week") % [tr(str(h.rank)), tr(str(h.cls_id.capitalize())), int(rank["cost"]), Combat.power_of(h), Combat.max_hp(h), GameState.wage_of(h)], 11, true))
 		mid.add_child(_rich_line(tr("Passive — ") + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
 		row.add_child(_button(tr("Reroll (%d Gold)") % GameState.recruit_reroll_cost(), func(id=h.id):

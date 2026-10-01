@@ -133,6 +133,37 @@ func refresh_recruit_pool() -> void:
 		_maybe_flag_s_rank(h, "recruit")
 
 
+## A recruit of the role you ask for, at the usual rank odds, for
+## COMMISSION_COST_MULT x the reroll fee. Rerolling the board until a cleric
+## turned up was the only way to look for one ("spamming Gold"). The new
+## offer goes first; the last one leaves, so the board keeps its size.
+func commission_recruit(role: String) -> String:
+	var cost := commission_cost()
+	if coins < cost:
+		return tr("Not enough Gold.")
+	var rank := Combat.weighted_rank()
+	var h: Hero = null
+	for i in 200:
+		var c := Combat.gen_hero(rank, 1)
+		if GameData.hero_role(c) == role:
+			h = c
+			break
+	if h == null:
+		return tr("No %s answered; try another role") % tr(role)
+	coins -= cost
+	recruit_pool.push_front(h)
+	if recruit_pool.size() > recruit_offer_count():
+		recruit_pool.pop_back()
+	_maybe_flag_s_rank(h, "recruit")
+	save()
+	state_changed.emit()
+	return ""
+
+
+func commission_cost() -> int:
+	return recruit_reroll_cost() * GameData.COMMISSION_COST_MULT
+
+
 func recruit_hero(offer_id: String) -> String:
 	var idx := -1
 	for i in recruit_pool.size():

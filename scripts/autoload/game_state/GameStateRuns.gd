@@ -618,7 +618,10 @@ func hazard_preview(dmg_scale: float) -> Dictionary:
 	if not run.get("anchor_used", false) and anchor_artifact():
 		return {"anchor": true, "total": 0, "absorbed": 0, "per_hero": 0, "downs": [], "party": party}
 	var hz: Dictionary = run["node_state"]["hazard"]
-	var dmg: float = (6.0 + int(_diff()["floors"]) * 2.0) * float(hz["dmg_mult"]) * dmg_scale
+	# Scaled like the rift's foes: a flat 16-26 points was nothing past Rank D
+	# ("hazard severity seems pretty wasted").
+	var rank_scale: float = float(_diff()["monster_dmg"]) / float(GameData.DIFFICULTIES[0]["monster_dmg"])
+	var dmg: float = (6.0 + int(_diff()["floors"]) * 2.0) * float(hz["dmg_mult"]) * dmg_scale * rank_scale
 	var guard: float = min(0.9, hazard_severity_reduction() + Combat.party_skill_total(party, "hazard_guard_pct") + Combat.relic_special_total("hazard_guard_pct") + Combat.relic_drawback_total("hazard_guard_pct") + Combat.synergy_value_for("hazard_guard_pct") + Combat.bond_bonus_for(party, "hazard_guard_pct"))
 	dmg = round(dmg * (1.0 - guard))
 	var absorbed: int = min(int(run.get("shield", 0)), int(dmg))
@@ -654,20 +657,31 @@ func _apply_hazard(dmg_scale: float, bonus_chance_override: float) -> void:
 					knock_out(h)
 			log.append(tr("The hazard deals %d damage across the party.") % dmg)
 			_note_injuries("wounded")
+	# Getting through always pays about what a fight here pays; the hazard's
+	# bonus chance (or Risk it) doubles it. It was a 15-50% chance of 2-6.
 	var bonus_chance: float = float(hz["bonus_chance"]) if bonus_chance_override < 0.0 else bonus_chance_override
-	if randf() < bonus_chance:
-		var c := randi() % 5 + 2
-		if hz["bonus_type"] == "coins":
-			coins += c
-			log.append(tr("You scavenge %d stray Gold.") % c)
-		else:
-			crystals += c
-			log.append(tr("Stray Essence found in the rubble: +%d.") % c)
+	var rng := hazard_reward_range()
+	var c := randi_range(int(rng[0]), int(rng[1])) * (2 if randf() < bonus_chance else 1)
+	if hz["bonus_type"] == "coins":
+		coins += c
+		log.append(tr("You scavenge %d Gold on the way through.") % c)
+	else:
+		crystals += c
+		log.append(tr("Essence found in the rubble: +%d.") % c)
 	ns["resolved"] = true
 	ns["log"] = log
 	run["node_state"] = ns
 	save()
 	state_changed.emit()
+
+
+## What getting through a hazard pays (before a double): the rift's own
+## per-fight Gold or Essence range, by the hazard's kind.
+func hazard_reward_range() -> Array:
+	ensure_hazard()
+	var key := "coin" if str(run["node_state"]["hazard"]["bonus_type"]) == "coins" else "crystal"
+	var r: Array = _diff()[key]
+	return [int(r[0]), int(r[1])]
 
 
 ## The safe default: full damage roll, the hazard's own normal bonus chance.

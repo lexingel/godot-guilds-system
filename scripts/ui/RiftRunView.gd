@@ -851,13 +851,13 @@ func _render_hazard_node(v: VBoxContainer) -> void:
 		var choice_row := HBoxContainer.new()
 		choice_row.add_theme_constant_override("separation", 10)
 		choice_row.add_child(_hazard_option("res://assets/skills/boots.png", "Push Through",
-			[_hazard_damage_text(push), tr("%d%% chance of 2-6 %s") % [bonus_pct, tr(str(bonus_kind))]], push["downs"],
+			[_hazard_damage_text(push), tr("%d-%d %s, %d%% chance of double") % [int(GameState.hazard_reward_range()[0]), int(GameState.hazard_reward_range()[1]), tr(str(bonus_kind)), bonus_pct]], push["downs"],
 			func(): GameState.push_through_hazard(); render()))
 		choice_row.add_child(_hazard_option(GameData.CURRENCY_ICON_PATH["crystals"], "Bypass",
 			["No damage, no reward", tr("Costs %d Essence (you have %d)") % [GameState.HAZARD_BYPASS_COST, GameState.crystals]], [],
 			func(): GameState.bypass_hazard(); render(), not GameState.can_afford_hazard_bypass()))
-		choice_row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"], "Risk it for Loot",
-			[_hazard_damage_text(risk), tr("Guaranteed 2-6 %s") % tr(str(bonus_kind))], risk["downs"],
+		choice_row.add_child(_hazard_option(GameData.BUTTON_ICON_PATH["dice"], "Risk it for double",
+			[_hazard_damage_text(risk), tr("A sure double: %d-%d %s") % [2 * int(GameState.hazard_reward_range()[0]), 2 * int(GameState.hazard_reward_range()[1]), tr(str(bonus_kind))]], risk["downs"],
 			func(): GameState.risk_hazard(); render()))
 		v.add_child(choice_row)
 	else:
