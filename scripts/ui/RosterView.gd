@@ -66,19 +66,23 @@ func _hero_card(h: Hero) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.theme_type_variation = &"CardPanelViolet"
 	var cv := _vbox(4)
-	cv.add_child(_title_strip(h.name))
 	var voice := GameData.hero_voice(h)
-	var chips := HBoxContainer.new()
-	chips.add_theme_constant_override("separation", 8)
-	chips.add_child(_rule_chip(tr("Lv%d %s") % [h.level, tr(str(h.cls_id.capitalize()))], "", Palette.LINE))
-	chips.add_child(_rule_chip(tr("Rank %s") % tr(str(h.rank)), "", Palette.RANK_S))
-	chips.add_child(_rule_chip(tr("Power %d") % Combat.power_of(h), "", Palette.VIOLET))
-	var hpw := _vbox(2)
-	hpw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hpw.add_child(_label(tr("%d/%d HP") % [h.hp, Combat.max_hp(h)], 11, true))
-	hpw.add_child(_hp_bar(h.hp, Combat.max_hp(h), 150.0))
-	chips.add_child(hpw)
-	cv.add_child(chips)
+	# A heading and one line of facts (they were three boxed chips in a boxed
+	# title bar); each number appears once on the page.
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 14)
+	var nm := _label(h.name, 18)
+	nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(nm)
+	var facts := _rich_line("%s · [color=#%s]%s[/color] · %s" % [tr("Lv%d %s") % [h.level, tr(str(h.cls_id.capitalize()))], Palette.rank_color(h.rank).to_html(false), tr("Rank %s") % tr(str(h.rank)), tr("Power %d") % Combat.power_of(h)], 14, true)
+	facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	facts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(facts)
+	var hpb := _hp_bar(h.hp, Combat.max_hp(h), 150.0)
+	hpb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hpb.tooltip_text = tr("%d/%d HP") % [h.hp, Combat.max_hp(h)]
+	head.add_child(hpb)
+	cv.add_child(head)
 
 	# Tabs (Overview · Gear · Skills · History) instead of one long card that
 	# stacked every section. A dot marks a tab with something to act on:
@@ -274,8 +278,6 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 	var stage := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Palette.SURFACE
-	st.border_color = Palette.LINE
-	st.set_border_width_all(1)
 	st.set_corner_radius_all(10)
 	st.set_content_margin_all(10)
 	stage.add_theme_stylebox_override("panel", st)
@@ -286,9 +288,6 @@ func _render_hero_sheet(cv: VBoxContainer, h: Hero, fitting_items: Array[Item]) 
 		cc.add_child(_hero_icon(h, 190))
 	stage.add_child(cc)
 	mid.add_child(stage)
-	var pw := _label(tr("Power %d") % Combat.power_of(h), 15)
-	pw.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mid.add_child(pw)
 	var changes := GameState.equip_best_changes(h)
 	if changes > 0:
 		var eb := _button(tr("Equip best (%d)") % changes, func(id=h.id):
@@ -391,9 +390,9 @@ const _ATTR_SHORT := {"dmg_pct": "dmg", "hp_pct": "HP", "speed_pct": "speed", "d
 func _attr_panel(h: Hero) -> PanelContainer:
 	var panel := PanelContainer.new()
 	var st := StyleBoxFlat.new()
-	st.bg_color = Palette.SURFACE
-	st.border_color = Palette.EMBER_DEEP if h.attr_points > 0 else Palette.LINE
-	st.set_border_width_all(1)
+	st.bg_color = Color(0, 0, 0, 0)   # on the card itself; an ember edge only while points wait
+	st.border_color = Palette.EMBER_DEEP
+	st.set_border_width_all(1 if h.attr_points > 0 else 0)   # an edge only while points wait
 	st.set_corner_radius_all(8)
 	st.set_content_margin_all(10)
 	panel.add_theme_stylebox_override("panel", st)
@@ -530,11 +529,8 @@ func _attr_bar(total: int) -> Control:
 func _stat_panel(h: Hero) -> PanelContainer:
 	var panel := PanelContainer.new()
 	var st := StyleBoxFlat.new()
-	st.bg_color = Palette.SURFACE
-	st.border_color = Palette.LINE
-	st.set_border_width_all(1)
-	st.set_corner_radius_all(8)
-	st.set_content_margin_all(10)
+	st.bg_color = Color(0, 0, 0, 0)   # no box in the box: a heading and spacing group it
+	st.set_content_margin_all(6)
 	panel.add_theme_stylebox_override("panel", st)
 	var v := _vbox(4)
 	v.add_child(_label("Stats", 15))
@@ -778,8 +774,9 @@ func _roster_row(h: Hero) -> Control:
 	top.add_child(nm)
 	var arch := _main_arch(h)
 	if arch != "":
-		var chip := _label("◆ " + tr(str(GameData.ARCHETYPES[arch])), 12)
-		chip.add_theme_color_override("font_color", ARCH_COLOR.get(arch, Palette.MUTED))
+		var chip := _rich_line(_arch_chip(arch), 12)
+		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		top.add_child(chip)
 	col.add_child(top)
 	col.add_child(_label(tr("Lv%d %s (%s) · %d/%d HP%s") % [h.level, tr(str(h.cls_id.capitalize())), tr(str(h.rank)), h.hp, Combat.max_hp(h), tr(str((tr(" · away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]) if h.busy_runs > 0 else ""))], 12, true))

@@ -13,11 +13,15 @@ func run() -> void:
 	check(Palette.good() != Palette.HAZARD, "never the danger colour")
 
 	GameState.reduce_motion = true
+	var was_kh := GameState.key_hints
+	GameState.key_hints = true
 	GameState.save_settings()
 	GameState.colorblind = false
 	GameState.reduce_motion = false
+	GameState.key_hints = false
 	GameState.load_settings()
-	check(GameState.colorblind and GameState.reduce_motion, "both settings round-trip through settings.json")
+	check(GameState.colorblind and GameState.reduce_motion and GameState.key_hints, "the settings round-trip through settings.json")
 	GameState.colorblind = was_cb
 	GameState.reduce_motion = was_rm
+	GameState.key_hints = was_kh
 	GameState.save_settings()

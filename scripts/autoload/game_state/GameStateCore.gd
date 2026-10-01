@@ -23,6 +23,7 @@ var active_slot: int = 0
 var music_volume: float = 1.0
 var combat_speed: float = 1.0
 var reduce_motion := false   # no shakes, sways, zooms or flashes in fights (settings.json)
+var key_hints := false      # keycaps on the fight's command buttons (settings.json); tooltips always name the key
 var colorblind := false      # blue instead of green against red, rarity letters on items (settings.json)
 var language := "en"         # a GameData.LANGUAGES locale (settings.json)
 var hearing_aid := false     # captions for meaningful sounds + an edge pulse on big hits (settings.json; see AudioManager.cue)
@@ -523,7 +524,7 @@ func save_settings() -> void:
 	if f:
 		f.store_string(JSON.stringify({
 			"music_volume": music_volume, "sfx_volume": sfx_volume, "resolution_idx": resolution_idx, "combat_speed": combat_speed, "ui_scale": ui_scale,
-			"reduce_motion": reduce_motion, "colorblind": colorblind, "hearing_aid": hearing_aid, "language": language,
+			"reduce_motion": reduce_motion, "colorblind": colorblind, "hearing_aid": hearing_aid, "language": language, "key_hints": key_hints,
 		}))
 
 
@@ -561,6 +562,7 @@ func load_settings() -> void:
 		ui_scale = float(parsed.get("ui_scale", 1.0))
 		reduce_motion = bool(parsed.get("reduce_motion", false))
 		colorblind = bool(parsed.get("colorblind", false))
+		key_hints = bool(parsed.get("key_hints", false))
 		hearing_aid = bool(parsed.get("hearing_aid", false))
 		language = str(parsed.get("language", "en"))
 		sfx_volume = parsed.get("sfx_volume", 1.0)

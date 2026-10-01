@@ -199,10 +199,12 @@ func _art_rect(path: String, rect: Rect2, parent: Control) -> TextureRect:
 
 ## The screen's art as a dim backdrop that drifts slowly side to side; ""
 ## clears it. Kept across re-renders of the same screen.
-func _set_ambient(path: String) -> void:
+## `quiet`: a data screen (lists, cards, forms): the art all but fades and
+## holds still, so it doesn't sit busy behind text.
+func _set_ambient(path: String, quiet: bool = false) -> void:
 	if _ambient_layer == null:
 		return
-	var key := "%s|%s" % [path, get_viewport().get_visible_rect().size]
+	var key := "%s|%s|%s" % [path, get_viewport().get_visible_rect().size, quiet]
 	if key == _ambient_key:
 		return
 	_ambient_key = key
@@ -214,7 +216,9 @@ func _set_ambient(path: String) -> void:
 	var r := _cover_rect(tex.get_size())
 	var grown := (r.size * 1.08).round()
 	var t := _art_rect(path, Rect2(r.position - (grown - r.size) * 0.5, grown), _ambient_layer)
-	t.modulate = Color(0.26, 0.25, 0.3)
+	t.modulate = Color(0.11, 0.1, 0.14) if quiet else Color(0.26, 0.25, 0.3)
+	if quiet:
+		return
 	var drift := (grown.x - r.size.x) * 0.45
 	var x0 := t.position.x
 	var tw := t.create_tween().set_loops().set_trans(Tween.TRANS_SINE)
@@ -384,7 +388,7 @@ func _rule_chip(text: String, tip: String, border: Color = Palette.LINE) -> Pane
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(Palette.INK, 0.75)
 	st.border_color = border
-	st.set_border_width_all(1)
+	st.set_border_width_all(0 if border == Palette.LINE else 1)   # a neutral chip is a fill; a coloured edge means something
 	st.set_corner_radius_all(4)
 	st.content_margin_left = 6
 	st.content_margin_right = 6
@@ -960,7 +964,7 @@ func _rich_line(bbcode: String, size: int = 11, muted: bool = false) -> RichText
 	rt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rt.mouse_filter = Control.MOUSE_FILTER_PASS
-	size = max(size, 12)
+	size = ui_size(size)   # the same floor as _label (it drew 2px smaller than the labels beside it)
 	rt.add_theme_font_size_override("normal_font_size", size)
 	rt.add_theme_font_size_override("bold_font_size", size)
 	rt.add_theme_color_override("default_color", Palette.MUTED if muted else Palette.TEXT)
@@ -1049,8 +1053,9 @@ func _bb(c: Color, text: String) -> String:
 	return tr("[color=#%s]%s[/color]") % [tr(str(c.to_html(false))), tr(str(text.replace("[", "[lb]")))]
 
 
+## The colour rides the diamond only: a red "Executioner" read as a warning.
 func _arch_chip(arch: String) -> String:
-	return _bb(ARCH_COLOR.get(arch, Palette.MUTED), "◆ " + tr(str(GameData.ARCHETYPES.get(arch, arch)))) if arch != "" else ""
+	return (_bb(ARCH_COLOR.get(arch, Palette.MUTED), "◆") + " " + _bb(Palette.MUTED, tr(str(GameData.ARCHETYPES.get(arch, arch))))) if arch != "" else ""
 
 
 ## An item as a tooltip card (RichTip): rarity-colored name, type/rank line,
@@ -1416,27 +1421,6 @@ func _icon_domain_button(domain: String, icon_path: String, text: String, cb: Ca
 
 func _hsep() -> HSeparator:
 	return HSeparator.new()
-
-
-## A small colored heading strip for a card that needs a title set apart from
-## its body text (e.g. a Roster hero card) — a plain StyleBoxFlat rather than
-## extracting the UI pack's header-bar art, since that art comes fused to a
-## specific panel body with baked-in text and isn't reusable standalone.
-func _title_strip(text: String) -> PanelContainer:
-	var p := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE3
-	style.content_margin_left = 8.0
-	style.content_margin_right = 8.0
-	style.content_margin_top = 4.0
-	style.content_margin_bottom = 4.0
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	p.add_theme_stylebox_override("panel", style)
-	var l := _label(text, 14)
-	l.add_theme_color_override("font_color", Palette.VIOLET)
-	p.add_child(l)
-	return p
 
 
 ## A purchase lands: a banner with what you got, a burst of sparks and a
@@ -1817,9 +1801,7 @@ func _camp_area_hotspot(hit_rect: Rect2, glow_rect: Rect2, label_text: String, c
 func _camp_plaque(text: String) -> PanelContainer:
 	var p := PanelContainer.new()
 	var st := StyleBoxFlat.new()
-	st.bg_color = Color(Palette.INK, 0.82)
-	st.border_color = Palette.EMBER_DEEP
-	st.set_border_width_all(1)
+	st.bg_color = Color(Palette.INK, 0.7)
 	st.set_corner_radius_all(4)
 	st.content_margin_left = 8
 	st.content_margin_right = 8
@@ -1828,7 +1810,7 @@ func _camp_plaque(text: String) -> PanelContainer:
 	p.add_theme_stylebox_override("panel", st)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := _label(text, 13)
-	l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	l.add_theme_color_override("font_color", Palette.TEXT)
 	p.add_child(l)
 	p.size = p.get_combined_minimum_size()
 	return p

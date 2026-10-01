@@ -116,6 +116,12 @@ func _play_transition(iris: bool) -> void:
 
 ## The art behind each screen that has no full-window scene of its own,
 ## shown dim and drifting (see _set_ambient).
+## Data screens get a calm ground: the camp's tabs (rosters, ledgers,
+## inventory, records) and Settings. Hubs, the Rift Hall and rifts keep their art.
+func _quiet_ground() -> bool:
+	return screen == "settings" or (screen == "camp" and (term_tab != "camp" or hub_cluster != ""))
+
+
 func _ambient_path() -> String:
 	match screen:
 		"camp":
@@ -284,11 +290,15 @@ func render() -> void:
 		if not GameState.check_feature_unlocks().is_empty():
 			AudioManager.play_sfx(GameData.SFX_PATH["unlock"])
 	var newly_claimed := GameState.check_milestones()
-	if newly_claimed.size() == 1:
-		var m = GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Achievement earned"), "text": str(m["label"])})
-	elif newly_claimed.size() > 1:
-		GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("%d achievements earned") % newly_claimed.size(), "text": tr("See Records in the Guild Hall.")})
+	if not newly_claimed.is_empty():
+		var ach := str(GameData.MILESTONES.filter(func(x): return str(x["id"]) == newly_claimed[0])[0]["label"]) if newly_claimed.size() == 1 else tr("%d achievements, see Records") % newly_claimed.size()
+		# Rides on a notice already waiting (an unlock, usually) instead of
+		# stacking a second card beside it.
+		if not GameState.pending_toasts.is_empty():
+			var last: Dictionary = GameState.pending_toasts[-1]
+			last["text"] = str(last["text"]) + "\n" + tr("Achievement: %s") % ach
+		else:
+			GameState.pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Achievement earned"), "text": ach})
 	# Once, on the web, after a guild has something worth losing.
 	if OS.has_feature("web") and GameState.guild_name != "" and GameState.last_export_day < 0 and GameState.rifts_sealed >= 3 and not GameState.hints_seen.has("backup_nudge"):
 		GameState.hints_seen.append("backup_nudge")
@@ -329,7 +339,7 @@ func render() -> void:
 	# On a full-window scene the UI lets clicks through to the art's props.
 	var bleed := _bleed_ui()
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE if bleed else _root_filter
-	_set_ambient("" if bleed or screen == "title" else _ambient_path())
+	_set_ambient("" if bleed or screen == "title" else _ambient_path(), _quiet_ground())
 	var outer := _vbox(4 if _compact() else 10)
 	if bleed:
 		outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -708,15 +718,18 @@ func _quick_go(id: String) -> void:
 	render()
 
 
-var _nav_bar: Control = null   # the phone canvas: the tab buttons, for the top bar
+var _nav_bar: Control = null   # the tab buttons when they ride in the top bar (phone, and any wide window)
 
 
 func _quick_nav() -> Control:
 	var col := _vbox(6)
 	var compact := _compact()
-	# Wraps to two rows on the narrow (portrait) canvas; a plain row in the phone's top bar.
+	# The main tabs ride in the top bar (the phone, and any wide window: a
+	# second row of big tabs under the header took ~150px with the sub-tabs);
+	# only the narrow portrait canvas keeps them as a wrapping row of their own.
+	var in_header := compact or not _narrow()
 	var bar: Container
-	if compact:
+	if in_header:
 		bar = HBoxContainer.new()
 		bar.add_theme_constant_override("separation", 4)
 	else:
@@ -725,8 +738,8 @@ func _quick_nav() -> Control:
 		flow.add_theme_constant_override("v_separation", 6)
 		flow.alignment = FlowContainer.ALIGNMENT_CENTER
 		bar = flow
-	if compact:
-		_nav_bar = bar   # icons only, in the top bar; only the sub-tabs stay below
+	if in_header:
+		_nav_bar = bar   # in the top bar; only the sub-tabs stay below
 	else:
 		col.add_child(bar)
 	var badges := _camp_badges()
@@ -740,7 +753,7 @@ func _quick_nav() -> Control:
 		var locked := open.is_empty()
 		var go := _quick_go.bind(str(open[0]) if not locked else "")
 		var b := _button("", go)
-		b.custom_minimum_size = Vector2(48, 38) if compact else Vector2(88, 54)
+		b.custom_minimum_size = Vector2(48, 38) if compact else (Vector2(104, 36) if in_header else Vector2(88, 54))
 		b.toggle_mode = true
 		b.button_pressed = ids.has(current)
 		b.tooltip_text = tr("%s  (key %s)") % [tr(str(g[0])), tr(str(key))]
@@ -749,23 +762,26 @@ func _quick_nav() -> Control:
 			b.disabled = true
 			b.modulate = Color(1, 1, 1, 0.45)
 			b.tooltip_text = "%s — %s" % [tr(str(g[0])), tr(str(GameData.FEATURE_UNLOCKS[NAV_FEATURE[ids[0]]]["hint"]))]
-		var tile := VBoxContainer.new()
+		# In the top bar: icon and name side by side; the key is in the tooltip.
+		var tile: BoxContainer = HBoxContainer.new() if in_header and not compact else VBoxContainer.new()
 		tile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tile.alignment = BoxContainer.ALIGNMENT_CENTER
-		tile.add_theme_constant_override("separation", 1)
+		tile.add_theme_constant_override("separation", 6 if in_header else 1)
 		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var ic := _icon(GameData.CAMP_HUB_ICON_PATH[str(g[1])], 26)
+		var ic := _icon(GameData.CAMP_HUB_ICON_PATH[str(g[1])], 22 if in_header and not compact else 26)
 		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tile.add_child(ic)
 		if not compact:
 			var nl := _label(str(g[0]), 12)
 			nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			nl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			tile.add_child(nl)
 		b.add_child(tile)
 		if not locked:
 			_combat_hotkeys[key] = go
-		if not compact:
+		if not compact and not in_header:
 			var kl := _label(key, 12)
 			kl.add_theme_color_override("font_color", Palette.MUTED)
 			kl.position = Vector2(3, 0)
@@ -774,7 +790,7 @@ func _quick_nav() -> Control:
 			var badge: Array = badges.get(str(m[0]), [])
 			if not badge.is_empty() and not _nav_locked(str(m[0])):
 				var chip := _count_badge(str(badge[0]), str(badge[1]))
-				chip.position = Vector2(32 if compact else 70, -6)
+				chip.position = Vector2(32 if compact else (88 if in_header else 70), -6)
 				b.add_child(chip)
 				break
 		bar.add_child(b)
@@ -875,7 +891,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		bb.tooltip_text = tr("Back to %s") % tr(str(back[1]))
 		bb.custom_minimum_size = Vector2(40, 36)
 		row.add_child(bb)
-	if _nav_bar != null:
+	if _nav_bar != null and _compact():
 		row.add_child(_nav_bar)
 	elif not _compact() or screen == "camp":
 		row.add_child(_icon(GameData.CREST_PATH[GameState.guild_crest - 1], 24))
@@ -883,6 +899,22 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		name_lbl.add_theme_font_override("font", DISPLAY_FONT)
 		name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(name_lbl)
+		if not _narrow() and not _compact():
+			# The guild tier lives here (it was a third panel floating over the camp).
+			var tier := Combat.guild_tier_info()
+			var ticon: String = GameData.GUILD_TIER_ICON.get(str(tier["name"]), "")
+			if ticon != "":
+				var ti := _icon(ticon, 18)
+				ti.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				row.add_child(ti)
+			var tl := _label(tr(str(tier["name"])), 12, true)
+			tl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var tip := tr("%d Guild Management levels") % int(tier["total"])
+			if not (tier["next"] as Dictionary).is_empty():
+				tip += tr(" · %d more to %s") % [int(tier["next"]["min"]) - int(tier["total"]), tr(str(tier["next"]["name"]))]
+			tl.tooltip_text = tip + tr(". The tier grows with Guild Management levels; the Guild Hall grows with it.")
+			tl.mouse_filter = Control.MOUSE_FILTER_STOP
+			row.add_child(tl)
 	elif breadcrumb != "":
 		# No room for the guild's name: say where you are instead.
 		var here := _label(tr(breadcrumb), 15)
@@ -898,7 +930,12 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 		title_lbl.tooltip_text = tr("Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d)") % [GameState.tower_best, GameState.best_endless_time / 60, GameState.best_endless_time % 60]
 		title_lbl.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.add_child(title_lbl)
-	if breadcrumb != "" and not _narrow():
+	if _nav_bar != null and not _compact():
+		var lsp := Control.new()
+		lsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(lsp)
+		row.add_child(_nav_bar)
+	elif breadcrumb != "" and not _narrow():
 		var crumb := _label("›  " + tr(breadcrumb), 16)
 		crumb.add_theme_color_override("font_color", Palette.MUTED)
 		crumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2532,6 +2569,12 @@ func _render_settings(v: VBoxContainer) -> void:
 		render())
 	cb.tooltip_text = "Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item"
 	acc_row.add_child(cb)
+	var kh := _button(tr("Key hints: %s") % tr(str((tr("on") if GameState.key_hints else tr("off")))), func():
+		GameState.key_hints = not GameState.key_hints
+		GameState.save_settings()
+		render())
+	kh.tooltip_text = "Show each fight command's key (1-9, Space, A) on its button. Off, the keys still work and every tooltip names them."
+	acc_row.add_child(kh)
 	var ha := _button(tr("Hearing aid: %s") % tr(str((tr("on") if GameState.hearing_aid else tr("off")))), func():
 		GameState.hearing_aid = not GameState.hearing_aid
 		GameState.save_settings()
@@ -2697,8 +2740,8 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool, picked: bool = false) 
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	var style := StyleBoxFlat.new()
 	style.bg_color = Palette.SURFACE3 if in_party or picked else Palette.SURFACE
-	style.border_color = Palette.EMBER if picked else Palette.LINE
-	style.set_border_width_all(1)
+	style.border_color = Palette.EMBER
+	style.set_border_width_all(1 if picked else 0)
 	style.set_corner_radius_all(6)
 	style.set_content_margin_all(6)
 	card.add_theme_stylebox_override("panel", style)

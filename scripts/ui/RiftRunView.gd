@@ -212,8 +212,6 @@ func _run_bar(in_combat: bool) -> Control:
 	var panel := PanelContainer.new()
 	var style := StyleBoxFlat.new()
 	style.bg_color = Palette.SURFACE2
-	style.border_color = Palette.LINE
-	style.set_border_width_all(1)
 	style.set_corner_radius_all(8)
 	style.set_content_margin_all(8)
 	panel.add_theme_stylebox_override("panel", style)

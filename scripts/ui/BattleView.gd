@@ -2182,7 +2182,7 @@ func _cmd_button(icon_path: String, caption: String, key: String, cb: Callable, 
 	cap.clip_text = true
 	col.add_child(cap)
 	b.add_child(col)
-	if key != "" and not _compact():   # a keycap; a phone has no keys
+	if key != "" and not _compact() and GameState.key_hints:   # a keycap (Settings > Key hints); a phone has no keys
 		var kb := _label(key, 11)
 		kb.add_theme_color_override("font_color", Palette.MUTED)
 		kb.position = Vector2(6, 3)
@@ -2349,9 +2349,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 	var monsters: Array = state["monsters"]
 	var panel := PanelContainer.new()
 	var st := StyleBoxFlat.new()
-	st.bg_color = Palette.SURFACE2
-	st.border_color = Palette.LINE
-	st.set_border_width_all(1)
+	st.bg_color = Palette.SURFACE2   # a fill, no outline (borders mark state)
 	var compact := _compact()
 	st.set_corner_radius_all(8)
 	st.set_content_margin_all(5 if compact else 10)
@@ -2501,7 +2499,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			pn.custom_minimum_size.x = 160 if compact else 280
 			pn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(pn)
-		elif not compact:   # a keyboard hint; the ring under the foe shows the target
+		elif not compact and (GameState.key_hints or GameState.runs_started <= 3):   # a keyboard hint for the first runs; the ring under the foe shows the target
 			var hint := _label(tr("Target: %s\nSpace repeats your last action") % tr(str(tgt_name)), 12, true)
 			hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(hint)

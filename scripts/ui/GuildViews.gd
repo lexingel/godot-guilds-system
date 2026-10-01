@@ -175,16 +175,10 @@ func _render_camp(v: VBoxContainer) -> void:
 		right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		right.custom_minimum_size.x = 340
 		right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		var tier_w := _guild_tier_banner()
-		tier_w.size_flags_horizontal = Control.SIZE_SHRINK_END
-		right.add_child(tier_w)
 		_render_getting_started(right)
 		top_row.add_child(right)
 		v.add_child(top_row)
 		return
-	var tier_panel := _guild_tier_banner()
-	scene.add_child(tier_panel)
-	tier_panel.position = Vector2(SCENE_SIZE.x - tier_panel.get_combined_minimum_size().x - 10.0, 10.0)
 	var board := _guild_status_board()
 	if _narrow():
 		v.add_child(scene)
@@ -216,44 +210,11 @@ func _hamlet_targets() -> Dictionary:
 	}
 
 
-func _guild_tier_banner() -> PanelContainer:
-	var tier := Combat.guild_tier_info()
-	var p := PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(Palette.INK, 0.78)
-	st.border_color = Palette.VIOLET_DEEP
-	st.set_border_width_all(1)
-	st.set_corner_radius_all(6)
-	st.set_content_margin_all(8)
-	p.add_theme_stylebox_override("panel", st)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	var icon_path: String = GameData.GUILD_TIER_ICON.get(str(tier["name"]), "")
-	if icon_path != "":
-		row.add_child(_icon(icon_path, 22))
-	var col := _vbox(0)
-	var t := _label(str(tier["name"]), 14)
-	t.add_theme_color_override("font_color", Palette.RANK_S)
-	col.add_child(t)
-	var sub := tr("%d levels") % int(tier["total"])
-	if not (tier["next"] as Dictionary).is_empty():
-		sub += tr(" · %d to %s") % [int(tier["next"]["min"]) - int(tier["total"]), tr(str(tier["next"]["name"]).replace(" Guild", ""))]
-	if GameState.tower_title() != "":
-		sub += " · " + GameState.tower_title()
-	col.add_child(_label(sub, 11, true))
-	row.add_child(col)
-	p.add_child(row)
-	p.tooltip_text = "Guild tier grows with Guild Management levels; the Guild Hall grows with it."
-	return p
-
-
 ## What needs you right now: each line opens where to act on it.
 func _guild_status_board() -> PanelContainer:
 	var p := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(Palette.INK, 0.8)
-	st.border_color = Palette.EMBER_DEEP
-	st.set_border_width_all(1)
 	st.set_corner_radius_all(6)
 	st.set_content_margin_all(10)
 	p.add_theme_stylebox_override("panel", st)
@@ -272,7 +233,8 @@ func _guild_status_board() -> PanelContainer:
 		b.text = "›  " + tr(str(ln[0]))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.add_theme_font_size_override("font_size", 14)
-		b.add_theme_color_override("font_color", ln[1])
+		# One colour for the list, red only for what's urgent (it used five).
+		b.add_theme_color_override("font_color", Palette.HAZARD if ln[1] == Palette.HAZARD else Palette.TEXT)
 		b.add_theme_color_override("font_hover_color", Palette.EMBER_BRIGHT)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -656,8 +618,12 @@ func _week_board() -> Control:
 			events.append([tr("Contest ends"), Palette.RANK_S, tr("The month's Renown contest with %s ends.") % tr(str(GameState.rival_name))])
 		var tile := PanelContainer.new()
 		tile.theme_type_variation = &"CardPanelEmber" if d == today else &"CardPanel"
+		# A day with nothing on it is just its name: three tall cards, two of
+		# them empty, made the week look busier than it was.
+		if events.is_empty() and d != today:
+			tile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tile.custom_minimum_size = Vector2(84, 92)
+		tile.custom_minimum_size = Vector2(84, 0)
 		var tv := _vbox(2)
 		var head := _label(tr("Today") if d == today else tr("Day %d") % d, 13)
 		head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if d == today else Palette.MUTED)
@@ -674,10 +640,8 @@ func _week_board() -> Control:
 		tile.add_child(tv)
 		tile.tooltip_text = "\n".join(tips)
 		row.add_child(tile)
-	var box := _vbox(4)
-	box.add_child(row)
-	box.add_child(_label("A day passes with every rift run or rest.", 11, true))
-	return box
+	row.tooltip_text = tr("A day passes with every rift run or rest.")
+	return row
 
 
 ## The Ledger: the week board, what waits for an answer, payday and wages,
@@ -1106,11 +1070,6 @@ func _render_recruits(v: VBoxContainer) -> void:
 		var card := PanelContainer.new()
 		var style := StyleBoxFlat.new()
 		style.bg_color = Palette.SURFACE2
-		style.border_width_left = 1
-		style.border_width_top = 1
-		style.border_width_right = 1
-		style.border_width_bottom = 1
-		style.border_color = Palette.LINE
 		style.corner_radius_top_left = 8
 		style.corner_radius_top_right = 8
 		style.corner_radius_bottom_right = 8

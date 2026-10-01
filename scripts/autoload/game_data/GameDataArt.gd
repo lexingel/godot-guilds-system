@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"A lighter interface: cards and buttons lose their outlines (an edge now means something needs you), the main tabs moved into the header, lists and ledgers sit on a calm background, the hero page says each number once, and notices stack less. Key numbers on fight buttons are a setting now (Settings > Key hints).",
 	"Act finales are real climaxes: each is built on the rank you sealed to reach it, a step harder (they had fallen below it, and a quarter of finale fights ended in the first round). The Recommended power on the party screen follows. Champion cards line up in an even grid.",
 	"Inventory and Guild Management open straight on their contents: the room's art is a slim strip with its sections as buttons, and each opens where you left it.",
 	"Cleaner screens on a laptop: shops, treasure, events and hazards no longer sit under the path map (it shows while you choose a path), Victory puts the rewards beside the results, the quest board fits every note, pre-fight art is shorter, and notices moved to the bottom right.",
