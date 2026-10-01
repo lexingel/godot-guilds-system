@@ -557,11 +557,18 @@ static func awakening_bonus_text(pool_id: String) -> String:
 	return ABILITY_AWAKENING_BUCKET_DESC.get(bucket, "")
 
 
-# Recruitment-screen reroll fee. Flat rather than rank-scaled, so a bad
-# opening pull is always cheap to retry (below even the F-rank recruit cost).
+# Recruitment-screen reroll fee: the first of the week. Each reroll or
+# commission doubles the next (up to RECRUIT_REROLL_DOUBLINGS times) until
+# payday, so hunting a high rank by rerolling stops being free.
 const RECRUIT_REROLL_COST := 20
+const RECRUIT_REROLL_DOUBLINGS := 4
 ## Commissioning a recruit of a chosen role costs this many rerolls.
 const COMMISSION_COST_MULT := 3
+## The recruit board: each offer waits this many days (min, max), new faces
+## arrive daily (two while the board is under half full), and from the
+## rival's first moves on, the rival may sign your best offer on any day.
+const RECRUIT_STAY := [3, 6]
+const RIVAL_SIGN_CHANCE := 0.15
 
 
 ## Compact "F 43% · E 26% · ..." odds line for the recruit/Champion rank

@@ -101,7 +101,7 @@ func run() -> void:
 	var leg := Combat.gen_unique_relic()
 	GameState.relics.append(leg)
 	GameState.save()
-	GameState.relics.erase(leg)
+	GameState.relics.assign(GameState.relics.filter(func(r): return r.unique_id != leg.unique_id))   # every copy (a finale may have given the same one)
 	GameState.save()
 	GameState.load_save()
 	check(GameState.relics_found.has(leg.unique_id) and not GameState.relics.any(func(r): return r.unique_id == leg.unique_id), "a sold Legendary stays found")

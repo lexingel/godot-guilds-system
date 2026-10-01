@@ -16,6 +16,9 @@ func reset() -> void:
 	items = []
 	tonics = {}
 	recruit_pool = []
+	recruit_until = {}
+	recruit_rerolls = 0
+	party_presets = [[], [], []]
 	upgrades = {}
 	caps = {}
 	champions = {}
@@ -140,7 +143,15 @@ func load_save() -> bool:
 		migrate_hero_skill_keys(h)
 	for h in recruit_pool:
 		migrate_hero_skill_keys(h)
-	if recruit_pool.is_empty() and guild_name != "":
+	recruit_until = (data.get("recruit_until", {}) as Dictionary).duplicate()
+	recruit_rerolls = int(data.get("recruit_rerolls", 0))
+	for h in recruit_pool:   # from before offers had a stay: spread their leaving
+		if not recruit_until.has(h.id):
+			recruit_until[h.id] = day + randi_range(int(GameData.RECRUIT_STAY[0]), int(GameData.RECRUIT_STAY[1]))
+	party_presets = (data.get("party_presets", [[], [], []]) as Array).duplicate(true)
+	while party_presets.size() < 3:
+		party_presets.append([])
+	if recruit_pool.is_empty() and guild_name != "" and not data.has("recruit_until"):
 		# Saves from before recruit_pool was persisted (or an old save with no
 		# key at all) would otherwise show an empty Hero Recruits screen until
 		# the next rift seal — refresh_recruit_pool() always produces exactly

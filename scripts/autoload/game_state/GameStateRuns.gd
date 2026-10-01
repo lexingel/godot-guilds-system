@@ -844,7 +844,6 @@ func seal_rift() -> void:
 		for line in check_earned_quirks(h):
 			flavor += " " + line
 	triage_used_this_cycle = false
-	refresh_recruit_pool()
 	run["sealed"] = {"essence": earned, "fast_clear": fast_clear, "cache": cache, "flavor": flavor}
 	if run.has("daily"):
 		run["sealed"]["daily"] = _complete_daily()
@@ -1118,6 +1117,7 @@ func pass_time() -> void:
 		if hr:
 			hr.last_rift_day = day
 	rival_day()
+	recruit_day()
 	if day % GameData.PAYDAY_DAYS == 0:
 		run_payday()
 	maybe_hero_request()

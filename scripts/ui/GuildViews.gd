@@ -1136,7 +1136,8 @@ func _render_champions(v: VBoxContainer) -> void:
 
 func _render_recruits(v: VBoxContainer) -> void:
 	_coach(v, "recruits", "Hiring heroes", "Recruit heroes below; higher ranks are stronger.")
-	v.add_child(_wrap_label(tr("Rank odds: %s%s") % [tr(str(GameData.rank_odds_text())), tr(str(tr("  ·  Scouts' Lodge: a C+ recruit is assured each refresh") if GameState.headhunter_guarantee() else ""))], 11, true))
+	v.add_child(_wrap_label(tr("New faces arrive every day and wait a few days; payday fills the board. Each reroll or commission doubles the next until payday (back to %d Gold).%s") % [GameState.recruit_reroll_base(), tr(" The rival may sign your best offer first.") if GameState.feature_unlocked("rival") else ""], 12, true))
+	v.add_child(_wrap_label(tr("Rank odds: %s%s") % [tr(str(GameData.rank_odds_text())), tr(str(tr("  ·  Scouts' Lodge: a C+ recruit is assured each payday") if GameState.headhunter_guarantee() else ""))], 11, true))
 	v.add_child(_hsep())
 
 	v.add_child(_label(tr("Hero Recruits — %d/%d roster slots") % [GameState.heroes.size(), GameState.hero_slot_cap()]))
@@ -1145,7 +1146,7 @@ func _render_recruits(v: VBoxContainer) -> void:
 		full.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 		v.add_child(full)
 	elif GameState.recruit_pool.is_empty():
-		v.add_child(_wrap_label(tr("No one is looking for work right now. New recruits arrive every payday."), 13, true))
+		v.add_child(_wrap_label(tr("No one is looking for work right now. New faces arrive every day."), 13, true))
 	# Ask for a role instead of rerolling until one turns up.
 	var com := HFlowContainer.new()
 	com.add_theme_constant_override("h_separation", 6)
@@ -1185,14 +1186,26 @@ func _render_recruits(v: VBoxContainer) -> void:
 		mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mid.add_child(_label(h.name, 13))
 		mid.add_child(_label(tr("Rank %s %s · %d Gold · Power %d · %d HP · wage %d/week") % [tr(str(h.rank)), tr(str(h.cls_id.capitalize())), int(rank["cost"]), Combat.power_of(h), Combat.max_hp(h), GameState.wage_of(h)], 11, true))
+		mid.add_child(_recruit_traits(h))
 		mid.add_child(_rich_line(tr("Passive — ") + _passive_bb(h.pool_id), 10, true))
 		row.add_child(mid)
-		row.add_child(_button(tr("Reroll (%d Gold)") % GameState.recruit_reroll_cost(), func(id=h.id):
+		var left := GameState.offer_days_left(h)
+		var stay := _label(tr("Last day") if left <= 0 else (tr("Leaves tomorrow") if left == 1 else tr("Leaves in %d days") % left), 12, left > 1)
+		if left <= 1:
+			stay.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		stay.tooltip_text = tr("Waits on the board until day %d, then takes work elsewhere.") % (GameState.day + left)
+		stay.mouse_filter = Control.MOUSE_FILTER_STOP
+		stay.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(stay)
+		var rr := _button(tr("Reroll (%d Gold)") % GameState.recruit_reroll_cost(), func(id=h.id):
 			var err := GameState.reroll_recruit_offer(id)
 			if err != "":
 				push_warning(err)
 			render()
-		))
+		)
+		rr.disabled = GameState.coins < GameState.recruit_reroll_cost()
+		rr.tooltip_text = tr("Swap this offer for a new face. The next reroll costs double, until payday.")
+		row.add_child(rr)
 		var hire := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["recruits"], "Recruit", func(id=h.id, nm=h.name, rk=h.rank):
 			var err := GameState.recruit_hero(id)
 			if err != "":
@@ -1207,6 +1220,33 @@ func _render_recruits(v: VBoxContainer) -> void:
 		row.add_child(hire)
 		card.add_child(row)
 		v.add_child(card)
+
+
+## A recruit's make-up at a glance: their attributes (the one they lean
+## on stands out) and their born quirk, so two offers of a rank differ.
+func _recruit_traits(h: Hero) -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	var top := ""
+	for a in ["might", "agility", "focus"]:
+		if top == "" or int(h.attrs.get(a, 0)) > int(h.attrs.get(top, 0)):
+			top = a
+	var tip := tr("Leans on %s. Might: damage and HP · Agility: speed, dodge, first strike · Focus: ability power, mending.") % tr(top.capitalize())
+	for a in ["might", "agility", "focus"]:
+		var al := _label("%s %d" % [tr(a.capitalize()), int(h.attrs.get(a, 0))], 11, a != top)
+		if a == top:
+			al.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		al.tooltip_text = tip
+		al.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(al)
+	for q in h.quirks:
+		var t := GameData.quirk(q)
+		var chip := _label(q, 11)
+		chip.add_theme_color_override("font_color", Palette.HAZARD if t.get("treatable", false) else Palette.good())
+		chip.tooltip_text = "%s — %s" % [tr(str(q)), tr(str(GameState.quirk_text(q)))]
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(chip)
+	return row
 
 
 func _render_medical_bay(v: VBoxContainer) -> void:

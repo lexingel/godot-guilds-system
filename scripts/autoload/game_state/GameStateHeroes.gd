@@ -104,6 +104,39 @@ func find_hero(hero_id: String) -> Hero:
 	return null
 
 
+## Saved loadouts (party_presets): a party with each hero's row, to load in
+## one click on any party screen.
+func save_party_preset(i: int, hero_ids: Array) -> void:
+	if i < 0 or i >= party_presets.size():
+		return
+	var out: Array = []
+	for id in hero_ids:
+		var h := find_hero(str(id))
+		if h and not h.is_champion:
+			out.append([h.id, h.formation])
+	party_presets[i] = out
+	save()
+
+
+## A loadout's heroes who can go now, set in their saved rows, up to `cap`:
+## {ids, missing (first names of the ones who can't)}.
+func load_party_preset(i: int, cap: int) -> Dictionary:
+	var ids: Array[String] = []
+	var missing: Array[String] = []
+	if i < 0 or i >= party_presets.size():
+		return {"ids": ids, "missing": missing}
+	for entry in party_presets[i]:
+		var h := find_hero(str(entry[0]))
+		if h == null:
+			continue
+		if h.is_downed() or h.busy_runs > 0 or ids.size() >= cap:
+			missing.append(h.name.split(" the ")[0])
+			continue
+		h.formation = str(entry[1])
+		ids.append(h.id)
+	return {"ids": ids, "missing": missing}
+
+
 func gen_recruit_offer(force_rank: String = "") -> Hero:
 	return Combat.gen_hero(force_rank if force_rank != "" else Combat.weighted_rank(), 1)
 
@@ -117,20 +150,65 @@ func _maybe_flag_s_rank(h: Hero, source: String) -> void:
 		pending_s_rank_reveal = {"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "source": source}
 
 
+## A full board (a new guild, or an old save without one).
 func refresh_recruit_pool() -> void:
 	recruit_pool = []
-	for i in recruit_offer_count():
-		recruit_pool.append(gen_recruit_offer())
-	if headhunter_guarantee():
-		var order: Array[String] = []
-		for r in GameData.RANKS:
-			order.append(r["id"])
-		var has_good := recruit_pool.any(func(h): return order.find(h.rank) >= 3)
-		if not has_good:
-			var good_ranks := ["C", "B", "A", "S"]
-			recruit_pool[0] = gen_recruit_offer(good_ranks[randi() % good_ranks.size()])
-	for h in recruit_pool:
-		_maybe_flag_s_rank(h, "recruit")
+	recruit_until = {}
+	recruit_top_up()
+
+
+## Puts a recruit on the board for a few days (`stay` -1 = the usual roll).
+func _post_offer(h: Hero, stay: int = -1, at: int = -1) -> void:
+	if stay < 0:
+		stay = randi_range(int(GameData.RECRUIT_STAY[0]), int(GameData.RECRUIT_STAY[1]))
+	if at < 0:
+		recruit_pool.append(h)
+	else:
+		recruit_pool.insert(at, h)
+	recruit_until[h.id] = day + stay
+	_maybe_flag_s_rank(h, "recruit")
+
+
+func _drop_offer(h: Hero) -> void:
+	recruit_pool.erase(h)
+	recruit_until.erase(h.id)
+
+
+## Days an offer still waits: 0 = its last day.
+func offer_days_left(h: Hero) -> int:
+	return int(recruit_until.get(h.id, day)) - day
+
+
+## Payday: the week's new faces fill the board (the Scouts' Lodge assures a
+## C+ among them) and rerolls are back to their first price.
+func recruit_top_up() -> void:
+	while recruit_pool.size() < recruit_offer_count():
+		_post_offer(gen_recruit_offer())
+	if headhunter_guarantee() and not recruit_pool.is_empty() and not recruit_pool.any(func(h): return GameData.rank_index(h.rank) >= GameData.rank_index("C")):
+		var good_ranks := ["C", "B", "A", "S"]
+		_drop_offer(recruit_pool[recruit_pool.size() - 1])
+		_post_offer(gen_recruit_offer(good_ranks[randi() % good_ranks.size()]))
+	recruit_rerolls = 0
+
+
+## A day on the recruit board: offers whose time is up move on, the rival may
+## sign the best one, and a new face arrives (two on a thin board). The board
+## used to refill whole after every seal, so rerolling was the only choice.
+func recruit_day() -> void:
+	for h in recruit_pool.duplicate():
+		if offer_days_left(h) < 0:
+			_drop_offer(h)
+	if not recruit_pool.is_empty() and feature_unlocked("rival") and randf() < GameData.RIVAL_SIGN_CHANCE:
+		var best: Hero = recruit_pool[0]
+		for h in recruit_pool:
+			if GameData.rank_index(h.rank) > GameData.rank_index(best.rank):
+				best = h
+		_drop_offer(best)
+		_news(tr("%s signed %s (Rank %s) off your recruit board.") % [tr(str(rival_name)), tr(str(best.name.split(" the ")[0])), tr(str(best.rank))])
+	var arrivals := 2 if recruit_pool.size() * 2 < recruit_offer_count() else 1
+	for i in arrivals:
+		if recruit_pool.size() < recruit_offer_count():
+			_post_offer(gen_recruit_offer())
 
 
 ## A recruit of the role you ask for, at the usual rank odds, for
@@ -151,10 +229,10 @@ func commission_recruit(role: String) -> String:
 	if h == null:
 		return tr("No %s answered; try another role") % tr(role)
 	coins -= cost
-	recruit_pool.push_front(h)
+	recruit_rerolls += 1
+	_post_offer(h, -1, 0)
 	if recruit_pool.size() > recruit_offer_count():
-		recruit_pool.pop_back()
-	_maybe_flag_s_rank(h, "recruit")
+		_drop_offer(recruit_pool[recruit_pool.size() - 1])
 	save()
 	state_changed.emit()
 	return ""
@@ -187,7 +265,7 @@ func recruit_hero(offer_id: String) -> String:
 		offer.base_dmg = int(round(offer.base_dmg * 1.08))
 		offer.hp = Combat.max_hp(offer)
 	heroes.append(offer)
-	recruit_pool[idx] = gen_recruit_offer()
+	_drop_offer(offer)   # the next face arrives tomorrow (it used to be replaced on the spot)
 	if is_dupe:
 		var refund := int(round(float(rank["cost"]) * 0.5))
 		coins += refund
@@ -208,8 +286,9 @@ func reroll_recruit_offer(offer_id: String) -> String:
 	if coins < recruit_reroll_cost():
 		return tr("Not enough Gold.")
 	coins -= recruit_reroll_cost()
-	recruit_pool[idx] = gen_recruit_offer()
-	_maybe_flag_s_rank(recruit_pool[idx], "recruit")
+	recruit_rerolls += 1
+	_drop_offer(recruit_pool[idx])
+	_post_offer(gen_recruit_offer(), -1, idx)
 	save()
 	state_changed.emit()
 	return ""

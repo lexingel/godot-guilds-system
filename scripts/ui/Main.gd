@@ -1914,6 +1914,8 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		var ph := GameState.find_hero(hid)
 		if ph:
 			lineup.append(ph)
+	if not GameState.heroes.is_empty():
+		v.add_child(_loadout_row())   # above the rows: a saved party is the quick way in
 	for row_id in ["front", "back"]:
 		var zone := DropZone.new()
 		var zone_style := StyleBoxFlat.new()
@@ -2015,6 +2017,49 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var launch := _party_launch_bar()
 	v.add_child(launch)
 	v.move_child(launch, 1)
+
+
+## Saved loadouts: a slot's button puts its party on the rows (each hero in
+## their saved row; anyone recovering, away or over the cap is left out and
+## named); Save stores the party above in that slot.
+func _loadout_row() -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 14)
+	row.add_theme_constant_override("v_separation", 6)
+	var head := _label("Loadouts", 12, true)
+	head.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(head)
+	var party_ids: Array = pending_party.filter(func(id): return not str(id).begins_with("champ:"))
+	for i in GameState.party_presets.size():
+		var names: Array = []
+		for entry in GameState.party_presets[i]:
+			var h := GameState.find_hero(str(entry[0]))
+			if h:
+				names.append(tr(str(h.name.split(" the ")[0])))
+		var shown := ", ".join(names.slice(0, 3)) + (" +%d" % (names.size() - 3) if names.size() > 3 else "")
+		var box := HBoxContainer.new()
+		box.add_theme_constant_override("separation", 2)
+		var load_b := _button(tr("%d · %s") % [i + 1, shown] if not names.is_empty() else tr("%d · empty") % (i + 1), func():
+			var res := GameState.load_party_preset(i, _party_cap())
+			pending_party.assign(res["ids"])
+			if not (res["missing"] as Array).is_empty():
+				_flavor_toast = tr("Left out (recovering, away or over the cap): %s") % ", ".join(res["missing"])
+			render())
+		load_b.disabled = names.is_empty()
+		load_b.tooltip_text = tr("Load this party, each hero in their saved row.")
+		load_b.add_theme_font_size_override("font_size", 13)
+		box.add_child(load_b)
+		var save_b := _button("Save", func():
+			GameState.save_party_preset(i, party_ids)
+			_flavor_toast = tr("Loadout %d saved.") % (i + 1)
+			render())
+		save_b.flat = true
+		save_b.disabled = party_ids.is_empty()
+		save_b.tooltip_text = tr("Save the party above, with their rows, as loadout %d.") % (i + 1)
+		save_b.add_theme_font_size_override("font_size", 12)
+		box.add_child(save_b)
+		row.add_child(box)
+	return row
 
 
 ## Who oversees this run: a champion's Boon for the whole party and their

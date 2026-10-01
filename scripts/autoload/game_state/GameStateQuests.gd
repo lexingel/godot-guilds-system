@@ -262,12 +262,6 @@ func check_milestones() -> Array[String]:
 
 # ---------------- Running the guild: wages, morale, the rival ----------------
 
-func _news(line: String) -> void:
-	guild_news.push_front(tr("Day %d: %s") % [day, tr(str(line))])
-	if guild_news.size() > 12:
-		guild_news.resize(12)
-
-
 ## A hero's weekly wage at their pay rate.
 func wage_of(h: Hero) -> int:
 	return wage_at(h, pay_rate_of(h))
@@ -486,7 +480,7 @@ func run_payday() -> void:
 		line += tr(" Walked out: %s.") % tr(str(", ".join(left)))
 	_news(line)
 	_news(tr("%s the %s (Renown %d vs %d).") % [tr(str(tr("Your guild leads") if rival_ahead > 0 else (tr("The guild trails") if rival_ahead < 0 else tr("Your guild is level with")))), tr(str(rival_name)), reputation, rival_renown] + (tr(" Recruits favor you this week: +1 offer.") if rival_ahead > 0 else (tr(" Recruits favor them this week: -1 offer.") if rival_ahead < 0 else "")))
-	refresh_recruit_pool()
+	recruit_top_up()
 	var text := tr("%d Gold in wages, %s") % [paid, tr(str((tr("%d upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
 	if not unpaid.is_empty():
 		text += tr(" · couldn't pay %s") % tr(str(", ".join(unpaid)))
@@ -504,6 +498,10 @@ func _release(h: Hero) -> void:
 			it.equipped_to = ""
 			it.equipped_idx = -1
 	pay_rate.erase(h.id)
+	for p in party_presets:
+		for entry in (p as Array).duplicate():
+			if str(entry[0]) == h.id:
+				p.erase(entry)
 	heroes.erase(h)
 
 

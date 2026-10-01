@@ -40,6 +40,8 @@ var relics: Array[Relic] = []
 var items: Array[Item] = []
 var tonics: Dictionary = {}   # tonic id -> count carried (GameData.TONIC_TYPES; belt of TONIC_CAP)
 var recruit_pool: Array[Hero] = []
+var recruit_until: Dictionary = {}   # offer id -> the last day it waits on the board
+var recruit_rerolls: int = 0         # rerolls and commissions since payday (each doubles the next)
 var upgrades: Dictionary = {}    # "branch.node" -> level int
 var caps: Dictionary = {}        # "branch.node" -> bool
 var champion_roll: Array[String] = []   # this guild's champions (GameData.CHAMPION_ROLL of the pool)
@@ -67,6 +69,7 @@ var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
 var last_party: Array[String] = []   # the heroes who went out last (party assembly opens on them)
+var party_presets: Array = [[], [], []]   # saved loadouts: [[hero id, row], ...] each
 var relics_found: Array = []   # every Legendary relic id this guild has held (the Compendium's record)
 
 ## One-shot flag for a hero/Champion that just rolled Rank S from any of the
@@ -287,6 +290,13 @@ func shop_guaranteed_epic() -> bool:
 	return lvl("log.trade") >= 5
 
 
+## A line in the guild's news (the Ledger), newest first.
+func _news(line: String) -> void:
+	guild_news.push_front(tr("Day %d: %s") % [day, tr(str(line))])
+	if guild_news.size() > 12:
+		guild_news.resize(12)
+
+
 ## Whether a staged feature (GameData.FEATURE_UNLOCKS) is open yet; anything
 ## not in the table is always open, and so is anything already announced. The
 ## first seals open one thing at a time, so a new player meets them in turn.
@@ -315,6 +325,11 @@ func headhunter_guarantee() -> bool:
 
 
 func recruit_reroll_cost() -> int:
+	return recruit_reroll_base() * (1 << mini(recruit_rerolls, GameData.RECRUIT_REROLL_DOUBLINGS))
+
+
+## The week's first reroll (the Scouts' Lodge halves it).
+func recruit_reroll_base() -> int:
 	return GameData.RECRUIT_REROLL_COST / (2 if lvl("log.scouts") >= 5 else 1)
 
 
@@ -594,6 +609,7 @@ func save() -> void:
 		"crystals": crystals,
 		"heroes": heroes.map(func(h): return h.to_dict()),
 		"recruit_pool": recruit_pool.map(func(h): return h.to_dict()),
+		"recruit_until": recruit_until, "recruit_rerolls": recruit_rerolls, "party_presets": party_presets,
 		"relics": relics.map(func(r): return r.to_dict()),
 		"items": items.map(func(it): return it.to_dict()),
 		"tonics": tonics,
