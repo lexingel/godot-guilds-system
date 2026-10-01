@@ -9,6 +9,8 @@ extends Node
 ##   ... -- bold                  always enter the highest open rank (no
 ##                                stepping down when it reads Deadly)
 ##   ... -- hp=1.2 dmg=1.2        try a RANK_THREAT without editing the data
+##   ... -- hand                  fight like a careful player (see _hand_action)
+##                                instead of Quick fight
 ## Profiles: "investor" spends like a player who reads the tooltips (quests,
 ## skills, upgrades, training, recruits, champion levels); "casual" takes
 ## quests, spends skill and attribute points, equips gear and hires up to 6,
@@ -21,6 +23,8 @@ var seeds := 4
 var profile := ""
 var log_days := false
 var bold := false
+var hand := false
+var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
 var gross_gold := {}     # week -> Gold earned (runs, quests, defenses)
@@ -43,6 +47,8 @@ func _ready() -> void:
 			GameData.RANK_THREAT_HP = float(a.substr(3))
 		elif a.begins_with("dmg="):
 			GameData.RANK_THREAT_DMG = float(a.substr(4))
+		elif a == "hand":
+			hand = true
 		elif a == "bold":
 			bold = true
 		elif a == "log":
@@ -67,7 +73,7 @@ func _ready() -> void:
 					ratios.append(float(bill_paid.get(w, 0)) / float(gross_gold[w]))
 			for a in acts:
 				acts[a].append(int(act_day.get(a, -1)))
-		print("== %s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", seeds, days])
+		print("== %s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", seeds, days])
 		print("   Act I done on days %s · Act II %s · Act III %s   (-1 = not reached)" % [acts[2], acts[3], acts[4]])
 		ratios.sort()
 		if not ratios.is_empty():
@@ -75,6 +81,8 @@ func _ready() -> void:
 		var ranks := all_fights.keys()
 		ranks.sort_custom(func(a, b): return GameData.rift_rank_index(str(a)) < GameData.rift_rank_index(str(b)))
 		print("   fights won: %s" % "  ".join(ranks.map(func(r): return "%s %d/%d" % [r, all_fights[r][0], all_fights[r][0] + all_fights[r][1]])))
+		if hand:
+			print("   flawless-by-hand bonus paid in %d fights" % hand_bonus)
 		print("   runs sealed: %s" % "  ".join(ranks.filter(func(r): return all_runs.has(r)).map(func(r): return "%s %d/%d" % [r, all_runs[r][0], all_runs[r][0] + all_runs[r][1]])))
 	var ks := curve.keys()
 	ks.sort()
@@ -315,7 +323,10 @@ func _play_run(rank: String) -> String:
 		match kind:
 			"combat", "elite", "boss":
 				if not ns.has("result"):
-					GameState.quick_fight()
+					if hand:
+						_hand_fight()
+					else:
+						GameState.quick_fight()
 					continue
 				var result: Dictionary = ns["result"]
 				if not ns.get("tallied", false):
@@ -370,6 +381,54 @@ func _play_run(rank: String) -> String:
 	notes.append("day %d: run stuck" % GameState.day)
 	GameState.retreat_now()
 	return "stuck"
+
+
+## A fight played turn by turn the way the battle screen's buttons would.
+func _hand_fight() -> void:
+	GameState.engage_node()
+	var st: Dictionary = GameState.run.get("node_state", {}).get("combat_state", {})
+	for i in 600:
+		if st.is_empty() or GameState.run.get("node_state", {}).has("result"):
+			break
+		var nxt := Combat.peek_next_turn(st)
+		if str(nxt["type"]) == "hero":
+			var h := Combat._find_party_hero(st["party"], str(nxt["id"]))
+			if h and h.hp > 0:
+				st["pending_actions"][h.id] = _hand_action(st, h)
+		GameState.resolve_turn_now()
+	if float(GameState.run.get("node_state", {}).get("result", {}).get("hand_bonus_ess", 0)) > 0:
+		hand_bonus += 1
+
+
+## What a careful player does on top of Auto: Defend against any hit that
+## would drop this hero (Auto only braces for wind-up blows), Guard a hurt ally
+## from a hit that would drop them when this hero can take it, and focus the
+## foe that hurts most per point of health left instead of the weakest.
+func _hand_action(st: Dictionary, h: Hero) -> Dictionary:
+	var monsters: Array = st["monsters"]
+	var threat_on := Combat.incoming_hits(st)
+	var mine := int(threat_on.get(h.id, 0))
+	if mine > 0 and mine >= h.hp:
+		return {"action": "defend", "target": 0}
+	for x in st["party"]:
+		var hit := int(threat_on.get(x.id, 0))
+		if x != h and x.hp > 0 and hit >= x.hp and Combat.guard_of(st, x) == null and h.hp - mine > hit * Combat.GUARD_DAMAGE_MULT * 1.2:
+			return {"action": "guard", "target": 0, "ally": x.id}
+	var a := Combat.auto_action(st, h)
+	if str(a["action"]) == "attack" or str(a["action"]) in ["skill:pierce", "skill:strike", "skill:backstab", "skill:volley"]:
+		var best := -1
+		var best_v := -1.0
+		for mi in monsters.size():
+			var m: Dictionary = monsters[mi]
+			if float(m["hp"]) <= 0:
+				continue
+			var v := float(m["dmg"]) * (2.0 if m.get("_winding", false) or m.get("_charged", false) else 1.0) / maxf(1.0, float(m["hp"]))
+			if v > best_v:
+				best_v = v
+				best = mi
+		if best >= 0:
+			a["target"] = best
+	return a
 
 
 func _defend() -> void:

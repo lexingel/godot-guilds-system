@@ -976,6 +976,13 @@ func _run_combat_turns(state: Dictionary, hero_wrappers: Dictionary, hero_rects:
 					if h and h.hp > 0:
 						if not _auto_battle:
 							break
+						# Auto hands back control (once a round) when a hero is about to fall.
+						var falling := Combat.hero_about_to_fall(state)
+						if falling and _auto_paused_round != int(state.get("round_num", 0)):
+							_auto_paused_round = int(state.get("round_num", 0))
+							_auto_battle = false
+							_auto_pause_note = tr("Auto paused: %s is about to fall. Defend, Guard or heal, then turn Auto back on.") % tr(str(falling.name.split(" the ")[0]))
+							break
 						state["pending_actions"][h.id] = Combat.auto_action(state, h)
 		force = false
 		if GameState.combat_speed >= INSTANT_SPEED:
@@ -1035,14 +1042,21 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var gl := _label(tr("Drill Yard: ") + ", ".join(guild_bits), 12, true)
 			gl.add_theme_color_override("font_color", Palette.RANK_E)
 			v.add_child(gl)
-		# Not in the training rift until its guided fight is done: that fight teaches the game.
-		if kind == "combat" and (not GameState.run.get("training", false) or GameState.hints_seen.has("tut_done") or GameState.tips_off):
+		if not GameState.run.has("tower"):
+			var hb := _label(tr("Win by hand with no one down: +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), 12, true)
+			hb.add_theme_color_override("font_color", Palette.COINS)
+			v.add_child(hb)
+		# Never in the training rift: its guided fight teaches the game.
+		if kind == "combat" and not GameState.run.get("training", false):
+			var lock := GameState.quick_fight_lock()
 			var qf := _icon_button("res://assets/skills/sword_dual.png", _no_keys(tr("Quick fight  (Q)")), func():
 				GameState.quick_fight()
 			)
-			qf.tooltip_text = "Play the whole fight out instantly on Auto and jump to the result"
+			qf.tooltip_text = lock if lock != "" else tr("Play the whole fight out instantly on Auto and jump to the result")
+			qf.disabled = lock != ""
 			v.add_child(qf)
-			_combat_hotkeys["Q"] = func(): GameState.quick_fight()
+			if lock == "":
+				_combat_hotkeys["Q"] = func(): GameState.quick_fight()
 		_combat_hotkeys["Space"] = func(): GameState.engage_node()
 		v.add_child(_icon_domain_button("ember", "res://assets/skills/sword_a.png", _no_keys(tr("Engage  (Space)")), func():
 			# engage_node() already emits state_changed, which render() is
@@ -1920,6 +1934,8 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 
 
 var _tut_key := ""   # the command key the guided first fight is pointing at
+var _auto_paused_round := -1   # the round Auto last stopped in for a falling hero
+var _auto_pause_note := ""     # why, shown in the command bar that round (toasts wait for the fight's end)
 var _more_open := false   # the command bar's "More" group (Guard, Move, Tonics, Call) is showing
 var _mom_pips: Array = []   # the Momentum meter's pips, for the hover preview
 var _mom_shown := -1        # the Momentum the meter showed last time, to flash what was just earned
@@ -2378,7 +2394,13 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 					return
 				_combat_target = living_idx[(living_idx.find(_combat_target) + 1) % living_idx.size()]
 				render()
-		if not compact:   # a keyboard hint; the ring under the foe shows the target
+		if _auto_pause_note != "" and _auto_paused_round == int(state.get("round_num", 0)) and not _auto_battle:
+			var pn := _wrap_label(_auto_pause_note, 12)
+			pn.add_theme_color_override("font_color", Palette.HAZARD)
+			pn.custom_minimum_size.x = 160 if compact else 280
+			pn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(pn)
+		elif not compact:   # a keyboard hint; the ring under the foe shows the target
 			var hint := _label(tr("Target: %s\nSpace repeats your last action") % tr(str(tgt_name)), 12, true)
 			hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(hint)
@@ -2410,7 +2432,7 @@ func _battle_tools(living_heroes: Array[Hero], hero_wrappers: Dictionary) -> HBo
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. A fight won by hand, with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()

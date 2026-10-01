@@ -403,6 +403,29 @@ func _intent_of(state: Dictionary, i: int) -> Dictionary:
 const GUARD_DAMAGE_MULT := 0.75
 
 
+## The biggest hit still coming at each living hero this round, by hero id
+## (from the monsters' intents; sweeps count on everyone they reach).
+func incoming_hits(state: Dictionary) -> Dictionary:
+	var out := {}
+	for mi in (state["monsters"] as Array).size():
+		var it := monster_intent(state, mi)
+		if it.is_empty():
+			continue
+		var targets: Array = it.get("targets", [it["target"]] if it.get("target") != null else [])
+		for t in targets:
+			out[t.id] = maxi(int(out.get(t.id, 0)), int(it.get("dmg", 0)))
+	return out
+
+
+## The living hero a hit this round would knock out, or null (Auto stops for it).
+func hero_about_to_fall(state: Dictionary) -> Hero:
+	var hits := incoming_hits(state)
+	for h in state["party"]:
+		if h.hp > 0 and int(hits.get(h.id, 0)) >= h.hp:
+			return h
+	return null
+
+
 ## The living hero guarding `target` this round, or null.
 func guard_of(state: Dictionary, target: Hero) -> Hero:
 	var gid: String = str(state.get("_guarding", {}).get(target.id, ""))

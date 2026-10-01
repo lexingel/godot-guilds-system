@@ -159,6 +159,21 @@ func engage_node() -> void:
 	state_changed.emit()
 
 
+## "" when the battle screen offers Quick fight for this run, else why not.
+## It's earned per rank: a rank you've sealed is routine, a new one (and a
+## finale) is fought where you can see it. Playing by hand seals ~17 points
+## more runs than the auto policy at the same power (campaign_sim -- hand),
+## so the frontier is where that matters. Only regular fights offer it at all
+## (BattleView); this function itself doesn't refuse, so the sims can use it.
+func quick_fight_lock() -> String:
+	if int(run.get("finale", 0)) > 0:
+		return tr("A finale is fought in full")
+	var rank := str(run.get("rift_rank", ""))
+	if rank != "" and GameData.rift_rank_index(rank) > best_rift_rank_sealed:
+		return tr("Seal a Rank %s rift to use Quick fight on this rank") % tr(rank)
+	return ""
+
+
 ## Quick fight: engages the node and plays it out instantly with the auto
 ## policy (Combat.auto_action), landing straight on the result screen.
 func quick_fight() -> void:

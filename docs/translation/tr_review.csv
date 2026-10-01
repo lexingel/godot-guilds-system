@@ -19,113 +19,113 @@ Frenzied — its blows already hit harder.,Çılgın — darbeleri şimdiden dah
 At half health ,Yarı canda ,scripts/autoload/Combat.gd:212
 A heavy blow is coming — consider Defending.,Ağır bir darbe geliyor — Savunmayı düşün.,scripts/autoload/Combat.gd:233
 Damage is stacking — every attack counts more now.,Hasar birikiyor — artık her saldırı daha çok sayılıyor.,scripts/autoload/Combat.gd:235
-The Gambler's Gold shines bright — damage is doubled this round!,Kumarbazın Altını parlıyor — bu tur hasar iki katı!,scripts/autoload/Combat.gd:463
-The Gambler's Gold shows its dark face — damage is halved this round.,Kumarbazın Altını karanlık yüzünü gösteriyor — bu tur hasar yarıya indi.,scripts/autoload/Combat.gd:466
-%s's armor turns aside %d.,%s zırhı %d hasarı savuşturuyor.,scripts/autoload/Combat.gd:645
-%s's ward absorbs %d damage.,%s koruması %d hasarı emiyor.,scripts/autoload/Combat.gd:652
-%s strikes %s for %d.,"%s, %s hedefine %d vuruyor.",scripts/autoload/Combat.gd:654
-%s's surface reflects %d damage back at %s.,%s yüzeyi %d hasarı %s üzerine yansıtıyor.,scripts/autoload/Combat.gd:659
-%s uses %s!,"%s, %s kullanıyor!",scripts/autoload/Combat.gd:674
-%s is stunned!,%s sersemledi!,scripts/autoload/Combat.gd:727
-%s's wind-up is broken!,%s güç toplaması bozuldu!,scripts/autoload/Combat.gd:729
-Every foe turns on %s.,Tüm düşmanlar %s üzerine dönüyor.,scripts/autoload/Combat.gd:733
-%s is healed for %d.,"%s, %d iyileşti.",scripts/autoload/Combat.gd:758
-A sanctuary shelters the party.,Bir sığınak ekibi koruyor.,scripts/autoload/Combat.gd:765
-Smoke fills the field — the party is hard to hit.,Alanı duman kaplıyor — ekibi vurmak zor.,scripts/autoload/Combat.gd:768
-%s moves to the %s row.,"%s, %s sıraya geçiyor.",scripts/autoload/Combat.gd:807
-%s gives %s a Healing Tonic: +%d HP.,"%s, %s için Şifa Toniği kullanıyor ve iyileştiriyor: +%d Can.",scripts/autoload/Combat.gd:820
-%s gives %s an Iron Tonic: a %d ward.,"%s, %s için Demir Toniği kullanıyor: %d koruma.",scripts/autoload/Combat.gd:825
-%s drinks a Focus Tonic: +%d Momentum.,%s Odak Toniği içiyor: +%d İvme.,scripts/autoload/Combat.gd:828
-%s moves to guard %s.,"%s, %s kahramanını korumaya geçiyor.",scripts/autoload/Combat.gd:837
-%s calls on %s: %s!,%s çağırıyor — %s: %s!,scripts/autoload/Combat.gd:863
-%s uses %s%s!,"%s, %s%s kullanıyor!",scripts/autoload/Combat.gd:865
-The party mends.,Ekip iyileşiyor.,scripts/autoload/Combat.gd:873
-The enemies' strength is sapped.,Düşmanların gücü emiliyor.,scripts/autoload/Combat.gd:877
-A burst lands on %s for %d!,Bir patlama %s hedefine %d vuruyor!,scripts/autoload/Combat.gd:885
-A wave of damage sweeps every foe.,Bir hasar dalgası tüm düşmanları süpürüyor.,scripts/autoload/Combat.gd:891
-A finishing blow strikes %s for %d!,Bitirici bir darbe %s hedefine %d vuruyor!,scripts/autoload/Combat.gd:898
-%s is shielded for %d.,%s %d kalkan kazandı.,scripts/autoload/Combat.gd:902
-+7 Momentum.,+7 İvme.,scripts/autoload/Combat.gd:905
-The party moves lighter on its feet.,Ekip daha çevik hareket ediyor.,scripts/autoload/Combat.gd:908
-Every attack counts for more now.,Artık her saldırı daha çok sayılıyor.,scripts/autoload/Combat.gd:911
-The party stands ready to strike back.,Ekip karşılık vermeye hazır.,scripts/autoload/Combat.gd:914
-The party braces against disaster.,Ekip felakete karşı hazırlanıyor.,scripts/autoload/Combat.gd:917
-%s sacrifices %d HP for a burst on %s for %d!,"%s %d can feda ediyor, %s hedefine %d patlama!",scripts/autoload/Combat.gd:925
-"%s is crippled, dealing far less damage.","%s sakatlandı, çok daha az hasar veriyor.",scripts/autoload/Combat.gd:930
-The whole party is shielded.,Tüm ekip kalkan kazandı.,scripts/autoload/Combat.gd:935
-Every wounded foe is finished off.,Yaralı tüm düşmanlar bitirildi.,scripts/autoload/Combat.gd:943
-%s is %s!,%s %s!,scripts/autoload/Combat.gd:958
-staggered — its wind-up breaks,sendeledi — güç toplaması bozuldu,scripts/autoload/Combat.gd:958
-%s is frozen solid!,%s kaskatı dondu!,scripts/autoload/Combat.gd:963
-%s is finished off!,%s bitirildi!,scripts/autoload/Combat.gd:967
-%s's defences shatter.,%s savunması paramparça.,scripts/autoload/Combat.gd:975
-%s is marked.,%s işaretlendi.,scripts/autoload/Combat.gd:978
-Every foe is set ablaze.,Tüm düşmanlar alev aldı.,scripts/autoload/Combat.gd:987
-Lightning leaps between the foes.,Şimşek düşmanlar arasında sıçrıyor.,scripts/autoload/Combat.gd:998
-Every ward and plate is torn away.,Tüm korumalar ve zırhlar söküldü.,scripts/autoload/Combat.gd:1005
-%s stands ready to answer every blow.,%s her darbeye karşılık vermeye hazır.,scripts/autoload/Combat.gd:1008
-%s plants their feet — every foe turns on them.,%s ayaklarını yere basıyor — tüm düşmanlar ona yöneliyor.,scripts/autoload/Combat.gd:1014
-%s will not fall this round.,%s bu tur düşmeyecek.,scripts/autoload/Combat.gd:1017
-%s is raised back to their feet!,%s yeniden ayağa kaldırıldı!,scripts/autoload/Combat.gd:1023
-%s is mended.,%s iyileşti.,scripts/autoload/Combat.gd:1030
-A cleansing light washes over the party.,Arındırıcı bir ışık ekibi sarıyor.,scripts/autoload/Combat.gd:1036
-The front row locks shields.,Ön sıra kalkanlarını kenetliyor.,scripts/autoload/Combat.gd:1042
-The party slips out of reach.,Ekip menzilin dışına süzülüyor.,scripts/autoload/Combat.gd:1045
-A snare is set.,Bir tuzak kuruldu.,scripts/autoload/Combat.gd:1048
-Every wound the party deals now feeds it.,Ekibin açtığı her yara artık onu besliyor.,scripts/autoload/Combat.gd:1051
-"%s pays in blood: +3 Momentum, and the party hits harder.",%s kanla ödüyor: +3 İvme ve ekip daha sert vuruyor.,scripts/autoload/Combat.gd:1056
-"%s drains %d from %s, healing %d!","%s, %d can emiyor: %s; %d iyileşiyor!",scripts/autoload/Combat.gd:1064
-%s is mended and shielded.,%s iyileşti ve kalkan kazandı.,scripts/autoload/Combat.gd:1075
-%s is frozen in time by the Stopped Clock.,"%s, Durmuş Saat tarafından zamanda donduruldu.",scripts/autoload/Combat.gd:1132
-The %s strikes %s for %d!,"%s, %s hedefine %d vuruyor!",scripts/autoload/Combat.gd:1138
-%s doesn't survive the fight.,%s dövüşten sağ çıkamıyor.,scripts/autoload/Combat.gd:1140
-%s is stunned and loses its action.,%s sersemledi ve hamlesini kaybediyor.,scripts/autoload/Combat.gd:1150
-%s gathers its strength — a heavy blow is coming!,%s güç topluyor — ağır bir darbe geliyor!,scripts/autoload/Combat.gd:1155
-%s wards %s for %d.,"%s, %s için %d koruma sağlıyor.",scripts/autoload/Combat.gd:1176
-%s mends %s for %d.,"%s, %s için %d iyileştiriyor.",scripts/autoload/Combat.gd:1181
-%s roars — every foe hits harder!,%s kükrüyor — tüm düşmanlar daha sert vuruyor!,scripts/autoload/Combat.gd:1189
-%s curses %s: %d%% less damage for %d rounds.,"%s, %s hedefini lanetliyor: %%%d daha az hasar, %d tur boyunca.",scripts/autoload/Combat.gd:1196
-%s sweeps the whole party!,%s tüm ekibi süpürüyor!,scripts/autoload/Combat.gd:1199
-%s reaps the whole party!,%s tüm ekibi biçiyor!,scripts/autoload/Combat.gd:1205
-%s drinks in the harvest (+%d).,%s hasadı içiyor (+%d).,scripts/autoload/Combat.gd:1217
-%s calls the Drowning Tide!,%s Boğan Dalga'yı çağırıyor!,scripts/autoload/Combat.gd:1221
-%s sets the party ablaze!,%s ekibi alevlere boğuyor!,scripts/autoload/Combat.gd:1230
-%s sunders the front line!,%s ön hattı parçalıyor!,scripts/autoload/Combat.gd:1241
-%s brands %s: they take %d%% more damage for %d rounds.,"%s, %s hedefini damgalıyor: %%%d daha fazla hasar alır, %d tur boyunca.",scripts/autoload/Combat.gd:1252
-"%s springs the snare: %d damage, and its attack is lost!",%s tuzağa basıyor: %d hasar ve saldırısı boşa gidiyor!,scripts/autoload/Combat.gd:1277
-%s takes the blow meant for %s!,"%s darbeyi üstleniyor, %s kurtuldu!",scripts/autoload/Combat.gd:1294
-%s saw it coming and slips the blow!,%s geldiğini gördü ve darbeden sıyrıldı!,scripts/autoload/Combat.gd:1324
-%s evades %s's retaliation!,"%s, %s karşılığından kaçıyor!",scripts/autoload/Combat.gd:1327
-%s's shield absorbs %d damage.,%s kalkanı %d hasarı emiyor.,scripts/autoload/Combat.gd:1340
-Last Stand! %s clings to life with %d HP.,Son Direniş! %s %d canla hayata tutunuyor.,scripts/autoload/Combat.gd:1347
-The %s hits %s for %d.,"%s, %s hedefine %d vuruyor.",scripts/autoload/Combat.gd:1350
-%s is stunned by the blow!,%s darbeyle sersemledi!,scripts/autoload/Combat.gd:1357
-%s is set ablaze!,%s alev aldı!,scripts/autoload/Combat.gd:1363
-%s is chilled — they'll act late next round.,%s üşüdü — sonraki tur geç davranacak.,scripts/autoload/Combat.gd:1366
-%s is poisoned!,%s zehirlendi!,scripts/autoload/Combat.gd:1369
-%s drains %d HP from the blow.,%s darbeden %d can emiyor.,scripts/autoload/Combat.gd:1373
-%s is knocked out!,%s bayıldı!,scripts/autoload/Combat.gd:1375
-"%s ripostes, striking %s for %d!","%s karşılık veriyor, %s hedefine %d vuruyor!",scripts/autoload/Combat.gd:1380
-Underpowered: party power %d vs %d recommended,"Güç yetersiz: ekip gücü %d, önerilen %d",scripts/autoload/Combat.gd:1404
-%d heavy blow%s landed undefended (%d damage),%d ağır darbe%s savunmasız yere indi (%d hasar),scripts/autoload/Combat.gd:1408
-Burn and poison did %d damage (%d%% of the total),Yanma ve zehir %d hasar verdi (toplamın %%%d'i),scripts/autoload/Combat.gd:1413
-Your foes healed %d HP,Düşmanların %d can iyileşti,scripts/autoload/Combat.gd:1420
-The party started the fight at %d%% HP,Ekip dövüşe %%%d canla başladı,scripts/autoload/Combat.gd:1424
-No Abilities were used,Hiç Yetenek kullanılmadı,scripts/autoload/Combat.gd:1427
-%s fell in the front row,%s ön sırada düştü,scripts/autoload/Combat.gd:1431
-No healer in a long fight,Uzun bir dövüşte şifacı yoktu,scripts/autoload/Combat.gd:1434
-%s regenerates %d HP.,%s %d can yeniliyor.,scripts/autoload/Combat.gd:1456
-%s burns for %d.,%s %d hasarla yanıyor.,scripts/autoload/Combat.gd:1466
-%s suffers %d poison damage.,%s %d zehir hasarı alıyor.,scripts/autoload/Combat.gd:1499
-The party mends its wounds.,Ekip yaralarını iyileştiriyor.,scripts/autoload/Combat.gd:1520
-The %s falls!,%s düşüyor!,scripts/autoload/Combat.gd:1532
-All foes defeated!,Tüm düşmanlar yenildi!,scripts/autoload/Combat.gd:1532
-The Phoenix Feather flares — the party rises from the ashes!,Anka Tüyü parlıyor — ekip küllerinden doğuyor!,scripts/autoload/Combat.gd:1544
-Rally! The guild's order rings out: the party moves first and hits 30% harder this round.,Toparlan! Loncanın emri yankılanıyor: ekip bu tur önce davranır ve %30 daha sert vurur.,scripts/autoload/Combat.gd:1568
-%s is stunned and loses the turn.,%s sersemledi ve sırasını kaybediyor.,scripts/autoload/Combat.gd:1599
-The party withdraws from the fight.,Ekip dövüşten çekiliyor.,scripts/autoload/Combat.gd:1649
-Your party is overwhelmed...,Ekibin ezildi...,scripts/autoload/Combat.gd:1658
-%s is left with a lasting scar: %s.,%s kalıcı bir yara izi aldı: %s.,scripts/autoload/Combat.gd:1673
+The Gambler's Gold shines bright — damage is doubled this round!,Kumarbazın Altını parlıyor — bu tur hasar iki katı!,scripts/autoload/Combat.gd:486
+The Gambler's Gold shows its dark face — damage is halved this round.,Kumarbazın Altını karanlık yüzünü gösteriyor — bu tur hasar yarıya indi.,scripts/autoload/Combat.gd:489
+%s's armor turns aside %d.,%s zırhı %d hasarı savuşturuyor.,scripts/autoload/Combat.gd:668
+%s's ward absorbs %d damage.,%s koruması %d hasarı emiyor.,scripts/autoload/Combat.gd:675
+%s strikes %s for %d.,"%s, %s hedefine %d vuruyor.",scripts/autoload/Combat.gd:677
+%s's surface reflects %d damage back at %s.,%s yüzeyi %d hasarı %s üzerine yansıtıyor.,scripts/autoload/Combat.gd:682
+%s uses %s!,"%s, %s kullanıyor!",scripts/autoload/Combat.gd:697
+%s is stunned!,%s sersemledi!,scripts/autoload/Combat.gd:750
+%s's wind-up is broken!,%s güç toplaması bozuldu!,scripts/autoload/Combat.gd:752
+Every foe turns on %s.,Tüm düşmanlar %s üzerine dönüyor.,scripts/autoload/Combat.gd:756
+%s is healed for %d.,"%s, %d iyileşti.",scripts/autoload/Combat.gd:781
+A sanctuary shelters the party.,Bir sığınak ekibi koruyor.,scripts/autoload/Combat.gd:788
+Smoke fills the field — the party is hard to hit.,Alanı duman kaplıyor — ekibi vurmak zor.,scripts/autoload/Combat.gd:791
+%s moves to the %s row.,"%s, %s sıraya geçiyor.",scripts/autoload/Combat.gd:830
+%s gives %s a Healing Tonic: +%d HP.,"%s, %s için Şifa Toniği kullanıyor ve iyileştiriyor: +%d Can.",scripts/autoload/Combat.gd:843
+%s gives %s an Iron Tonic: a %d ward.,"%s, %s için Demir Toniği kullanıyor: %d koruma.",scripts/autoload/Combat.gd:848
+%s drinks a Focus Tonic: +%d Momentum.,%s Odak Toniği içiyor: +%d İvme.,scripts/autoload/Combat.gd:851
+%s moves to guard %s.,"%s, %s kahramanını korumaya geçiyor.",scripts/autoload/Combat.gd:860
+%s calls on %s: %s!,%s çağırıyor — %s: %s!,scripts/autoload/Combat.gd:886
+%s uses %s%s!,"%s, %s%s kullanıyor!",scripts/autoload/Combat.gd:888
+The party mends.,Ekip iyileşiyor.,scripts/autoload/Combat.gd:896
+The enemies' strength is sapped.,Düşmanların gücü emiliyor.,scripts/autoload/Combat.gd:900
+A burst lands on %s for %d!,Bir patlama %s hedefine %d vuruyor!,scripts/autoload/Combat.gd:908
+A wave of damage sweeps every foe.,Bir hasar dalgası tüm düşmanları süpürüyor.,scripts/autoload/Combat.gd:914
+A finishing blow strikes %s for %d!,Bitirici bir darbe %s hedefine %d vuruyor!,scripts/autoload/Combat.gd:921
+%s is shielded for %d.,%s %d kalkan kazandı.,scripts/autoload/Combat.gd:925
++7 Momentum.,+7 İvme.,scripts/autoload/Combat.gd:928
+The party moves lighter on its feet.,Ekip daha çevik hareket ediyor.,scripts/autoload/Combat.gd:931
+Every attack counts for more now.,Artık her saldırı daha çok sayılıyor.,scripts/autoload/Combat.gd:934
+The party stands ready to strike back.,Ekip karşılık vermeye hazır.,scripts/autoload/Combat.gd:937
+The party braces against disaster.,Ekip felakete karşı hazırlanıyor.,scripts/autoload/Combat.gd:940
+%s sacrifices %d HP for a burst on %s for %d!,"%s %d can feda ediyor, %s hedefine %d patlama!",scripts/autoload/Combat.gd:948
+"%s is crippled, dealing far less damage.","%s sakatlandı, çok daha az hasar veriyor.",scripts/autoload/Combat.gd:953
+The whole party is shielded.,Tüm ekip kalkan kazandı.,scripts/autoload/Combat.gd:958
+Every wounded foe is finished off.,Yaralı tüm düşmanlar bitirildi.,scripts/autoload/Combat.gd:966
+%s is %s!,%s %s!,scripts/autoload/Combat.gd:981
+staggered — its wind-up breaks,sendeledi — güç toplaması bozuldu,scripts/autoload/Combat.gd:981
+%s is frozen solid!,%s kaskatı dondu!,scripts/autoload/Combat.gd:986
+%s is finished off!,%s bitirildi!,scripts/autoload/Combat.gd:990
+%s's defences shatter.,%s savunması paramparça.,scripts/autoload/Combat.gd:998
+%s is marked.,%s işaretlendi.,scripts/autoload/Combat.gd:1001
+Every foe is set ablaze.,Tüm düşmanlar alev aldı.,scripts/autoload/Combat.gd:1010
+Lightning leaps between the foes.,Şimşek düşmanlar arasında sıçrıyor.,scripts/autoload/Combat.gd:1021
+Every ward and plate is torn away.,Tüm korumalar ve zırhlar söküldü.,scripts/autoload/Combat.gd:1028
+%s stands ready to answer every blow.,%s her darbeye karşılık vermeye hazır.,scripts/autoload/Combat.gd:1031
+%s plants their feet — every foe turns on them.,%s ayaklarını yere basıyor — tüm düşmanlar ona yöneliyor.,scripts/autoload/Combat.gd:1037
+%s will not fall this round.,%s bu tur düşmeyecek.,scripts/autoload/Combat.gd:1040
+%s is raised back to their feet!,%s yeniden ayağa kaldırıldı!,scripts/autoload/Combat.gd:1046
+%s is mended.,%s iyileşti.,scripts/autoload/Combat.gd:1053
+A cleansing light washes over the party.,Arındırıcı bir ışık ekibi sarıyor.,scripts/autoload/Combat.gd:1059
+The front row locks shields.,Ön sıra kalkanlarını kenetliyor.,scripts/autoload/Combat.gd:1065
+The party slips out of reach.,Ekip menzilin dışına süzülüyor.,scripts/autoload/Combat.gd:1068
+A snare is set.,Bir tuzak kuruldu.,scripts/autoload/Combat.gd:1071
+Every wound the party deals now feeds it.,Ekibin açtığı her yara artık onu besliyor.,scripts/autoload/Combat.gd:1074
+"%s pays in blood: +3 Momentum, and the party hits harder.",%s kanla ödüyor: +3 İvme ve ekip daha sert vuruyor.,scripts/autoload/Combat.gd:1079
+"%s drains %d from %s, healing %d!","%s, %d can emiyor: %s; %d iyileşiyor!",scripts/autoload/Combat.gd:1087
+%s is mended and shielded.,%s iyileşti ve kalkan kazandı.,scripts/autoload/Combat.gd:1098
+%s is frozen in time by the Stopped Clock.,"%s, Durmuş Saat tarafından zamanda donduruldu.",scripts/autoload/Combat.gd:1155
+The %s strikes %s for %d!,"%s, %s hedefine %d vuruyor!",scripts/autoload/Combat.gd:1161
+%s doesn't survive the fight.,%s dövüşten sağ çıkamıyor.,scripts/autoload/Combat.gd:1163
+%s is stunned and loses its action.,%s sersemledi ve hamlesini kaybediyor.,scripts/autoload/Combat.gd:1173
+%s gathers its strength — a heavy blow is coming!,%s güç topluyor — ağır bir darbe geliyor!,scripts/autoload/Combat.gd:1178
+%s wards %s for %d.,"%s, %s için %d koruma sağlıyor.",scripts/autoload/Combat.gd:1199
+%s mends %s for %d.,"%s, %s için %d iyileştiriyor.",scripts/autoload/Combat.gd:1204
+%s roars — every foe hits harder!,%s kükrüyor — tüm düşmanlar daha sert vuruyor!,scripts/autoload/Combat.gd:1212
+%s curses %s: %d%% less damage for %d rounds.,"%s, %s hedefini lanetliyor: %%%d daha az hasar, %d tur boyunca.",scripts/autoload/Combat.gd:1219
+%s sweeps the whole party!,%s tüm ekibi süpürüyor!,scripts/autoload/Combat.gd:1222
+%s reaps the whole party!,%s tüm ekibi biçiyor!,scripts/autoload/Combat.gd:1228
+%s drinks in the harvest (+%d).,%s hasadı içiyor (+%d).,scripts/autoload/Combat.gd:1240
+%s calls the Drowning Tide!,%s Boğan Dalga'yı çağırıyor!,scripts/autoload/Combat.gd:1244
+%s sets the party ablaze!,%s ekibi alevlere boğuyor!,scripts/autoload/Combat.gd:1253
+%s sunders the front line!,%s ön hattı parçalıyor!,scripts/autoload/Combat.gd:1264
+%s brands %s: they take %d%% more damage for %d rounds.,"%s, %s hedefini damgalıyor: %%%d daha fazla hasar alır, %d tur boyunca.",scripts/autoload/Combat.gd:1275
+"%s springs the snare: %d damage, and its attack is lost!",%s tuzağa basıyor: %d hasar ve saldırısı boşa gidiyor!,scripts/autoload/Combat.gd:1300
+%s takes the blow meant for %s!,"%s darbeyi üstleniyor, %s kurtuldu!",scripts/autoload/Combat.gd:1317
+%s saw it coming and slips the blow!,%s geldiğini gördü ve darbeden sıyrıldı!,scripts/autoload/Combat.gd:1347
+%s evades %s's retaliation!,"%s, %s karşılığından kaçıyor!",scripts/autoload/Combat.gd:1350
+%s's shield absorbs %d damage.,%s kalkanı %d hasarı emiyor.,scripts/autoload/Combat.gd:1363
+Last Stand! %s clings to life with %d HP.,Son Direniş! %s %d canla hayata tutunuyor.,scripts/autoload/Combat.gd:1370
+The %s hits %s for %d.,"%s, %s hedefine %d vuruyor.",scripts/autoload/Combat.gd:1373
+%s is stunned by the blow!,%s darbeyle sersemledi!,scripts/autoload/Combat.gd:1380
+%s is set ablaze!,%s alev aldı!,scripts/autoload/Combat.gd:1386
+%s is chilled — they'll act late next round.,%s üşüdü — sonraki tur geç davranacak.,scripts/autoload/Combat.gd:1389
+%s is poisoned!,%s zehirlendi!,scripts/autoload/Combat.gd:1392
+%s drains %d HP from the blow.,%s darbeden %d can emiyor.,scripts/autoload/Combat.gd:1396
+%s is knocked out!,%s bayıldı!,scripts/autoload/Combat.gd:1398
+"%s ripostes, striking %s for %d!","%s karşılık veriyor, %s hedefine %d vuruyor!",scripts/autoload/Combat.gd:1403
+Underpowered: party power %d vs %d recommended,"Güç yetersiz: ekip gücü %d, önerilen %d",scripts/autoload/Combat.gd:1427
+%d heavy blow%s landed undefended (%d damage),%d ağır darbe%s savunmasız yere indi (%d hasar),scripts/autoload/Combat.gd:1431
+Burn and poison did %d damage (%d%% of the total),Yanma ve zehir %d hasar verdi (toplamın %%%d'i),scripts/autoload/Combat.gd:1436
+Your foes healed %d HP,Düşmanların %d can iyileşti,scripts/autoload/Combat.gd:1443
+The party started the fight at %d%% HP,Ekip dövüşe %%%d canla başladı,scripts/autoload/Combat.gd:1447
+No Abilities were used,Hiç Yetenek kullanılmadı,scripts/autoload/Combat.gd:1450
+%s fell in the front row,%s ön sırada düştü,scripts/autoload/Combat.gd:1454
+No healer in a long fight,Uzun bir dövüşte şifacı yoktu,scripts/autoload/Combat.gd:1457
+%s regenerates %d HP.,%s %d can yeniliyor.,scripts/autoload/Combat.gd:1479
+%s burns for %d.,%s %d hasarla yanıyor.,scripts/autoload/Combat.gd:1489
+%s suffers %d poison damage.,%s %d zehir hasarı alıyor.,scripts/autoload/Combat.gd:1522
+The party mends its wounds.,Ekip yaralarını iyileştiriyor.,scripts/autoload/Combat.gd:1543
+The %s falls!,%s düşüyor!,scripts/autoload/Combat.gd:1555
+All foes defeated!,Tüm düşmanlar yenildi!,scripts/autoload/Combat.gd:1555
+The Phoenix Feather flares — the party rises from the ashes!,Anka Tüyü parlıyor — ekip küllerinden doğuyor!,scripts/autoload/Combat.gd:1567
+Rally! The guild's order rings out: the party moves first and hits 30% harder this round.,Toparlan! Loncanın emri yankılanıyor: ekip bu tur önce davranır ve %30 daha sert vurur.,scripts/autoload/Combat.gd:1591
+%s is stunned and loses the turn.,%s sersemledi ve sırasını kaybediyor.,scripts/autoload/Combat.gd:1622
+The party withdraws from the fight.,Ekip dövüşten çekiliyor.,scripts/autoload/Combat.gd:1672
+Your party is overwhelmed...,Ekibin ezildi...,scripts/autoload/Combat.gd:1681
+%s is left with a lasting scar: %s.,%s kalıcı bir yara izi aldı: %s.,scripts/autoload/Combat.gd:1696
 Save restored,Kayıt geri yüklendi,scripts/autoload/GameState.gd:114
 "Your last save was damaged, so the one just before it was loaded.","Son kaydın bozulmuştu, bu yüzden ondan hemen önceki yüklendi.",scripts/autoload/GameState.gd:115
 Heroes have attributes now,Kahramanların artık nitelikleri var,scripts/autoload/GameState.gd:133
@@ -262,36 +262,37 @@ Opens when you free your first champion (the end of Act I),İlk şampiyonunu kur
 A champion oversees your rift runs: their Boon for the party and their Call. Choose one and level them up under Roster > Champions.,Bir şampiyon yarık seferlerini gözetir: ekibe Lütfu ve Çağrısı. Kadro > Şampiyonlar'dan birini seç ve seviyesini yükselt.,scripts/autoload/game_data/GameDataArt.gd:73
 English,,scripts/autoload/game_data/GameDataArt.gd:112
 Türkçe (beta),,scripts/autoload/game_data/GameDataArt.gd:112
-"Balance: from Rank E up, monsters hit harder and last longer, so a party at Recommended power now seals about 3 rifts in 5 and Deadly means it. Hero wages are 50% higher, so a big roster has to earn its keep.",Denge: Rütbe E'den itibaren canavarlar daha sert vuruyor ve daha uzun dayanıyor; Önerilen güçteki bir grup artık 5 yarıktan yaklaşık 3'ünü mühürlüyor ve Ölümcül gerçekten ölümcül. Kahraman maaşları %50 daha yüksek; büyük bir kadro kendi masrafını çıkarmalı.,scripts/autoload/game_data/GameDataArt.gd:115
-"A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday.","Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor.",scripts/autoload/game_data/GameDataArt.gd:116
-"Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt.","Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük.",scripts/autoload/game_data/GameDataArt.gd:117
-"Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold.","Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor.",scripts/autoload/game_data/GameDataArt.gd:118
-"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.","Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor.",scripts/autoload/game_data/GameDataArt.gd:119
-"Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen.","Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle.",scripts/autoload/game_data/GameDataArt.gd:120
-"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.","Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor.",scripts/autoload/game_data/GameDataArt.gd:121
-"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.","Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler.",scripts/autoload/game_data/GameDataArt.gd:122
-"Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead.","Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner.",scripts/autoload/game_data/GameDataArt.gd:123
-"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.","Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez.",scripts/autoload/game_data/GameDataArt.gd:124
-"Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger.","Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu.",scripts/autoload/game_data/GameDataArt.gd:125
-"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.","Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı.",scripts/autoload/game_data/GameDataArt.gd:126
-"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:127
-"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:128
-"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:129
-"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:130
-"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:131
-Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:132
-"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:133
-"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:134
-"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:135
-"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:136
-"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:137
-"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:138
-"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:139
-"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:140
-Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:141
-"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:142
-"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:143
-1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:210
+"Fights: Quick fight now opens on a rank once you've sealed it, so a new rank and the act finales are fought where you can see them. Auto pauses when a hero is about to fall. The bonus for winning by hand shows before every fight.","Dövüşler: Hızlı dövüş artık bir rütbeyi mühürledikten sonra o rütbede açılıyor; yeni bir rütbe ve perde finalleri gözünün önünde dövüşülür. Oto, bir kahraman düşmek üzereyken duraklar. Elle kazanmanın bonusu her dövüşten önce gösteriliyor.",scripts/autoload/game_data/GameDataArt.gd:115
+"Balance: from Rank E up, monsters hit harder and last longer, so a party at Recommended power now seals about 3 rifts in 5 and Deadly means it. Hero wages are 50% higher, so a big roster has to earn its keep.",Denge: Rütbe E'den itibaren canavarlar daha sert vuruyor ve daha uzun dayanıyor; Önerilen güçteki bir grup artık 5 yarıktan yaklaşık 3'ünü mühürlüyor ve Ölümcül gerçekten ölümcül. Kahraman maaşları %50 daha yüksek; büyük bir kadro kendi masrafını çıkarmalı.,scripts/autoload/game_data/GameDataArt.gd:116
+"A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday.","Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor.",scripts/autoload/game_data/GameDataArt.gd:117
+"Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt.","Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük.",scripts/autoload/game_data/GameDataArt.gd:118
+"Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold.","Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor.",scripts/autoload/game_data/GameDataArt.gd:119
+"A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went.","Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor.",scripts/autoload/game_data/GameDataArt.gd:120
+"Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen.","Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle.",scripts/autoload/game_data/GameDataArt.gd:121
+"New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks.","Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor.",scripts/autoload/game_data/GameDataArt.gd:122
+"The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it.","Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler.",scripts/autoload/game_data/GameDataArt.gd:123
+"Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead.","Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner.",scripts/autoload/game_data/GameDataArt.gd:124
+"New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged.","Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez.",scripts/autoload/game_data/GameDataArt.gd:125
+"Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger.","Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu.",scripts/autoload/game_data/GameDataArt.gd:126
+"Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab.","Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı.",scripts/autoload/game_data/GameDataArt.gd:127
+"Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel.","Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır.",scripts/autoload/game_data/GameDataArt.gd:128
+"Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions.","Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda.",scripts/autoload/game_data/GameDataArt.gd:129
+"Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold.","Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması.",scripts/autoload/game_data/GameDataArt.gd:130
+"Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods.","Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır.",scripts/autoload/game_data/GameDataArt.gd:131
+"Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength).",Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir).,scripts/autoload/game_data/GameDataArt.gd:132
+Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires.,Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor.,scripts/autoload/game_data/GameDataArt.gd:133
+"Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up.","Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir.",scripts/autoload/game_data/GameDataArt.gd:134
+"The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day.","Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur.",scripts/autoload/game_data/GameDataArt.gd:135
+"Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish.","Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe.",scripts/autoload/game_data/GameDataArt.gd:136
+"Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments.","Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner.",scripts/autoload/game_data/GameDataArt.gd:137
+"Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear.",Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor.,scripts/autoload/game_data/GameDataArt.gd:138
+"Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up.","Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor.",scripts/autoload/game_data/GameDataArt.gd:139
+"New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in.","Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık.",scripts/autoload/game_data/GameDataArt.gd:140
+"Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers.","Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar.",scripts/autoload/game_data/GameDataArt.gd:141
+Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold.,Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder.,scripts/autoload/game_data/GameDataArt.gd:142
+"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.","Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma.",scripts/autoload/game_data/GameDataArt.gd:143
+"New music, larger text, and rank rules shown in the rift.","Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları.",scripts/autoload/game_data/GameDataArt.gd:144
+1280×800 (Default),1280×800 (Varsayılan),scripts/autoload/game_data/GameDataArt.gd:211
 Ballista,Balista,scripts/autoload/game_data/GameDataBreach.gd:67
 Long-range bolts at the foe furthest along the road,Yolda en ileri giden düşmana uzun menzilli oklar,scripts/autoload/game_data/GameDataBreach.gd:67
 Fire Brazier,Ateş Mangalı,scripts/autoload/game_data/GameDataBreach.gd:69
@@ -2225,46 +2226,48 @@ The month's contest ends level at %d Renown each.,Ayın yarışması berabere bi
 New: %s,Yeni: %s,scripts/autoload/game_state/GameStateRuns.gd:69
 New at camp,Kampta yeni,scripts/autoload/game_state/GameStateRuns.gd:72
  — check the tabs above., — yukarıdaki sekmelere bak.,scripts/autoload/game_state/GameStateRuns.gd:72
-The party rests by the fire and recovers %d%% HP.,Ekip ateşin başında dinleniyor ve canının %%%d'ini geri kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:354
-The party drills together: +%d XP each.,Ekip birlikte talim yapıyor: her birine +%d TP.,scripts/autoload/game_state/GameStateRuns.gd:358
-"Weapons sharpened, focus restored — the next fight starts with +4 Momentum.","Silahlar bilendi, odak yerine geldi — sonraki dövüş +4 İvme ile başlıyor.",scripts/autoload/game_state/GameStateRuns.gd:361
-"%s check (%s, %d vs %d): %s.","%s sınaması (%s, %d / %d): %s.",scripts/autoload/game_state/GameStateRuns.gd:410
-Luck is with you.,Şans senden yana.,scripts/autoload/game_state/GameStateRuns.gd:415
-Luck is not with you.,Şans senden yana değil.,scripts/autoload/game_state/GameStateRuns.gd:415
-You move on.,Yoluna devam ediyorsun.,scripts/autoload/game_state/GameStateRuns.gd:420
-+%d Gold.,+%d Altın.,scripts/autoload/game_state/GameStateRuns.gd:457
-+%d Essence.,+%d Öz.,scripts/autoload/game_state/GameStateRuns.gd:461
-%+d Renown.,%+d Ün.,scripts/autoload/game_state/GameStateRuns.gd:465
-Every hero gains %d XP.,Her kahraman %d TP kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:469
-The party heals %d%% HP.,Ekip canının %%%d'ini iyileştiriyor.,scripts/autoload/game_state/GameStateRuns.gd:473
-Everyone loses %d%% HP.,Herkes canının %%%d'ini kaybediyor.,scripts/autoload/game_state/GameStateRuns.gd:477
-The next fight starts with +3 Momentum.,Sonraki dövüş +3 İvme ile başlıyor.,scripts/autoload/game_state/GameStateRuns.gd:480
-+%d Healing Tonic.,+%d Şifa Toniği.,scripts/autoload/game_state/GameStateRuns.gd:483
-You can't carry another tonic.,Bir tonik daha taşıyamazsın.,scripts/autoload/game_state/GameStateRuns.gd:483
-A %d-point shield against hazards.,Tehlikelere karşı %d puanlık kalkan.,scripts/autoload/game_state/GameStateRuns.gd:486
-You receive: %s (%s).,Aldın: %s (%s).,scripts/autoload/game_state/GameStateRuns.gd:494
-The Anchor Artifact snuffs the hazard before it strikes.,Çapa Eseri tehlikeyi vurmadan söndürüyor.,scripts/autoload/game_state/GameStateRuns.gd:605
-Relic wards absorb %d of the hazard.,Kalıntı korumaları tehlikenin %d kadarını emiyor.,scripts/autoload/game_state/GameStateRuns.gd:610
-The hazard deals %d damage across the party.,Tehlike ekibe toplam %d hasar veriyor.,scripts/autoload/game_state/GameStateRuns.gd:618
-You scavenge %d stray Gold.,Ortalıktan %d Altın topluyorsun.,scripts/autoload/game_state/GameStateRuns.gd:625
-Stray Essence found in the rubble: +%d.,Molozun içinde başıboş Öz bulundu: +%d.,scripts/autoload/game_state/GameStateRuns.gd:628
-You pay %d Essence and bypass the hazard entirely.,%d Öz ödüyor ve tehlikeyi tamamen atlatıyorsun.,scripts/autoload/game_state/GameStateRuns.gd:659
- %s and %s's bond deepens (Lv%d)., %s ile %s arasındaki bağ derinleşiyor (Sv%d).,scripts/autoload/game_state/GameStateRuns.gd:789
-Bond deepened — Lv%d,Bağ derinleşti — Sv%d,scripts/autoload/game_state/GameStateRuns.gd:790
-%s & %s: +%d%% party damage while both stand,%s & %s: ikisi de ayaktayken +%%%d ekip hasarı,scripts/autoload/game_state/GameStateRuns.gd:790
-%s: %s+%d essence,%s: %s+%d öz,scripts/autoload/game_state/GameStateRuns.gd:842
-"+%d gold, ","+%d altın, ",scripts/autoload/game_state/GameStateRuns.gd:842
-", the relic %s",", %s kalıntısı",scripts/autoload/game_state/GameStateRuns.gd:847
-", the title ""%s""",", ""%s"" unvanı",scripts/autoload/game_state/GameStateRuns.gd:849
-Field Triage,Sahada Triyaj,scripts/autoload/game_state/GameStateRuns.gd:923
-Needs %d idle hero%s at camp,Kampta %d boşta kahraman%s gerekir,scripts/autoload/game_state/GameStateRuns.gd:947
-No healer can do it,Bunu yapabilecek şifacı yok,scripts/autoload/game_state/GameStateRuns.gd:960
-A new guild can't leave anyone behind,Yeni bir lonca kimseyi geride bırakamaz,scripts/autoload/game_state/GameStateRuns.gd:976
-Found alive,Sağ bulundu,scripts/autoload/game_state/GameStateRuns.gd:991
-%s is carried home from the sealed rift,%s mühürlenen yarıktan eve taşınıyor,scripts/autoload/game_state/GameStateRuns.gd:991
-Lost in the rift,Yarıkta kayboldu,scripts/autoload/game_state/GameStateRuns.gd:1006
-%s was left behind and never came back,%s geride bırakıldı ve bir daha dönmedi,scripts/autoload/game_state/GameStateRuns.gd:1006
-Left behind in a %s,Bir %s içinde geride bırakıldı,scripts/autoload/game_state/GameStateRuns.gd:1007
+A finale is fought in full,Final baştan sona dövüşülür,scripts/autoload/game_state/GameStateRuns.gd:170
+Seal a Rank %s rift to use Quick fight on this rank,Bu rütbede Hızlı dövüş için bir Rütbe %s yarığı mühürle,scripts/autoload/game_state/GameStateRuns.gd:173
+The party rests by the fire and recovers %d%% HP.,Ekip ateşin başında dinleniyor ve canının %%%d'ini geri kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:369
+The party drills together: +%d XP each.,Ekip birlikte talim yapıyor: her birine +%d TP.,scripts/autoload/game_state/GameStateRuns.gd:373
+"Weapons sharpened, focus restored — the next fight starts with +4 Momentum.","Silahlar bilendi, odak yerine geldi — sonraki dövüş +4 İvme ile başlıyor.",scripts/autoload/game_state/GameStateRuns.gd:376
+"%s check (%s, %d vs %d): %s.","%s sınaması (%s, %d / %d): %s.",scripts/autoload/game_state/GameStateRuns.gd:425
+Luck is with you.,Şans senden yana.,scripts/autoload/game_state/GameStateRuns.gd:430
+Luck is not with you.,Şans senden yana değil.,scripts/autoload/game_state/GameStateRuns.gd:430
+You move on.,Yoluna devam ediyorsun.,scripts/autoload/game_state/GameStateRuns.gd:435
++%d Gold.,+%d Altın.,scripts/autoload/game_state/GameStateRuns.gd:472
++%d Essence.,+%d Öz.,scripts/autoload/game_state/GameStateRuns.gd:476
+%+d Renown.,%+d Ün.,scripts/autoload/game_state/GameStateRuns.gd:480
+Every hero gains %d XP.,Her kahraman %d TP kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:484
+The party heals %d%% HP.,Ekip canının %%%d'ini iyileştiriyor.,scripts/autoload/game_state/GameStateRuns.gd:488
+Everyone loses %d%% HP.,Herkes canının %%%d'ini kaybediyor.,scripts/autoload/game_state/GameStateRuns.gd:492
+The next fight starts with +3 Momentum.,Sonraki dövüş +3 İvme ile başlıyor.,scripts/autoload/game_state/GameStateRuns.gd:495
++%d Healing Tonic.,+%d Şifa Toniği.,scripts/autoload/game_state/GameStateRuns.gd:498
+You can't carry another tonic.,Bir tonik daha taşıyamazsın.,scripts/autoload/game_state/GameStateRuns.gd:498
+A %d-point shield against hazards.,Tehlikelere karşı %d puanlık kalkan.,scripts/autoload/game_state/GameStateRuns.gd:501
+You receive: %s (%s).,Aldın: %s (%s).,scripts/autoload/game_state/GameStateRuns.gd:509
+The Anchor Artifact snuffs the hazard before it strikes.,Çapa Eseri tehlikeyi vurmadan söndürüyor.,scripts/autoload/game_state/GameStateRuns.gd:620
+Relic wards absorb %d of the hazard.,Kalıntı korumaları tehlikenin %d kadarını emiyor.,scripts/autoload/game_state/GameStateRuns.gd:625
+The hazard deals %d damage across the party.,Tehlike ekibe toplam %d hasar veriyor.,scripts/autoload/game_state/GameStateRuns.gd:633
+You scavenge %d stray Gold.,Ortalıktan %d Altın topluyorsun.,scripts/autoload/game_state/GameStateRuns.gd:640
+Stray Essence found in the rubble: +%d.,Molozun içinde başıboş Öz bulundu: +%d.,scripts/autoload/game_state/GameStateRuns.gd:643
+You pay %d Essence and bypass the hazard entirely.,%d Öz ödüyor ve tehlikeyi tamamen atlatıyorsun.,scripts/autoload/game_state/GameStateRuns.gd:674
+ %s and %s's bond deepens (Lv%d)., %s ile %s arasındaki bağ derinleşiyor (Sv%d).,scripts/autoload/game_state/GameStateRuns.gd:804
+Bond deepened — Lv%d,Bağ derinleşti — Sv%d,scripts/autoload/game_state/GameStateRuns.gd:805
+%s & %s: +%d%% party damage while both stand,%s & %s: ikisi de ayaktayken +%%%d ekip hasarı,scripts/autoload/game_state/GameStateRuns.gd:805
+%s: %s+%d essence,%s: %s+%d öz,scripts/autoload/game_state/GameStateRuns.gd:857
+"+%d gold, ","+%d altın, ",scripts/autoload/game_state/GameStateRuns.gd:857
+", the relic %s",", %s kalıntısı",scripts/autoload/game_state/GameStateRuns.gd:862
+", the title ""%s""",", ""%s"" unvanı",scripts/autoload/game_state/GameStateRuns.gd:864
+Field Triage,Sahada Triyaj,scripts/autoload/game_state/GameStateRuns.gd:938
+Needs %d idle hero%s at camp,Kampta %d boşta kahraman%s gerekir,scripts/autoload/game_state/GameStateRuns.gd:962
+No healer can do it,Bunu yapabilecek şifacı yok,scripts/autoload/game_state/GameStateRuns.gd:975
+A new guild can't leave anyone behind,Yeni bir lonca kimseyi geride bırakamaz,scripts/autoload/game_state/GameStateRuns.gd:991
+Found alive,Sağ bulundu,scripts/autoload/game_state/GameStateRuns.gd:1006
+%s is carried home from the sealed rift,%s mühürlenen yarıktan eve taşınıyor,scripts/autoload/game_state/GameStateRuns.gd:1006
+Lost in the rift,Yarıkta kayboldu,scripts/autoload/game_state/GameStateRuns.gd:1021
+%s was left behind and never came back,%s geride bırakıldı ve bir daha dönmedi,scripts/autoload/game_state/GameStateRuns.gd:1021
+Left behind in a %s,Bir %s içinde geride bırakıldı,scripts/autoload/game_state/GameStateRuns.gd:1022
 Not researched yet,Henüz araştırılmadı,scripts/defense/DefenseRun.gd:363
 Something is built here,Burada zaten bir yapı var,scripts/defense/DefenseRun.gd:365
 Not enough supplies,Yeterli erzak yok,scripts/defense/DefenseRun.gd:367
@@ -2453,177 +2456,179 @@ Hold a finger on anything to read what it does.,Bir şeyin ne işe yaradığın�
 Escape,,scripts/ui/BattleView.gd:363
 Acting now: ,Şimdi oynayan: ,scripts/ui/BattleView.gd:527
 [Heavy blow on %s],[Ağır darbe: %s],scripts/ui/BattleView.gd:722
-Boss,Boss,scripts/ui/BattleView.gd:1025
-Elite,Seçkin,scripts/ui/BattleView.gd:1025
-Combat,Dövüş,scripts/ui/BattleView.gd:1025
-A %s encounter awaits.,Seni bir karşılaşma bekliyor: %s.,scripts/ui/BattleView.gd:1026
-+%d%% damage and HP,+%%%d hasar ve can,scripts/ui/BattleView.gd:1029
-Vanguard first strike,Öncü ilk vuruşu,scripts/ui/BattleView.gd:1031
-+3 starting Momentum,+3 başlangıç İvmesi,scripts/ui/BattleView.gd:1033
-Drill Yard: ,Talim Alanı: ,scripts/ui/BattleView.gd:1035
-Quick fight  (Q),Hızlı dövüş  (Q),scripts/ui/BattleView.gd:1040
-Play the whole fight out instantly on Auto and jump to the result,Tüm dövüşü Oto ile anında oyna ve sonuca geç,scripts/ui/BattleView.gd:1043
-Engage  (Space),Çatış  (Boşluk),scripts/ui/BattleView.gd:1047
-%s · %d round%s,%s · %d tur%s,scripts/ui/BattleView.gd:1073
-Hide log,Kaydı gizle,scripts/ui/BattleView.gd:1074
-Fight log,Dövüş kaydı,scripts/ui/BattleView.gd:1074
-Show or hide the full fight log,Tam dövüş kaydını göster ya da gizle,scripts/ui/BattleView.gd:1074
-Victory!,Zafer!,scripts/ui/BattleView.gd:1103
- (%d from Amplifiers), (%d Güçlendiricilerden),scripts/ui/BattleView.gd:1114
-  +%d Essence cache (Resonance),  +%d Öz zulası (Rezonans),scripts/ui/BattleView.gd:1116
-  +%d extracted,  +%d çıkarıldı,scripts/ui/BattleView.gd:1119
-"Flawless, by hand: +%d Gold, +%d Essence (no one went down and you played every turn).","Kusursuz, elle: +%d Altın, +%d Öz (kimse düşmedi ve her turu sen oynadın).",scripts/ui/BattleView.gd:1125
-"%s made it through safely — +2 Renown, +1 Token.","%s sağ salim çıktı — +2 Ün, +1 Nişan.",scripts/ui/BattleView.gd:1129
-Choose a reward:,Bir ödül seç:,scripts/ui/BattleView.gd:1134
-Continue,Devam,scripts/ui/BattleView.gd:1174
-Decide what happens to the downed hero first (above),Önce düşen kahramana ne olacağına karar ver (yukarıda),scripts/ui/BattleView.gd:1183
-You withdraw from the fight.,Dövüşten çekiliyorsun.,scripts/ui/BattleView.gd:1187
-Defeat — the party is downed and recovering.,Yenilgi — ekip düştü ve toparlanıyor.,scripts/ui/BattleView.gd:1187
-"The trial ends. Your heroes step out of the tower unharmed — this floor will be waiting, exactly as it was.",Sınav bitti. Kahramanların kuleden yara almadan çıkıyor — bu kat seni aynen bıraktığın gibi bekleyecek.,scripts/ui/BattleView.gd:1189
-Back to the Tower,Kuleye dön,scripts/ui/BattleView.gd:1204
-Return to camp,Kampa dön,scripts/ui/BattleView.gd:1204
-Why you lost,Neden kaybettin,scripts/ui/BattleView.gd:1222
-Choose a boon — it lasts the rest of this rift,Bir lütuf seç — bu yarığın sonuna kadar sürer,scripts/ui/BattleView.gd:1238
-%s · you have %d,%s · sende %d var,scripts/ui/BattleView.gd:1267
-Completes %s: %s,Tamamlar: %s: %s,scripts/ui/BattleView.gd:1273
-Take,Al,scripts/ui/BattleView.gd:1277
-Skip the boon,Lütfu atla,scripts/ui/BattleView.gd:1284
-%s %d-piece %s — %s,%s %d parça %s — %s,scripts/ui/BattleView.gd:1319
-Floor %d cleared!,%d. kat temizlendi!,scripts/ui/BattleView.gd:1333
-A weekly re-clear pays half.,Haftalık tekrar temizleme yarısını öder.,scripts/ui/BattleView.gd:1344
-Guardian's relic: %s,Muhafızın kalıntısı: %s,scripts/ui/BattleView.gd:1346
- It's on the Relic Altar., Kalıntı Sunağı'nda.,scripts/ui/BattleView.gd:1349
-New guild title: %s,Yeni lonca unvanı: %s,scripts/ui/BattleView.gd:1351
- — floor %d next, — sıradaki kat %d,scripts/ui/BattleView.gd:1357
-Floor %d/%d reached,Kat %d/%d'ye ulaşıldı,scripts/ui/BattleView.gd:1374
-"%+d Gold, %+d Essence this run","Bu koşuda %+d Altın, %+d Öz",scripts/ui/BattleView.gd:1377
-%d hero%s lost,%d kahraman%s kaybedildi,scripts/ui/BattleView.gd:1380
-Shield: absorbs the next %d damage,Kalkan: sonraki %d hasarı emer,scripts/ui/BattleView.gd:1445
-Defending — takes reduced damage this round,Savunuyor — bu tur daha az hasar alır,scripts/ui/BattleView.gd:1534
-Shield — absorbs the next %d damage,Kalkan — sonraki %d hasarı emer,scripts/ui/BattleView.gd:1537
-Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out.,"Yanıyor — her tur %d hasar, %d tur daha. Şifa Toniği söndürür.",scripts/ui/BattleView.gd:1540
-Chilled — acts late next round,Üşümüş — sonraki tur geç davranır,scripts/ui/BattleView.gd:1542
-Stunned — loses their next turn,Sersemlemiş — sonraki sırasını kaybeder,scripts/ui/BattleView.gd:1544
-Poisoned — %d damage a round for %d more round(s),"Zehirli — her tur %d hasar, %d tur daha",scripts/ui/BattleView.gd:1547
-Guarded by %s this round,Bu tur koruyan: %s,scripts/ui/BattleView.gd:1552
-"Guarding an ally this round (takes their hits, 25% weaker)",Bu tur bir müttefiki koruyor (darbelerini %25 daha zayıf alır),scripts/ui/BattleView.gd:1554
-Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it.,"Lanetli — %%%d daha az hasar verir, %d tur daha. Sığınak arındırır.",scripts/ui/BattleView.gd:1556
-Riposte — answers the next %d hit(s) with a counter-strike,Karşılık — sonraki %d darbeye karşı saldırıyla cevap verir,scripts/ui/BattleView.gd:1558
-Undying — half damage and can't fall this round,Ölümsüz — bu tur yarı hasar alır ve düşemez,scripts/ui/BattleView.gd:1560
-Will dodge the next hit aimed at them,Kendisine gelen sonraki darbeden kaçacak,scripts/ui/BattleView.gd:1562
-Branded — takes %d%% more damage for %d more round(s). Guard them.,"Damgalı — %%%d daha fazla hasar alır, %d tur daha. Onu koru.",scripts/ui/BattleView.gd:1564
-"Taunting — every foe's attacks come here this round, %d%% weaker","Kışkırtıyor — bu tur tüm düşman saldırıları buraya gelir, %%%d daha zayıf",scripts/ui/BattleView.gd:1566
-Enough Momentum for their Ability,Yeteneği için yeterli İvme var,scripts/ui/BattleView.gd:1568
- (active), (etkin),scripts/ui/BattleView.gd:1584
-Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor.,Zırhlı — temel saldırıların %%%d'ini savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar.,scripts/ui/BattleView.gd:1595
-Its hits can set a hero ablaze (damage over time),Darbeleri bir kahramanı tutuşturabilir (zamanla hasar),scripts/ui/BattleView.gd:1597
-Its hits can chill a hero (acts late next round),Darbeleri bir kahramanı üşütebilir (sonraki tur geç davranır),scripts/ui/BattleView.gd:1598
-"Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.","Ağır bir darbe için güç topluyor. Kalkan Darbesi, Buz Novası ya da Sırttan Bıçak bunu cezalandırabilir.",scripts/ui/BattleView.gd:1600
-Stunned — loses its next %s,Sersemlemiş — sonraki %s kaybeder,scripts/ui/BattleView.gd:1602
-%d actions,%d hamlesini,scripts/ui/BattleView.gd:1602
-Burning — %d damage a round for %d more round(s),"Yanıyor — her tur %d hasar, %d tur daha",scripts/ui/BattleView.gd:1605
-Marked — takes %d%% more damage from heroes,İşaretli — kahramanlardan %%%d daha fazla hasar alır,scripts/ui/BattleView.gd:1607
-Can also: %s (telegraphed a round ahead),Ayrıca yapabilir: %s (bir tur önceden belli olur),scripts/ui/BattleView.gd:1611
-Ward — absorbs the next %d damage,Koruma — sonraki %d hasarı emer,scripts/ui/BattleView.gd:1614
-winding up a heavy blow,ağır darbe için güç topluyor,scripts/ui/BattleView.gd:1678
-Next round!,Sonraki tur!,scripts/ui/BattleView.gd:1734
-Incoming this round: %s,Bu tur gelenler: %s,scripts/ui/BattleView.gd:1734
-Winding up,Güç topluyor,scripts/ui/BattleView.gd:1807
-"Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row.","Bu tur güç topluyor. Sonraki tur ağır bir darbe (×%s hasar) indirir; hedef Savunmazsa sersemler. Savun, Koru ya da muhtemel hedefi arka sıraya al.",scripts/ui/BattleView.gd:1807
-HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it.,"AĞIR DARBE: %s, yaklaşık %d — Savunmazsa sersemler. Savun (5) yarıya indirir; Koru (6) darbeyi onun yerine alır; Kalkan Darbesi bozar.",scripts/ui/BattleView.gd:1810
-Attacks %s this round for about %d%s,Bu tur %s hedefine yaklaşık %d vuracak%s,scripts/ui/BattleView.gd:1813
-" — a heavy hit, consider Defending"," — ağır bir darbe, Savunmayı düşün",scripts/ui/BattleView.gd:1813
-Round %d%s,Tur %d%s,scripts/ui/BattleView.gd:1823
-Rank %s,Rütbe %s,scripts/ui/BattleView.gd:1836
-This rift is Rank %s on the rift ladder.,"Bu yarık, yarık merdiveninde Rütbe %s.",scripts/ui/BattleView.gd:1836
-Attack %s,Saldır: %s,scripts/ui/BattleView.gd:1870
-"That's the core of every fight: read the tags above the foes, build Momentum with attacks and defence, and spend it on skills. Auto (A) plays turns for you whenever you like.","Her dövüşün özü bu: düşmanların üstündeki etiketleri oku, saldırı ve savunmayla İvme biriktir, becerilere harca. Oto (A) istediğin an turları senin yerine oynar.",scripts/ui/BattleView.gd:1935
-"Wind-ups. %s has wound up a heavy blow (the red tag above it). Next round it lands on one hero and stuns them unless they Defend. Press Defend (5) to take half and earn Momentum, or Guard (6) a hurt ally.","Güç toplama. %s ağır bir darbe için güç topladı (üstündeki kırmızı etiket). Sonraki tur bir kahramana iner ve Savunmazsa onu sersemletir. Hasarın yarısını almak ve İvme kazanmak için Savun (5), ya da yaralı bir müttefiki Koru (6).",scripts/ui/BattleView.gd:1948
-Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s,"Güç toplama. %s, %s hedefine ağır bir darbe için güç topluyor: üstündeki kırmızı etikete bak. Sonraki tur iner ve hedef Savunmazsa sersemletir. %s",scripts/ui/BattleView.gd:1951
-Press Defend (5) — %s takes half and earns Momentum.,Savun'a (5) bas — %s yarı hasar alır ve İvme kazanır.,scripts/ui/BattleView.gd:1952
-"Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker.","Koru'ya (6) bas ve %s seç — darbeyi %s alır, %%25 daha zayıf.",scripts/ui/BattleView.gd:1952
-Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name.,Saldırı. Sıra: %s. Saldır'a (1) bas ya da bir düşmana tıkla. Her saldırı 1 İvme ekler — %s adının altındaki noktalar.,scripts/ui/BattleView.gd:1954
-"Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it.","Beceriler. %d İvmen var. %s becerisi %s (2), daha güçlü bir hamle için %d harcar — üstüne gelip oku, sonra kullan.",scripts/ui/BattleView.gd:1958
-"Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it.","Beceriler İvme harcar. Bir beceri (2-4) yanana kadar saldırmaya devam et, sonra kullan.",scripts/ui/BattleView.gd:1959
-Step %d of 3,Adım %d / 3,scripts/ui/BattleView.gd:1974
-Well fought,İyi dövüştün,scripts/ui/BattleView.gd:1974
-Got it,Anladım,scripts/ui/BattleView.gd:1982
-Skip tutorial,Eğitimi atla,scripts/ui/BattleView.gd:1982
-"Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it.","İvme %d/%d — ekibin beceri ve Yetenekler için ortak havuzu. Saldırılar, öldürmeler ve Savunurken ya da Korurken alınan darbeler doldurur.",scripts/ui/BattleView.gd:2092
-Momentum,İvme,scripts/ui/BattleView.gd:2094
-Which tonic?,Hangi tonik?,scripts/ui/BattleView.gd:2149
-%s (key %d),%s (tuş %d),scripts/ui/BattleView.gd:2168
-Cancel,İptal,scripts/ui/BattleView.gd:2177
-Guard whom?,Kimi koruyacak?,scripts/ui/BattleView.gd:2180
-%s for whom?,%s kimin için?,scripts/ui/BattleView.gd:2180
+"Auto paused: %s is about to fall. Defend, Guard or heal, then turn Auto back on.","Oto durdu: %s düşmek üzere. Savun, Koru ya da iyileştir, sonra Oto'yu yeniden aç.",scripts/ui/BattleView.gd:984
+Boss,Boss,scripts/ui/BattleView.gd:1032
+Elite,Seçkin,scripts/ui/BattleView.gd:1032
+Combat,Dövüş,scripts/ui/BattleView.gd:1032
+A %s encounter awaits.,Seni bir karşılaşma bekliyor: %s.,scripts/ui/BattleView.gd:1033
++%d%% damage and HP,+%%%d hasar ve can,scripts/ui/BattleView.gd:1036
+Vanguard first strike,Öncü ilk vuruşu,scripts/ui/BattleView.gd:1038
++3 starting Momentum,+3 başlangıç İvmesi,scripts/ui/BattleView.gd:1040
+Drill Yard: ,Talim Alanı: ,scripts/ui/BattleView.gd:1042
+Win by hand with no one down: +%d%% Gold and Essence.,Kimse düşmeden elle kazan: +%%%d Altın ve Öz.,scripts/ui/BattleView.gd:1046
+Quick fight  (Q),Hızlı dövüş  (Q),scripts/ui/BattleView.gd:1052
+Play the whole fight out instantly on Auto and jump to the result,Tüm dövüşü Oto ile anında oyna ve sonuca geç,scripts/ui/BattleView.gd:1055
+Engage  (Space),Çatış  (Boşluk),scripts/ui/BattleView.gd:1061
+%s · %d round%s,%s · %d tur%s,scripts/ui/BattleView.gd:1087
+Hide log,Kaydı gizle,scripts/ui/BattleView.gd:1088
+Fight log,Dövüş kaydı,scripts/ui/BattleView.gd:1088
+Show or hide the full fight log,Tam dövüş kaydını göster ya da gizle,scripts/ui/BattleView.gd:1088
+Victory!,Zafer!,scripts/ui/BattleView.gd:1117
+ (%d from Amplifiers), (%d Güçlendiricilerden),scripts/ui/BattleView.gd:1128
+  +%d Essence cache (Resonance),  +%d Öz zulası (Rezonans),scripts/ui/BattleView.gd:1130
+  +%d extracted,  +%d çıkarıldı,scripts/ui/BattleView.gd:1133
+"Flawless, by hand: +%d Gold, +%d Essence (no one went down and you played every turn).","Kusursuz, elle: +%d Altın, +%d Öz (kimse düşmedi ve her turu sen oynadın).",scripts/ui/BattleView.gd:1139
+"%s made it through safely — +2 Renown, +1 Token.","%s sağ salim çıktı — +2 Ün, +1 Nişan.",scripts/ui/BattleView.gd:1143
+Choose a reward:,Bir ödül seç:,scripts/ui/BattleView.gd:1148
+Continue,Devam,scripts/ui/BattleView.gd:1188
+Decide what happens to the downed hero first (above),Önce düşen kahramana ne olacağına karar ver (yukarıda),scripts/ui/BattleView.gd:1197
+You withdraw from the fight.,Dövüşten çekiliyorsun.,scripts/ui/BattleView.gd:1201
+Defeat — the party is downed and recovering.,Yenilgi — ekip düştü ve toparlanıyor.,scripts/ui/BattleView.gd:1201
+"The trial ends. Your heroes step out of the tower unharmed — this floor will be waiting, exactly as it was.",Sınav bitti. Kahramanların kuleden yara almadan çıkıyor — bu kat seni aynen bıraktığın gibi bekleyecek.,scripts/ui/BattleView.gd:1203
+Back to the Tower,Kuleye dön,scripts/ui/BattleView.gd:1218
+Return to camp,Kampa dön,scripts/ui/BattleView.gd:1218
+Why you lost,Neden kaybettin,scripts/ui/BattleView.gd:1236
+Choose a boon — it lasts the rest of this rift,Bir lütuf seç — bu yarığın sonuna kadar sürer,scripts/ui/BattleView.gd:1252
+%s · you have %d,%s · sende %d var,scripts/ui/BattleView.gd:1281
+Completes %s: %s,Tamamlar: %s: %s,scripts/ui/BattleView.gd:1287
+Take,Al,scripts/ui/BattleView.gd:1291
+Skip the boon,Lütfu atla,scripts/ui/BattleView.gd:1298
+%s %d-piece %s — %s,%s %d parça %s — %s,scripts/ui/BattleView.gd:1333
+Floor %d cleared!,%d. kat temizlendi!,scripts/ui/BattleView.gd:1347
+A weekly re-clear pays half.,Haftalık tekrar temizleme yarısını öder.,scripts/ui/BattleView.gd:1358
+Guardian's relic: %s,Muhafızın kalıntısı: %s,scripts/ui/BattleView.gd:1360
+ It's on the Relic Altar., Kalıntı Sunağı'nda.,scripts/ui/BattleView.gd:1363
+New guild title: %s,Yeni lonca unvanı: %s,scripts/ui/BattleView.gd:1365
+ — floor %d next, — sıradaki kat %d,scripts/ui/BattleView.gd:1371
+Floor %d/%d reached,Kat %d/%d'ye ulaşıldı,scripts/ui/BattleView.gd:1388
+"%+d Gold, %+d Essence this run","Bu koşuda %+d Altın, %+d Öz",scripts/ui/BattleView.gd:1391
+%d hero%s lost,%d kahraman%s kaybedildi,scripts/ui/BattleView.gd:1394
+Shield: absorbs the next %d damage,Kalkan: sonraki %d hasarı emer,scripts/ui/BattleView.gd:1459
+Defending — takes reduced damage this round,Savunuyor — bu tur daha az hasar alır,scripts/ui/BattleView.gd:1548
+Shield — absorbs the next %d damage,Kalkan — sonraki %d hasarı emer,scripts/ui/BattleView.gd:1551
+Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out.,"Yanıyor — her tur %d hasar, %d tur daha. Şifa Toniği söndürür.",scripts/ui/BattleView.gd:1554
+Chilled — acts late next round,Üşümüş — sonraki tur geç davranır,scripts/ui/BattleView.gd:1556
+Stunned — loses their next turn,Sersemlemiş — sonraki sırasını kaybeder,scripts/ui/BattleView.gd:1558
+Poisoned — %d damage a round for %d more round(s),"Zehirli — her tur %d hasar, %d tur daha",scripts/ui/BattleView.gd:1561
+Guarded by %s this round,Bu tur koruyan: %s,scripts/ui/BattleView.gd:1566
+"Guarding an ally this round (takes their hits, 25% weaker)",Bu tur bir müttefiki koruyor (darbelerini %25 daha zayıf alır),scripts/ui/BattleView.gd:1568
+Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it.,"Lanetli — %%%d daha az hasar verir, %d tur daha. Sığınak arındırır.",scripts/ui/BattleView.gd:1570
+Riposte — answers the next %d hit(s) with a counter-strike,Karşılık — sonraki %d darbeye karşı saldırıyla cevap verir,scripts/ui/BattleView.gd:1572
+Undying — half damage and can't fall this round,Ölümsüz — bu tur yarı hasar alır ve düşemez,scripts/ui/BattleView.gd:1574
+Will dodge the next hit aimed at them,Kendisine gelen sonraki darbeden kaçacak,scripts/ui/BattleView.gd:1576
+Branded — takes %d%% more damage for %d more round(s). Guard them.,"Damgalı — %%%d daha fazla hasar alır, %d tur daha. Onu koru.",scripts/ui/BattleView.gd:1578
+"Taunting — every foe's attacks come here this round, %d%% weaker","Kışkırtıyor — bu tur tüm düşman saldırıları buraya gelir, %%%d daha zayıf",scripts/ui/BattleView.gd:1580
+Enough Momentum for their Ability,Yeteneği için yeterli İvme var,scripts/ui/BattleView.gd:1582
+ (active), (etkin),scripts/ui/BattleView.gd:1598
+Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor.,Zırhlı — temel saldırıların %%%d'ini savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar.,scripts/ui/BattleView.gd:1609
+Its hits can set a hero ablaze (damage over time),Darbeleri bir kahramanı tutuşturabilir (zamanla hasar),scripts/ui/BattleView.gd:1611
+Its hits can chill a hero (acts late next round),Darbeleri bir kahramanı üşütebilir (sonraki tur geç davranır),scripts/ui/BattleView.gd:1612
+"Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.","Ağır bir darbe için güç topluyor. Kalkan Darbesi, Buz Novası ya da Sırttan Bıçak bunu cezalandırabilir.",scripts/ui/BattleView.gd:1614
+Stunned — loses its next %s,Sersemlemiş — sonraki %s kaybeder,scripts/ui/BattleView.gd:1616
+%d actions,%d hamlesini,scripts/ui/BattleView.gd:1616
+Burning — %d damage a round for %d more round(s),"Yanıyor — her tur %d hasar, %d tur daha",scripts/ui/BattleView.gd:1619
+Marked — takes %d%% more damage from heroes,İşaretli — kahramanlardan %%%d daha fazla hasar alır,scripts/ui/BattleView.gd:1621
+Can also: %s (telegraphed a round ahead),Ayrıca yapabilir: %s (bir tur önceden belli olur),scripts/ui/BattleView.gd:1625
+Ward — absorbs the next %d damage,Koruma — sonraki %d hasarı emer,scripts/ui/BattleView.gd:1628
+winding up a heavy blow,ağır darbe için güç topluyor,scripts/ui/BattleView.gd:1692
+Next round!,Sonraki tur!,scripts/ui/BattleView.gd:1748
+Incoming this round: %s,Bu tur gelenler: %s,scripts/ui/BattleView.gd:1748
+Winding up,Güç topluyor,scripts/ui/BattleView.gd:1821
+"Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row.","Bu tur güç topluyor. Sonraki tur ağır bir darbe (×%s hasar) indirir; hedef Savunmazsa sersemler. Savun, Koru ya da muhtemel hedefi arka sıraya al.",scripts/ui/BattleView.gd:1821
+HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it.,"AĞIR DARBE: %s, yaklaşık %d — Savunmazsa sersemler. Savun (5) yarıya indirir; Koru (6) darbeyi onun yerine alır; Kalkan Darbesi bozar.",scripts/ui/BattleView.gd:1824
+Attacks %s this round for about %d%s,Bu tur %s hedefine yaklaşık %d vuracak%s,scripts/ui/BattleView.gd:1827
+" — a heavy hit, consider Defending"," — ağır bir darbe, Savunmayı düşün",scripts/ui/BattleView.gd:1827
+Round %d%s,Tur %d%s,scripts/ui/BattleView.gd:1837
+Rank %s,Rütbe %s,scripts/ui/BattleView.gd:1850
+This rift is Rank %s on the rift ladder.,"Bu yarık, yarık merdiveninde Rütbe %s.",scripts/ui/BattleView.gd:1850
+Attack %s,Saldır: %s,scripts/ui/BattleView.gd:1884
+"That's the core of every fight: read the tags above the foes, build Momentum with attacks and defence, and spend it on skills. Auto (A) plays turns for you whenever you like.","Her dövüşün özü bu: düşmanların üstündeki etiketleri oku, saldırı ve savunmayla İvme biriktir, becerilere harca. Oto (A) istediğin an turları senin yerine oynar.",scripts/ui/BattleView.gd:1951
+"Wind-ups. %s has wound up a heavy blow (the red tag above it). Next round it lands on one hero and stuns them unless they Defend. Press Defend (5) to take half and earn Momentum, or Guard (6) a hurt ally.","Güç toplama. %s ağır bir darbe için güç topladı (üstündeki kırmızı etiket). Sonraki tur bir kahramana iner ve Savunmazsa onu sersemletir. Hasarın yarısını almak ve İvme kazanmak için Savun (5), ya da yaralı bir müttefiki Koru (6).",scripts/ui/BattleView.gd:1964
+Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s,"Güç toplama. %s, %s hedefine ağır bir darbe için güç topluyor: üstündeki kırmızı etikete bak. Sonraki tur iner ve hedef Savunmazsa sersemletir. %s",scripts/ui/BattleView.gd:1967
+Press Defend (5) — %s takes half and earns Momentum.,Savun'a (5) bas — %s yarı hasar alır ve İvme kazanır.,scripts/ui/BattleView.gd:1968
+"Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker.","Koru'ya (6) bas ve %s seç — darbeyi %s alır, %%25 daha zayıf.",scripts/ui/BattleView.gd:1968
+Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name.,Saldırı. Sıra: %s. Saldır'a (1) bas ya da bir düşmana tıkla. Her saldırı 1 İvme ekler — %s adının altındaki noktalar.,scripts/ui/BattleView.gd:1970
+"Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it.","Beceriler. %d İvmen var. %s becerisi %s (2), daha güçlü bir hamle için %d harcar — üstüne gelip oku, sonra kullan.",scripts/ui/BattleView.gd:1974
+"Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it.","Beceriler İvme harcar. Bir beceri (2-4) yanana kadar saldırmaya devam et, sonra kullan.",scripts/ui/BattleView.gd:1975
+Step %d of 3,Adım %d / 3,scripts/ui/BattleView.gd:1990
+Well fought,İyi dövüştün,scripts/ui/BattleView.gd:1990
+Got it,Anladım,scripts/ui/BattleView.gd:1998
+Skip tutorial,Eğitimi atla,scripts/ui/BattleView.gd:1998
+"Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it.","İvme %d/%d — ekibin beceri ve Yetenekler için ortak havuzu. Saldırılar, öldürmeler ve Savunurken ya da Korurken alınan darbeler doldurur.",scripts/ui/BattleView.gd:2108
+Momentum,İvme,scripts/ui/BattleView.gd:2110
+Which tonic?,Hangi tonik?,scripts/ui/BattleView.gd:2165
+%s (key %d),%s (tuş %d),scripts/ui/BattleView.gd:2184
+Cancel,İptal,scripts/ui/BattleView.gd:2193
+Guard whom?,Kimi koruyacak?,scripts/ui/BattleView.gd:2196
+%s for whom?,%s kimin için?,scripts/ui/BattleView.gd:2196
 Tonic,Tonik,locale/extra_msgids.txt
-  (%d dmg incoming),  (%d hasar geliyor),scripts/ui/BattleView.gd:2202
-Key %d,Tuş %d,scripts/ui/BattleView.gd:2205
-Already at full HP,Canı zaten tam,scripts/ui/BattleView.gd:2210
-%s's turn,Sıra: %s,scripts/ui/BattleView.gd:2257
-Lv%d %s · %d/%d HP,Sv%d %s · %d/%d Can,scripts/ui/BattleView.gd:2261
-"Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle.","Saldır: %s (1): +%d İvme%s. Başkasını seçmek için bir düşmana tıkla, sırayla geçmek için Tab.",scripts/ui/BattleView.gd:2275
- (+1 for the kill: this hit should finish it), (öldürme için +1: bu darbe onu bitirmeli),scripts/ui/BattleView.gd:2275
+  (%d dmg incoming),  (%d hasar geliyor),scripts/ui/BattleView.gd:2218
+Key %d,Tuş %d,scripts/ui/BattleView.gd:2221
+Already at full HP,Canı zaten tam,scripts/ui/BattleView.gd:2226
+%s's turn,Sıra: %s,scripts/ui/BattleView.gd:2273
+Lv%d %s · %d/%d HP,Sv%d %s · %d/%d Can,scripts/ui/BattleView.gd:2277
+"Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle.","Saldır: %s (1): +%d İvme%s. Başkasını seçmek için bir düşmana tıkla, sırayla geçmek için Tab.",scripts/ui/BattleView.gd:2291
+ (+1 for the kill: this hit should finish it), (öldürme için +1: bu darbe onu bitirmeli),scripts/ui/BattleView.gd:2291
 "
 From the back row a %s hits at half strength.","
-Arka sıradan bir %s yarı güçle vurur.",scripts/ui/BattleView.gd:2277
-Attack,Saldır,scripts/ui/BattleView.gd:2281
-Attack ½,Saldır ½,scripts/ui/BattleView.gd:2281
+Arka sıradan bir %s yarı güçle vurur.",scripts/ui/BattleView.gd:2293
+Attack,Saldır,scripts/ui/BattleView.gd:2297
+Attack ½,Saldır ½,scripts/ui/BattleView.gd:2297
 "
 %s row.","
-%s sıra.",scripts/ui/BattleView.gd:2291
+%s sıra.",scripts/ui/BattleView.gd:2307
 "
 %s twist: %s.","
-%s dokunuşu: %s.",scripts/ui/BattleView.gd:2291
+%s dokunuşu: %s.",scripts/ui/BattleView.gd:2307
 "%s
 Learned at level %d.","%s
-%d. seviyede öğrenilir.",scripts/ui/BattleView.gd:2294
-Ability,Yetenek,scripts/ui/BattleView.gd:2297
-%s (%s) — %d Momentum. %s%s,%s (%s) — %d İvme. %s%s,scripts/ui/BattleView.gd:2306
-Defend,Savun,scripts/ui/BattleView.gd:2316
-Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow).,Savun (5) — bu tur darbelerden yarı hasar al. Savunurken alınan her darbe +1 İvme verir (ağır darbe için +2).,scripts/ui/BattleView.gd:2316
-"More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s","Diğer (M ya da oyun kolunda Start) — Koru (6), Yer Değiştir (7), Tonikler (8)%s",scripts/ui/BattleView.gd:2324
-", Champion's Call (9)",", Şampiyon Çağrısı (9)",scripts/ui/BattleView.gd:2324
-Less,Daha az,scripts/ui/BattleView.gd:2328
-More ★,Diğer ★,scripts/ui/BattleView.gd:2328
-More,Diğer,scripts/ui/BattleView.gd:2328
-"Guard (6) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker, for +1 Momentum each.","Koru (6) — bir müttefik seç: bu tur ona yönelen saldırılar %25 daha zayıf olarak sana gelir, her biri +1 İvme.",scripts/ui/BattleView.gd:2342
-%s's Call (9) — %s. Uses this hero's turn; %d left this rift.,%s Çağrısı (9) — %s. Bu kahramanın sırasını harcar; bu yarıkta %d kaldı.,scripts/ui/BattleView.gd:2348
-To %s,%s sıraya,scripts/ui/BattleView.gd:2354
-Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row.,Yer Değiştir (7) — %s sıraya geç. Ön sıra saldırıların çoğunu çeker; yakın dövüş kahramanları arkadan yarı güçle vurur; bazı beceriler belli bir sıra ister.,scripts/ui/BattleView.gd:2355
-Tonics ×%d,Tonikler ×%d,scripts/ui/BattleView.gd:2363
-"Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.","Tonikler (8) — Şifa, Demir ya da Odak. Bu kahramanın sırasını harcar.",scripts/ui/BattleView.gd:2363
+%d. seviyede öğrenilir.",scripts/ui/BattleView.gd:2310
+Ability,Yetenek,scripts/ui/BattleView.gd:2313
+%s (%s) — %d Momentum. %s%s,%s (%s) — %d İvme. %s%s,scripts/ui/BattleView.gd:2322
+Defend,Savun,scripts/ui/BattleView.gd:2332
+Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow).,Savun (5) — bu tur darbelerden yarı hasar al. Savunurken alınan her darbe +1 İvme verir (ağır darbe için +2).,scripts/ui/BattleView.gd:2332
+"More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s","Diğer (M ya da oyun kolunda Start) — Koru (6), Yer Değiştir (7), Tonikler (8)%s",scripts/ui/BattleView.gd:2340
+", Champion's Call (9)",", Şampiyon Çağrısı (9)",scripts/ui/BattleView.gd:2340
+Less,Daha az,scripts/ui/BattleView.gd:2344
+More ★,Diğer ★,scripts/ui/BattleView.gd:2344
+More,Diğer,scripts/ui/BattleView.gd:2344
+"Guard (6) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker, for +1 Momentum each.","Koru (6) — bir müttefik seç: bu tur ona yönelen saldırılar %25 daha zayıf olarak sana gelir, her biri +1 İvme.",scripts/ui/BattleView.gd:2358
+%s's Call (9) — %s. Uses this hero's turn; %d left this rift.,%s Çağrısı (9) — %s. Bu kahramanın sırasını harcar; bu yarıkta %d kaldı.,scripts/ui/BattleView.gd:2364
+To %s,%s sıraya,scripts/ui/BattleView.gd:2370
+Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row.,Yer Değiştir (7) — %s sıraya geç. Ön sıra saldırıların çoğunu çeker; yakın dövüş kahramanları arkadan yarı güçle vurur; bazı beceriler belli bir sıra ister.,scripts/ui/BattleView.gd:2371
+Tonics ×%d,Tonikler ×%d,scripts/ui/BattleView.gd:2379
+"Tonics (8) — Healing, Iron or Focus. Uses this hero's turn.","Tonikler (8) — Şifa, Demir ya da Odak. Bu kahramanın sırasını harcar.",scripts/ui/BattleView.gd:2379
 "Target: %s
 Space repeats your last action","Hedef: %s
-Boşluk son hamleni tekrarlar",scripts/ui/BattleView.gd:2382
-The party is down.,Ekip düştü.,scripts/ui/BattleView.gd:2388
-Enemy turn…,Düşman sırası…,scripts/ui/BattleView.gd:2388
-"Battle speed: ×1, ×2, ×3 or Instant (click to change; also in Settings)","Savaş hızı: ×1, ×2, ×3 ya da Anında (değiştirmek için tıkla; Ayarlar'da da var)",scripts/ui/BattleView.gd:2406
-Auto,Oto,scripts/ui/BattleView.gd:2413
-Auto ✓,Oto ✓,scripts/ui/BattleView.gd:2413
-"Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. A fight won by hand, with no one down, pays +%d%% Gold and Essence.","Oto (A) — kahramanlar kendi başına davranır: ağır darbelere karşı Savunur, hazır olunca Yetenek kullanır, en zayıf düşmana odaklanır. Kimse düşmeden elle kazanılan dövüş +%%%d Altın ve Öz öder.",scripts/ui/BattleView.gd:2413
-Log,Kayıt,scripts/ui/BattleView.gd:2422
-Show or hide the fight log,Dövüş kaydını göster ya da gizle,scripts/ui/BattleView.gd:2422
-Retreat — leave the fight (the run ends),Geri çekil — dövüşten ayrıl (koşu biter),scripts/ui/BattleView.gd:2427
+Boşluk son hamleni tekrarlar",scripts/ui/BattleView.gd:2404
+The party is down.,Ekip düştü.,scripts/ui/BattleView.gd:2410
+Enemy turn…,Düşman sırası…,scripts/ui/BattleView.gd:2410
+"Battle speed: ×1, ×2, ×3 or Instant (click to change; also in Settings)","Savaş hızı: ×1, ×2, ×3 ya da Anında (değiştirmek için tıkla; Ayarlar'da da var)",scripts/ui/BattleView.gd:2428
+Auto,Oto,scripts/ui/BattleView.gd:2435
+Auto ✓,Oto ✓,scripts/ui/BattleView.gd:2435
+"Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. A fight won by hand, with no one down, pays +%d%% Gold and Essence.","Oto (A) — kahramanlar kendi başına davranır: ağır darbelere karşı Savunur, hazır olunca Yetenek kullanır, en zayıf düşmana odaklanır. Bir kahraman düşmek üzereyken duraklar. Kimse düşmeden elle kazanılan dövüş +%%%d Altın ve Öz öder.",scripts/ui/BattleView.gd:2435
+Log,Kayıt,scripts/ui/BattleView.gd:2444
+Show or hide the fight log,Dövüş kaydını göster ya da gizle,scripts/ui/BattleView.gd:2444
+Retreat — leave the fight (the run ends),Geri çekil — dövüşten ayrıl (koşu biter),scripts/ui/BattleView.gd:2449
 gathers its strength,güç topluyor,locale/extra_msgids.txt
 strikes every foe,tüm düşmanlara vuruyor,locale/extra_msgids.txt
 Phoenix,Anka,locale/extra_msgids.txt
 uses ,kullanıyor,locale/extra_msgids.txt
-[A foe gathers its strength],[Bir düşman güç topluyor],scripts/ui/BattleView.gd:2456
-[%s roars: a second phase],[%s kükrüyor: ikinci evre],scripts/ui/BattleView.gd:2465
-%s enters its second phase,%s ikinci evresine giriyor,scripts/ui/BattleView.gd:2466
-[A boss roars],[Bir boss kükrüyor],scripts/ui/BattleView.gd:2470
-[An elite snarls],[Bir seçkin hırlıyor],scripts/ui/BattleView.gd:2470
-Tower Guardian,Kule Muhafızı,scripts/ui/BattleView.gd:2483
-Round %d,Tur %d,scripts/ui/BattleView.gd:2490
-+%d XP each,Her birine +%d TP,scripts/ui/BattleView.gd:2566
-%s  Lv%d,%s  Sv%d,scripts/ui/BattleView.gd:2579
-LEVEL UP!,SEVİYE ATLADI!,scripts/ui/BattleView.gd:2582
-MVP,En İyi,scripts/ui/BattleView.gd:2590
-Most damage dealt this fight,Bu dövüşte en çok hasar veren,scripts/ui/BattleView.gd:2593
-Max level,En üst seviye,scripts/ui/BattleView.gd:2601
-%d / %d XP to Lv%d,%d / %d TP (Sv%d için),scripts/ui/BattleView.gd:2601
-%d dmg · %d kill%s,%d hasar · %d öldürme%s,scripts/ui/BattleView.gd:2606
+[A foe gathers its strength],[Bir düşman güç topluyor],scripts/ui/BattleView.gd:2478
+[%s roars: a second phase],[%s kükrüyor: ikinci evre],scripts/ui/BattleView.gd:2487
+%s enters its second phase,%s ikinci evresine giriyor,scripts/ui/BattleView.gd:2488
+[A boss roars],[Bir boss kükrüyor],scripts/ui/BattleView.gd:2492
+[An elite snarls],[Bir seçkin hırlıyor],scripts/ui/BattleView.gd:2492
+Tower Guardian,Kule Muhafızı,scripts/ui/BattleView.gd:2505
+Round %d,Tur %d,scripts/ui/BattleView.gd:2512
++%d XP each,Her birine +%d TP,scripts/ui/BattleView.gd:2588
+%s  Lv%d,%s  Sv%d,scripts/ui/BattleView.gd:2601
+LEVEL UP!,SEVİYE ATLADI!,scripts/ui/BattleView.gd:2604
+MVP,En İyi,scripts/ui/BattleView.gd:2612
+Most damage dealt this fight,Bu dövüşte en çok hasar veren,scripts/ui/BattleView.gd:2615
+Max level,En üst seviye,scripts/ui/BattleView.gd:2623
+%d / %d XP to Lv%d,%d / %d TP (Sv%d için),scripts/ui/BattleView.gd:2623
+%d dmg · %d kill%s,%d hasar · %d öldürme%s,scripts/ui/BattleView.gd:2628
 Guild tier reached,Lonca kademesi yükseldi,scripts/ui/GuildViews.gd:14
 Welcome to your guild,Loncana hoş geldin,scripts/ui/GuildViews.gd:19
 "Rifts are tearing open across the land. Your first three heroes have signed on (Roster, key 1). Head to the Rift Hall (key 3) to seal a rift.","Diyarın dört bir yanında yarıklar açılıyor. İlk üç kahramanın loncaya katıldı (Kadro, tuş 1). Bir yarığı mühürlemek için Yarık Salonu'na git (tuş 3).",scripts/ui/GuildViews.gd:19

@@ -46,3 +46,32 @@ func run() -> void:
 	GameState.quick_fight()
 	var res3: Dictionary = GameState.run["node_state"].get("result", {})
 	check(res3.get("won", false) and int(res3.get("hand_bonus", 0)) == 0, "Quick fight is auto play: no hand bonus")
+
+	# Quick fight is earned per rank: open on a sealed rank, not on a new one
+	# or a finale.
+	GameState.finish_run()
+	GameState.best_rift_rank_sealed = GameData.rift_rank_index("D")
+	GameState.start_ladder_rift("D", ids, null)
+	check(GameState.quick_fight_lock() == "", "Quick fight on a rank you've sealed")
+	GameState.finish_run()
+	GameState.start_ladder_rift("C", ids, null)
+	check(GameState.quick_fight_lock() != "", "not on a rank you haven't sealed yet")
+	GameState.finish_run()
+	GameState.run = {"finale": 1, "rift_rank": ""}
+	check(GameState.quick_fight_lock() != "", "nor in a finale")
+	GameState.run = {}
+
+	# Auto stops for a hero about to fall.
+	GameState.start_run("lesser", ids, null)
+	GameState.run["node_state"] = {}
+	GameState.choose_node_type("combat")
+	GameState.engage_node()
+	var st: Dictionary = GameState.run["node_state"]["combat_state"]
+	for m in st["monsters"]:
+		m["dmg"] = 1.0
+	check(Combat.hero_about_to_fall(st) == null, "no pause while nobody is in danger")
+	check(not Combat.incoming_hits(st).is_empty(), "the foes' intents show who they're hitting")
+	for x in st["party"]:
+		x.hp = 1
+	check(Combat.hero_about_to_fall(st) != null, "a hit that would drop a hero is spotted")
+	GameState.finish_run()
