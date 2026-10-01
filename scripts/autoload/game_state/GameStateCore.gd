@@ -65,6 +65,7 @@ var best_rift_rank_sealed: int = -1   # highest ladder rank sealed (GameData.RIF
 var triage_used_this_cycle: bool = false
 var pending_shop_boost: bool = false
 var guide_hidden: bool = false   # the camp's "Getting started" checklist was dismissed
+var last_party: Array[String] = []   # the heroes who went out last (party assembly opens on them)
 
 ## One-shot flag for a hero/Champion that just rolled Rank S from any of the
 ## blind-reroll sources (recruit-offer reroll, Champion reroll, or the free
@@ -389,7 +390,7 @@ func _run_for_save() -> Dictionary:
 		"node_kind": run.get("node_kind", ""), "node_state": _pack(_saveable_node_state()), "seed": run.get("seed", 0),
 		"sealed": run.get("sealed"), "anchor_used": run.get("anchor_used", false),
 		"start_coins": run.get("start_coins", coins), "start_crystals": run.get("start_crystals", crystals),
-		"heroes_lost": run.get("heroes_lost", 0),
+		"heroes_lost": run.get("heroes_lost", 0), "start_snap": run.get("start_snap", {}),
 		"rift_rank": run.get("rift_rank", ""), "champion_call_used": run.get("champion_call_used", false),
 		"injured": run.get("injured", []), "left_behind": run.get("left_behind", []), "heal_used": run.get("heal_used", false),
 		"any_ko": run.get("any_ko", false),
@@ -591,7 +592,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "contest_start": contest_start, "rival_event": rival_event, "session": session, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
-		"guide_hidden": guide_hidden,
+		"guide_hidden": guide_hidden, "last_party": last_party,
 		"run": _run_for_save(),
 		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,

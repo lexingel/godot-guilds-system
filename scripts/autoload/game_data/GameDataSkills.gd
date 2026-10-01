@@ -167,6 +167,53 @@ const ABILITY_EFFECT_ICON := {
 }
 
 
+## An Ability's description with its numbers: most descriptions were only
+## flavour ("Mends the whole party."). The numbers follow Combat's ability
+## match exactly; "the party's damage" is the party's combined attack.
+static func ability_desc(pool_id: String) -> String:
+	var ab: Dictionary = SUBCLASS_ABILITIES.get(pool_id, {})
+	var v: float = float(ab.get("value", 0.0))
+	var p := func(x: float) -> int: return int(round(x * 100.0))
+	var n := ""
+	match str(ab.get("effect", "")):
+		"mend_burst": n = TranslationServer.translate("Heals every ally for %d%% of their max HP.") % p.call(v)
+		"monster_dmg_mult": n = TranslationServer.translate("Every foe deals %d%% less damage for the rest of the fight.") % p.call(1.0 - v)
+		"team_dmg_mult": n = TranslationServer.translate("+%d%% party damage for the rest of the fight.") % p.call(v - 1.0)
+		"burst_lowest": n = TranslationServer.translate("Hits the weakest foe for %d%% of the party's damage.") % p.call(v)
+		"cleave_burst": n = TranslationServer.translate("Hits every foe for %d%% of the party's damage.") % p.call(v)
+		"execute_burst": n = TranslationServer.translate("Hits the weakest foe for %d%% of the party's damage, up to double against one near death.") % p.call(v)
+		"shield_lowest": n = TranslationServer.translate("Shields the lowest-HP ally for %d%% of their max HP.") % p.call(v)
+		"reset_cooldowns": n = TranslationServer.translate("+7 Momentum.")
+		"dodge_surge": n = TranslationServer.translate("+%d%% party dodge for the rest of the fight (60%% at most).") % p.call(v)
+		"escalate_surge": n = TranslationServer.translate("The party's damage grows %d%% more each round for the rest of the fight.") % p.call(v)
+		"counter_surge": n = TranslationServer.translate("+%d%% chance to counter-attack for the rest of the fight (60%% at most).") % p.call(v)
+		"wipe_guard_surge": n = TranslationServer.translate("+%d%% chance the last hero standing survives a killing blow, once this fight (90%% at most).") % p.call(v)
+		"self_sac_burst": n = TranslationServer.translate("Costs 15%% of this hero's max HP; hits the weakest foe for %d%% of the party's damage.") % p.call(v)
+		"debuff_lowest": n = TranslationServer.translate("The weakest foe deals %d%% less damage for the rest of the fight.") % p.call(1.0 - v)
+		"team_shield_burst": n = TranslationServer.translate("Shields every ally for %d%% of their max HP.") % p.call(v)
+		"execute_all_low": n = TranslationServer.translate("Hits every foe below half health for %d-%d%% of the party's damage.") % [p.call(v * 1.5), p.call(v * 2.0)]
+		"stun_strike": n = TranslationServer.translate("Hits the target for %d%% of the party's damage and stuns it (a boss only loses a wind-up).") % p.call(v)
+		"freeze_target": n = TranslationServer.translate("The target loses its next 2 actions and any wind-up (a boss: 1 action).")
+		"execute_threshold": n = TranslationServer.translate("Finishes off a foe below 35%% HP (not a boss); otherwise hits it for %d%% of the party's damage.") % p.call(v)
+		"armor_break": n = TranslationServer.translate("Strips the target's armor and wards; it takes +15%% damage for the fight, and is hit for %d%% of the party's damage.") % p.call(v * 0.5)
+		"mark_target": n = TranslationServer.translate("The target takes +%d%% damage for the rest of the fight.") % p.call(v)
+		"double_strike": n = TranslationServer.translate("Two hits on the target, each %d%% of this hero's attack.") % p.call(v)
+		"burn_all": n = TranslationServer.translate("Every foe burns for %d rounds, each round for %d%% of the party's damage.") % [MONSTER_BURN_ROUNDS, p.call(v * 0.5)]
+		"chain_lightning": n = TranslationServer.translate("3 strikes on random foes, each %d%% of the party's damage.") % p.call(v)
+		"ward_break": n = TranslationServer.translate("Strips every foe's armor and wards and hits each for %d%% of the party's damage.") % p.call(v * 0.5)
+		"riposte": n = TranslationServer.translate("This hero answers the next 3 blows with %d%% of the party's damage.") % p.call(v)
+		"taunt_ward": n = TranslationServer.translate("Every foe attacks this hero this round, for 30%% less; they gain a shield of %d%% of their max HP.") % p.call(v)
+		"undying": n = TranslationServer.translate("This hero can't fall this round.")
+		"revive": n = TranslationServer.translate("Raises a fallen ally with %d%% of their max HP.") % p.call(v)
+		"hp_drain_burst": n = TranslationServer.translate("Hits the weakest foe for %d%% of the party's damage and heals this hero for 40%% of it.") % p.call(v)
+		"trap": n = TranslationServer.translate("The next foe to attack loses that attack and takes %d%% of the party's damage.") % p.call(v)
+		"mend_shield_hybrid": n = TranslationServer.translate("Heals the lowest-HP ally for %d%% of max HP and shields them for %d%%.") % [p.call(v), p.call(v * 0.6)]
+		"cleanse_heal": n = TranslationServer.translate("Heals every ally for %d%% of max HP and clears their burns, poisons and curses.") % p.call(v)
+		"shield_wall_front": n = TranslationServer.translate("Shields every front-row ally for %d%% of their max HP.") % p.call(v)
+	var d := TranslationServer.translate(str(ab.get("desc", "")))
+	return d if n == "" else "%s %s" % [d, n]
+
+
 static func ability_icon(pool_id: String) -> String:
 	var ab: Dictionary = SUBCLASS_ABILITIES.get(pool_id, {})
 	return ABILITY_EFFECT_ICON.get(str(ab.get("effect", "")), "res://assets/skills/sword_a.png")
@@ -550,7 +597,7 @@ const BACK_ROW_MELEE_MULT := 0.5
 const ROLE_SKILLS := {
 	"warrior": [
 		{"id": "shield_bash", "name": "Shield Bash", "level": 1, "cost": 2, "row": "front", "target": "foe", "effect": "bash", "value": 1.1,
-			"icon": "res://assets/skills/shield_orange.png", "desc": "Hits the target for 110% and stuns it: it loses its next action and any wind-up. Bosses only lose the wind-up."},
+			"icon": "res://assets/skills/shield_orange.png", "desc": "Hits the target for 110% and stuns it: it loses its next action and any wind-up. Bosses only lose a wind-up, and a foe stunned this round or last shakes it off."},
 		{"id": "taunt", "name": "Taunt", "level": 6, "cost": 3, "row": "front", "target": "none", "effect": "taunt", "value": 0.3,
 			"icon": "res://assets/skills/helm.png", "desc": "Every foe aims its attacks at this hero until the round ends, and this hero takes 30% less from them."},
 	],

@@ -692,7 +692,6 @@ func _quick_go(id: String) -> void:
 	hub_cluster = ""
 	inv_category = ""
 	mgmt_branch = ""
-	medical_picker_bed = -1
 	match id:
 		"crafting": screen = "crafting_hall"
 		"rift": screen = "rift_hall"
@@ -804,7 +803,6 @@ func _header_back() -> Array:
 		screen = "camp"
 		term_tab = "camp"
 		hub_cluster = ""
-		medical_picker_bed = -1
 		mgmt_branch = ""
 		inv_category = ""
 		render()
@@ -1319,6 +1317,7 @@ func _render_campaign_panel(v: Container) -> void:
 	var ready := GameState.finale_ready()
 	var fb := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Face the finale: %s") % tr(str(act["finale"])), func():
 		pending_party.clear()
+		_prefill_party = true
 		screen = "party_assembly"
 		_pending_diff_id = str(act["tier"])
 		_pending_rift_rank = ""
@@ -1367,6 +1366,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 	var unlocked := GameState.greater_rift_unlocked()
 	var go := func(rank_id: String, endless: bool):
 		pending_party.clear()
+		_prefill_party = true
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_tower = false
@@ -1747,6 +1747,7 @@ func _tower_floor_card(info: Dictionary) -> Control:
 	cv.add_child(_tower_reward_line(info))
 	var b := _icon_domain_button("ember", GameData.CAMP_HUB_ICON_PATH["rift"], tr("Assemble party (up to %d)") % cap, func():
 		pending_party.clear()
+		_prefill_party = true
 		_pending_tower = true
 		screen = "party_assembly"
 		render()
@@ -1829,7 +1830,19 @@ func _daily_twist_row() -> Control:
 
 
 # ---------------- Party Assembly ----------------
+var _prefill_party := false   # the next party assembly opens on GameState.last_party
+
+
 func _render_party_assembly(v: VBoxContainer) -> void:
+	# It opens on the last party that went out (whoever's still ready, in their
+	# rows): picking the same four for every Tower floor was a chore.
+	if _prefill_party:
+		_prefill_party = false
+		if not _pending_endless:
+			for id in GameState.last_party:
+				var lh := GameState.find_hero(id)
+				if lh and not lh.is_champion and not lh.is_downed() and lh.busy_runs <= 0 and not pending_party.has(id) and pending_party.size() < _party_cap():
+					pending_party.append(id)
 	if GameState.breach_blocks_runs():
 		screen = "defense"   # a broken rift comes first
 		_render_defense_setup(v)
@@ -1890,6 +1903,7 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		cards.add_theme_constant_override("h_separation", 8)
 		cards.add_theme_constant_override("v_separation", 8)
 		cards.mouse_filter = Control.MOUSE_FILTER_PASS
+		cards.custom_minimum_size.y = 100   # a card's height even while empty, so the page doesn't jump on the first Add
 		for ph in in_row:
 			cards.add_child(_party_card(ph, ph.is_champion, true))
 		if in_row.is_empty():
@@ -1901,10 +1915,10 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var bench: Array = GameState.heroes.filter(func(x): return not pending_party.has(x.id))
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some under Roster > Recruits first."))
-	elif not bench.is_empty():
+	elif not GameState.heroes.is_empty():
 		var bench_head := HBoxContainer.new()
 		bench_head.add_theme_constant_override("separation", 10)
-		var bl := _label("Roster — drag into a row, or Add (joins their natural row)", 12, true)
+		var bl := _label("Roster — drag into a row, or Add (they keep the row they stood in last)", 12, true)
 		bl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bench_head.add_child(bl)
 		# One click to a full party: the strongest ready heroes, each in their natural row.
@@ -1914,18 +1928,19 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 			for x in ready:
 				if pending_party.size() >= _party_cap():
 					break
-				pending_party.append(x.id)
-				GameState.set_hero_formation(x.id, str(GameData.ROLE_POSITION.get(GameData.hero_role(x), {}).get("row", x.formation)))
+				pending_party.append(x.id)   # each in the row they stood in last (a new hero: their role's)
 			render())
-		fill.tooltip_text = tr("Fill the party with your strongest ready heroes, each in their natural row.")
+		fill.tooltip_text = tr("Fill the party with your strongest ready heroes, each in the row they stood in last.")
 		fill.disabled = ready.is_empty() or pending_party.size() >= _party_cap()
 		bench_head.add_child(fill)
 		v.add_child(bench_head)
 		var bench_flow := HFlowContainer.new()
 		bench_flow.add_theme_constant_override("h_separation", 8)
 		bench_flow.add_theme_constant_override("v_separation", 8)
-		for bh in bench:
-			bench_flow.add_child(_party_card(bh, bh.is_champion, false))
+		# Everyone stays in their place here, the ones in the party marked: a
+		# card leaving the list reflowed it under the cursor between two Adds.
+		for bh in GameState.heroes:
+			bench_flow.add_child(_party_card(bh, bh.is_champion, false, pending_party.has(bh.id)))
 		v.add_child(bench_flow)
 
 	if not GameState.champions.is_empty():
@@ -2673,12 +2688,13 @@ func _render_slot_list(v: VBoxContainer) -> void:
 ## Front/Back row), name, level/role/HP, and their position bonus. `in_party`
 ## cards get Move/Remove (the Champion can't be removed); bench cards get Add,
 ## which drops the hero into their role's natural row.
-func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
+## `picked`: a roster card for a hero already in the party (marked, with Remove).
+func _party_card(h: Hero, is_champ: bool, in_party: bool, picked: bool = false) -> Control:
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE3 if in_party else Palette.SURFACE
-	style.border_color = Palette.LINE
+	style.bg_color = Palette.SURFACE3 if in_party or picked else Palette.SURFACE
+	style.border_color = Palette.EMBER if picked else Palette.LINE
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(6)
 	style.set_content_margin_all(6)
@@ -2720,9 +2736,11 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 	names.add_child(_rich_line(power_line + ("  " + _arch_chip(arch) if arch != "" else ""), 10, true))
 	top.add_child(names)
 	cv.add_child(top)
+	# The row bonus is in the card's tooltip: as a wrapped paragraph it made a
+	# card three times taller and pushed the roster off a laptop screen.
 	var pos_text := _position_text(h) if in_party else ""
 	if pos_text != "":
-		cv.add_child(_wrap_label(pos_text, 10, true))
+		card.tooltip_text = pos_text
 	var actions := HBoxContainer.new()
 	if in_party:
 		var other := "back" if h.formation == "front" else "front"
@@ -2734,12 +2752,16 @@ func _party_card(h: Hero, is_champ: bool, in_party: bool) -> Control:
 			pending_party.erase(id)
 			render()
 		))
+	elif picked:
+		actions.add_child(_button(tr("In party · Remove"), func(id=h.id):
+			pending_party.erase(id)
+			render()
+		))
 	elif not downed:
-		var add_btn := _button("Add", func(id=h.id, hero=h):
+		var add_btn := _button("Add", func(id=h.id):   # into the row they stood in last
 			if pending_party.size() >= _party_cap():
 				return
 			pending_party.append(id)
-			GameState.set_hero_formation(id, str(GameData.ROLE_POSITION.get(GameData.hero_role(hero), {}).get("row", hero.formation)))
 			render()
 		)
 		add_btn.disabled = pending_party.size() >= _party_cap()

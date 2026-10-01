@@ -403,6 +403,21 @@ func _intent_of(state: Dictionary, i: int) -> Dictionary:
 const GUARD_DAMAGE_MULT := 0.75
 
 
+## Stuns monster `i` for its next `actions` actions, unless a stun already
+## cost it an action this round or last: a foe can't be stun-locked round
+## after round (a front row of warriors used to keep a boss's adds frozen).
+## Returns whether the stun took; logs the shake-off when it didn't.
+func stun_monster(state: Dictionary, i: int, actions: int) -> bool:
+	var rn := int(state.get("round_num", 0))
+	var last: Dictionary = state.get_or_add("_m_stun_round", {})
+	if int(last.get(i, -99)) >= rn - 1:
+		(state["log"] as Array).append(tr("%s shakes off the stun.") % tr(str(state["monsters"][i]["name"])))
+		return false
+	state.get_or_add("_m_stunned", {})[i] = actions
+	last[i] = rn + actions - 1
+	return true
+
+
 ## The biggest hit still coming at each living hero this round, by hero id
 ## (from the monsters' intents; sweeps count on everyone they reach).
 func incoming_hits(state: Dictionary) -> Dictionary:
@@ -746,10 +761,12 @@ func _role_skill_effect(state: Dictionary, h: Hero, sk: Dictionary, target_idx: 
 					m["_winding"] = false
 					m["_charged"] = false
 					if str(m.get("tier", "")) != "boss":
-						state.get_or_add("_m_stunned", {})[target_idx] = true
-						log.append(tr("%s is stunned!") % tr(str(m["name"])))
+						if stun_monster(state, target_idx, 1):
+							log.append(tr("%s is stunned!") % tr(str(m["name"])))
 					elif broke:
 						log.append(tr("%s's wind-up is broken!") % tr(str(m["name"])))
+					else:
+						log.append(tr("%s shrugs off the stun: a boss only loses a wind-up.") % tr(str(m["name"])))
 		"taunt":
 			state["_taunt"] = h.id
 			state["_taunt_cut"] = val
@@ -976,14 +993,15 @@ func _resolve_hero_action(state: Dictionary, h: Hero) -> void:
 							tm["hp"] = float(tm["hp"]) - round(team_dmg_base * escalate_mult * val)
 							tm["_winding"] = false
 							tm["_charged"] = false
-							if not boss:
-								state.get_or_add("_m_stunned", {})[ti] = 1
-							log.append(tr("%s is %s!") % [tr(str(tm["name"])), tr(str("stunned" if not boss else tr("staggered — its wind-up breaks")))])
+							if boss:
+								log.append(tr("%s is staggered — its wind-up breaks!") % tr(str(tm["name"])))
+							elif stun_monster(state, ti, 1):
+								log.append(tr("%s is stunned!") % tr(str(tm["name"])))
 						"freeze_target":
 							tm["_winding"] = false
 							tm["_charged"] = false
-							state.get_or_add("_m_stunned", {})[ti] = 1 if boss else 2
-							log.append(tr("%s is frozen solid!") % tr(str(tm["name"])))
+							if stun_monster(state, ti, 1 if boss else 2):
+								log.append(tr("%s is frozen solid!") % tr(str(tm["name"])))
 						"execute_threshold":
 							if not boss and float(tm["hp"]) <= float(tm["max_hp"]) * 0.35:
 								tm["hp"] = 0.0
@@ -1306,7 +1324,11 @@ func _monster_strike(state: Dictionary, i: int, target: Hero, mult: float, aimed
 			taunted = true
 		else:
 			var aim := {"target": target, "attacker": m}
-			for ally in alive_now:
+			# The sturdiest ally gets the first chance to step in (a relic's
+			# intercept says "your healthiest hero").
+			var in_line := alive_now.duplicate()
+			in_line.sort_custom(func(a, b): return a.hp > b.hp)
+			for ally in in_line:
 				if ally != target:
 					_fire("ally_targeted", state, ally, aim)
 					if aim["target"] != target:

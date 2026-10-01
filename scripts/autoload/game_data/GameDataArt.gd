@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"From player feedback: click a foe to target it (click again to attack). Auto lasts one fight. Quick fight also opens for a Favored party and says why when it can't. Every Ability shows its numbers. Shield Bash can't stun the same foe two rounds running. Fixed Legendary relics no longer take Essence for levels (refunded). Items say which slot they take. The party screen remembers your last party and rows. Clearer Medical Bay, rewards, run summary and skill tree.",
 	"The bonus for winning by hand (+30% Gold and Essence, no one down) now pays on elites, bosses and every fight on a rank you haven't sealed: the fights where playing by hand matters.",
 	"Fights: Quick fight now opens on a rank once you've sealed it, so a new rank and the act finales are fought where you can see them. Auto pauses when a hero is about to fall. The bonus for winning by hand shows before every fight.",
 	"Balance: from Rank E up, monsters hit harder and last longer, so a party at Recommended power now seals about 3 rifts in 5 and Deadly means it. Hero wages are 50% higher, so a big roster has to earn its keep.",

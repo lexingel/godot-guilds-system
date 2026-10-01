@@ -42,6 +42,7 @@ var selected_hero_id: String = ""
 
 
 var expanded_skill_tree_kind: String = ""   # "" = no tree section expanded, else which kind's tree is showing — a plain toggle rather than per-hero, so it stays put switching between heroes. A hero can hold several trees (one per evolution stage); only one is expanded at a time.
+var _skill_tree_closed := false   # the player hid the tree (it opens on its own otherwise)
 
 
 var evolve_picker_hero_id: String = ""   # "" = closed, else which hero's evolution-path picker is open
@@ -69,7 +70,6 @@ var _s_rank_celebration: Dictionary = {}   # {} = not showing; else GameState.pe
 var _last_guild_tier_name: String = ""   # tracks Guild Tier across renders to detect "just reached a new tier" (tier itself is derived, not stored)
 
 
-var medical_picker_bed: int = -1   # which empty bed slot is showing its hero picker, -1 = none
 
 
 var mgmt_branch: String = ""       # "" = branch hub, else a GameData.BRANCHES id
@@ -493,7 +493,7 @@ func _framed_portrait(cls_id: String, pool_id: String, size: float, look: int = 
 ## hub's clickable props. Selected state is a filled tint (not just a thin
 ## border) since the border alone was too easy to miss against the wooden
 ## shelf background.
-func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "", drop_target: Dictionary = {}) -> Control:
+func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disabled: bool, cb: Callable, size: float = 48.0, label_text: String = "", frame_path: String = "", tooltip_override: String = "", drop_target: Dictionary = {}, badge_color: Color = Palette.HAZARD) -> Control:
 	var label_h := 30.0 if label_text != "" else 0.0   # room for a 2-line caption
 	var wrap := Control.new()
 	wrap.custom_minimum_size = Vector2(size, size + label_h)
@@ -533,7 +533,7 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 	if cooldown_text != "":
 		var badge := PanelContainer.new()
 		var badge_style := StyleBoxFlat.new()
-		badge_style.bg_color = Palette.HAZARD
+		badge_style.bg_color = badge_color
 		badge_style.corner_radius_top_left = 8
 		badge_style.corner_radius_top_right = 8
 		badge_style.corner_radius_bottom_left = 8
@@ -596,15 +596,15 @@ func _action_slot(icon_path: String, cooldown_text: String, selected: bool, disa
 func _reward_tile(icon_path: String, name_text: String, rarity_text: String, desc_text: String, cb: Callable, tip_bbcode: String = "", note: Array = []) -> Control:
 	const TILE_W := 184.0
 	var TILE_H := 132.0 if note.is_empty() else 160.0
-	var wrap := Control.new()
+	# A container, so the card grows with its wrapped text: sizing it by hand
+	# before layout (when a wrapped label still reads as one line) let long
+	# item text spill out of the card and past the Victory box.
+	var wrap := MarginContainer.new()
 	wrap.custom_minimum_size = Vector2(TILE_W, TILE_H)
-	wrap.size = Vector2(TILE_W, TILE_H)
+	wrap.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"CardPanelViolet"
-	panel.custom_minimum_size = Vector2(TILE_W, TILE_H)
-	panel.size = Vector2(TILE_W, TILE_H)
-	panel.clip_contents = true
 	var col := _vbox(2)
 	if icon_path != "":
 		var icon_row := HBoxContainer.new()
@@ -634,18 +634,10 @@ func _reward_tile(icon_path: String, name_text: String, rarity_text: String, des
 		note_lbl.add_theme_color_override("font_color", note[1])
 		col.add_child(note_lbl)
 	panel.add_child(col)
-	# Grow to fit long item text instead of spilling past the frame.
-	var fit := Vector2(TILE_W, maxf(TILE_H, panel.get_combined_minimum_size().y))
-	wrap.custom_minimum_size = fit
-	wrap.size = fit
-	panel.custom_minimum_size = fit
-	panel.size = fit
 	wrap.add_child(panel)
 
-	var btn := Button.new()
+	var btn := Button.new()   # over the whole card
 	btn.flat = true
-	btn.custom_minimum_size = wrap.custom_minimum_size
-	btn.size = wrap.size
 	var clear_style := StyleBoxEmpty.new()
 	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
 		btn.add_theme_stylebox_override(style_name, clear_style)
@@ -854,7 +846,19 @@ func _colorize_log_line(line: String, party: Array[Hero], monsters: Array) -> St
 ## the generic Relic.desc() (built for the normal rolled case), so every
 ## loot-listing site (reward choice, shop, inventory) routes through here
 ## instead of duplicating the unique/normal branch three times.
+## What kind of thing a reward is and where it goes, in front of its stats:
+## players couldn't tell a hero's gear from a party-wide relic.
+func _loot_slot_tag(obj, is_relic: bool) -> String:
+	if is_relic:
+		return tr("Relic (whole party, a relic slot)")
+	return tr("Weapon (a hero's weapon slot)") if (obj as Item).slot_type() == "weapon" else tr("%s (a hero's gear slot)") % tr(str(GameData.ITEM_CATEGORY_LABEL.get((obj as Item).category, "Gear")))
+
+
 func _loot_desc(obj, is_relic: bool) -> String:
+	return "%s · %s" % [_loot_slot_tag(obj, is_relic), _loot_desc_body(obj, is_relic)]
+
+
+func _loot_desc_body(obj, is_relic: bool) -> String:
 	if is_relic:
 		var r: Relic = obj
 		if r.unique_id != "":
@@ -1057,7 +1061,7 @@ func _item_card(it: Item, compare_for: Hero = null, slot: int = -2) -> String:
 	var lines: Array[String] = []
 	var rc: Color = ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT)
 	lines.append("[b]%s[/b]" % _bb(rc, it.name))
-	var sub := "%s %s" % [tr(str(it.rarity.capitalize())), tr(str(GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category)))]
+	var sub := "%s %s · %s" % [tr(str(it.rarity.capitalize())), tr(str(GameData.ITEM_CATEGORY_LABEL.get(it.category, it.category))), tr("weapon slot") if it.slot_type() == "weapon" else tr("gear slot")]
 	if it.item_rank != "":
 		sub += tr(" · Rank %s") % tr(str(it.item_rank))
 	lines.append(_bb(Palette.MUTED, sub))

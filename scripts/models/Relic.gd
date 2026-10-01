@@ -34,7 +34,7 @@ func desc() -> String:
 	for s in specials:
 		parts.append(str(s["label"]))
 	if not trigger.is_empty():
-		parts.append(Combat.describe_effect(trigger))
+		parts.append(Combat.describe_effect(trigger, true))
 	if drawback_kind != "":
 		parts.append(drawback_label)
 	return " · ".join(parts)

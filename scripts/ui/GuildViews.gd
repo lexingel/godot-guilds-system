@@ -1133,80 +1133,57 @@ func _render_medical_bay(v: VBoxContainer) -> void:
 	v.add_child(_label(tr("Medical Bay — %d/%d beds occupied") % [GameState.occupied_beds(), GameState.medical_bed_cap()], 16))
 	if GameState.field_triage_available():
 		v.add_child(_wrap_label("Field Triage: once per rift, get a downed hero back up mid-rift.", 12, true))
-
-	var scene_size := Vector2(HUB_SCENE.x, 200)
-	var scene := _hub_banner(GameData.MEDICAL_BG, scene_size.y)
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(_hub_banner(GameData.MEDICAL_BG, 120.0 if _narrow() else 160.0))
 
 	var bedded: Array[Hero] = []
 	bedded.assign(GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and h.bedded))
 	var waiting: Array[Hero] = []
 	waiting.assign(GameState.heroes.filter(func(h): return GameState.needs_recovery(h) and not h.bedded))
+	var free := GameState.medical_bed_cap() - GameState.occupied_beds()
 
-	var cap := GameState.medical_bed_cap()
-	var bed_w := 64.0
-	var bed_h := 40.0
-	var gap: float = (scene_size.x - cap * bed_w) / (cap + 1)
-	for i in cap:
-		var bx: float = gap + i * (bed_w + gap)
-		var by := scene_size.y - bed_h - 24.0
-		var bed_rect := _icon(GameData.BED_ICON, int(bed_w))
-		var bed_wrap := _wrap_icon(bed_rect)
-		bed_wrap.position = Vector2(bx, by)
-
+	# The beds as cards (they used to be drawn at fixed spots on the picture,
+	# which put them and their labels off it on a narrow window).
+	var beds := HFlowContainer.new()
+	beds.add_theme_constant_override("h_separation", 8)
+	beds.add_theme_constant_override("v_separation", 8)
+	for i in GameState.medical_bed_cap():
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelViolet"
+		card.custom_minimum_size = Vector2(190, 0)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var bed_icon := _icon(GameData.BED_ICON, 40)
+		row.add_child(bed_icon)
+		var col := _vbox(0)
 		if i < bedded.size():
 			var h: Hero = bedded[i]
-			bed_rect.modulate = Color(0.8, 0.85, 1.0)
-			scene.add_child(bed_wrap)
-			var name_label := _label(h.name.split(" the ")[0], 10, true)
-			name_label.position = Vector2(bx - 10, by + bed_h + 2)
-			scene.add_child(name_label)
-			var time_label := _label(_recovery_text(h, true), 10, true)
-			time_label.position = Vector2(bx - 10, by + bed_h + 16)
-			scene.add_child(time_label)
+			col.add_child(_label(h.name.split(" the ")[0], 13))
+			col.add_child(_label(tr("%d/%d HP · %s") % [h.hp, Combat.max_hp(h), tr(_recovery_text(h, true))], 11, true))
 		else:
-			scene.add_child(bed_wrap)
-			var bed_btn := _button("", func(idx=i):
-				medical_picker_bed = -1 if medical_picker_bed == idx else idx
+			bed_icon.modulate = Color(1, 1, 1, 0.45)
+			col.add_child(_label(tr("Empty bed"), 13, true))
+		row.add_child(col)
+		card.add_child(row)
+		beds.add_child(card)
+	v.add_child(beds)
+
+	if not waiting.is_empty():
+		v.add_child(_label(tr("Recovering without a bed (slower):"), 13))
+		for h in waiting:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 10)
+			var info := _wrap_label(tr("%s — %d/%d HP (%s) · %s") % [tr(str(h.name)), h.hp, Combat.max_hp(h), tr("downed") if h.is_downed() else tr("wounded"), tr(str(_recovery_text(h, false)))], 12)
+			info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(info)
+			var put := _icon_domain_button("ember", "res://assets/skills/heart.png", "Put in a bed", func(id=h.id):
+				GameState.assign_to_bed(id)
 				render()
 			)
-			bed_btn.flat = true
-			bed_btn.custom_minimum_size = Vector2(bed_w, bed_h)
-			bed_btn.size = Vector2(bed_w, bed_h)
-			bed_btn.position = Vector2(bx, by)
-			var clear_style := StyleBoxEmpty.new()
-			for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
-				bed_btn.add_theme_stylebox_override(style_name, clear_style)
-			bed_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			scene.add_child(bed_btn)
-			var empty_label := _label("Empty", 10, true)
-			empty_label.position = Vector2(bx + 6, by + bed_h + 2)
-			scene.add_child(empty_label)
-
-	v.add_child(scene)
-
-	if medical_picker_bed >= 0 and medical_picker_bed < cap:
-		var picker := _vbox(4)
-		if waiting.is_empty():
-			picker.add_child(_label("No wounded heroes waiting for a bed.", 12, true))
-		else:
-			picker.add_child(_label(tr("Assign to bed %d:") % (medical_picker_bed + 1), 12, true))
-			for h in waiting:
-				var status := "downed" if h.is_downed() else "wounded"
-				var row := HBoxContainer.new()
-				row.add_child(_label(tr("%s — %d/%d HP (%s)") % [tr(str(h.name)), h.hp, Combat.max_hp(h), tr(str(status))]))
-				row.add_child(_icon_domain_button("ember", "res://assets/skills/heart.png", "Assign", func(id=h.id):
-					GameState.assign_to_bed(id)
-					medical_picker_bed = -1
-					render()
-				))
-				picker.add_child(row)
-		v.add_child(picker)
-
-	if medical_picker_bed == -1 and not waiting.is_empty():
-		v.add_child(_label("Recovering without a bed (slower) — click an empty bed to assign one:", 12, true))
-		for h in waiting:
-			v.add_child(_label(tr("%s — %d/%d HP · %s") % [tr(str(h.name)), h.hp, Combat.max_hp(h), tr(str(_recovery_text(h, false)))], 12))
+			put.disabled = free <= 0
+			put.tooltip_text = tr("Every bed is taken") if free <= 0 else tr("A downed hero comes back a run sooner; a wounded one is fully healed after the next run.")
+			row.add_child(put)
+			v.add_child(row)
 
 	# Time only passes when a run ends — resting passes it without one.
 	v.add_child(_hsep())

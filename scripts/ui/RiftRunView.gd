@@ -317,7 +317,7 @@ func _run_bar(in_combat: bool) -> Control:
 		for r in relics:
 			var ricon := _icon(GameData.relic_icon(r), 22)
 			ricon.mouse_filter = Control.MOUSE_FILTER_PASS
-			ricon.tooltip_text = "%s — %s" % [tr(str(_loot_display_name(r))), tr(str(_loot_desc(r, true)))]
+			ricon.tooltip_text = "%s — %s" % [tr(str(_loot_display_name(r))), tr(str(_loot_desc_body(r, true)))]
 			rrow.add_child(ricon)
 		if in_combat:
 			top.add_child(rrow)
@@ -432,12 +432,16 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	if sealed != null:
 		var sealed_dict: Dictionary = sealed
 		var sealed_row := HBoxContainer.new()
-		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 28))
-		sealed_row.add_child(_label(tr("Rift Sealed! +%d Essence%s%s") % [
+		sealed_row.add_theme_constant_override("separation", 10)
+		sealed_row.add_child(_icon(GameData.CHEST_ICON_PATH, 36))
+		var st := _label(tr("Rift Sealed! +%d Essence%s%s") % [
 			int(sealed_dict["essence"]),
 			tr(" (+%d%% Wardstones)") % (GameState.lvl("infra.wardstones") * 10) if GameState.lvl("infra.wardstones") > 0 else "",
 			tr(" · Rift Cache found: +%d Gold!") % int(sealed_dict.get("cache", 0)) if int(sealed_dict.get("cache", 0)) > 0 else "",
-		]))
+		], 20)
+		st.add_theme_color_override("font_color", Palette.COINS)
+		st.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		sealed_row.add_child(st)
 		v.add_child(sealed_row)
 		var dbonus: Dictionary = sealed_dict.get("daily", {})
 		if not dbonus.is_empty():
@@ -446,9 +450,8 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			v.add_child(dl)
 		if str(sealed_dict.get("flavor", "")) != "":
 			v.add_child(_label(str(sealed_dict["flavor"]), 12, true))
-		for line in _run_summary_lines():
-			v.add_child(_label(line, 12, true))
-		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Return to camp", func():
+		v.add_child(_run_report())
+		v.add_child(_icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Return to camp", func():
 			GameState.finish_run()
 			screen = "camp"
 			render()

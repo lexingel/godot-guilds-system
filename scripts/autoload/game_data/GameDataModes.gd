@@ -123,6 +123,9 @@ const HERO_REQUESTS := {
 ## A fight won by hand (Auto never on) with no hero down pays this share
 ## of its Gold and its Essence again, where GameState.hand_bonus_here says.
 const HAND_BONUS := 0.3
+## A party at this share of a rank's Recommended power ("Favored") may Quick
+## fight it before sealing it: a tester way above the content couldn't.
+const QUICK_FIGHT_FAVORED := 1.2
 
 ## The Endless Rift pays once for each of these, the first time the guild
 ## survives that long (any region); "sealed" means beating the Rift Warden.

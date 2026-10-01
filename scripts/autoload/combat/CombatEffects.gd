@@ -366,7 +366,8 @@ func _proc(state: Dictionary, h: Hero, text: String) -> void:
 
 ## One effect entry (hero_effects shape) as a player-facing sentence, e.g.
 ## "+25% damage in round 1" or "On a kill: act again (once per round)".
-func describe_effect(e: Dictionary) -> String:
+## `whole_party`: a relic's trigger, which any hero can fire (not one hero's gear).
+func describe_effect(e: Dictionary, whole_party: bool = false) -> String:
 	var pct := func(x) -> String: return "%d%%" % int(round(float(x) * 100.0))
 	var v: float = float(e.get("value", 0.0))
 	var text := ""
@@ -384,7 +385,7 @@ func describe_effect(e: Dictionary) -> String:
 			"counter_attack": what = tr("%s chance to counter-attack") % tr(str(pct.call(v)))
 			"gain_momentum": what = tr("%s chance to gain 1 Momentum") % tr(str(pct.call(v)))
 			"extra_turn": what = tr("act again (once per round)")
-			"intercept": what = tr("%s chance to take the hit for an ally below half HP") % tr(str(pct.call(v)))
+			"intercept": what = (tr("%s chance your healthiest hero takes the hit for an ally below half HP") if whole_party else tr("%s chance this hero takes the hit for an ally below half HP")) % tr(str(pct.call(v)))
 			"weaken_attacker": what = tr("cut the attacker's damage by %s") % tr(str(pct.call(v)))
 			"mend_party": what = tr("mend every ally for %s of their max HP") % tr(str(pct.call(v)))
 			"nova": what = tr("strike every foe for %s of the party's damage") % tr(str(pct.call(v)))

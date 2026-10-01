@@ -149,7 +149,7 @@ func _hero_card(h: Hero) -> PanelContainer:
 				var ab_mid := _vbox(0)
 				ab_mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				ab_mid.add_child(_label(tr("Ability: %s") % tr(str(ab["name"])), 12))
-				ab_mid.add_child(_wrap_label(str(ab["desc"]), 11, true))
+				ab_mid.add_child(_wrap_label(GameData.ability_desc(h.pool_id), 11, true))
 				ab_row.add_child(ab_mid)
 				if h.level < 3:
 					ab_row.add_child(_label("Unlocks at Lv3", 11, true))
@@ -187,7 +187,7 @@ func _hero_card(h: Hero) -> PanelContainer:
 							tr("Passive: %s") % tr(str(_passive_bb(str(c["id"])))),
 						]
 						if not ab.is_empty():
-							lines.append(tr("Ability: %s — %s") % [tr(str(ab["name"])), tr(str(ab["desc"]))])
+							lines.append(tr("Ability: %s — %s") % [tr(str(ab["name"])), GameData.ability_desc(str(c["id"]))])
 						lines.append(str(c["flavor"]))
 						cv.add_child(_rich_info_row("\n".join(lines), 11, [_icon_button("res://assets/skills/star.png", "Choose", func(id=h.id, pid=str(c["id"])):
 							var err := GameState.evolve_hero(id, pid)
@@ -204,6 +204,8 @@ func _hero_card(h: Hero) -> PanelContainer:
 			# hero can have several; only one tree's grid shows at a time (accordion
 			# style) to avoid stacking multiple full grids on screen at once.
 			var tree_summaries: Array = GameData.hero_tree_summaries(h)
+			if not _skill_tree_closed and not tree_summaries.is_empty() and not tree_summaries.any(func(ts): return ts["kind"] == expanded_skill_tree_kind):
+				expanded_skill_tree_kind = str(tree_summaries[0]["kind"])   # the tree used to hide behind a button
 			var pills := HBoxContainer.new()
 			pills.add_theme_constant_override("separation", 6)
 			for summary in tree_summaries:
@@ -211,13 +213,18 @@ func _hero_card(h: Hero) -> PanelContainer:
 				var is_open: bool = expanded_skill_tree_kind == kind
 				pills.add_child(_icon_button("res://assets/skills/eye_gem.png", tr("Hide %s") % tr(str(summary["label"])) if is_open else str(summary["label"]), func(k=kind):
 					expanded_skill_tree_kind = "" if expanded_skill_tree_kind == k else k
+					_skill_tree_closed = expanded_skill_tree_kind == ""
 					render()
 				))
 			cv.add_child(pills)
 
 			if not expanded_skill_tree_kind.is_empty() and tree_summaries.any(func(s): return s["kind"] == expanded_skill_tree_kind):
 				cv.add_child(_hsep())
-				cv.add_child(_label(tr("Skill Points: %d") % h.skill_points, 12))
+				var spl := _label(tr("Skill Points: %d") % h.skill_points, 15)
+				if h.skill_points > 0:
+					spl.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+				cv.add_child(spl)
+				cv.add_child(_wrap_label(tr("A glowing node can be learned now: click it. Each shows its cost in skill points (SP); a hero earns one per level. Lines lead from what a node needs. Path nodes are one choice: taking one locks the others. Hover a node for what it does."), 11, true))
 				_render_skill_tree_graph(cv, h, expanded_skill_tree_kind)
 				# Per-tree, not "respec everything" — a hero holds at most 2 trees
 				# (current + one prior evolution stage), so undoing just the one
@@ -394,17 +401,20 @@ func _attr_panel(h: Hero) -> PanelContainer:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 10)
 	head.add_child(_label("Attributes", 15))
+	# The same controls whether or not points are left, only disabled: the
+	# panel used to shrink on the last point, moving the + under the cursor.
+	var pts := _label(tr("%d point%s to spend") % [h.attr_points, tr(str(_pl(h.attr_points)))] if h.attr_points > 0 else tr("No points to spend"), 13, h.attr_points <= 0)
 	if h.attr_points > 0:
-		var pts := _label(tr("%d point%s to spend") % [h.attr_points, tr(str(_pl(h.attr_points)))], 13)
 		pts.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-		pts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		head.add_child(pts)
-		var sp := Control.new()
-		sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		head.add_child(sp)
-		var auto := _button("Auto", func(id=h.id): GameState.auto_assign_attrs(id); render())
-		auto.tooltip_text = tr("Spend them the %s way") % tr(str(GameData.hero_role(h).capitalize()))
-		head.add_child(auto)
+	pts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(pts)
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(sp)
+	var auto := _button("Auto", func(id=h.id): GameState.auto_assign_attrs(id); render())
+	auto.tooltip_text = tr("Spend them the %s way") % tr(str(GameData.hero_role(h).capitalize()))
+	auto.disabled = h.attr_points <= 0
+	head.add_child(auto)
 	v.add_child(head)
 	for a in GameData.ATTRIBUTES:
 		var row := HBoxContainer.new()
@@ -440,11 +450,11 @@ func _attr_panel(h: Hero) -> PanelContainer:
 		var nlab := _label(note, 12, true)
 		nlab.custom_minimum_size.x = 150
 		row.add_child(nlab)
-		if h.attr_points > 0:
-			var plus := _button("+", func(id=h.id, at=a): GameState.spend_attr_point(id, at); render())
-			plus.custom_minimum_size = Vector2(36, 30)
-			plus.tooltip_text = "+1 %s" % tr(str(GameData.ATTR_LABEL[a]))
-			row.add_child(plus)
+		var plus := _button("+", func(id=h.id, at=a): GameState.spend_attr_point(id, at); render())
+		plus.custom_minimum_size = Vector2(36, 30)
+		plus.tooltip_text = "+1 %s" % tr(str(GameData.ATTR_LABEL[a]))
+		plus.disabled = h.attr_points <= 0
+		row.add_child(plus)
 		v.add_child(row)
 	# Camp training (Gold) and a full reset (Essence).
 	var foot := HBoxContainer.new()
@@ -583,14 +593,16 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 	var missing_stone: bool = n.get("stone", false) and GameState.crystals < GameData.STONEBOUND_CRYSTALS
 	var can_learn := not learned and not missing_level and not missing_prereq and not missing_sp and not locked_out and not missing_rift and not missing_stone
 
+	var node_name := func(id) -> String: return tr(str(GameData.find_skill_node(kind, str(id), h.cls_id).get("name", id)))
 	var reason := "Learned"
 	if not learned:
 		if locked_out:
-			reason = "Locked out by your other path"
+			reason = tr("Locked out: you took %s. A Path is one choice; respec the tree to switch.") % ", ".join((n.get("excludes", []) as Array).filter(func(x): return h.skills.get(GameData.skill_storage_key(kind, x), false)).map(node_name))
 		elif missing_level:
 			reason = tr("Requires Lv%d") % int(n["req_level"])
 		elif missing_prereq:
-			reason = "Needs prerequisite"
+			var need: Array = (n["requires"] as Array).filter(func(r): return not h.skills.get(GameData.skill_storage_key(kind, r), false)).map(node_name)
+			reason = (tr("Learn %s first") % tr(" and ").join(need)) if not need.is_empty() else (tr("Learn one of %s first") % tr(" or ").join((n.get("requires_any", []) as Array).map(node_name)))
 		elif missing_rift:
 			reason = tr("Seal a Rank %s+ rift first") % tr(str(n["rift_rank"]))
 		elif missing_stone:
@@ -610,12 +622,13 @@ func _skill_node_tile(h: Hero, kind: String, n: Dictionary) -> Control:
 			Combat.describe_skill(str(n["kind"]), float(n.get("combo_bonus", 0.0))),
 			str(n["combo_kind"]),
 		]
-	var tile := _action_slot(str(n["icon"]), "", can_learn, not can_learn and not learned, func(hid=h.id, k=kind, sid=skill_id):
+	# The cost sits on the tile (it was only in the tooltip).
+	var tile := _action_slot(str(n["icon"]), "" if learned else tr("%d SP") % cost, can_learn, not can_learn and not learned, func(hid=h.id, k=kind, sid=skill_id):
 		var err := GameState.learn_skill(hid, k, sid)
 		if err != "":
 			push_warning(err)
 		render()
-	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), _node_effect_text(n), reason, combo_line])
+	, 60.0, str(n["name"]), GameData.SKILL_NODE_FRAME_PATH, "%s\n%s\n%s%s" % [str(n["name"]), _node_effect_text(n), reason, combo_line], {}, Palette.EMBER_DEEP if can_learn else Palette.SURFACE3)
 	if learned:
 		tile.modulate = Color(1.15, 1.02, 0.68)
 	var card := "[b]%s[/b]\n%s\n%s%s" % [str(n["name"]).replace("[", "[lb]"), _node_effect_text(n).replace("[", "[lb]"), _bb(Palette.MUTED, reason), combo_line.replace("[", "[lb]")]
@@ -1319,7 +1332,7 @@ func _relic_effect_lines(r: Relic) -> Array[String]:
 		for s in r.specials:
 			out.append(str(s["label"]))
 		if not r.trigger.is_empty():
-			out.append(Combat.describe_effect(r.trigger))
+			out.append(Combat.describe_effect(r.trigger, true))
 	return out
 
 
@@ -1470,7 +1483,7 @@ func _relic_modal(r: Relic) -> void:
 		for i in r.specials.size():
 			rows.append([str(r.specials[i]["label"]), i])
 		if not r.trigger.is_empty():
-			rows.append([Combat.describe_effect(r.trigger), -1])
+			rows.append([Combat.describe_effect(r.trigger, true), -1])
 		for row_def in rows:
 			var er := HBoxContainer.new()
 			er.add_theme_constant_override("separation", 8)
@@ -1509,7 +1522,9 @@ func _relic_modal(r: Relic) -> void:
 		eb.disabled = used >= GameState.relic_slot_cap()
 		eb.tooltip_text = tr("Every altar slot is full — take a relic off first") if eb.disabled else ""
 		acts.add_child(eb)
-	if r.level < GameState.RELIC_MAX_LEVEL:
+	if r.level < GameState.RELIC_MAX_LEVEL and not GameState.relic_levels_up(r):
+		acts.add_child(_label(tr("Its power is fixed: Legendary relics like this one don't level."), 12, true))
+	elif r.level < GameState.RELIC_MAX_LEVEL:
 		var ucost := GameState.relic_upgrade_cost(r)
 		var ub := _icon_button(GameData.CURRENCY_ICON_PATH["crystals"], tr("Upgrade — %d") % ucost, func(id=r.id):
 			var err := GameState.upgrade_relic(id)

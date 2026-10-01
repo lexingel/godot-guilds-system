@@ -1025,6 +1025,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var is_boss := kind == "boss"
 
 	if not ns.has("combat_state") and not ns.has("result"):
+		_auto_battle = false   # Auto is for one fight: it used to stay on for every fight after
 		GameState.ensure_combat_bg()
 		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
 		var bw := _battle_width()
@@ -1047,6 +1048,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			hb.add_theme_color_override("font_color", Palette.COINS)
 			v.add_child(hb)
 		# Never in the training rift: its guided fight teaches the game.
+		if kind != "combat" and not GameState.run.get("training", false):
+			v.add_child(_label(tr("Elites and bosses are fought in full: no Quick fight."), 12, true))
 		if kind == "combat" and not GameState.run.get("training", false):
 			var lock := GameState.quick_fight_lock()
 			var qf := _icon_button("res://assets/skills/sword_dual.png", _no_keys(tr("Quick fight  (Q)")), func():
@@ -1054,7 +1057,17 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			)
 			qf.tooltip_text = lock if lock != "" else tr("Play the whole fight out instantly on Auto and jump to the result")
 			qf.disabled = lock != ""
-			v.add_child(qf)
+			if lock == "":
+				v.add_child(qf)
+			else:   # the reason in plain sight, not only in the tooltip
+				var qrow := HBoxContainer.new()
+				qrow.add_theme_constant_override("separation", 10)
+				qrow.add_child(qf)
+				var why := _wrap_label(lock, 12, true)
+				why.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				why.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				qrow.add_child(why)
+				v.add_child(qrow)
 			if lock == "":
 				_combat_hotkeys["Q"] = func(): GameState.quick_fight()
 		_combat_hotkeys["Space"] = func(): GameState.engage_node()
@@ -1213,8 +1226,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			v.add_child(_label(str(result["flavor"]), 12, true))
 		var in_tower := GameState.run.has("tower")
 		if not in_tower:
-			for line in _run_summary_lines():
-				v.add_child(_label(line, 12, true))
+			v.add_child(_run_report())
 		v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], tr("Back to the Tower") if in_tower else tr("Return to camp"), func():
 			GameState.finish_run()
 			screen = "tower" if in_tower else "camp"
@@ -1381,6 +1393,74 @@ func _tower_victory(result: Dictionary) -> Control:
 ## can be spent as well as earned mid-run, e.g. at a shop, so "net
 ## change" is the honest framing, not "earned"), and heroes lost if any. Deliberately reads only numbers that already exist or are a cheap
 ## snapshot diff — no new combat-hot-path instrumentation.
+## The end of a run in one card: floors, Gold and Essence, every hero (levels
+## gained, HP, who's down) and what was found. The old end screen was three
+## small lines in a corner of an empty page.
+func _run_report() -> Control:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"CardPanelViolet"
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var col := _vbox(8)
+	col.custom_minimum_size.x = 560.0 if _compact() else 640.0
+	var layers: Array = GameState.run.get("layers", [])
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 16)
+	if not layers.is_empty():
+		head.add_child(_label(tr("Floor %d/%d") % [int(GameState.run.get("pos", 0)) + 1, layers.size()], 14))
+	for cur in [["coins", GameState.coins - int(GameState.run.get("start_coins", GameState.coins))], ["crystals", GameState.crystals - int(GameState.run.get("start_crystals", GameState.crystals))]]:
+		var cr := HBoxContainer.new()
+		cr.add_theme_constant_override("separation", 4)
+		cr.add_child(_icon(GameData.CURRENCY_ICON_PATH[cur[0]], 18))
+		cr.add_child(_label("%+d %s" % [int(cur[1]), tr("Gold") if cur[0] == "coins" else tr("Essence")], 14))
+		head.add_child(cr)
+	col.add_child(head)
+	var snap: Dictionary = GameState.run.get("start_snap", {})
+	var party := HFlowContainer.new()
+	party.add_theme_constant_override("h_separation", 12)
+	party.add_theme_constant_override("v_separation", 8)
+	for h in GameState.current_party():
+		var hr := HBoxContainer.new()
+		hr.add_theme_constant_override("separation", 6)
+		hr.custom_minimum_size.x = 150
+		var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		if portrait != "":
+			var pic := _icon(portrait, 36)
+			_hero_look(pic, h)
+			if h.hp <= 0 or h.is_downed():
+				pic.modulate = Color(1, 1, 1, 0.4)
+			hr.add_child(pic)
+		var hv := _vbox(0)
+		hv.add_child(_label(h.name.split(" the ")[0], 12))
+		var lv0 := int((snap.get("levels", {}) as Dictionary).get(h.id, h.level))
+		var lvl_l := _label(tr("Lv%d → Lv%d") % [lv0, h.level] if h.level > lv0 else tr("Lv%d") % h.level, 11, h.level <= lv0)
+		if h.level > lv0:
+			lvl_l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		hv.add_child(lvl_l)
+		var hp_l := _label(tr("Down") if h.hp <= 0 or h.is_downed() else tr("%d/%d HP") % [h.hp, Combat.max_hp(h)], 11, true)
+		if h.hp <= 0 or h.is_downed():
+			hp_l.add_theme_color_override("font_color", Palette.HAZARD)
+		hv.add_child(hp_l)
+		hr.add_child(hv)
+		party.add_child(hr)
+	col.add_child(party)
+	var found: Array[String] = []
+	if not snap.is_empty():
+		for it in GameState.items:
+			if not (snap.get("items", []) as Array).has(it.id):
+				found.append("[color=#%s]%s[/color]" % [(ITEM_RARITY_COLOR.get(it.rarity, Palette.TEXT) as Color).to_html(false), tr(str(_loot_display_name(it)))])
+		for r in GameState.relics:
+			if not (snap.get("relics", []) as Array).has(r.id):
+				found.append("[color=#%s]%s[/color]" % [(ITEM_RARITY_COLOR.get(r.rarity, Palette.TEXT) as Color).to_html(false), tr(str(_loot_display_name(r)))])
+		col.add_child(_rich_line((tr("Found: ") + ", ".join(found)) if not found.is_empty() else tr("Found: nothing this time"), 12, found.is_empty()))
+	var lost := int(GameState.run.get("heroes_lost", 0))
+	if lost > 0:
+		var ll := _label(tr("%d hero%s lost") % [lost, tr(str(_pl(lost, "es")))], 12)
+		ll.add_theme_color_override("font_color", Palette.HAZARD)
+		col.add_child(ll)
+	panel.add_child(col)
+	return panel
+
+
 func _run_summary_lines() -> Array[String]:
 	var lines: Array[String] = []
 	var layers: Array = GameState.run.get("layers", [])
@@ -1871,7 +1951,16 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		attack_cb = func(ti: int):
 			_combat_target = ti
 			run_turns.call(func(): GameState.set_hero_action(hid, "attack", ti))
-		# Click a foe to attack it; hovering lights it up.
+		# Click a foe to make it the target (abilities and skills aim there);
+		# click the target again to attack it. Hovering lights it up.
+		var pick_target := func(ti: int):
+			if _combat_animating:
+				return
+			if ti == _combat_target:
+				attack_cb.call(ti)
+			else:
+				_combat_target = ti
+				render()
 		for i in monster_wrappers:
 			var w: Control = monster_wrappers[i]
 			var hit := Button.new()
@@ -1881,10 +1970,10 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			hit.position = w.position
 			hit.size = w.size
 			hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			hit.tooltip_text = tr("Attack %s") % tr(str(monsters[i]["name"]))
+			hit.tooltip_text = (tr("Attack %s") if i == _combat_target else tr("Target %s (click again to attack)")) % tr(str(monsters[i]["name"]))
 			hit.mouse_entered.connect(func(): if is_instance_valid(w): w.modulate = Color(1.35, 1.2, 1.2))
 			hit.mouse_exited.connect(func(): if is_instance_valid(w): w.modulate = Color.WHITE)
-			hit.pressed.connect(attack_cb.bind(i))
+			hit.pressed.connect(pick_target.bind(i))
 			arena.add_child(hit)
 	arena.add_child(frame)
 
@@ -2310,7 +2399,7 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			skill_defs.append(["skill:" + str(locked_sk["id"]), str(locked_sk["icon"]), str(locked_sk["name"]), tr("%s\nLearned at level %d.") % [tr(str(locked_sk["desc"])), int(locked_sk["level"])], int(locked_sk["cost"])])
 		if Combat.qualifies_for_ability(current_hero):
 			var ab: Dictionary = GameData.SUBCLASS_ABILITIES.get(current_hero.pool_id, {})
-			skill_defs.append(["ability", GameData.ability_icon(current_hero.pool_id), str(ab.get("name", "Ability")), str(ab.get("desc", "")), GameData.ABILITY_MOMENTUM_COST])
+			skill_defs.append(["ability", GameData.ability_icon(current_hero.pool_id), str(ab.get("name", "Ability")), GameData.ability_desc(current_hero.pool_id), GameData.ABILITY_MOMENTUM_COST])
 		var keys := ["2", "3", "4"]
 		for k in skill_defs.size():
 			var d: Array = skill_defs[k]
@@ -2432,7 +2521,7 @@ func _battle_tools(living_heroes: Array[Hero], hero_wrappers: Dictionary) -> HBo
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. An elite, a boss or any fight on a rank you haven't sealed, won by hand with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A), for this fight — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. An elite, a boss or any fight on a rank you haven't sealed, won by hand with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()

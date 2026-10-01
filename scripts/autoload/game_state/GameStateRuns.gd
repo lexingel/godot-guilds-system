@@ -6,6 +6,7 @@ extends "res://scripts/autoload/game_state/GameStateModes.gd"
 ## (daily, finale). relic_rarity_floor_down is read by Party Assembly's
 ## starting-relic roll, which happens before the run exists.
 func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, rift_rank: String = "") -> void:
+	last_party = hero_ids.duplicate()
 	var shield := 0
 	for r in Combat.equipped_relics():
 		shield += r.hp
@@ -29,7 +30,7 @@ func start_run(diff_id: String, hero_ids: Array[String], starting_relic: Relic, 
 		"layers": Combat.build_layers(diff), "pos": 0, "chosen": {},
 		"hero_ids": hero_ids, "shield": shield, "boss_rounds": 0,
 		"node_kind": "", "node_state": {}, "sealed": null, "anchor_used": false,
-		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0,
+		"start_coins": coins, "start_crystals": crystals, "heroes_lost": 0, "start_snap": run_snapshot(hero_ids),
 		"rift_rank": rift_rank, "seed": randi(), "training": training, "biome": pick_biome(),
 		"overseer": overseer if champions.has(overseer) else "",
 	}
@@ -168,6 +169,17 @@ func hand_bonus_here(kind: String) -> bool:
 	return not run.has("tower") and (kind in ["elite", "boss"] or quick_fight_lock() != "")
 
 
+## What the end-of-run summary compares against: the party's levels and the
+## items and relics the guild held when the run began.
+func run_snapshot(hero_ids: Array) -> Dictionary:
+	var lv := {}
+	for id in hero_ids:
+		var h := find_hero(str(id))
+		if h:
+			lv[h.id] = h.level
+	return {"levels": lv, "items": items.map(func(it): return it.id), "relics": relics.map(func(r): return r.id)}
+
+
 ## "" when the battle screen offers Quick fight for this run, else why not.
 ## It's earned per rank: a rank you've sealed is routine, a new one (and a
 ## finale) is fought where you can see it. Playing by hand seals ~17 points
@@ -178,8 +190,9 @@ func quick_fight_lock() -> String:
 	if int(run.get("finale", 0)) > 0:
 		return tr("A finale is fought in full")
 	var rank := str(run.get("rift_rank", ""))
-	if rank != "" and GameData.rift_rank_index(rank) > best_rift_rank_sealed:
-		return tr("Seal a Rank %s rift to use Quick fight on this rank") % tr(rank)
+	# A party far above the rank (Favored on the Party screen) may Quick fight it too.
+	if rank != "" and GameData.rift_rank_index(rank) > best_rift_rank_sealed and Combat.party_power(current_party()) < Combat.recommended_power("", rank) * GameData.QUICK_FIGHT_FAVORED:
+		return tr("Quick fight opens once you seal a Rank %s rift, or with a party at %d%% of Recommended power") % [tr(rank), int(GameData.QUICK_FIGHT_FAVORED * 100)]
 	return ""
 
 

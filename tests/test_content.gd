@@ -158,3 +158,7 @@ func run() -> void:
 	Combat._check_phases(bst)
 	var called: Array = (bst["monsters"] as Array).slice(n0).map(func(x): return x["name"])
 	check(called == ["Carrion Crier", "Hedge Warden"], "Vaelith calls a Crier and a Warden %s" % [called])
+
+	# Every Ability says what it does in numbers (players couldn't tell).
+	var vague: Array = GameData.SUBCLASS_ABILITIES.keys().filter(func(pid): return str(GameData.SUBCLASS_ABILITIES[pid]["effect"]) != "undying" and not RegEx.create_from_string("[0-9]").search(GameData.ability_desc(str(pid))))
+	check(vague.is_empty(), "every Ability description has its numbers %s" % [vague])

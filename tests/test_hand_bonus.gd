@@ -30,14 +30,14 @@ func run() -> void:
 		ids.append(h.id)
 	GameState.runs_started = 3   # past the training rift
 	GameState.start_ladder_rift("F", ids, null)   # nothing sealed yet: the frontier
-	var res := _fight(false)
+	var res := _fight(false, "elite")   # (this party is Favored on F, so its regular fights don't pay it)
 	check(res.get("won", false), "the strong party wins")
 	var coins_before := GameState.coins
 	check(int(res.get("hand_bonus", 0)) > 0, "a flawless fight played by hand pays a bonus (%d)" % int(res.get("hand_bonus", 0)))
 	check(int(res.get("hand_bonus_ess", 0)) > 0, "and the same share of its Essence (%d)" % int(res.get("hand_bonus_ess", 0)))
 	for h in GameState.heroes:
 		h.hp = Combat.max_hp(h)
-	var res2 := _fight(true)
+	var res2 := _fight(true, "elite")
 	check(res2.get("won", false) and int(res2.get("hand_bonus", 0)) == 0, "no bonus once Auto played a turn")
 	check(GameState.coins >= coins_before, "gold only goes up")
 	for h in GameState.heroes:
@@ -59,14 +59,21 @@ func run() -> void:
 	check(res5.get("won", false) and int(res5.get("hand_bonus", 0)) > 0, "an elite still pays it")
 
 	# Quick fight is earned per rank: open on a sealed rank, not on a new one
-	# or a finale.
+	# (unless the party is Favored there) or a finale.
 	GameState.finish_run()
+	var weak := Combat.gen_hero("F", 1)
+	weak.id = "weak"
+	GameState.heroes.append(weak)
+	var weak_ids: Array[String] = ["weak"]
 	GameState.best_rift_rank_sealed = GameData.rift_rank_index("D")
-	GameState.start_ladder_rift("D", ids, null)
+	GameState.start_ladder_rift("D", weak_ids, null)
 	check(GameState.quick_fight_lock() == "", "Quick fight on a rank you've sealed")
 	GameState.finish_run()
-	GameState.start_ladder_rift("C", ids, null)
+	GameState.start_ladder_rift("C", weak_ids, null)
 	check(GameState.quick_fight_lock() != "", "not on a rank you haven't sealed yet")
+	GameState.finish_run()
+	GameState.start_ladder_rift("C", ids, null)
+	check(GameState.quick_fight_lock() == "", "unless the party is Favored there")
 	GameState.finish_run()
 	GameState.run = {"finale": 1, "rift_rank": ""}
 	check(GameState.quick_fight_lock() != "", "nor in a finale")
@@ -86,3 +93,23 @@ func run() -> void:
 		x.hp = 1
 	check(Combat.hero_about_to_fall(st) != null, "a hit that would drop a hero is spotted")
 	GameState.finish_run()
+
+	# A foe can't be stunned round after round; a boss shrugs off a stun.
+	var sst := {"round_num": 3, "log": [] as Array[String], "monsters": [{"name": "Wolf", "hp": 10.0, "tier": "combat"}]}
+	check(Combat.stun_monster(sst, 0, 1), "a stun takes")
+	check(not Combat.stun_monster(sst, 0, 1), "not twice in a round")
+	sst["round_num"] = 4
+	check(not Combat.stun_monster(sst, 0, 1), "nor the next round")
+	sst["round_num"] = 5
+	check(Combat.stun_monster(sst, 0, 1), "but again a round later")
+
+	# Fixed Legendary relics don't take Essence for a level; old levels are refunded.
+	var coin := Combat.relic_from_unique(GameData.UNIQUE_RELICS.filter(func(d): return d["id"] == "gamblers_coin")[0])
+	GameState.relics.append(coin)
+	GameState.crystals = 1000
+	check(not GameState.relic_levels_up(coin) and GameState.upgrade_relic(coin.id) != "" and GameState.crystals == 1000, "a fixed Legendary relic can't be levelled")
+	coin.level = 3
+	GameState.save()
+	GameState.load_save()
+	var back: Relic = GameState.relics.filter(func(r): return r.unique_id == "gamblers_coin")[0]
+	check(back.level == 1 and GameState.crystals > 1000, "levels already bought on one are refunded (%d Essence)" % (GameState.crystals - 1000))

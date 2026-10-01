@@ -59,6 +59,7 @@ func reset() -> void:
 	triage_used_this_cycle = false
 	pending_shop_boost = false
 	guide_hidden = false
+	last_party = []
 	run = {}
 	monsters_seen = []
 	bosses_defeated = []
@@ -145,6 +146,11 @@ func load_save() -> bool:
 		# never "no offers today."
 		refresh_recruit_pool()
 	relics.assign(data.get("relics", []).map(func(d): return Relic.from_dict(d)))
+	# Levels bought on a fixed Legendary relic (they did nothing): the Essence comes back.
+	for r in relics:
+		while r.level > 1 and not relic_levels_up(r):
+			r.level -= 1
+			crystals += relic_upgrade_cost(r)
 	items.assign(data.get("items", []).map(func(d): return Item.from_dict(d)))
 	var tn = data.get("tonics", {})
 	tonics = tn if tn is Dictionary else ({"healing": int(tn)} if int(tn) > 0 else {})
@@ -241,6 +247,7 @@ func load_save() -> bool:
 	triage_used_this_cycle = data.get("triage_used_this_cycle", false)
 	pending_shop_boost = data.get("pending_shop_boost", false)
 	guide_hidden = data.get("guide_hidden", false)
+	last_party.assign(data.get("last_party", []))
 
 	var run_data: Dictionary = data.get("run", {})
 	if run_data.get("endless", false):
@@ -266,7 +273,7 @@ func load_save() -> bool:
 			"node_kind": run_data.get("node_kind", ""), "node_state": _unpack(run_data.get("node_state", {})), "seed": int(run_data.get("seed", randi())),
 			"sealed": run_data.get("sealed"), "anchor_used": run_data.get("anchor_used", false),
 			"start_coins": run_data.get("start_coins", coins), "start_crystals": run_data.get("start_crystals", crystals),
-			"heroes_lost": run_data.get("heroes_lost", 0),
+			"heroes_lost": run_data.get("heroes_lost", 0), "start_snap": run_data.get("start_snap", {}),
 			"rift_rank": run_data.get("rift_rank", ""), "champion_call_used": bool(run_data.get("champion_call_used", false)),
 			"injured": run_data.get("injured", []), "left_behind": run_data.get("left_behind", []), "heal_used": bool(run_data.get("heal_used", false)),
 			"any_ko": bool(run_data.get("any_ko", false)),
@@ -411,6 +418,7 @@ func start_tower(hero_ids: Array[String]) -> void:
 	var info := tower_floor_info(f)
 	var ids: Array[String] = []
 	ids.assign(hero_ids.slice(0, int(info["party_cap"])))
+	last_party = ids.duplicate()
 	var shield := 0
 	for r in Combat.equipped_relics():
 		shield += r.hp

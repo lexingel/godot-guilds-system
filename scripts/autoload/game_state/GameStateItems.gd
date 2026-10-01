@@ -378,12 +378,21 @@ func reroll_relic(relic_id: String, idx: int) -> String:
 	return ""
 
 
+## Whether levelling `r` changes anything. Most Legendary relics are a fixed
+## rule (Gambler's Coin, Phoenix Feather...) with no number to grow, and a
+## level used to take the Essence and do nothing.
+func relic_levels_up(r: Relic) -> bool:
+	return r.unique_id == "" or not r.specials.is_empty() or not r.trigger.is_empty()
+
+
 func upgrade_relic(relic_id: String) -> String:
 	for r in relics:
 		if r.id != relic_id:
 			continue
 		if r.level >= RELIC_MAX_LEVEL:
 			return tr("Already max level")
+		if not relic_levels_up(r):
+			return tr("This Legendary relic's power is fixed: a level wouldn't change it")
 		var cost := relic_upgrade_cost(r)
 		if crystals < cost:
 			return tr("Not enough Essence")
