@@ -1042,7 +1042,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var gl := _label(tr("Drill Yard: ") + ", ".join(guild_bits), 12, true)
 			gl.add_theme_color_override("font_color", Palette.RANK_E)
 			v.add_child(gl)
-		if not GameState.run.has("tower"):
+		if GameState.hand_bonus_here(kind):
 			var hb := _label(tr("Win by hand with no one down: +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), 12, true)
 			hb.add_theme_color_override("font_color", Palette.COINS)
 			v.add_child(hb)
@@ -2432,7 +2432,7 @@ func _battle_tools(living_heroes: Array[Hero], hero_wrappers: Dictionary) -> HBo
 		if not _combat_animating:
 			render()
 	))
-	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. A fight won by hand, with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
+	var auto_btn := _tool_button("res://assets/skills/sword_dual.png", "Auto" if not _auto_battle else "Auto ✓", tr("Auto (A) — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. An elite, a boss or any fight on a rank you haven't sealed, won by hand with no one down, pays +%d%% Gold and Essence.") % int(GameData.HAND_BONUS * 100), func():
 		_auto_battle = not _auto_battle
 		if not _combat_animating:
 			render()

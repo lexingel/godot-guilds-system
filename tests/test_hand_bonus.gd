@@ -2,9 +2,9 @@ extends "res://tests/base_test.gd"
 ## Playing by hand: a fight won with no Auto and no hero down pays extra Gold.
 
 
-func _fight(auto: bool) -> Dictionary:
+func _fight(auto: bool, kind: String = "combat") -> Dictionary:
 	GameState.run["node_state"] = {}
-	GameState.choose_node_type("combat")
+	GameState.choose_node_type(kind)
 	GameState.engage_node()
 	var state: Dictionary = GameState.run["node_state"]["combat_state"]
 	if auto:
@@ -28,7 +28,8 @@ func run() -> void:
 		GameState.next_id += 1
 		GameState.heroes.append(h)
 		ids.append(h.id)
-	GameState.start_run("lesser", ids, null)
+	GameState.runs_started = 3   # past the training rift
+	GameState.start_ladder_rift("F", ids, null)   # nothing sealed yet: the frontier
 	var res := _fight(false)
 	check(res.get("won", false), "the strong party wins")
 	var coins_before := GameState.coins
@@ -46,6 +47,16 @@ func run() -> void:
 	GameState.quick_fight()
 	var res3: Dictionary = GameState.run["node_state"].get("result", {})
 	check(res3.get("won", false) and int(res3.get("hand_bonus", 0)) == 0, "Quick fight is auto play: no hand bonus")
+	# Once the rank is sealed, only its elites and bosses pay the bonus.
+	GameState.best_rift_rank_sealed = 0
+	for h in GameState.heroes:
+		h.hp = Combat.max_hp(h)
+	var res4 := _fight(false)
+	check(res4.get("won", false) and int(res4.get("hand_bonus", 0)) == 0, "no bonus for a regular fight on a sealed rank")
+	for h in GameState.heroes:
+		h.hp = Combat.max_hp(h)
+	var res5 := _fight(false, "elite")
+	check(res5.get("won", false) and int(res5.get("hand_bonus", 0)) > 0, "an elite still pays it")
 
 	# Quick fight is earned per rank: open on a sealed rank, not on a new one
 	# or a finale.

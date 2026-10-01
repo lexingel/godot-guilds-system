@@ -159,6 +159,15 @@ func engage_node() -> void:
 	state_changed.emit()
 
 
+## Whether a flawless fight played by hand pays HAND_BONUS here: elites,
+## bosses, and every fight on a rank not sealed yet (a finale, the training
+## rift). Paid everywhere it was ~+30% income for anyone playing by hand
+## (campaign_sim -- hand: 1,423 of ~1,500 fights); it now rewards the
+## fights where hand play matters. Never in the Tower.
+func hand_bonus_here(kind: String) -> bool:
+	return not run.has("tower") and (kind in ["elite", "boss"] or quick_fight_lock() != "")
+
+
 ## "" when the battle screen offers Quick fight for this run, else why not.
 ## It's earned per rank: a rank you've sealed is routine, a new one (and a
 ## finale) is fought where you can see it. Playing by hand seals ~17 points
@@ -274,7 +283,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 			if flawless:
 				flawless_wins += 1
 				# Played by hand (no Auto) with no one down: a bonus on top.
-				if not state.get("auto_used", false) and not run.has("tower"):
+				if not state.get("auto_used", false) and hand_bonus_here(kind):
 					result["hand_bonus"] = maxi(1, int(round(int(result["coin"]) * GameData.HAND_BONUS)))
 					coins += int(result["hand_bonus"])
 					# Essence too: it's the currency a guild runs short of.
