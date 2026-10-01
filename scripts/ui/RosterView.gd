@@ -986,10 +986,18 @@ func _equip_choice_card(h: Hero, it: Item, slot_type: String, idx: int) -> Panel
 	return card
 
 
+var _inv_last := "items"   # the Inventory section opened last (the strip opens on it)
+
+
 func _render_inventory(v: VBoxContainer) -> void:
 	if inv_category == "":
-		_render_inventory_hub(v)
-		return
+		inv_category = _inv_last
+	_inv_last = inv_category
+	var loose_n: int = GameState.items.filter(func(it): return it.equipped_to == "").size()
+	v.add_child(_hub_strip(GameData.INVENTORY_BG, [["items", tr("Items  %d") % loose_n], ["relics", tr("Relics  %d") % GameState.relics.size()], ["supplies", tr("Supplies  %d") % GameState.tonic_count()]], inv_category, func(id):
+		inv_category = id
+		inv_view = "supplies" if id == "supplies" else "gear"
+		render()))
 	match inv_category:
 		"relics": _render_inventory_relics(v)
 		"supplies":
@@ -998,68 +1006,8 @@ func _render_inventory(v: VBoxContainer) -> void:
 		_: _render_inventory_items(v)
 
 
-## The 3 Inventory categories as clickable stations on a storage-vault scene
-## (a chest for Items, a glowing altar for Relics, a table with a spyglass
-## for Supplies) — same background-prop-as-button + hover-glow pattern as
-## the camp/management screens.
-func _render_inventory_hub(v: VBoxContainer) -> void:
-	var scene_size := HUB_SCENE
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.INVENTORY_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
-
-	# hit_rect (generous, easy-to-click) + native_rect (the station's own
-	# tight bounds in the source 320x200 art, for the hover glow).
-	var cat_entries := [
-		["items", "Items", Rect2(0, 0, 230, 340), Rect2(3, 103, 97, 70)],
-		["relics", "Relics", Rect2(230, 0, 240, 340), Rect2(133, 58, 62, 100)],
-		["supplies", "Supplies", Rect2(470, 0, 230, 340), Rect2(210, 65, 110, 95)],
-	]
-	var camp_scale := HUB_ART_SCALE
-	for entry in cat_entries:
-		var cid: String = entry[0]
-		var label_text: String = entry[1]
-		var hit_rect: Rect2 = _hub_rect(entry[2])
-		var native_rect: Rect2 = entry[3]
-		var glow_rect := Rect2(
-			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
-			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
-		)
-		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, func(id=cid):
-			inv_category = id
-			render()
-		)
-		hotspot.position = hit_rect.position
-		scene.add_child(hotspot)
-
-	v.add_child(scene)
-
-
 func _render_inventory_items(v: VBoxContainer) -> void:
 	var loose: Array = GameState.items.filter(func(it): return it.equipped_to == "")
-	# Gear | Supplies — the gear grid and the tonic shop each get
-	# the full width instead of sharing one long page.
-	var tab_row := HBoxContainer.new()
-	tab_row.add_theme_constant_override("separation", 4)
-	for td in [["gear", tr("Gear  %d") % loose.size()], ["supplies", tr("Supplies  %d") % GameState.tonic_count()]]:
-		var tb := _button(str(td[1]), func(t=str(td[0])):
-			inv_view = t
-			selected_item_id = ""
-			render()
-		)
-		tb.toggle_mode = true
-		tb.button_pressed = inv_view == td[0]
-		tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tab_row.add_child(tb)
-	v.add_child(tab_row)
 	if inv_view == "supplies":
 		_render_inventory_supplies(v)
 		return

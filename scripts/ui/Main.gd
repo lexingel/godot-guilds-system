@@ -815,10 +815,6 @@ func _header_back() -> Array:
 		render()
 	match screen:
 		"camp":
-			if term_tab == "inventory" and inv_category != "":
-				return [func(): inv_category = ""; render(), "Inventory"]
-			if term_tab == "management" and mgmt_branch != "":
-				return [func(): mgmt_branch = ""; render(), "Management"]
 			if term_tab != "camp" or hub_cluster != "":
 				return [to_camp, "Camp"]
 		"rift_hall", "crafting_hall":

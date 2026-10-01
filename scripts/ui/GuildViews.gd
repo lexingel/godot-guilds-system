@@ -1734,91 +1734,40 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	return note
 
 
+var _mgmt_last := "ops"   # the Management branch opened last (the strip opens on it)
+
+
 func _render_management(v: VBoxContainer) -> void:
 	if mgmt_branch == "":
-		_render_management_hub(v)
-		return
-
+		mgmt_branch = _mgmt_last
+	_mgmt_last = mgmt_branch
+	v.add_child(_hub_strip(GameData.MANAGEMENT_BG, GameData.BRANCHES.map(func(br): return [str(br["id"]), tr(str(br["name"])).trim_suffix(tr(" Branch"))]), mgmt_branch, func(id):
+		mgmt_branch = id
+		render()))
 	var branch: Dictionary = {}
 	for b in GameData.BRANCHES:
 		if b["id"] == mgmt_branch:
 			branch = b
-	v.add_child(_banner(GameData.BRANCH_BANNER[mgmt_branch], 700, 150))
 	v.add_child(_label("%s — %s" % [tr(str(branch["name"])), tr(str(branch["sub"]))], 16))
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 1 if _narrow() else 2
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	for n in branch["nodes"]:
 		grid.add_child(_management_node_card(branch, n))
 	v.add_child(grid)
+	v.add_child(_hsep())
+	v.add_child(_reset_guild_button())
 
 
-## The 5 Guild Management branches as clickable stations on a war-room scene
-## (a soldier's kit for Operations, gears/blueprints for Infrastructure, a
-## coin pouch/ledger for Logistics, a spellbook/crystal for Research, a fort
-## model for Defenses) — same
-## background-prop-as-button + hover-glow pattern as the camp screen.
-func _render_management_hub(v: VBoxContainer) -> void:
-	var scene_size := HUB_SCENE
-	var scene := Control.new()
-	scene.custom_minimum_size = scene_size
-	scene.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.MANAGEMENT_BG)
-	bg.custom_minimum_size = scene_size
-	bg.size = scene_size
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	scene.add_child(bg)
-
-	# hit_rect (a generous quadrant of the round table, easy to click) +
-	# native_rect (the station's own tight prop bounds in the source 320x200
-	# art — helmet+sword north, gears+blueprint east, coin pouch+ledger
-	# south, crystal+book west — used only to place the hover glow).
-	var branch_entries := [
-		["ops", "Operations", Rect2(180, 0, 280, 115), Rect2(97, 7, 96, 45)],
-		["infra", "Infrastructure", Rect2(460, 60, 240, 170), Rect2(223, 52, 62, 71)],
-		["log", "Logistics", Rect2(180, 210, 280, 130), Rect2(102, 133, 121, 34)],
-		["res", "Research", Rect2(0, 60, 220, 170), Rect2(30, 50, 57, 67)],
-		["def", "Defenses", Rect2(425, 150, 90, 72), Rect2(196, 98, 30, 30)],
-	]
-	# The Defenses station is a fort model standing on the map (the others are painted in).
-	var fort := TextureRect.new()
-	fort.texture = load("res://assets/screens/mgmt_prop_defenses.png")
-	fort.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	fort.stretch_mode = TextureRect.STRETCH_SCALE
-	fort.position = Vector2(194, 96) * HUB_ART_SCALE
-	fort.size = Vector2(34, 34) * HUB_ART_SCALE
-	fort.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scene.add_child(fort)
-	var camp_scale := HUB_ART_SCALE
-	for entry in branch_entries:
-		var bid: String = entry[0]
-		var label_text: String = entry[1]
-		var hit_rect: Rect2 = _hub_rect(entry[2])
-		var native_rect: Rect2 = entry[3]
-		var glow_rect := Rect2(
-			native_rect.position.x * camp_scale.x, native_rect.position.y * camp_scale.y,
-			native_rect.size.x * camp_scale.x, native_rect.size.y * camp_scale.y
-		)
-		var hotspot := _camp_area_hotspot(hit_rect, glow_rect, label_text, func(id=bid):
-			mgmt_branch = id
-			render()
-		)
-		hotspot.position = hit_rect.position
-		scene.add_child(hotspot)
-
-	v.add_child(scene)
-
+func _reset_guild_button() -> Control:
 	var reset_btn := _icon_button("res://assets/skills/shard_green.png", "Click again to confirm reset" if confirm_reset else "Reset Guild", func():
 		if not confirm_reset:
 			confirm_reset = true
 			render()
 			get_tree().create_timer(3.0).timeout.connect(func():
 				confirm_reset = false
-				if screen == "camp" and term_tab == "management" and mgmt_branch == "":
+				if screen == "camp" and term_tab == "management":
 					render()
 			)
 			return
@@ -1828,7 +1777,8 @@ func _render_management_hub(v: VBoxContainer) -> void:
 		screen = "onboard"
 		render()
 	)
-	v.add_child(reset_btn)
+	reset_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	return reset_btn
 
 
 ## One upgrade node as a card — icon/name header, a level progress bar

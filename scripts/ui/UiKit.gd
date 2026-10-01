@@ -1733,6 +1733,31 @@ func _hub_banner(path: String, height: float) -> Control:
 	return win
 
 
+## A hub room as a slim strip above its contents: the art's middle band, its
+## stations as buttons on it, the open one lit. The full picture took a click
+## before anything showed ("old UI had fewer clicks").
+## `entries`: [[id, label], ...]; `pick` is called with the chosen id.
+func _hub_strip(path: String, entries: Array, current: String, pick: Callable) -> Control:
+	var h := 64.0 if _compact() else 84.0
+	var strip := MarginContainer.new()
+	strip.custom_minimum_size = Vector2(HUB_SCENE.x, h)
+	strip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var art := _hub_banner(path, h)
+	art.modulate = Color(0.62, 0.6, 0.66)
+	strip.add_child(art)
+	var center := CenterContainer.new()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for e in entries:
+		var b := _button(str(e[1]), func(id=str(e[0])): pick.call(id))
+		b.toggle_mode = true
+		b.button_pressed = str(e[0]) == current
+		row.add_child(b)
+	center.add_child(row)
+	strip.add_child(center)
+	return strip
+
+
 ## An invisible clickable region over a prop already drawn in the background
 ## art — the prop itself stays untouched (no duplicated/cropped copy of it,
 ## which read as an awkward seam when scaled). Hovering instead fades in a

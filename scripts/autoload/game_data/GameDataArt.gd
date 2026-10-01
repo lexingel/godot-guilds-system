@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Inventory and Guild Management open straight on their contents: the room's art is a slim strip with its sections as buttons, and each opens where you left it.",
 	"Cleaner screens on a laptop: shops, treasure, events and hazards no longer sit under the path map (it shows while you choose a path), Victory puts the rewards beside the results, the quest board fits every note, pre-fight art is shorter, and notices moved to the bottom right.",
 	"Recruits: commission a hero of the role you want (3 rerolls' Gold), and each offer shows power, HP and wage. Hazards now hurt in line with the rift's rank and always pay about a fight's worth, with a chance of double. Agility gives +1.5% dodge a point (was 0.8%).",
 	"From player feedback: click a foe to target it (click again to attack). Auto lasts one fight. Quick fight also opens for a Favored party and says why when it can't. Every Ability shows its numbers. Shield Bash can't stun the same foe two rounds running. Fixed Legendary relics no longer take Essence for levels (refunded). Items say which slot they take. The party screen remembers your last party and rows. Clearer Medical Bay, rewards, run summary and skill tree.",
@@ -186,13 +187,6 @@ const RIFTHALL_BG := "res://assets/screens/rifthall_bg.png"
 const INVENTORY_BG := "res://assets/screens/inventory_bg.png"
 const CRAFTING_BG := "res://assets/screens/crafting_bg.png"
 const SHOP_BG := "res://assets/screens/shop_bg.png"
-const OPS_BANNER := "res://assets/screens/ops_banner.png"
-const INFRA_BANNER := "res://assets/screens/infra_banner.png"
-const LOGISTICS_BANNER := "res://assets/screens/logistics_banner.png"
-const RESEARCH_BANNER := "res://assets/screens/research_banner.png"
-const BRANCH_BANNER := {
-	"ops": OPS_BANNER, "infra": INFRA_BANNER, "log": LOGISTICS_BANNER, "res": RESEARCH_BANNER, "def": INFRA_BANNER,
-}
 const CAMP_HUB_ICON_PATH := {
 	"roster": "res://assets/camp/icon_roster.png",
 	"inventory": "res://assets/camp/icon_inventory.png",
