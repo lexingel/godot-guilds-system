@@ -182,3 +182,27 @@ func run() -> void:
 	var cq0 := GameState.coins
 	GameState._end_contest()
 	check(GameState.coins == cq0 + int(GameData.CONTEST_PRIZE["coins"]) and GameState.contest_status()["ours"] == 0 and GameState.contest_status()["theirs"] == 0, "gaining more Renown in the month wins the prize, and a new month starts")
+
+	# Pay rates: half pay halves the wage for a morale cost at payday, a bonus
+	# adds half again for a morale gain; payday pays the rate.
+	GameState.reset()
+	GameState.guild_name = "T"
+	var p1 := _hero("F", 1)
+	var p2 := _hero("F", 1)
+	GameState.set_pay_rate(p1.id, "half")
+	GameState.set_pay_rate(p2.id, "bonus")
+	check(GameState.wage_of(p1) == 30 and GameState.wage_of(p2) == 90 and GameState.weekly_wages() == 120, "half pay 30, a bonus 90 (full 60)")
+	p1.morale = 50
+	p2.morale = 50
+	p1.last_rift_day = GameState.day
+	p2.last_rift_day = GameState.day
+	GameState.coins = 1000
+	GameState.run_payday()
+	check(GameState.coins == 1000 - 120 - GameState.upkeep(), "payday pays the rates")
+	check(p1.morale == 50 + int(GameData.PAY_RATES["half"][1]) and p2.morale == 50 + int(GameData.PAY_RATES["bonus"][1]), "half pay costs morale, a bonus raises it")
+	GameState.coins = 40
+	check(GameState.unpaid_if_payday_now() == [p2.id], "the Ledger warns who'd go unpaid (pay runs in roster order)")
+	GameState.set_pay_rate(p2.id, "full")
+	check(not GameState.pay_rate.has(p2.id), "full pay is the default, not stored")
+	GameState._release(p1)
+	check(not GameState.pay_rate.has(p1.id), "a hero who leaves takes their rate along")

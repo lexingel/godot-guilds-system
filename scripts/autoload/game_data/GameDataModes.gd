@@ -678,6 +678,10 @@ const RUN_HISTORY_MAX := 30
 const PAYDAY_DAYS := 7
 const WAGE_BY_RANK := {"F": 60, "E": 90, "D": 130, "C": 165, "B": 225, "A": 255, "S": 330}
 const WAGE_PER_LEVEL := 0.03
+## Pay rates the Ledger sets per hero: [wage multiplier, morale at payday].
+## Half pay saves Gold at a morale cost (still far better than going unpaid);
+## a bonus buys morale for heroes you want Inspired.
+const PAY_RATES := {"half": [0.5, -10], "full": [1.0, 0], "bonus": [1.5, 10]}
 ## Every Guild Management level costs this much Gold a week to keep running.
 ## Upkeep is paid after wages; unpaid upkeep costs Renown.
 const UPKEEP_PER_LEVEL := 12

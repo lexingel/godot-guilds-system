@@ -39,6 +39,7 @@ func reset() -> void:
 	breach_next_day = -1
 	damaged = {}
 	wage_raise = {}
+	pay_rate = {}
 	contest_start = {}
 	rival_event = {}
 	session = {}
@@ -200,6 +201,7 @@ func load_save() -> bool:
 	breach_next_day = int(data.get("breach_next_day", -1))
 	damaged = (data.get("damaged", {}) as Dictionary).duplicate()
 	wage_raise = (data.get("wage_raise", {}) as Dictionary).duplicate()
+	pay_rate = (data.get("pay_rate", {}) as Dictionary).duplicate()
 	contest_start = (data.get("contest_start", {}) as Dictionary).duplicate()
 	rival_event = (data.get("rival_event", {}) as Dictionary).duplicate(true)
 	session = (data.get("session", {}) as Dictionary).duplicate()

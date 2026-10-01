@@ -2708,26 +2708,30 @@ func _render_slot_list(v: VBoxContainer) -> void:
 			actions.append(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Continue", func(s=slot):
 				_switch_slot(s)
 			))
-		if not is_active:
+		if not is_active or is_empty:
 			actions.append(_icon_button(GameData.BUTTON_ICON_PATH["confirm"], "Play", func(s=slot):
 				_switch_slot(s)
 			))
-			if not is_empty:
-				actions.append(_icon_button("res://assets/skills/shard_green.png", "Click again to confirm delete" if confirm_delete_slot == slot else "Delete", func(s=slot):
-					if confirm_delete_slot != s:
-						confirm_delete_slot = s
-						render()
-						get_tree().create_timer(3.0).timeout.connect(func():
-							if confirm_delete_slot == s:
-								confirm_delete_slot = -1
-								if screen == "settings" or screen == "load_game":
-									render()
-						)
-						return
-					GameState.delete_slot(s)
-					confirm_delete_slot = -1
+		# In-game Settings keep the guild you're playing; from the title any
+		# guild can go (the last one played is the active slot).
+		if not is_empty and (not is_active or screen == "load_game"):
+			actions.append(_icon_button("res://assets/skills/shard_green.png", "Click again to confirm delete" if confirm_delete_slot == slot else "Delete", func(s=slot):
+				if confirm_delete_slot != s:
+					confirm_delete_slot = s
 					render()
-				))
+					get_tree().create_timer(3.0).timeout.connect(func():
+						if confirm_delete_slot == s:
+							confirm_delete_slot = -1
+							if screen == "settings" or screen == "load_game":
+								render()
+					)
+					return
+				GameState.delete_slot(s)
+				confirm_delete_slot = -1
+				if s == GameState.active_slot:
+					GameState.reset()   # the deleted guild mustn't save itself back
+				render()
+			))
 		v.add_child(_info_row(text, 13, actions))
 
 ## One hero as a Party Assembly card: a draggable portrait (drop it on a

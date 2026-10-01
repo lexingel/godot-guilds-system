@@ -268,8 +268,42 @@ func _news(line: String) -> void:
 		guild_news.resize(12)
 
 
+## A hero's weekly wage at their pay rate.
 func wage_of(h: Hero) -> int:
-	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1)) * (1.0 + float(wage_raise.get(h.id, 0.0)))))
+	return wage_at(h, pay_rate_of(h))
+
+
+func wage_at(h: Hero, rate: String) -> int:
+	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1)) * (1.0 + float(wage_raise.get(h.id, 0.0))) * float(GameData.PAY_RATES[rate][0])))
+
+
+func pay_rate_of(h: Hero) -> String:
+	return str(pay_rate.get(h.id, "full"))
+
+
+func set_pay_rate(hero_id: String, rate: String) -> void:
+	if not GameData.PAY_RATES.has(rate) or find_hero(hero_id) == null:
+		return
+	if rate == "full":
+		pay_rate.erase(hero_id)
+	else:
+		pay_rate[hero_id] = rate
+	save()
+	state_changed.emit()
+
+
+## Who payday would leave unpaid if it came now: wages go out in roster
+## order while the Gold lasts (run_payday).
+func unpaid_if_payday_now() -> Array:
+	var left := coins
+	var out: Array = []
+	for h in heroes:
+		var w := wage_of(h)
+		if left >= w:
+			left -= w
+		else:
+			out.append(h.id)
+	return out
 
 
 func weekly_wages() -> int:
@@ -414,6 +448,7 @@ func run_payday() -> void:
 			coins -= w
 			paid += w
 			h.unpaid_weeks = 0
+			change_morale(h, int(GameData.PAY_RATES[pay_rate_of(h)][1]))
 		else:
 			h.unpaid_weeks += 1
 			change_morale(h, GameData.MORALE_UNPAID)
@@ -468,6 +503,7 @@ func _release(h: Hero) -> void:
 		if it.equipped_to == h.id:
 			it.equipped_to = ""
 			it.equipped_idx = -1
+	pay_rate.erase(h.id)
 	heroes.erase(h)
 
 

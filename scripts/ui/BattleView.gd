@@ -357,7 +357,7 @@ func _hide_hold_tip(release_button: bool = true) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed:
 		var pk := ""
-		if screen == "rift_run" and PAD_BATTLE.has(event.button_index) and _ally_pick == "":
+		if screen == "rift_run" and PAD_BATTLE.has(event.button_index) and (_ally_pick == "" or _ally_pick.begins_with("foe:")):
 			pk = PAD_BATTLE[event.button_index]
 		elif event.button_index == JOY_BUTTON_B:
 			pk = "Escape"
@@ -1968,6 +1968,12 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 		var pick_target := func(ti: int):
 			if _combat_animating:
 				return
+			if _ally_pick.begins_with("foe:"):   # a skill waiting for its foe
+				var sk_act := _ally_pick.substr(4)
+				_ally_pick = ""
+				_combat_target = ti
+				run_turns.call(func(): GameState.set_hero_action(hid, sk_act, ti))
+				return
 			if ti == _combat_target:
 				attack_cb.call(ti)
 			else:
@@ -1983,8 +1989,15 @@ func _render_battle(v: VBoxContainer, state: Dictionary) -> void:
 			hit.size = w.size
 			hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			hit.tooltip_text = (tr("Attack %s") if i == _combat_target else tr("Target %s (click again to attack)")) % tr(str(monsters[i]["name"]))
+			# Picking a skill's foe: every foe glows a little and the cursor aims.
+			var rest := Color.WHITE
+			if _ally_pick.begins_with("foe:") and float(monsters[i]["hp"]) > 0:
+				rest = Color(1.15, 1.08, 1.0)
+				w.modulate = rest
+				hit.mouse_default_cursor_shape = Control.CURSOR_CROSS
+				hit.tooltip_text = tr("%s on %s") % [tr(str(GameData.find_role_skill(_ally_pick.substr(10)).get("name", ""))), tr(str(monsters[i]["name"]))]
 			hit.mouse_entered.connect(func(): if is_instance_valid(w): w.modulate = Color(1.35, 1.2, 1.2))
-			hit.mouse_exited.connect(func(): if is_instance_valid(w): w.modulate = Color.WHITE)
+			hit.mouse_exited.connect(func(): if is_instance_valid(w): w.modulate = rest)
 			hit.pressed.connect(pick_target.bind(i))
 			arena.add_child(hit)
 	arena.add_child(frame)
@@ -2262,6 +2275,9 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 			c.queue_free()
 	_combat_hotkeys.clear()
 	var action := _ally_pick
+	if action.begins_with("foe:"):
+		_foe_picker(row, state, current_hero, run_turns)
+		return
 	if action == "tonic_kind":
 		var ask_k := _label("Which tonic?", 15)
 		ask_k.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
@@ -2327,6 +2343,52 @@ func _guard_picker(row: Container, state: Dictionary, current_hero: Hero, living
 			b.tooltip_text = "Already at full HP"
 			continue
 		_combat_hotkeys[str(n)] = pick
+	var cancel := func():
+		_ally_pick = ""
+		render()
+	row.add_child(_button("Cancel", cancel))
+	_combat_hotkeys["Escape"] = cancel
+
+
+## "<Skill>: click a foe": a skill aimed at one foe waits for its target.
+## Click the foe in the arena, or press 1-4 here; Space (A) takes the marked
+## target, Tab (D-pad) moves the mark, Esc (B) cancels.
+func _foe_picker(row: Container, state: Dictionary, current_hero: Hero, run_turns: Callable) -> void:
+	var act_id := _ally_pick.substr(4)
+	var ask := _label((tr("%s: tap a foe") if _compact() else tr("%s: click a foe")) % tr(str(GameData.find_role_skill(act_id.substr(6)).get("name", ""))), 15)
+	ask.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	ask.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(ask)
+	var hid := current_hero.id
+	var monsters: Array = state["monsters"]
+	var living: Array[int] = []
+	for i in monsters.size():
+		if float(monsters[i]["hp"]) > 0:
+			living.append(i)
+	var fire := func(ti: int):
+		if _combat_animating:
+			return
+		_ally_pick = ""
+		_combat_target = ti
+		run_turns.call(func(): GameState.set_hero_action(hid, act_id, ti))
+	for n in living.size():
+		var i: int = living[n]
+		_combat_hotkeys[str(n + 1)] = fire.bind(i)
+		if _compact():   # no room on the phone canvas: tap the foe itself
+			continue
+		var b := _button("%s  %d/%d" % [tr(str(monsters[i]["name"])), int(monsters[i]["hp"]), int(monsters[i]["max_hp"])], fire.bind(i))
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.tooltip_text = tr("Key %d") % (n + 1)
+		if i == _combat_target:
+			b.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		row.add_child(b)
+	if living.has(_combat_target):
+		_combat_hotkeys["Space"] = fire.bind(_combat_target)
+		_combat_hotkeys["Enter"] = fire.bind(_combat_target)
+	if living.size() > 1:
+		_combat_hotkeys["Tab"] = func():
+			_combat_target = living[(living.find(_combat_target) + 1) % living.size()]
+			render()
 	var cancel := func():
 		_ally_pick = ""
 		render()
@@ -2418,13 +2480,22 @@ func _command_bar(state: Dictionary, current_hero: Hero, living_heroes: Array[He
 			var block := Combat.action_block(state, current_hero, act_id)
 			var sk_target: bool = act_id == "ability" or str(GameData.find_role_skill(act_id.substr(6)).get("target", "")) == "foe"
 			var do_skill := func(): run_turns.call(func(): GameState.set_hero_action(hid, act_id, tgt if sk_target else 0))
+			# A skill aimed at one foe asks which (_foe_picker); Space repeating
+			# it keeps the marked target. Abilities pick their own.
+			var press_skill := do_skill
+			if sk_target and act_id != "ability":
+				press_skill = func():
+					if _combat_animating:
+						return
+					_ally_pick = "foe:" + act_id
+					render()
 			var tip := tr("%s (%s) — %d Momentum. %s%s") % [tr(str(d[2])), tr(str(key)), int(d[4]), tr(str(d[3])), tr(str(("\n" + block) if block != "" else ""))]
-			var sb := _cmd_button(str(d[1]), str(d[2]), key, do_skill, tip, last_action == act_id, block, int(d[4]))
+			var sb := _cmd_button(str(d[1]), str(d[2]), key, press_skill, tip, last_action == act_id, block, int(d[4]))
 			sb.custom_minimum_size.x = 84 if compact else 104
 			_momentum_hover(sb, mom, -int(d[4]) if block == "" else 0)
 			primary.add_child(sb)
 			if block == "":
-				_combat_hotkeys[key] = do_skill
+				_combat_hotkeys[key] = press_skill
 				if last_action == act_id:
 					_combat_hotkeys["Space"] = do_skill
 		var do_defend := func(): run_turns.call(func(): GameState.set_hero_action(hid, "defend"))
