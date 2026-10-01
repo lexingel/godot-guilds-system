@@ -1029,7 +1029,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		GameState.ensure_combat_bg()
 		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
 		var bw := _battle_width()
-		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, 120.0 if _compact() else _battle_height(bw)))   # the phone canvas keeps Engage on screen
+		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, 120.0 if _compact() else minf(_battle_height(bw), 190.0)))   # scenery only: Engage stays high on the screen
 		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else tr("Combat"))
 		v.add_child(_label(tr("A %s encounter awaits.") % tr(str(kind_label)), 16))
 		var guild_bits: Array[String] = []
@@ -1089,7 +1089,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 	var result: Dictionary = ns["result"]
 	# The result screen is one centered column, not the arena's full width.
 	var rcol := _vbox(12)
-	rcol.custom_minimum_size.x = 720
+	rcol.custom_minimum_size.x = 720 if _narrow() else 940
 	rcol.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(rcol)
 	v = rcol
@@ -1120,6 +1120,21 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		victory_frame.theme_type_variation = &"CardPanelViolet"
 		var victory_col := _vbox(8)
 		victory_frame.add_child(victory_col)
+		# Two columns on a wide screen: what happened on the left, the reward
+		# on the right (stacked, the cards fell below a laptop screen's fold).
+		var left := victory_col
+		var right := victory_col
+		if not _narrow():
+			var vsplit := HBoxContainer.new()
+			vsplit.add_theme_constant_override("separation", 18)
+			left = _vbox(8)
+			left.custom_minimum_size.x = 400
+			right = _vbox(8)
+			right.custom_minimum_size.x = 400   # room for two reward cards side by side
+			right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			vsplit.add_child(left)
+			vsplit.add_child(right)
+			victory_col.add_child(vsplit)
 
 		# A level-up chime, once per won fight (keyed by the node position).
 		var win_key := "win%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0))]
@@ -1129,7 +1144,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				AudioManager.play_sfx(GameData.SFX_PATH["level_up"])
 		var vt := _label("Victory!", 28)
 		vt.add_theme_color_override("font_color", Palette.RANK_S)
-		victory_col.add_child(vt)
+		left.add_child(vt)
 		var bonus_crystal: int = result.get("bonus_crystal", 0)
 		var gains_row := HBoxContainer.new()
 		gains_row.add_theme_constant_override("separation", 14)
@@ -1145,20 +1160,20 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		if bonus_crystal > 0:
 			crystal_text += tr("  +%d extracted") % bonus_crystal
 		gains_row.add_child(_label(crystal_text, 14))
-		victory_col.add_child(gains_row)
+		left.add_child(gains_row)
 		if result.has("heroes"):
-			victory_col.add_child(_victory_party(result))
+			left.add_child(_victory_party(result))
 		if int(result.get("hand_bonus", 0)) > 0:
 			var hb := _label(tr("Flawless, by hand: +%d Gold, +%d Essence (no one went down and you played every turn).") % [int(result["hand_bonus"]), int(result.get("hand_bonus_ess", 0))], 12)
 			hb.add_theme_color_override("font_color", Palette.RANK_S)
-			victory_col.add_child(hb)
+			left.add_child(hb)
 		if str(result.get("escort_saved", "")) != "":
-			victory_col.add_child(_label(tr("%s made it through safely — +2 Renown, +1 Token.") % tr(str(result["escort_saved"])), 12, true))
+			left.add_child(_label(tr("%s made it through safely — +2 Renown, +1 Token.") % tr(str(result["escort_saved"])), 12, true))
 		if kind == "boss" or kind == "elite":
-			victory_col.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
+			left.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
 		if not options.is_empty() and not ns.get("reward_chosen", false):
-			victory_col.add_child(_label("Choose a reward:", 14))
+			right.add_child(_label("Choose a reward:", 14))
 			var reward_row := HFlowContainer.new()
 			reward_row.add_theme_constant_override("h_separation", 10)
 			reward_row.add_theme_constant_override("v_separation", 10)
@@ -1175,7 +1190,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 						_flavor_toast = GameData.narrative_line("legendary_drop")
 					render()
 				, "" if is_relic else _item_card(obj, note[2]), note))
-			victory_col.add_child(reward_row)
+			right.add_child(reward_row)
 			# Flip each reward card in, one after another, the first time this
 			# result is shown (a re-render after that shows them instantly).
 			# Legendaries land with a gold flash.
@@ -1187,16 +1202,13 @@ func _render_combat_node(v: VBoxContainer) -> void:
 				for ri in reward_row.get_child_count():
 					var tile: Control = reward_row.get_child(ri)
 					var tw := tile.create_tween().set_parallel(true)
-					for part in tile.get_children():
-						if part is Control:
-							part.pivot_offset = tile.custom_minimum_size * 0.5 - part.position
-							part.scale = Vector2(0.0, 1.0)
-							tw.tween_property(part, "scale", Vector2.ONE, 0.22).set_delay(0.2 + 0.18 * ri).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+					tile.modulate.a = 0.0
+					tw.tween_property(tile, "modulate:a", 1.0, 0.25).set_delay(0.15 + 0.15 * ri)
 					if str(options[ri]["obj"].rarity) == "legendary":
 						tw.tween_property(tile, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.45 + 0.18 * ri)
 						tw.tween_property(tile, "modulate", Color.WHITE, 0.45).set_delay(0.6 + 0.18 * ri)
 		if GameState.boon_pending():
-			victory_col.add_child(_boon_offer_row(result))
+			right.add_child(_boon_offer_row(result))
 		if (options.is_empty() or ns.get("reward_chosen", false)) and not GameState.boon_pending():
 			var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:

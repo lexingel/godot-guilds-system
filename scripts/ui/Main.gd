@@ -197,13 +197,20 @@ func _drain_toasts() -> void:
 	var ns: Dictionary = GameState.run.get("node_state", {}) if screen == "rift_run" else {}
 	if ns.has("combat_state") and not ns.has("result"):
 		return
-	# The phone canvas: one at a time, narrower, right under its shorter header.
+	# Bottom right, stacking up: the top-right corner sat on the run bar's
+	# Retreat and on headings in a laptop-sized window. The phone canvas: one
+	# at a time, narrower, right under its shorter header.
 	var compact := _compact()
-	var toast_w := 270.0 if compact else TOAST_W
+	# As wide as the margin beside the page allows (on a laptop the corner
+	# card sat over the page's right edge).
+	var toast_w := 270.0 if compact else clampf((get_viewport().get_visible_rect().size.x - 980.0) * 0.5 - 16.0, 230.0, TOAST_W)
+	_toast_box.anchor_top = 0.0 if compact else 1.0
+	_toast_box.anchor_bottom = 0.0 if compact else 1.0
+	_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN if compact else BoxContainer.ALIGNMENT_END
 	_toast_box.offset_left = -toast_w - (10.0 if compact else 20.0)
 	_toast_box.offset_right = -10.0 if compact else -20.0
-	_toast_box.offset_top = 50.0 if compact else 78.0
-	_toast_box.offset_bottom = 300.0 if compact else 400.0
+	_toast_box.offset_top = 50.0 if compact else -340.0
+	_toast_box.offset_bottom = 300.0 if compact else -20.0
 	while not GameState.pending_toasts.is_empty() and _toast_box.get_children().filter(func(c): return not c.is_queued_for_deletion()).size() < (1 if compact else TOAST_MAX):
 		var t: Dictionary = GameState.pending_toasts.pop_front()
 		# A card in the corner: the title over its text. Click to dismiss.

@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Cleaner screens on a laptop: shops, treasure, events and hazards no longer sit under the path map (it shows while you choose a path), Victory puts the rewards beside the results, the quest board fits every note, pre-fight art is shorter, and notices moved to the bottom right.",
 	"Recruits: commission a hero of the role you want (3 rerolls' Gold), and each offer shows power, HP and wage. Hazards now hurt in line with the rift's rank and always pay about a fight's worth, with a chance of double. Agility gives +1.5% dodge a point (was 0.8%).",
 	"From player feedback: click a foe to target it (click again to attack). Auto lasts one fight. Quick fight also opens for a Favored party and says why when it can't. Every Ability shows its numbers. Shield Bash can't stun the same foe two rounds running. Fixed Legendary relics no longer take Essence for levels (refunded). Items say which slot they take. The party screen remembers your last party and rows. Clearer Medical Bay, rewards, run summary and skill tree.",
 	"The bonus for winning by hand (+30% Gold and Essence, no one down) now pays on elites, bosses and every fight on a rank you haven't sealed: the fights where playing by hand matters.",

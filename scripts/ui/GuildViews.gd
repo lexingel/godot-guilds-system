@@ -1535,27 +1535,24 @@ func _render_quests(v: VBoxContainer) -> void:
 	var posted: Array = GameState.guild_board.filter(func(q): return str(q["status"]) == "posted")
 	var failed: Array = GameState.guild_board.filter(func(q): return str(q["status"]) == "failed")
 	var notes: Array = taken + failed + posted
-	var cols := 3
+	var cols := 3 if board_w >= 600.0 else 2
 	var pad_x := roundf(board_w * 0.075)
-	var pad_top := 96.0
 	var gap := 16.0
 	var note_w := floorf((board_w - pad_x * 2.0 - gap * (cols - 1)) / cols)
-	var note_h := 262.0
-	var rows: int = max(1, ceili(notes.size() / float(cols)))
-	var board_h := pad_top + rows * (note_h + gap) + 46.0
-	var board := Control.new()
-	board.custom_minimum_size = Vector2(board_w, board_h)
-	var bg := TextureRect.new()
-	bg.texture = load(GameData.QUEST_BOARD_BG)
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	bg.size = Vector2(board_w, board_h)
-	board.add_child(bg)
+	var board := PanelContainer.new()
+	board.custom_minimum_size.x = board_w
+	var bst := StyleBoxTexture.new()
+	bst.texture = load(GameData.QUEST_BOARD_BG)
+	bst.content_margin_left = pad_x
+	bst.content_margin_right = pad_x
+	bst.content_margin_top = 34.0
+	bst.content_margin_bottom = 46.0
+	board.add_theme_stylebox_override("panel", bst)
+	board.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var bcol := _vbox(14)
+	board.add_child(bcol)
 	# The header, chalked onto a plank at the top.
 	var head := _vbox(0)
-	head.position = Vector2(pad_x, 34)
-	head.size = Vector2(board_w - pad_x * 2.0, 60)
 	var title := _label("Quests", 22)
 	title.add_theme_color_override("font_color", Color("f1e2c0"))
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
@@ -1571,19 +1568,18 @@ func _render_quests(v: VBoxContainer) -> void:
 	sub.tooltip_text = "A day passes with every rift run or rest. Unaccepted postings are replaced when the board refreshes; quests you've taken stay."
 	sub.mouse_filter = Control.MOUSE_FILTER_STOP
 	head.add_child(sub)
-	board.add_child(head)
-	for i in notes.size():
-		var q: Dictionary = notes[i]
-		var jitter := hash(str(q["id"]))
-		var note := _quest_note(q, note_w, note_h, taken.size())
-		note.position = Vector2(pad_x + (i % cols) * (note_w + gap) + float(jitter % 9) - 4.0, pad_top + (i / cols) * (note_h + gap) + float((jitter / 9) % 9) - 4.0)
-		note.rotation = deg_to_rad(float((jitter / 81) % 7) * 0.7 - 2.1)
-		board.add_child(note)
+	bcol.add_child(head)
+	var grid := GridContainer.new()
+	grid.columns = cols
+	grid.add_theme_constant_override("h_separation", int(gap))
+	grid.add_theme_constant_override("v_separation", int(gap))
+	for q in notes:
+		grid.add_child(_quest_note(q, note_w, 0.0, taken.size()))
+	bcol.add_child(grid)
 	if notes.is_empty():
 		var empty := _label(tr("Nothing posted — new postings in %d day%s.") % [days_left, tr(str(_pl(days_left)))], 14)
 		empty.add_theme_color_override("font_color", Color("e0cfa8"))
-		empty.position = Vector2(pad_x, pad_top + 20)
-		board.add_child(empty)
+		bcol.add_child(empty)
 	v.add_child(board)
 	v.add_child(_wrap_label("Every 20 Renown arms a guaranteed Epic relic at your next Shop.", 12, true))
 	v.add_child(_hsep())
@@ -1606,24 +1602,20 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	var progress := GameState.quest_progress(q)
 	var target := int(q["target"])
 	var done := status == "active" and progress >= target
-	var note := Control.new()
-	note.custom_minimum_size = Vector2(w, h)
-	note.size = Vector2(w, h)
-	note.pivot_offset = Vector2(w, h) * 0.5
-	var paper := TextureRect.new()
+	var note := PanelContainer.new()
+	note.custom_minimum_size = Vector2(w, maxf(h, 230.0))
+	var paper := StyleBoxTexture.new()
 	var paper_by_cat := {"Hunt": "quest_note_torn", "Wanted": "quest_note_poster"}
 	paper.texture = load("res://assets/ui/%s.png" % paper_by_cat.get(QUEST_CATEGORY.get(type, ""), "quest_note"))
-	paper.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	paper.stretch_mode = TextureRect.STRETCH_SCALE
-	paper.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	paper.size = Vector2(w, h)
-	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	paper.content_margin_left = 18.0
+	paper.content_margin_right = 18.0
+	paper.content_margin_top = 26.0
+	paper.content_margin_bottom = 18.0
 	if status == "failed":
-		paper.modulate = Color(0.7, 0.68, 0.66)
-	note.add_child(paper)
+		paper.modulate_color = Color(0.7, 0.68, 0.66)
+	note.add_theme_stylebox_override("panel", paper)
+	note.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var col := _vbox(4)
-	col.position = Vector2(18, 24)
-	col.size = Vector2(w - 36, h - 40)
 	var cat := _label(str(QUEST_CATEGORY.get(type, "Quest")).to_upper() if type == "bounty" else str(QUEST_CATEGORY.get(type, "Quest")), 18 if type == "bounty" else 16)
 	cat.add_theme_font_override("font", DISPLAY_FONT)
 	cat.add_theme_color_override("font_color", Color("7a1f14") if type == "bounty" else INK)
@@ -1711,6 +1703,10 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 			rm.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			col.add_child(rm)
 	note.add_child(col)
+	# Pin and stamp on an overlay over the content (a container child fills it).
+	var deco := Control.new()
+	deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note.add_child(deco)
 	# The pin: red on quests you've taken, brass on postings.
 	var pin := Panel.new()
 	var ps := StyleBoxFlat.new()
@@ -1720,21 +1716,21 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 	ps.set_border_width_all(2)
 	pin.add_theme_stylebox_override("panel", ps)
 	pin.size = Vector2(16, 16)
-	pin.position = Vector2(w * 0.5 - 8, 6)
+	pin.position = Vector2((w - 36.0) * 0.5 - 8, -20)
 	pin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	note.add_child(pin)
+	deco.add_child(pin)
 	# A stamp across the corner for taken / done / failed.
 	var stamp_text := tr("DONE") if done else (tr("TAKEN") if status == "active" else (tr("FAILED") if status == "failed" else ""))
 	if stamp_text != "":
 		var st := _label(stamp_text, 18)
 		st.add_theme_font_override("font", DISPLAY_FONT)
 		st.add_theme_color_override("font_color", Color(0.2, 0.55, 0.2, 0.8) if done else (Color(0.7, 0.12, 0.1, 0.6) if status == "active" else Color(0.25, 0.25, 0.25, 0.75)))
-		st.position = Vector2(14, h - 58) if done else Vector2(10, 30)
+		st.position = Vector2(-4, 4)
 		st.rotation = deg_to_rad(-14)
 		if not done:
 			st.add_theme_font_size_override("font_size", 14)
 		st.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		note.add_child(st)
+		deco.add_child(st)
 	return note
 
 

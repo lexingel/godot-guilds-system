@@ -227,7 +227,15 @@ func _run_bar(in_combat: bool) -> Control:
 	var cycle_label := ""
 	if GameState.run.has("tower"):
 		cycle_label = tr(" — Floor %d") % int(GameState.run["tower"])
-	top.add_child(_label("%s%s" % [diff["name"], cycle_label], 16))
+	var region: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
+	var title := _label("%s%s" % [tr(str(diff["name"])), cycle_label], 16)
+	title.tooltip_text = tr("This rift's region sets which foes you'll meet.")
+	title.mouse_filter = Control.MOUSE_FILTER_STOP
+	top.add_child(title)
+	if not region.is_empty() and not _compact() and not GameState.run.has("tower"):
+		var rl := _label(tr(str(region["name"])), 12, true)
+		rl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		top.add_child(rl)
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 3)
 	for li in total_layers:
@@ -323,6 +331,16 @@ func _run_bar(in_combat: bool) -> Control:
 			top.add_child(rrow)
 		else:
 			bottom.add_child(rrow)
+	if not in_combat and GameState.run.get("sealed") == null and not GameState.current_party().is_empty():
+		var bsp := Control.new()
+		bsp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bottom.add_child(bsp)
+		var hp := _icon_button("res://assets/skills/armor_chest.png", "Hero pages", func():
+			rift_hero_id = GameState.current_party()[0].id
+			render())
+		hp.tooltip_text = tr("Gear, attributes and skills. Or click a hero.")
+		hp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bottom.add_child(hp)
 	if bottom.get_child_count() > 0:
 		if _compact() and not in_combat:
 			# One row on the phone canvas: the party sits beside the floor pips.
@@ -399,12 +417,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 			var rl := _wrap_label(tr("Rule · %s — %s") % [tr(str(r["name"])), tr(str(r["desc"]))], 12)
 			rl.add_theme_color_override("font_color", Palette.HAZARD)
 			v.add_child(rl)
-	var biome: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
-	if not biome.is_empty() and not fighting and not _compact():   # the arena shows where you are
-		var bl := _label(str(biome["name"]), 12, true)
-		bl.tooltip_text = "This rift's region sets which foes you'll meet."
-		bl.mouse_filter = Control.MOUSE_FILTER_STOP
-		v.add_child(bl)
 	if GameState.run.get("training", false) and not slim:
 		var tb := _label("Training rift — shorter and gentler than a real one. Beat the boss at the end to seal it.", 12)
 		tb.add_theme_color_override("font_color", Palette.RANK_E)
@@ -425,7 +437,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	# The path map is hidden here too — it's one more thing to scroll past
 	# on a screen that's already the most cramped in the game.
 	var is_combat_kind := kind in ["combat", "boss", "elite"]
-	if not is_combat_kind and not (_compact() and kind != ""):   # the phone canvas shows the map only while choosing a path
+	if kind == "":   # only while choosing the path: inside a node it pushed the choices off a laptop screen
 		_render_rift_map(v)
 
 	var sealed = GameState.run.get("sealed")
@@ -458,13 +470,6 @@ func _render_rift_run(v: VBoxContainer) -> void:
 		))
 		return
 
-	if not is_combat_kind:
-		var hp := _icon_button("res://assets/skills/armor_chest.png", "Hero pages — gear, attributes, skills", func():
-			rift_hero_id = GameState.current_party()[0].id
-			render())
-		hp.tooltip_text = tr("Or click a hero in the bar above")
-		hp.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		v.add_child(hp)
 
 	# An unresolved fork (kind == "") is now chosen directly on the path map
 	# rendered above — its two options are clickable node markers right
