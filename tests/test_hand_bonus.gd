@@ -85,8 +85,19 @@ func run() -> void:
 	GameState.choose_node_type("combat")
 	GameState.engage_node()
 	var st: Dictionary = GameState.run["node_state"]["combat_state"]
-	for m in st["monsters"]:
+	# A known round: every foe alive, none has acted, each aims a plain attack
+	# at the first hero (an opening volley or a rolled Ward made this flaky).
+	st["turn_idx"] = 0
+	st["_m_stunned"] = {}
+	var aim: Hero = st["party"][0]
+	for mi in (st["monsters"] as Array).size():
+		var m: Dictionary = st["monsters"][mi]
+		m["hp"] = 999.0
+		m["max_hp"] = 999.0
 		m["dmg"] = 1.0
+		m["_winding"] = false
+		m["_charged"] = false
+		st["intents"][mi] = {"kind": "attack", "target": aim.id}
 	check(Combat.hero_about_to_fall(st) == null, "no pause while nobody is in danger")
 	check(not Combat.incoming_hits(st).is_empty(), "the foes' intents show who they're hitting")
 	for x in st["party"]:
