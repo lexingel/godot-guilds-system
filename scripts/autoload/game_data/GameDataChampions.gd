@@ -164,13 +164,21 @@ const CHAMPIONS := {
 }
 
 
+## Champions from the player's own past guilds (GameState.legacy), by id
+## ("legacy_..."), set when the legacy record loads: CHAMPIONS' shape plus
+## "guild", "portrait", "memory" and "post" (took the forty-first post).
+static var LEGACY_CHAMPIONS := {}
+
+
 static func champion_def(id: String) -> Dictionary:
-	return CHAMPIONS.get(id, {})
+	return CHAMPIONS.get(id, LEGACY_CHAMPIONS.get(id, {}))
 
 
 ## "Brannoch the Unbroken" / "Grell Ironjaw" / "Imre of the Tides".
 static func champion_full_name(id: String) -> String:
 	var d := champion_def(id)
+	if d.has("guild"):   # a hero from a past guild: "Oren of the Pocket Crows"
+		return String(TranslationServer.translate("%s of %s")) % [str(d["name"]), str(d["guild"])]
 	# A template, so a language can put the title first ("Kırılmaz Brannoch").
 	return String(TranslationServer.translate("{name} {title}")).format({"name": str(d.get("name", id)), "title": String(TranslationServer.translate(str(d.get("title", ""))))})
 
@@ -181,7 +189,10 @@ static func champion_power(level: int) -> float:
 
 static func champion_portrait(id: String) -> String:
 	var own := "res://assets/champions/%s.png" % id
-	return own if ResourceLoader.exists(own) else HERO_PORTRAIT_PATH.get(str(champion_def(id).get("role", "warrior")), "")
+	if ResourceLoader.exists(own):
+		return own
+	var d := champion_def(id)
+	return str(d["portrait"]) if d.has("portrait") else HERO_PORTRAIT_PATH.get(str(d.get("role", "warrior")), "")
 
 
 ## What each champion remembers of the Night of Breaking (the Broken Accord):
@@ -213,3 +224,30 @@ const CHAMPION_MEMORY := {
 	"raske": "We were to ferry the last guild to its post across the Marches. The water rose too fast. I kept the coat. I kept the list of names too.",
 	"corvin": "The Accord's healers poisoned nobody, whatever the songs say. They gave the posts something to sleep. I still have the recipe.",
 }
+
+
+## ---- Legacy: what a finished or retired guild leaves the next ones ----
+## (design: "The Vale Remembers"). Laurels are earned once, when the legacy
+## is written, and spent at founding.
+const LAURELS := {"act": 5, "ending": 10, "freed": 2, "charter": 5, "morrow": 3, "echo": 1}
+const LEGACY_HEROES := 2          # heroes a guild can ask the Vale to remember
+const LEGACY_POOL := 12           # remembered heroes kept (the most recent)
+const LEGACY_MIN_RANK := "C"      # ...or LEGACY_MIN_RIFTS sealed
+const LEGACY_MIN_RIFTS := 25
+const LEGACY_SHALLOW := 5         # a remembered hero waits at one of the first lost pillars
+## One-guild starting gifts bought with Laurels at founding.
+const LEGACY_GIFTS := [
+	{"id": "gold", "cost": 5, "name": "300 more Gold"},
+	{"id": "hero", "cost": 8, "name": "A fourth hero, Rank D"},
+	{"id": "relic", "cost": 8, "name": "A rare relic"},
+	{"id": "barracks", "cost": 10, "name": "The Barracks one level up"},
+]
+## A remembered hero's champion text (%s/%d filled when the legacy is written).
+const LEGACY_LORE := "Once Rank %s with %s: %d rifts sealed, %d foes felled."
+const LEGACY_POST_LORE := "Took the forty-first post for %s, and held it."
+const LEGACY_MEMORY := [
+	"Different crest on the banner. Same work. I sealed %d rifts with %s; I can manage a few more.",
+	"Tell Hesper I kept count. %d rifts with %s, and every one of them stayed shut.",
+	"The light was very quiet. I kept thinking about payday at %s, of all things. %d rifts, and I still miss the pay table.",
+]
+const LEGACY_POST_MEMORY := "Every year someone from %s climbed down to tell me how the harvest went. I'd like to hear it up close for once."

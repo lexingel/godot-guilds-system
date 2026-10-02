@@ -54,4 +54,6 @@ static func make(key: String, scale_mult: float) -> AnimatedSprite2D:
 ## without one still looks like themself).
 static func hero_key(h: Hero, role: String) -> String:
 	var own := "sub_" + str(h.pool_id)
+	if own.begins_with("sub_champ_legacy_"):
+		return role   # a hero from a past guild walks as their class does
 	return own if ResourceLoader.exists(WALK_DIR + own + "_0.png") or own.begins_with("sub_champ_") else role

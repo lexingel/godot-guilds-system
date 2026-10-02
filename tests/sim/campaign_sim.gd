@@ -15,6 +15,9 @@ extends Node
 ##   ... -- charter=expose|quiet  the Charter War's turn (default: never
 ##                                answered, as before 0.32.0); echoes are
 ##                                given back or kept 50/50, the Accord renewed
+## The Endless Rift: when the act still asks for a freed champion (Act IV),
+## every other day goes to an Endless run with the guild's champions on
+## autopilot, finished through GameState.finish_survivors like a player's.
 ## Profiles: "investor" spends like a player who reads the tooltips (quests,
 ## skills, upgrades, training, recruits, champion levels); "casual" takes
 ## quests, spends skill and attribute points, equips gear and hires up to 6,
@@ -116,6 +119,8 @@ func _guild(p: String, s: int) -> void:
 	act_day = {}
 	notes = []
 	ambush = [0, 0]
+	endless_runs = 0
+	freed_day = -1
 	morrow_day = -1
 	morrow_lost = 0
 	GameState.active_slot = 9
@@ -143,15 +148,18 @@ func _guild(p: String, s: int) -> void:
 			act_day[act] = GameState.day
 	GameState.active_slot = 9
 	var last := (GameState.day - 1) / GameData.PAYDAY_DAYS
-	print("   [%s seed %d] day %d act %d · %d Gold %d Essence · roster %d · week %d bill %d of income %d · Renown %d vs rival %d · charter %s/%s · echoes %d (%d back) · ambushes %d/%d won · Morrow %s%s" % [p, s, GameState.day, GameState.campaign_act, GameState.coins, GameState.crystals, GameState.heroes.size(),
+	print("   [%s seed %d] day %d act %d · %d Gold %d Essence · roster %d · week %d bill %d of income %d · Renown %d vs rival %d · charter %s/%s · echoes %d (%d back) · ambushes %d/%d won · Endless %d runs, %s · Morrow %s%s" % [p, s, GameState.day, GameState.campaign_act, GameState.coins, GameState.crystals, GameState.heroes.size(),
 		last - 1, int(bill_paid.get(last - 1, 0)), int(gross_gold.get(last - 1, 0)), GameState.reputation, GameState.rival_renown,
 		GameState.charter_choice if GameState.charter_choice != "" else "-", GameState.charter_result if GameState.charter_result != "" else "-",
 		GameState.echoes_seen.size(), GameState.echoes_returned, ambush[0], ambush[0] + ambush[1],
+		endless_runs, ("freed day %d" % freed_day) if freed_day >= 0 else "none freed",
 		("beaten day %d after %d loss%s" % [morrow_day, morrow_lost, "" if morrow_lost == 1 else "es"]) if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
 		("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
 
 
 var ambush := [0, 0]     # Company Ambush fights [won, lost]
+var endless_runs := 0
+var freed_day := -1
 var morrow_day := -1
 var morrow_lost := 0
 var _party_power := 0
@@ -174,6 +182,9 @@ func _day(p: String) -> void:
 	_spent += maxi(0, g0 - GameState.coins)
 	if GameState.breach_broken():
 		_defend()
+		return
+	if GameState.day % 2 == 0 and _endless_due():
+		_endless()
 		return
 	var party := _pick_party()
 	if party.is_empty():
@@ -496,6 +507,44 @@ func _hand_action(st: Dictionary, h: Hero) -> Dictionary:
 		if best >= 0:
 			a["target"] = best
 	return a
+
+
+## The act still needs a champion freed and there are champions to send.
+func _endless_due() -> bool:
+	var act := GameState.current_act()
+	if act.is_empty() or not GameState.endless_unlocked() or GameState.champions.is_empty():
+		return false
+	return (act["objectives"] as Array).any(func(o): return str(o["type"]) == "posts_freed" and not GameState.campaign_objective_met(o))
+
+
+## One Endless run: up to four champions, autopilot, the strongest pick each
+## level-up, until it ends or 25 minutes in.
+func _endless() -> void:
+	var party: Array = []
+	for id in GameState.champion_roll:
+		if GameState.champion_unlocked(str(id)) and party.size() < 4:
+			party.append(GameState.champion_hero(str(id)))
+	var r := SurvivorsRun.new(party, GameState.pick_biome())
+	r.lost = GameState.lost_champions().filter(func(e): return not GameState.champion_unlocked(str(e[0])))
+	r.threat = GameState.endless_threat()
+	while not r.over and r.time < 1500.0:
+		r.step(0.2, r.autopilot_dir())
+		r.events.clear()
+		r.settle_picks(_best_pick)
+	endless_runs += 1
+	if not r.rescued.is_empty() and freed_day < 0:
+		freed_day = GameState.day
+	GameState.finish_survivors(r)
+
+
+func _best_pick(o: Array) -> String:
+	if o.is_empty():
+		return ""
+	for pref in ["evolve:", "fuse:", "ability:", "mod:", "might", "vigor", "skill:", "haste", "area"]:
+		for id in o:
+			if str(id).begins_with(pref) and not (pref == "skill:" and str(id).split(":")[2] in ["heal", "sanctuary", "taunt", "smoke_bomb"]):
+				return str(id)
+	return str(o[randi() % o.size()])
 
 
 func _defend() -> void:

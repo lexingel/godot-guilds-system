@@ -302,6 +302,20 @@ func roll_champions() -> void:
 	var ids: Array = GameData.CHAMPIONS.keys()
 	ids.shuffle()
 	champion_roll.assign(ids.slice(0, GameData.CHAMPION_ROLL))
+	# Up to two heroes from the player's past guilds wait among the lost: one
+	# who took the forty-first post at the deepest pillar, others near the top.
+	var past: Array = GameData.LEGACY_CHAMPIONS.keys()
+	if past.is_empty():
+		return   # (and no extra random draws, so seeded rolls stay as they were)
+	past.shuffle()
+	var posts: Array = past.filter(func(k): return GameData.LEGACY_CHAMPIONS[k].get("post", false))
+	var others: Array = past.filter(func(k): return not GameData.LEGACY_CHAMPIONS[k].get("post", false))
+	var picked: Array = (posts.slice(0, 1) + others).slice(0, GameData.LEGACY_HEROES)
+	var shallow: Array = range(GameData.CHAMPION_STORY_ACTS, mini(GameData.CHAMPION_STORY_ACTS + GameData.LEGACY_SHALLOW, champion_roll.size()))
+	shallow.shuffle()
+	for k in picked:
+		var at: int = champion_roll.size() - 1 if GameData.LEGACY_CHAMPIONS[k].get("post", false) else int(shallow.pop_back())
+		champion_roll[at] = str(k)
 
 
 ## The champion freed at the end of Act `act`, or "".

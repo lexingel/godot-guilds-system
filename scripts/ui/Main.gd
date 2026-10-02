@@ -11,6 +11,7 @@ extends GuildViews
 
 func _ready() -> void:
 	GameState.load_settings()
+	GameState.load_legacy()
 	GameState.apply_language()
 	GameState.load_active_slot()
 	AudioManager.set_music_volume(GameState.music_volume)
@@ -417,12 +418,16 @@ func render() -> void:
 	# when Settings is opened from the naming screen.
 	if _rotate_prompt:
 		_rotate_overlay()
+	elif _retire_open and GameState.can_retire():
+		_legacy_overlay(true)
 	elif not GameState.pending_stories.is_empty() and GameState.guild_name != "" and screen not in ["title", "load_game", "credits", "onboard"]:
 		var card_key := "story:" + str(GameState.pending_stories[0].get("title", ""))
 		if not _sfx_seen.has(card_key):
 			_sfx_seen[card_key] = true
 			AudioManager.play_sfx(GameData.SFX_PATH["story"])
 		_story_overlay(GameState.pending_stories[0])
+	elif screen == "camp" and GameState.legacy_due():
+		_legacy_overlay(false)
 	elif screen in ["camp", "rift_hall"] and GameState.guild_name != "" and _unseen_matter() != "":
 		_matter_overlay(_unseen_matter())
 	# A new screen (or a switch to or from a full-window scene) uncovers
@@ -592,6 +597,130 @@ func _accord_choice(cv: VBoxContainer) -> void:
 		burn.tooltip_text = tr("Burn the Terms. Every champion of the old guilds comes home; Riftbreaks come twice as often.")
 		row.add_child(burn)
 	cv.add_child(row)
+
+
+var _retire_open := false
+var _legacy_pick: Array = []     # heroes picked to be remembered
+var _pending_gifts: Array = []   # founding gifts chosen with Laurels
+
+
+## The legacy moment: after the Accord's ending (or when retiring), pick up
+## to two heroes the Vale will remember (they return as champions in later
+## guilds) and write the guild into the Hall of Guilds for its Laurels.
+func _legacy_overlay(retire: bool) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.78)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+	var outer := ScrollContainer.new()
+	outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	overlay.add_child(outer)
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(center)
+	var box := PanelContainer.new()
+	box.theme_type_variation = &"CardPanelEmber" if retire else &"CardPanelViolet"
+	box.custom_minimum_size.x = minf(660.0, get_viewport().get_visible_rect().size.x - 40.0)
+	center.add_child(box)
+	var col := _vbox(10)
+	box.add_child(col)
+	var head := _label(tr("Retire the %s") % GameState.guild_name if retire else tr("The Vale will remember the %s") % GameState.guild_name, 22)
+	head.add_theme_font_override("font", DISPLAY_FONT)
+	head.add_theme_color_override("font_color", Palette.RANK_S)
+	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(head)
+	col.add_child(_wrap_label("The guild leaves its save slot for the Hall of Guilds, where its record stays. It can't be played again." if retire
+		else "Your guild's story is told. Choose up to two heroes the Vale will remember: they come back as champions in your later guilds, waiting to be freed in the Endless Rift.", 13))
+	var laurels := _label(tr("Laurels this guild leaves: %d") % GameState.laurels_earned(), 15)
+	laurels.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	laurels.tooltip_text = tr("5 for each act finished, 10 for the Accord's ending, 2 for each champion freed in the Endless Rift, 5 for the Royal Charter, 3 for Captain Morrow, 1 for each echo given back. Spent when founding your next guild.")
+	col.add_child(laurels)
+	if GameState.accord_ending == "renew" and GameState.accord_hero != "":
+		col.add_child(_wrap_label(tr("%s, who took the forty-first post, will be remembered too.") % GameState.accord_hero, 12, true))
+	var cands := GameState.legacy_candidates()
+	_legacy_pick = _legacy_pick.filter(func(id): return cands.any(func(h): return h.id == id))
+	if cands.is_empty():
+		col.add_child(_wrap_label("No hero has reached Rank C or sealed 25 rifts yet, so none can be remembered.", 12, true))
+	else:
+		col.add_child(_label(tr("Remember (%d/%d):") % [_legacy_pick.size(), GameData.LEGACY_HEROES], 13))
+		var grid := HFlowContainer.new()
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		for h in cands:
+			var b := Button.new()
+			b.toggle_mode = true
+			b.button_pressed = _legacy_pick.has(h.id)
+			b.custom_minimum_size = Vector2(200, 56)
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+			if portrait != "":
+				b.icon = _icon_trimmed(portrait, 40).texture
+				b.add_theme_constant_override("icon_max_width", 36)
+			b.text = "%s\n%s" % [h.name.split(" the ")[0], tr("Rank %s %s · %d rifts") % [tr(h.rank), tr(str(GameData.hero_role(h).capitalize())), int(h.history.get("rifts_cleared", 0))]]
+			b.add_theme_font_size_override("font_size", 12)
+			b.disabled = not b.button_pressed and _legacy_pick.size() >= GameData.LEGACY_HEROES
+			b.pressed.connect(func(id=h.id):
+				if _legacy_pick.has(id):
+					_legacy_pick.erase(id)
+				else:
+					_legacy_pick.append(id)
+				render())
+			grid.add_child(b)
+		col.add_child(grid)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var go := _icon_domain_button("ember" if retire else "violet", GameData.BUTTON_ICON_PATH["confirm"], "Retire the guild" if retire else "Write it in the Chronicle", func():
+		var name := GameState.guild_name
+		var earned := GameState.retire_guild(_legacy_pick) if retire else GameState.write_legacy(_legacy_pick)
+		_legacy_pick.clear()
+		_flavor_toast = tr("The %s joined the Hall of Guilds: +%d Laurels.") % [name, earned]
+		if retire:
+			_retire_open = false
+			screen = "title"
+		render())
+	row.add_child(go)
+	if retire:
+		row.add_child(_button("Cancel", func():
+			_retire_open = false
+			_legacy_pick.clear()
+			render()))
+	col.add_child(row)
+	root.add_child(overlay)
+
+
+## The founding screen's Laurels: one-guild gifts from past guilds' legacy.
+func _founding_gifts() -> Control:
+	var col := _vbox(6)
+	var have := int(GameState.legacy.get("laurels", 0))
+	var spent := 0
+	for g in GameData.LEGACY_GIFTS:
+		if _pending_gifts.has(g["id"]):
+			spent += int(g["cost"])
+	var head := _label(tr("Laurels: %d (from %d past guild%s)") % [have - spent, (GameState.legacy["guilds"] as Array).size(), _pl((GameState.legacy["guilds"] as Array).size())], 14)
+	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+	col.add_child(head)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 6)
+	for g in GameData.LEGACY_GIFTS:
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = _pending_gifts.has(g["id"])
+		b.text = tr("%s · %d") % [tr(str(g["name"])), int(g["cost"])]
+		b.disabled = not b.button_pressed and int(g["cost"]) > have - spent
+		b.pressed.connect(func(id=g["id"]):
+			if _pending_gifts.has(id):
+				_pending_gifts.erase(id)
+			else:
+				_pending_gifts.append(id)
+			render())
+		row.add_child(b)
+	col.add_child(row)
+	return col
 
 
 ## A hero's request or the rival's move, popped up over the camp the first
@@ -1417,6 +1546,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 	))
 	v.add_child(crest_row)
 
+	if not (GameState.legacy.get("guilds", []) as Array).is_empty():
+		v.add_child(_founding_gifts())
 	var found := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
 		var n := edit.text.strip_edges()
 		if n == "":
@@ -1428,6 +1559,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 		GameState.guild_name = n
 		GameState.guild_crest = pending_crest
 		GameState.hire_starters()
+		GameState.apply_legacy_gifts(_pending_gifts)
+		_pending_gifts.clear()
 		GameState.refresh_recruit_pool()
 		GameState.save()
 		pending_guild_name = ""

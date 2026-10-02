@@ -397,6 +397,15 @@ func _render_records(v: VBoxContainer) -> void:
 		"stats": _render_stats(v)
 		"history": _render_history(v)
 		_: _render_achievements(v)
+	if GameState.can_retire():
+		v.add_child(_hsep())
+		v.add_child(_label("Retire the guild", 15))
+		v.add_child(_wrap_label("A guild can retire once Act II is done: it joins the Hall of Guilds, leaves Laurels for your next guild, and up to two of its heroes come back as champions. Its save slot is freed.", 12, true))
+		var rb := _button("Retire this guild…", func():
+			set("_retire_open", true)
+			render())
+		rb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		v.add_child(rb)
 
 
 func _render_achievements(v: VBoxContainer) -> void:
@@ -1574,10 +1583,34 @@ func _render_compendium(v: VBoxContainer) -> void:
 ## The Broken Accord as far as the guild knows it: the world everyone knows,
 ## what each sealed finale revealed, the Grandmaster's ledger pages found in
 ## rifts, and what the freed champions remember.
+## Past guilds (GameState.legacy): crest, name, how they ended, what they left.
+func _render_hall_of_guilds(v: VBoxContainer) -> void:
+	var hall: Array = GameState.legacy.get("guilds", [])
+	if hall.is_empty():
+		return
+	v.add_child(_label(tr("Hall of Guilds · %d Laurels") % int(GameState.legacy.get("laurels", 0)), 16))
+	for g in hall:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var crest := int(g.get("crest", 1))
+		row.add_child(_icon(GameData.CREST_PATH[clampi(crest - 1, 0, GameData.CREST_PATH.size() - 1)], 32))
+		var col := _vbox(0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(_label(str(g["name"]), 14))
+		var how := tr("Renewed the Accord") if str(g.get("ending", "")) == "renew" else tr("Broke the Accord") if str(g.get("ending", "")) == "break" else tr("Retired in Act %s") % tr(GameState._roman(maxi(1, int(g.get("act", 1)) - 1)))
+		var names: Array = g.get("remembered", [])
+		col.add_child(_wrap_label(tr("%s · day %d · %d rifts sealed · +%d Laurels%s") % [how, int(g.get("day", 0)), int(g.get("rifts", 0)), int(g.get("laurels", 0)),
+			(tr(" · remembered: %s") % ", ".join(names)) if not names.is_empty() else ""], 12, true))
+		row.add_child(col)
+		v.add_child(row)
+	v.add_child(_hsep())
+
+
 func _render_chronicle(v: VBoxContainer) -> void:
 	var watch := _button("Watch the opening", func(): call("_play_cinematic", false))
 	watch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	v.add_child(watch)
+	_render_hall_of_guilds(v)
 	v.add_child(_label("The world", 16))
 	for e in GameData.CHRONICLE_WORLD:
 		v.add_child(_label(str(e[0]), 14))

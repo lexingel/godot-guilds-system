@@ -72,7 +72,12 @@ var last_party: Array[String] = []   # the heroes who went out last (party assem
 var party_presets: Array = [[], [], []]   # saved loadouts: [[hero id, row], ...] each
 var charter_choice: String = ""   # the Charter War's turn: "", "expose" or "quiet"
 var charter_result: String = ""
-var morrow_defeated: bool = false   # the Charter War's last fight (after exposing the Company)   # the Crown's hearing after Act III: "", "won" or "lost"
+var morrow_defeated: bool = false
+var legacy_written: bool = false     # this guild's legacy is in the Vale's history
+## Across guilds (user://legacy.json, not a save slot): Laurels, the Hall of
+## Guilds and the remembered heroes as champions. See write_legacy.
+var legacy: Dictionary = {}
+const LEGACY_PATH := "user://legacy.json"   # the Charter War's last fight (after exposing the Company)   # the Crown's hearing after Act III: "", "won" or "lost"
 var echoes_seen: Array = []      # What the Rifts Take: echoes met (GameData.ECHOES ids)
 var echoes_returned: int = 0
 var accord_hero: String = ""     # who took the forty-first post (renew)
@@ -644,7 +649,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "pay_rate": pay_rate, "contest_start": contest_start, "rival_event": rival_event, "session": session, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
-		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "morrow_defeated": morrow_defeated, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
+		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "morrow_defeated": morrow_defeated, "legacy_written": legacy_written, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
 		"run": _run_for_save(),
 		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
@@ -686,7 +691,42 @@ func export_save_text() -> String:
 	save()
 	if not FileAccess.file_exists(_slot_path(active_slot)):
 		return ""
-	return FileAccess.get_file_as_string(_slot_path(active_slot))
+	# The legacy rides along, so a backup or a transfer keeps it too.
+	var d = JSON.parse_string(FileAccess.get_file_as_string(_slot_path(active_slot)))
+	if typeof(d) != TYPE_DICTIONARY:
+		return ""
+	d["_legacy"] = legacy
+	return JSON.stringify(d)
+
+
+func load_legacy() -> void:
+	legacy = {"laurels": 0, "guilds": [], "champions": {}}
+	if FileAccess.file_exists(LEGACY_PATH):
+		var d = JSON.parse_string(FileAccess.get_file_as_string(LEGACY_PATH))
+		if typeof(d) == TYPE_DICTIONARY:
+			merge_legacy(d)
+	GameData.LEGACY_CHAMPIONS = legacy["champions"]
+
+
+func save_legacy() -> void:
+	var f := FileAccess.open(LEGACY_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(legacy))
+	GameData.LEGACY_CHAMPIONS = legacy["champions"]
+
+
+## Folds another device's legacy into this one: every guild and remembered
+## hero from both (ids are unique), the larger Laurels balance.
+func merge_legacy(other: Dictionary) -> void:
+	if legacy.is_empty():
+		legacy = {"laurels": 0, "guilds": [], "champions": {}}
+	legacy["laurels"] = maxi(int(legacy["laurels"]), int(other.get("laurels", 0)))
+	var have: Array = (legacy["guilds"] as Array).map(func(g): return str(g["id"]))
+	for g in other.get("guilds", []):
+		if not have.has(str(g["id"])):
+			(legacy["guilds"] as Array).append(g)
+	(legacy["champions"] as Dictionary).merge(other.get("champions", {}))
+	GameData.LEGACY_CHAMPIONS = legacy["champions"]
 
 
 ## Replaces `slot` with an exported save. Returns "" or why it was refused.
@@ -697,6 +737,10 @@ func import_save_text(text: String, slot: int) -> String:
 	if int(parsed.get("save_version", 1)) > SAVE_VERSION:
 		return tr("That save is from a newer version of the game")
 	# The slot's current save is kept as .bak by _write_slot.
+	if parsed.has("_legacy"):
+		merge_legacy(parsed["_legacy"])
+		parsed.erase("_legacy")
+		save_legacy()
 	if not _write_slot(slot, JSON.stringify(parsed)):
 		return tr("Couldn't write the save slot")
 	return ""

@@ -170,7 +170,7 @@ func _complete_act(act_num: int) -> void:
 
 ## "<Name> remembers: ..." (the Broken Accord), or "" for a champion without one.
 func champion_memory_line(id: String) -> String:
-	var m := str(GameData.CHAMPION_MEMORY.get(id, ""))
+	var m := str(GameData.CHAMPION_MEMORY.get(id, GameData.champion_def(id).get("memory", "")))
 	return "" if m == "" else tr("%s remembers: %s") % [tr(str(GameData.champion_def(id)["name"])), tr(m)]
 
 
@@ -623,3 +623,125 @@ func _end_tower() -> void:
 	_clamp_hp_to_max()
 	save()
 	state_changed.emit()
+
+
+# ---------------- Legacy ----------------
+## The Laurels this guild leaves the next ones (GameData.LAURELS).
+func laurels_earned() -> int:
+	var L: Dictionary = GameData.LAURELS
+	var n := clampi(campaign_act - 1, 0, GameData.CAMPAIGN.size()) * int(L["act"])
+	n += int(L["ending"]) if accord_ending != "" else 0
+	n += posts_freed() * int(L["freed"])
+	n += int(L["charter"]) if charter_result == "won" else 0
+	n += int(L["morrow"]) if morrow_defeated else 0
+	n += echoes_returned * int(L["echo"])
+	return n
+
+
+## Heroes the Vale can remember: Rank C or higher, or 25 rifts sealed.
+func legacy_candidates() -> Array:
+	return heroes.filter(func(h): return not h.is_champion and (GameData.rank_index(h.rank) >= GameData.rank_index(GameData.LEGACY_MIN_RANK)
+		or int(h.history.get("rifts_cleared", 0)) >= GameData.LEGACY_MIN_RIFTS))
+
+
+## The Accord's ending is chosen and the guild's legacy isn't written yet.
+func legacy_due() -> bool:
+	return guild_name != "" and accord_ending != "" and not legacy_written
+
+
+## A guild can retire once Act II is done (and not after its legacy is written).
+func can_retire() -> bool:
+	return guild_name != "" and campaign_act >= 3 and not legacy_written
+
+
+## Writes this guild into the Vale's history: its record in the Hall of
+## Guilds, up to LEGACY_HEROES remembered heroes as champions for later
+## guilds (plus whoever took the forty-first post), and its Laurels.
+## Returns the Laurels earned.
+func write_legacy(hero_ids: Array, retired: bool = false) -> int:
+	if legacy_written or guild_name == "":
+		return 0
+	if legacy.is_empty():
+		load_legacy()
+	var names: Array = []
+	var ok := legacy_candidates()
+	for hid in hero_ids.slice(0, GameData.LEGACY_HEROES):
+		var h := find_hero(str(hid))
+		if h and ok.has(h):
+			_legacy_champion({"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "rank": h.rank,
+				"rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0))}, false)
+			names.append(h.name.split(" the ")[0])
+	if accord_ending == "renew":
+		for f in fallen:
+			if str(f.get("name", "")).split(" the ")[0] == accord_hero:
+				_legacy_champion(f, true)
+				names.append(accord_hero)
+				break
+	# Only the most recent remembered heroes stay in the pool.
+	var keys: Array = (legacy["champions"] as Dictionary).keys()
+	keys.sort_custom(func(a, b): return int(legacy["champions"][a].get("at", 0)) > int(legacy["champions"][b].get("at", 0)))
+	for k in keys.slice(GameData.LEGACY_POOL):
+		(legacy["champions"] as Dictionary).erase(k)
+	var earned := laurels_earned()
+	legacy["laurels"] = int(legacy["laurels"]) + earned
+	(legacy["guilds"] as Array).append({"id": "g%d_%d" % [int(Time.get_unix_time_from_system()), randi() % 100000],
+		"name": guild_name, "crest": guild_crest, "ending": accord_ending, "retired": retired, "day": day, "act": campaign_act,
+		"rifts": rifts_sealed, "laurels": earned, "remembered": names, "fallen": fallen.size(), "charter": charter_result})
+	legacy_written = true
+	save_legacy()
+	save()
+	state_changed.emit()
+	return earned
+
+
+## A remembered hero as a champion: their name, class and portrait, a Boon,
+## Call and mods borrowed from a champion of the same role, and a lore and
+## memory line from their history.
+func _legacy_champion(src: Dictionary, post: bool) -> String:
+	var role := str(src.get("cls_id", "warrior"))
+	var same: Array = GameData.CHAMPIONS.keys().filter(func(k): return str(GameData.CHAMPIONS[k]["role"]) == role)
+	if same.is_empty():
+		same = GameData.CHAMPIONS.keys()
+	same.sort()
+	var first := str(src.get("name", "")).split(" the ")[0]
+	var tpl: Dictionary = GameData.CHAMPIONS[same[absi(hash(first + guild_name)) % same.size()]]
+	var rifts := int(src.get("rifts", 0))
+	var id := "legacy_%d_%d" % [int(Time.get_unix_time_from_system()), randi() % 100000]
+	var memory := tr(GameData.LEGACY_POST_MEMORY) % guild_name if post else ""
+	if not post:
+		var m := str(GameData.LEGACY_MEMORY[absi(hash(first)) % GameData.LEGACY_MEMORY.size()])
+		memory = tr(m) % ([guild_name, rifts] if m.find("%s") < m.find("%d") else [rifts, guild_name])
+	legacy["champions"][id] = {"name": first, "guild": guild_name, "role": role, "post": post, "at": int(Time.get_unix_time_from_system()),
+		"boon": (tpl["boon"] as Dictionary).duplicate(), "call": (tpl["call"] as Dictionary).duplicate(), "mods": (tpl["mods"] as Array).duplicate(),
+		"portrait": GameData.portrait_for_hero(role, str(src.get("pool_id", ""))),
+		"lore": tr(GameData.LEGACY_POST_LORE) % guild_name if post else tr(GameData.LEGACY_LORE) % [tr(str(src.get("rank", "F"))), guild_name, rifts, int(src.get("kills", 0))],
+		"memory": memory}
+	return id
+
+
+## Spends Laurels on founding gifts for this new guild (GameData.LEGACY_GIFTS
+## ids); a gift it can't afford is skipped. Returns the ones applied.
+func apply_legacy_gifts(ids: Array) -> Array:
+	var applied: Array = []
+	for g in GameData.LEGACY_GIFTS:
+		if not ids.has(g["id"]) or int(legacy.get("laurels", 0)) < int(g["cost"]):
+			continue
+		legacy["laurels"] = int(legacy["laurels"]) - int(g["cost"])
+		match str(g["id"]):
+			"gold":
+				coins += 300
+			"hero":
+				heroes.append(Combat.gen_hero("D", 1))
+			"relic":
+				var r := Combat.gen_relic("rare")
+				r.id = "rl" + str(next_id)
+				next_id += 1
+				r.equipped = true
+				relics.append(r)
+			"barracks":
+				upgrades["ops.barracks"] = maxi(1, int(upgrades.get("ops.barracks", 0)))
+		applied.append(g["id"])
+	if not applied.is_empty():
+		save_legacy()
+		save()
+	return applied

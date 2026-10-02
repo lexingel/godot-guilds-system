@@ -20,11 +20,15 @@ func _ready() -> void:
 		var sp := "user://save_slot_%d.json" % i
 		for p in [sp, sp + ".bak"]:
 			kept[p] = FileAccess.get_file_as_bytes(p) if FileAccess.file_exists(p) else null
+	kept[GameState.LEGACY_PATH] = FileAccess.get_file_as_bytes(GameState.LEGACY_PATH) if FileAccess.file_exists(GameState.LEGACY_PATH) else null
 	kept[GameState.ACTIVE_SLOT_PATH] = FileAccess.get_file_as_bytes(GameState.ACTIVE_SLOT_PATH) if FileAccess.file_exists(GameState.ACTIVE_SLOT_PATH) else null
 	var total_pass := 0
 	var total_fail := 0
 	for f in files:
 		GameState.active_slot = TEST_SLOT
+		# Every test starts with no past guilds (Main loads the real legacy).
+		GameState.legacy = {"laurels": 0, "guilds": [], "champions": {}}
+		GameData.LEGACY_CHAMPIONS = GameState.legacy["champions"]
 		var script: GDScript = load("res://tests/" + f)
 		if script == null or not script.can_instantiate():
 			# A test that doesn't compile fails loudly instead of hanging the run.
