@@ -523,6 +523,10 @@ func evolve_hero(hero_id: String, target_pool_id: String) -> String:
 	h.hp = Combat.max_hp(h)
 	var passive := GameData.subclass_passive(h.pool_id)
 	push_toast(h, tr("Evolved — Rank %s") % tr(str(h.rank)), tr("%s · new passive: %s") % [tr(str(h.name)), tr(str(passive.get("name", "none")))])
+	if h.rank == "B":   # the Path's first fork into a calling: a scene (the Guildhold Chronicle)
+		var scene := str(GameData.CALLING_SCENES.get(GameData.hero_voice(h), GameData.CALLING_SCENES["stoic"]))
+		pending_stories.append({"title": tr("A calling: %s") % tr(str(next["name"])), "subtitle": tr(str(h.name)),
+			"text": tr(scene) % [tr(str(h.name.split(" the ")[0])), tr(str(next["name"]))]})
 	save()
 	state_changed.emit()
 	return ""

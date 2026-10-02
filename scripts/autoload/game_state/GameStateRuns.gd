@@ -425,7 +425,7 @@ func ensure_event() -> void:
 	ns["type"] = "event"
 	var seen: Array = run.get("events_seen", [])
 	# Region events ("biome") only happen in their region.
-	var here: Array = GameData.RIFT_EVENTS.filter(func(e): return str(e.get("biome", run_biome())) == run_biome())
+	var here: Array = GameData.RIFT_EVENTS.filter(func(e): return str(e.get("biome", run_biome())) == run_biome() and campaign_act >= int(e.get("min_act", 1)))
 	var fresh: Array = here.filter(func(e): return not seen.has(e["id"]))
 	if fresh.is_empty():
 		fresh = here
@@ -810,6 +810,8 @@ func advance_node() -> void:
 func seal_rift() -> void:
 	_rescue_left_behind()
 	maybe_find_ledger_page(int(run.get("finale", 0)) > 0)
+	if int(run.get("finale", 0)) == 0 and not run.has("tower"):
+		maybe_echo()
 	if int(run.get("finale", 0)) > 0 and int(run["finale"]) == campaign_act:
 		_complete_act(campaign_act)
 	var diff := _diff()

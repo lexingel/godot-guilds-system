@@ -68,6 +68,8 @@ func reset() -> void:
 	accord_pages = 0
 	accord_ending = ""
 	accord_hero = ""
+	echoes_seen = []
+	echoes_returned = 0
 	run = {}
 	monsters_seen = []
 	bosses_defeated = []
@@ -269,6 +271,8 @@ func load_save() -> bool:
 	accord_pages = int(data.get("accord_pages", 0))
 	accord_ending = str(data.get("accord_ending", ""))
 	accord_hero = str(data.get("accord_hero", ""))
+	echoes_seen = data.get("echoes_seen", [])
+	echoes_returned = int(data.get("echoes_returned", 0))
 	# Guilds that finished the campaign before Act IV existed start it now.
 	if campaign_act == 4 and not hints_seen.has("act4_intro"):
 		hints_seen.append("act4_intro")

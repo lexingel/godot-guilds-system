@@ -159,3 +159,34 @@ func run() -> void:
 	GameState.save()
 	GameState.load_save()
 	check(GameState.accord_pages == 3, "found pages survive a reload")
+
+	# Side threads: echoes (What the Rifts Take), gentle Hollow events held
+	# back by act (The Sky Beneath), calling scenes (the Chronicle).
+	GameState.campaign_act = 2
+	GameState.pending_stories.clear()
+	GameState.echoes_seen.clear()
+	var tries := 0
+	while GameState.pending_stories.is_empty() and tries < 400:
+		GameState.maybe_echo()
+		tries += 1
+	check(GameState.pending_stories.size() == 1 and str(GameState.pending_stories[0]["kind"]) == "echo", "a sealed rift can leave an echo from Act II")
+	GameState.maybe_echo()
+	check(GameState.pending_stories.size() == 1, "one echo waits at a time")
+	var ren0 := GameState.reputation
+	GameState.answer_echo("return")
+	check(GameState.reputation == ren0 + GameData.ECHO_RENOWN and GameState.echoes_returned >= 1 and str(GameState.pending_stories[0].get("subtitle", "")).contains("Given back"), "giving it back: Renown and a scene")
+	GameState.pending_stories.clear()
+	while GameState.pending_stories.is_empty() and GameState.echoes_seen.size() < GameData.ECHOES.size():
+		GameState.maybe_echo()
+	var cr0e := GameState.crystals
+	var ess := int(GameState.pending_stories[0]["essence"])
+	GameState.answer_echo("keep")
+	check(GameState.crystals == cr0e + ess, "keeping it: its Essence")
+	GameState.campaign_act = 1
+	GameState.pending_stories.clear()
+	for i in 200:
+		GameState.maybe_echo()
+	check(GameState.pending_stories.is_empty(), "no echoes in Act I")
+	check(GameData.RIFT_EVENTS.filter(func(e): return int(e.get("min_act", 1)) > 1).size() >= 3, "gentle Hollow events wait for later acts")
+	for v in ["bold", "swift", "stoic", "wary", "devout", "arcane"]:
+		check(str(GameData.CALLING_SCENES.get(v, "")).count("%s") == 2, "a calling scene for the %s voice" % v)

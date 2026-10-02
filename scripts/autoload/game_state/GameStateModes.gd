@@ -175,6 +175,44 @@ func maybe_find_ledger_page(finale: bool) -> void:
 		"text": tr("Page %d of %d, found in the rift. Read it in Library > Codex > Chronicle.") % [accord_pages, GameData.LEDGER_PAGES.size()]})
 
 
+## What the Rifts Take: from Act II a sealed rift sometimes leaves an echo
+## (GameData.ECHOES, each once), a choice card: give it back or keep it.
+func maybe_echo() -> void:
+	if campaign_act < 2 or pending_stories.any(func(c): return str(c.get("kind", "")) == "echo") or randf() >= GameData.ECHO_CHANCE:
+		return
+	var left: Array = GameData.ECHOES.filter(func(e): return not echoes_seen.has(str(e["id"])))
+	if left.is_empty():
+		return
+	var e: Dictionary = left[randi() % left.size()]
+	echoes_seen.append(str(e["id"]))
+	pending_stories.append({"kind": "echo", "echo": str(e["id"]), "title": str(e["title"]), "subtitle": tr("An echo, from the last rift"),
+		"text": str(e["text"]), "choices": ["return", "keep"], "essence": echo_essence()})
+
+
+func echo_essence() -> int:
+	return 25 + 15 * mini(campaign_act, 4)
+
+
+## Answers the echo on top of the story queue: "return" (Renown, and a scene)
+## or "keep" (its Essence).
+func answer_echo(choice: String) -> void:
+	if pending_stories.is_empty() or str(pending_stories[0].get("kind", "")) != "echo":
+		return
+	var card: Dictionary = pending_stories.pop_front()
+	var e: Array = GameData.ECHOES.filter(func(x): return str(x["id"]) == str(card["echo"]))
+	if choice == "return":
+		add_reputation(GameData.ECHO_RENOWN)
+		echoes_returned += 1
+		if not e.is_empty():
+			pending_stories.push_front({"title": tr(str(e[0]["title"])), "subtitle": tr("Given back · +%d Renown") % GameData.ECHO_RENOWN, "text": str(e[0]["returned"])})
+		_news(tr("An echo was given back to the village: %s.") % tr(str(card["title"])))
+	else:
+		crystals += int(card.get("essence", echo_essence()))
+		_news(tr("An echo was kept: %s (+%d Essence).") % [tr(str(card["title"])), int(card.get("essence", 0))])
+	save()
+	state_changed.emit()
+
+
 func _the_end_card() -> Dictionary:
 	return {"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")}
 

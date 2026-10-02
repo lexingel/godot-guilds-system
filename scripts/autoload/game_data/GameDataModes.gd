@@ -391,6 +391,30 @@ const RIFT_EVENTS := [
 			{"label": "Warm it", "desc": "40%: it hatches and leaves a gift, a Rare-or-better find, +10 Essence · 60%: it bursts, everyone loses 15% HP", "gamble": {"chance": 0.4, "win": {"loot": "rare", "crystals": 10}, "lose": {"hurt_pct": 0.15}}},
 			{"label": "Take its shell", "desc": "+15 Essence", "effect": {"crystals": 15}},
 		]},
+	# The Sky Beneath (a side thread): strange, gentle things from the Hollow.
+	# "min_act" holds an event back until that act.
+	{"id": "glass_market", "name": "The Glass Market", "text": "In the middle of the rift, a stall. A thing with too many hands is selling fruit made of glass. It does not attack. It seems embarrassed to be seen. When your party comes closer it holds out a fruit and says, very clearly, in our language: please.",
+		"choices": [
+			{"label": "Buy a fruit", "desc": "Costs 12 Gold · every hero heals 25% HP", "cost": {"coins": 12}, "effect": {"heal_pct": 0.25}},
+			{"label": "Take one (it lets you)", "desc": "+8-14 Essence · -1 Renown", "effect": {"crystals": [8, 14], "reputation": -1}},
+			{"label": "Leave it in peace", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "lost_child", "min_act": 2, "name": "A Lost Child", "text": "A small creature hides behind a rock. It has the shape of the things you fight, but small, and it is crying. It flinches when your party comes near, then follows at a distance.",
+		"choices": [
+			{"label": "Walk it to the rift's heart", "desc": "Every hero gains 15 XP", "effect": {"xp_all": 15}},
+			{"label": "Leave it your rations", "desc": "Costs 10 Gold · +3 Renown", "cost": {"coins": 10}, "effect": {"reputation": 3}},
+			{"label": "Drive it off", "desc": "Nothing happens", "effect": {}},
+		]},
+	{"id": "rain_up", "min_act": 2, "name": "Rain That Falls Up", "text": "Here the rain falls toward the sky, slow and warm, and collects in the air above your heads like a lake seen from underneath.",
+		"choices": [
+			{"label": "Stand in it", "desc": "Every hero heals 15% HP · +3 Momentum next fight", "effect": {"heal_pct": 0.15, "ready": true}},
+			{"label": "Bottle it", "desc": "+8-14 Essence", "effect": {"crystals": [8, 14]}},
+		]},
+	{"id": "dark_post", "min_act": 2, "name": "A Dark Post", "text": "A pillar of glass stands in the rift, cracked and empty. Scratched into its base: a name, and the Accord's oath. Whoever held this post let go a long time ago.",
+		"choices": [
+			{"label": "Read the oath aloud", "desc": "Every hero heals 10% HP · +2 Renown", "effect": {"heal_pct": 0.10, "reputation": 2}},
+			{"label": "Chip out the crystal", "desc": "+10-16 Essence · -2 Renown", "effect": {"crystals": [10, 16], "reputation": -2}},
+		]},
 ]
 
 ## Attribute checks in events: the party's best score in the attribute vs
@@ -887,4 +911,37 @@ const ACCORD_ENDING := {
 const CHRONICLE_ENDING := {
 	"renew": ["The forty-first post", "Your guild signed the Terms. %s took the forty-first post, and the Hollow stays below. The rifts that remain are old ones, and quiet."],
 	"break": ["The Terms burned", "Your guild burned the Terms. Every post was released, the old guilds came home, and the Hollow came up with them. The rifts are louder now, and nobody holds them shut but the guilds."],
+}
+
+
+## What the Rifts Take (a side thread): from Act II, a sealed rift sometimes
+## leaves an echo, Essence that holds one thing the Hollow took. Give it back
+## to the village (Renown, and a scene) or keep it (Essence).
+const ECHO_CHANCE := 0.12
+const ECHO_RENOWN := 3
+const ECHOES := [
+	{"id": "name", "title": "A Child's Name", "text": "This Essence will not settle. It keeps the shape of a word. The miller's wife in Hollin heard about it and walked here in the rain: her son went into the Breach on the Night of Breaking, and she cannot remember what she called him.",
+		"returned": "She holds the crystal to her ear, then says the name out loud, twice, as if checking it still fits. She does not thank you. She does not need to."},
+	{"id": "street", "title": "A Street", "text": "The Essence from the last rift has a street in it: cobbles, a bakery, a blue door. A carter in the village swears it is the street he grew up on, in a town the Vale forgot.",
+		"returned": "He walks the street in his head all evening, door by door. In the morning he paints his own door blue."},
+	{"id": "song", "title": "A Song", "text": "This Essence hums. The old women in the village know the tune and none of the words. The words were in the rift.",
+		"returned": "By nightfall the whole village is singing it, words and all, a little off-key. Wen writes them down."},
+	{"id": "face", "title": "A Face", "text": "There is a face in this crystal, young and stern, in an Accord ranger's green. The village elder asks to see it and goes very quiet.",
+		"returned": "'My sister,' the elder says. 'I had forgotten I had one.' The crystal goes home with them and sits in the window."},
+	{"id": "bread", "title": "A Recipe", "text": "This Essence smells of bread. The innkeeper says her grandmother's loaf tasted like this, before the Night took the recipe out of everyone's heads.",
+		"returned": "The inn smells of it for a week. Your heroes eat there free for the rest of the month, and nobody counts."},
+	{"id": "oath", "title": "An Oath", "text": "The words in this crystal are the Accord's oath, spoken in a voice nobody living remembers. Old Hesper asks to hold it.",
+		"returned": "Hesper holds it a long time. 'That was the Grandmaster,' she says, 'before.' She gives it to the village shrine and does not speak of it again."},
+]
+
+## The Guildhold Chronicle: when a hero's Path first forks into a calling
+## (their Rank B evolution), a short scene by their voice (%s: the hero,
+## then the calling).
+const CALLING_SCENES := {
+	"bold": "Hesper watches %s split the training post and keep swinging at the stump. 'The Path is choosing for you,' she says. 'You could let it.' They let it. Wen writes a new word under their name: %s.",
+	"swift": "%s used to be first into every rift and first out. This week they stayed behind to walk the slowest hero home. Hesper calls that the moment a Path forks. Wen writes the new word down: %s.",
+	"stoic": "%s says nothing about it at all. They turn up at the pay table one morning carrying themselves differently, and Hesper nods as if a debt has been paid. Wen asks what to write. Hesper says: %s.",
+	"wary": "%s didn't want it. The Essence settled anyway, the way rain settles on a roof. Hesper sits with them until dark. 'Nobody's ready,' she says. 'The good ones are scared.' Wen writes: %s.",
+	"devout": "%s prays before every rift, and this time the answer came back as a shape. Hesper says the Vow always answers in its own time. Wen writes it in the chronicle in her best hand: %s.",
+	"arcane": "%s has been taking notes on their own Essence for weeks. The notes end mid-sentence on the day it settled. Wen copies the last line into the chronicle and adds the new word: %s.",
 }

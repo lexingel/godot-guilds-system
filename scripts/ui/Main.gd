@@ -487,7 +487,10 @@ func _story_overlay(card_data: Dictionary) -> void:
 	var body := _wrap_label(str(card_data.get("text", "")), 15)
 	cv.add_child(body)
 	if card_data.has("choices"):
-		_accord_choice(cv)   # the Broken Accord's ending: no Continue, a decision
+		if str(card_data.get("kind", "")) == "echo":
+			_echo_choice(cv, card_data)
+		else:
+			_accord_choice(cv)   # the Broken Accord's ending: no Continue, a decision
 		card.add_child(cv)
 		center.add_child(card)
 		root.add_child(overlay)
@@ -506,6 +509,23 @@ func _story_overlay(card_data: Dictionary) -> void:
 
 
 var _accord_pick := false   # the ending card is asking which hero takes the post
+
+
+## What the Rifts Take: give the echo back to the village, or keep it.
+func _echo_choice(cv: VBoxContainer, card_data: Dictionary) -> void:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	row.alignment = FlowContainer.ALIGNMENT_CENTER
+	var give := _icon_domain_button("violet", "", tr("Give it back (+%d Renown)") % GameData.ECHO_RENOWN, func():
+		GameState.answer_echo("return")
+		render())
+	row.add_child(give)
+	var keep := _icon_domain_button("ember", "", tr("Keep it (+%d Essence)") % int(card_data.get("essence", 0)), func():
+		GameState.answer_echo("keep")
+		render())
+	row.add_child(keep)
+	cv.add_child(row)
+	_combat_hotkeys = {}
 
 
 ## The Broken Accord's ending: Renew (then pick the hero who takes the
