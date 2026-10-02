@@ -2181,21 +2181,15 @@ func _party_slot(index: int, hid: String, w: float, small: bool) -> Control:
 	zone.on_drop = func(data) -> void:
 		_place_hero(str(data.get("hero_id", "")), index)
 		render()
-	var hit := Button.new()   # a click on the slot opens the picker (to fill or swap)
-	hit.flat = true
-	var clear := StyleBoxEmpty.new()
-	for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
-		hit.add_theme_stylebox_override(sn, clear)
-	hit.mouse_filter = Control.MOUSE_FILTER_PASS
-	hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	hit.pressed.connect(func():
+	# A click anywhere on the slot (bar F, B and ×) opens the picker.
+	zone.clicked = func():
 		_slot_pick = index
-		render())
-	hit.mouse_entered.connect(func(): st.bg_color = base.lightened(0.06))
-	hit.mouse_exited.connect(func(): st.bg_color = base)
-	zone.add_child(hit)
+		render()
+	zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	zone.mouse_entered.connect(func(): st.bg_color = base.lightened(0.06))
+	zone.mouse_exited.connect(func(): st.bg_color = base)
 	var col := _vbox(2)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE   # clicks fall through to `hit`
+	col.mouse_filter = Control.MOUSE_FILTER_PASS
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	if h == null:
 		var plus := _label("+", 44 if not small else 32)
@@ -2207,7 +2201,7 @@ func _party_slot(index: int, hid: String, w: float, small: bool) -> Control:
 		col.add_child(hint)
 	else:
 		var top := HBoxContainer.new()
-		top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.mouse_filter = Control.MOUSE_FILTER_PASS
 		top.add_theme_constant_override("separation", 2)
 		for r in ["front", "back"]:   # the F/B switch
 			var rb := Button.new()
@@ -2244,9 +2238,6 @@ func _party_slot(index: int, hid: String, w: float, small: bool) -> Control:
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			icon.drag_payload = {"kind": "party_hero", "hero_id": h.id}
 			icon.mouse_default_cursor_shape = Control.CURSOR_MOVE
-			icon.clicked = func():
-				_slot_pick = index
-				render()
 			_hero_look(icon, h)
 			col.add_child(icon)
 		var nm := _label(h.name.split(" the ")[0], 14 if not small else 12)
