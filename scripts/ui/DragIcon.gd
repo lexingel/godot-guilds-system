@@ -22,6 +22,22 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	return drag_payload
 
 
+## Called on a plain click (pressed and released without moving): the icon
+## stays draggable and still works as a button.
+var clicked: Callable = Callable()
+var _press_at := Vector2(-1, -1)
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not clicked.is_valid() or not (event is InputEventMouseButton) or event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if event.pressed:
+		_press_at = event.position
+	elif _press_at.x >= 0.0 and event.position.distance_to(_press_at) < 6.0:
+		_press_at = Vector2(-1, -1)
+		clicked.call()
+
+
 ## BBCode tooltips render as item cards (see RichTip).
 func _make_custom_tooltip(for_text: String) -> Object:
 	return RichTip.card(for_text)

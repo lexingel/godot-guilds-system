@@ -2029,85 +2029,47 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	else:
 		v.add_child(_label("Assemble Party (up to 4)", 20))
 	_coach(v, "party", "Pick your party", "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less.")
-	# Formation slots (Darkest Dungeon style): the party sits in a Front and a
-	# Back row. Drag a portrait into a row (from the roster below, or between
-	# rows), or use Add/Move/Remove. The front row draws ~3x the attacks; each
-	# role has a natural row with its own bonus (GameData.ROLE_POSITION).
-	var lineup: Array[Hero] = []
-	for hid in pending_party:
-		var ph := GameState.find_hero(hid)
-		if ph:
-			lineup.append(ph)
+	# The party stands on four slots facing the foes, each hero set Front or
+	# Back with a small F/B switch. An empty slot's + opens a picker; a hero
+	# can also be dragged from the roster onto a slot (onto someone: a swap).
 	if not GameState.heroes.is_empty():
-		v.add_child(_loadout_row())   # above the rows: a saved party is the quick way in
-	for row_id in ["front", "back"]:
-		var zone := DropZone.new()
-		var zone_style := StyleBoxFlat.new()
-		zone_style.bg_color = Palette.SURFACE2
-		zone_style.border_color = Palette.EMBER if row_id == "front" else Palette.VIOLET
-		zone_style.set_border_width_all(1)
-		zone_style.set_corner_radius_all(8)
-		zone_style.set_content_margin_all(8)
-		zone.add_theme_stylebox_override("panel", zone_style)
-		zone.can_accept = func(data) -> bool:
-			if typeof(data) != TYPE_DICTIONARY or data.get("kind", "") != "party_hero":
-				return false
-			var hid2: String = str(data.get("hero_id", ""))
-			return pending_party.has(hid2) or pending_party.size() < _party_cap()
-		zone.on_drop = func(data, r=row_id) -> void:
-			var hid2: String = str(data.get("hero_id", ""))
-			if not pending_party.has(hid2):
-				pending_party.append(hid2)
-			GameState.set_hero_formation(hid2, r)
-			render()
-		var zv := _vbox(6)
-		zv.mouse_filter = Control.MOUSE_FILTER_PASS
-		var in_row: Array = lineup.filter(func(x): return x.formation == row_id)
-		zv.add_child(_label(tr("%s row (%d) — %s") % [tr(row_id).capitalize(), in_row.size(),
-			tr("takes most of the enemy's attacks") if row_id == "front" else tr("attacked far less often")], 13))
-		var cards := HFlowContainer.new()
-		cards.add_theme_constant_override("h_separation", 8)
-		cards.add_theme_constant_override("v_separation", 8)
-		cards.mouse_filter = Control.MOUSE_FILTER_PASS
-		cards.custom_minimum_size.y = 100   # a card's height even while empty, so the page doesn't jump on the first Add
-		for ph in in_row:
-			cards.add_child(_party_card(ph, ph.is_champion, true))
-		if in_row.is_empty():
-			cards.add_child(_label("Drag a hero here", 11, true))
-		zv.add_child(cards)
-		zone.add_child(zv)
-		v.add_child(zone)
-
-	var bench: Array = GameState.heroes.filter(func(x): return not pending_party.has(x.id))
+		v.add_child(_loadout_row())   # above the slots: a saved party is the quick way in
+	v.add_child(_formation_stage())
 	if GameState.heroes.is_empty():
 		v.add_child(_label("No heroes yet — recruit some under Roster > Recruits first."))
-	elif not GameState.heroes.is_empty():
+	else:
 		var bench_head := HBoxContainer.new()
 		bench_head.add_theme_constant_override("separation", 10)
-		var bl := _label("Roster — drag into a row, or Add (they keep the row they stood in last)", 12, true)
+		var bl := _label("Roster — click a hero to add them, or drag them onto a slot", 12, true)
 		bl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bench_head.add_child(bl)
-		# One click to a full party: the strongest ready heroes, each in their natural row.
-		var ready: Array = bench.filter(func(x): return not x.is_champion and not x.is_downed() and x.busy_runs <= 0)
+		# One click to a full party: the strongest ready heroes.
+		var ready: Array = GameState.heroes.filter(func(x): return not pending_party.has(x.id) and not x.is_champion and not x.is_downed() and x.busy_runs <= 0)
 		ready.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
 		var fill := _button("Add strongest", func():
 			for x in ready:
 				if pending_party.size() >= _party_cap():
 					break
-				pending_party.append(x.id)   # each in the row they stood in last (a new hero: their role's)
+				pending_party.append(x.id)   # in the row they stood in last (a new hero: their role's)
 			render())
 		fill.tooltip_text = tr("Fill the party with your strongest ready heroes, each in the row they stood in last.")
 		fill.disabled = ready.is_empty() or pending_party.size() >= _party_cap()
 		bench_head.add_child(fill)
+		var clear := _button("Clear", func():
+			pending_party.clear()
+			render())
+		clear.disabled = pending_party.is_empty()
+		bench_head.add_child(clear)
 		v.add_child(bench_head)
 		var bench_flow := HFlowContainer.new()
 		bench_flow.add_theme_constant_override("h_separation", 8)
 		bench_flow.add_theme_constant_override("v_separation", 8)
-		# Everyone stays in their place here, the ones in the party marked: a
-		# card leaving the list reflowed it under the cursor between two Adds.
 		for bh in GameState.heroes:
-			bench_flow.add_child(_party_card(bh, bh.is_champion, false, pending_party.has(bh.id)))
+			if not bh.is_champion:
+				bench_flow.add_child(_bench_tile(bh))
 		v.add_child(bench_flow)
+	if _slot_pick >= 0:
+		_slot_picker_overlay()
 
 	if not GameState.champions.is_empty():
 		v.add_child(_hsep())
@@ -2141,6 +2103,328 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 	var launch := _party_launch_bar()
 	v.add_child(launch)
 	v.move_child(launch, 1)
+
+
+var _slot_pick := -1   # the slot whose hero picker is open (-1: none)
+
+
+## Puts hero `id` on slot `index`: onto a hero standing there (a party member
+## swaps places with them; a roster hero takes the slot and the one there
+## goes home), or onto an empty slot. Heroes keep the row they stood in last.
+func _place_hero(id: String, index: int) -> void:
+	if GameState.find_hero(id) == null:
+		return
+	var here := str(pending_party[index]) if index < pending_party.size() else ""
+	if here == id:
+		return
+	if here != "":
+		var j := pending_party.find(id)
+		pending_party[index] = id
+		if j >= 0:
+			pending_party[j] = here
+		return
+	if pending_party.has(id):   # to an empty slot: the end of the line
+		pending_party.erase(id)
+	elif pending_party.size() >= _party_cap():
+		return
+	pending_party.append(id)
+
+
+## The party's slots in a line facing the foes (the party cap's worth).
+func _formation_stage() -> Control:
+	var panel := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = Palette.VIOLET_DEEP
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(10)
+	st.set_content_margin_all(10)
+	panel.add_theme_stylebox_override("panel", st)
+	var col := _vbox(6)
+	var head := _wrap_label("F = Front row: takes most of the enemy's attacks.   B = Back row: attacked far less.", 12, true)
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(head)
+	var small := _compact()
+	var cap := _party_cap()
+	var avail: float = minf(_column_width(), get_viewport().get_visible_rect().size.x - 40.0)
+	var slot_w := clampf((avail - 90.0) / maxf(4.0, cap) - 10.0, 120.0, 190.0)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 10)
+	for i in cap:
+		row.add_child(_party_slot(i, str(pending_party[i]) if i < pending_party.size() else "", slot_w, small))
+	var foes := _label("Foes ›", 13, true)
+	foes.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(foes)
+	col.add_child(row)
+	panel.add_child(col)
+	return panel
+
+
+## One slot: the hero standing there (sprite, name, level and role, HP,
+## power, the F/B switch; × sends them home, a click swaps someone in) or a
+## big + to pick one. A hero dropped on it lands here.
+func _party_slot(index: int, hid: String, w: float, small: bool) -> Control:
+	var h := GameState.find_hero(hid) if hid != "" else null
+	var zone := DropZone.new()
+	var st := StyleBoxFlat.new()
+	var base := Palette.SURFACE if h == null else Palette.SURFACE3
+	st.bg_color = base
+	st.border_color = Palette.MUTED2 if h == null else (Palette.EMBER if h.formation == "front" else Palette.VIOLET)
+	st.set_border_width_all(2 if h != null else 1)
+	st.set_corner_radius_all(10)
+	st.set_content_margin_all(6)
+	zone.add_theme_stylebox_override("panel", st)
+	zone.custom_minimum_size = Vector2(w, 160 if small else 214)
+	zone.can_accept = func(data) -> bool:
+		return typeof(data) == TYPE_DICTIONARY and data.get("kind", "") == "party_hero"
+	zone.on_drop = func(data) -> void:
+		_place_hero(str(data.get("hero_id", "")), index)
+		render()
+	var hit := Button.new()   # a click on the slot opens the picker (to fill or swap)
+	hit.flat = true
+	var clear := StyleBoxEmpty.new()
+	for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
+		hit.add_theme_stylebox_override(sn, clear)
+	hit.mouse_filter = Control.MOUSE_FILTER_PASS
+	hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	hit.pressed.connect(func():
+		_slot_pick = index
+		render())
+	hit.mouse_entered.connect(func(): st.bg_color = base.lightened(0.06))
+	hit.mouse_exited.connect(func(): st.bg_color = base)
+	zone.add_child(hit)
+	var col := _vbox(2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE   # clicks fall through to `hit`
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	if h == null:
+		var plus := _label("+", 44 if not small else 32)
+		plus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		plus.add_theme_color_override("font_color", Palette.MUTED)
+		col.add_child(plus)
+		var hint := _label("Add a hero", 12, true)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(hint)
+	else:
+		var top := HBoxContainer.new()
+		top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_theme_constant_override("separation", 2)
+		for r in ["front", "back"]:   # the F/B switch
+			var rb := Button.new()
+			rb.text = tr("Front row" if r == "front" else "Back row").left(1)   # F/B (Ö/A in Turkish)
+			rb.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			rb.toggle_mode = true
+			rb.button_pressed = h.formation == r
+			rb.custom_minimum_size = Vector2(28, 24)
+			rb.add_theme_font_size_override("font_size", 12)
+			rb.theme_type_variation = (&"ButtonEmber" if r == "front" else &"ButtonViolet") if h.formation == r else &""
+			rb.tooltip_text = tr("Front row: takes most of the enemy's attacks") if r == "front" else tr("Back row: attacked far less")
+			rb.pressed.connect(func(row_id=r):
+				GameState.set_hero_formation(hid, row_id)
+				render())
+			top.add_child(rb)
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(spacer)
+		var x := _button("×", func():
+			pending_party.erase(hid)
+			render())
+		x.flat = true
+		x.tooltip_text = tr("Send home")
+		top.add_child(x)
+		col.add_child(top)
+		var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+		if portrait != "":
+			var icon := DragIcon.new()
+			icon.texture = _icon_trimmed(portrait, 96).texture
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.custom_minimum_size = Vector2(64, 64) if small else Vector2(96, 96)
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.drag_payload = {"kind": "party_hero", "hero_id": h.id}
+			icon.mouse_default_cursor_shape = Control.CURSOR_MOVE
+			icon.clicked = func():
+				_slot_pick = index
+				render()
+			_hero_look(icon, h)
+			col.add_child(icon)
+		var nm := _label(h.name.split(" the ")[0], 14 if not small else 12)
+		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(nm)
+		var info := _label(tr("Lv%d %s · %d/%d HP") % [h.level, tr(str(GameData.hero_role(h).capitalize())), h.hp, Combat.max_hp(h)], 11, true)
+		info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if h.hp < Combat.max_hp(h) * 0.5:
+			info.add_theme_color_override("font_color", Palette.HAZARD)
+		col.add_child(info)
+		var pw := _label(tr("Power %d") % Combat.power_of(h), 11, true)
+		pw.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(pw)
+		var natural := str(GameData.ROLE_POSITION.get(GameData.hero_role(h), {}).get("row", "front"))
+		if natural != h.formation:
+			var off := _wrap_label(tr("Fights best in Front") if natural == "front" else tr("Fights best in Back"), 11)
+			off.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			off.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			col.add_child(off)
+		zone.tooltip_text = _position_text(h)
+	zone.add_child(col)
+	return zone
+
+
+## A roster hero under the slots: click to add them (or send them home),
+## drag onto a slot; those in the party are marked with their row.
+func _bench_tile(h: Hero) -> Control:
+	var in_party := pending_party.has(h.id)
+	var away := h.is_downed() or h.busy_runs > 0
+	var card := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE3 if in_party else Palette.SURFACE
+	st.border_color = Palette.EMBER if in_party else Palette.SURFACE
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(6)
+	st.set_content_margin_all(6)
+	card.add_theme_stylebox_override("panel", st)
+	if not away:
+		var hit := Button.new()
+		hit.flat = true
+		var clear := StyleBoxEmpty.new()
+		for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
+			hit.add_theme_stylebox_override(sn, clear)
+		hit.mouse_filter = Control.MOUSE_FILTER_PASS
+		hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		hit.tooltip_text = tr("Click to send home") if in_party else tr("Click to add to the party, or drag onto a slot")
+		hit.disabled = not in_party and pending_party.size() >= _party_cap()
+		hit.pressed.connect(func():
+			if in_party:
+				pending_party.erase(h.id)
+			elif pending_party.size() < _party_cap():
+				pending_party.append(h.id)
+			render())
+		card.add_child(hit)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE   # clicks fall through to `hit`
+	var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
+	if portrait != "":
+		var icon := DragIcon.new()
+		icon.texture = _icon_trimmed(portrait, 40).texture
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.custom_minimum_size = Vector2(40, 40)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_hero_look(icon, h)
+		if not away:
+			icon.drag_payload = {"kind": "party_hero", "hero_id": h.id}
+			icon.mouse_default_cursor_shape = Control.CURSOR_MOVE
+			icon.clicked = func():
+				if in_party:
+					pending_party.erase(h.id)
+				elif pending_party.size() < _party_cap():
+					pending_party.append(h.id)
+				render()
+		else:
+			icon.modulate = Color(1, 1, 1, 0.4)
+		row.add_child(icon)
+	var col := _vbox(0)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.custom_minimum_size.x = 120
+	col.add_child(_label(h.name.split(" the ")[0], 12))
+	var sub := tr("Lv%d %s · Power %d") % [h.level, tr(str(GameData.hero_role(h).capitalize())), Combat.power_of(h)]
+	if away:
+		sub = tr("Out %d run%s") % [h.down_runs, tr(str(_pl(h.down_runs)))] if h.down_runs > 0 else tr("Away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]
+	elif in_party:
+		sub = tr("In the party · Front") if h.formation == "front" else tr("In the party · Back")
+	col.add_child(_label(sub, 10, true))
+	row.add_child(col)
+	card.add_child(row)
+	return card
+
+
+## The hero picker for a slot: every ready hero as a button (strongest
+## first). Picking a party member swaps them into this slot.
+func _slot_picker_overlay() -> void:
+	var index := _slot_pick
+	var here := str(pending_party[index]) if index < pending_party.size() else ""
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := Button.new()   # a click outside closes it
+	var dim_st := StyleBoxFlat.new()
+	dim_st.bg_color = Color(0, 0, 0, 0.62)
+	for sn in ["normal", "hover", "pressed", "focus"]:
+		dim.add_theme_stylebox_override(sn, dim_st)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.pressed.connect(func():
+		_slot_pick = -1
+		render())
+	overlay.add_child(dim)
+	# The whole pop-up scrolls on a small window; clicks beside the box reach
+	# `dim` (so the scroll and centering don't take mouse input themselves).
+	var outer := ScrollContainer.new()
+	outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(outer)
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outer.add_child(center)
+	var vp := get_viewport().get_visible_rect().size
+	var box := PanelContainer.new()
+	box.theme_type_variation = &"CardPanelViolet"
+	box.custom_minimum_size.x = minf(700.0, vp.x - 40.0)
+	center.add_child(box)
+	var col := _vbox(10)
+	box.add_child(col)
+	var head := _label("Choose a hero" if here == "" else "Swap in a hero", 20)
+	head.add_theme_font_override("font", DISPLAY_FONT)
+	head.add_theme_color_override("font_color", Palette.RANK_S)
+	col.add_child(head)
+	# An empty slot lists the bench; a filled one also offers the party (a swap).
+	var pool: Array = GameState.heroes.filter(func(x): return not x.is_champion and not x.is_downed() and x.busy_runs <= 0 and x.id != here and (here != "" or not pending_party.has(x.id)))
+	pool.sort_custom(func(a, b): return Combat.power_of(a) > Combat.power_of(b))
+	var grid := HFlowContainer.new()
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	for x in pool:
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(205, 56)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var portrait := GameData.portrait_for_hero(x.cls_id, x.pool_id)
+		if portrait != "":
+			b.icon = _icon_trimmed(portrait, 40).texture
+			b.add_theme_constant_override("icon_max_width", 36)
+		var tag := ""
+		if pending_party.has(x.id):
+			tag = tr(" · swaps places")
+		b.text = "%s\n%s" % [tr(str(x.name.split(" the ")[0])), tr("Lv%d %s · Power %d") % [x.level, tr(str(GameData.hero_role(x).capitalize())), Combat.power_of(x)] + tag]
+		b.add_theme_font_size_override("font_size", 12)
+		b.disabled = here == "" and not pending_party.has(x.id) and pending_party.size() >= _party_cap()
+		b.pressed.connect(func(id=x.id):
+			_place_hero(id, index)
+			_slot_pick = -1
+			render())
+		grid.add_child(b)
+	if pool.is_empty():
+		col.add_child(_wrap_label("No other hero is ready to go.", 13, true))
+	else:
+		col.add_child(grid)
+	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override("separation", 8)
+	if here != "":
+		foot.add_child(_button("Send this one home", func():
+			pending_party.erase(here)
+			_slot_pick = -1
+			render()))
+	foot.add_child(_button("Cancel", func():
+		_slot_pick = -1
+		render()))
+	col.add_child(foot)
+	_combat_hotkeys["Escape"] = func():
+		_slot_pick = -1
+		render()
+	root.add_child(overlay)
 
 
 ## Saved loadouts: a slot's button puts its party on the rows (each hero in
@@ -3089,89 +3373,3 @@ func _render_slot_list(v: VBoxContainer) -> void:
 				render()
 			))
 		v.add_child(_info_row(text, 13, actions))
-
-## One hero as a Party Assembly card: a draggable portrait (drop it on a
-## Front/Back row), name, level/role/HP, and their position bonus. `in_party`
-## cards get Move/Remove (the Champion can't be removed); bench cards get Add,
-## which drops the hero into their role's natural row.
-## `picked`: a roster card for a hero already in the party (marked, with Remove).
-func _party_card(h: Hero, is_champ: bool, in_party: bool, picked: bool = false) -> Control:
-	var card := PanelContainer.new()
-	card.mouse_filter = Control.MOUSE_FILTER_PASS
-	var style := StyleBoxFlat.new()
-	style.bg_color = Palette.SURFACE3 if in_party or picked else Palette.SURFACE
-	style.border_color = Palette.EMBER
-	style.set_border_width_all(1 if picked else 0)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(6)
-	card.add_theme_stylebox_override("panel", style)
-	var cv := _vbox(2)
-	cv.custom_minimum_size.x = 150
-	cv.mouse_filter = Control.MOUSE_FILTER_PASS
-	var top := HBoxContainer.new()
-	top.mouse_filter = Control.MOUSE_FILTER_PASS
-	var downed := h.is_downed() or h.busy_runs > 0
-	var portrait := GameData.portrait_for_hero(h.cls_id, h.pool_id)
-	if portrait != "":
-		var icon := DragIcon.new()
-		var tex: Texture2D = _icon_trimmed(portrait, 44).texture
-		icon.texture = tex
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.custom_minimum_size = Vector2(44, 44)
-		_hero_look(icon, h)
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		if not downed:
-			icon.drag_payload = {"kind": "party_hero", "hero_id": h.id}
-			icon.mouse_default_cursor_shape = Control.CURSOR_MOVE
-			icon.tooltip_text = "Drag onto the Front or Back row"
-		else:
-			icon.modulate = Color(1, 1, 1, 0.4)
-		top.add_child(icon)
-	var names := _vbox(0)
-	names.mouse_filter = Control.MOUSE_FILTER_PASS
-	names.add_child(_label(h.name.split(" the ")[0], 12))
-	names.add_child(_label(tr("Lv%d %s · %d/%d HP%s") % [h.level, tr(str(GameData.hero_role(h).capitalize())), h.hp, Combat.max_hp(h), tr(str((tr(" · out %d run%s") % [h.down_runs, tr(str(_pl(h.down_runs)))] if h.down_runs > 0 else tr(" · away %d run%s") % [h.busy_runs, tr(str(_pl(h.busy_runs)))]) if downed else ""))], 10, true))
-	if not downed and h.hp < Combat.max_hp(h) * 0.5:
-		var wl := _label(tr("Wounded — %d%% HP") % int(100.0 * h.hp / max(1, Combat.max_hp(h))), 12)
-		wl.add_theme_color_override("font_color", Palette.HAZARD)
-		wl.tooltip_text = "Starts the rift at this HP. A Medical Bay bed or a rest heals them."
-		names.add_child(wl)
-	var power_line := tr("Power %d") % Combat.power_of(h)
-	var arch := _main_arch(h)
-	names.add_child(_rich_line(power_line + ("  " + _arch_chip(arch) if arch != "" else ""), 10, true))
-	top.add_child(names)
-	cv.add_child(top)
-	# The row bonus is in the card's tooltip: as a wrapped paragraph it made a
-	# card three times taller and pushed the roster off a laptop screen.
-	var pos_text := _position_text(h) if in_party else ""
-	if pos_text != "":
-		card.tooltip_text = pos_text
-	var actions := HBoxContainer.new()
-	if in_party:
-		var other := "back" if h.formation == "front" else "front"
-		actions.add_child(_button(tr("Move %s") % tr(other), func(id=h.id, r=other):
-			GameState.set_hero_formation(id, r)
-			render()
-		))
-		actions.add_child(_button("Remove", func(id=h.id):
-			pending_party.erase(id)
-			render()
-		))
-	elif picked:
-		actions.add_child(_button(tr("In party · Remove"), func(id=h.id):
-			pending_party.erase(id)
-			render()
-		))
-	elif not downed:
-		var add_btn := _button("Add", func(id=h.id):   # into the row they stood in last
-			if pending_party.size() >= _party_cap():
-				return
-			pending_party.append(id)
-			render()
-		)
-		add_btn.disabled = pending_party.size() >= _party_cap()
-		actions.add_child(add_btn)
-	cv.add_child(actions)
-	card.add_child(cv)
-	return card

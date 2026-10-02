@@ -93,6 +93,24 @@ func run() -> void:
 	main._open_settings()   # the gear pressed again on Settings
 	(main._header_back()[0] as Callable).call()
 	check(main.screen == "rift_hall", "Back from Settings returns where it was opened, even after a second gear press")
+	# Party slots: a bench hero takes an occupied slot (the one there goes
+	# home), a party member dropped on another swaps, an empty slot appends,
+	# and the cap holds.
+	main.pending_party.assign([ids[0], ids[1]])
+	main._place_hero(ids[2], 0)
+	var ok_replace: bool = main.pending_party == [ids[2], ids[1]]
+	main._place_hero(ids[1], 0)
+	var ok_swap: bool = main.pending_party == [ids[1], ids[2]]
+	main._place_hero(ids[0], 3)
+	main._place_hero(ids[3], 3)
+	var ok_fill: bool = main.pending_party == [ids[1], ids[2], ids[0], ids[3]]
+	check(ok_replace and ok_swap and ok_fill, "party slots: replace, swap and fill")
+	await _show(main, "party_assembly")
+	main._slot_pick = 1
+	await _show(main, "party_assembly")
+	check(main._combat_hotkeys.has("Escape"), "a slot's hero picker opens (Esc closes it)")
+	main._slot_pick = -1
+	main.pending_party.clear()
 	# A guild received from another device: pick a slot and it opens there.
 	var sent := GameState.export_save_text()
 	main._receive_open = true
