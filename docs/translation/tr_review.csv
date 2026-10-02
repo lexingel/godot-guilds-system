@@ -1,6 +1,7 @@
 ﻿English,Türkçe,Where
-Music,Müzik,scripts/autoload/AudioManager.gd:86
-SFX,Efektler,scripts/autoload/AudioManager.gd:90
+Music,Müzik,scripts/autoload/AudioManager.gd:123
+Voice,,scripts/autoload/AudioManager.gd:97
+SFX,Efektler,scripts/autoload/AudioManager.gd:132
 A %s blocks the way (%d HP).,Yolu bir %s kesiyor (%d Can).,scripts/autoload/Combat.gd:51
 %d foes block the way: %s.,Yolu %d düşman kesiyor: %s.,scripts/autoload/Combat.gd:56
 An opening volley lands for %d!,Açılış yaylımı %d vuruyor!,scripts/autoload/Combat.gd:71
@@ -2342,12 +2343,12 @@ The guild held against a Rank %s Riftbreak.,Lonca %s rütbeli bir Yarık Taşmas
 A Rank %s Riftbreak overran the defenders.,%s rütbeli bir Yarık Taşması savunucuları ezip geçti.,scripts/autoload/game_state/GameStateBreach.gd:152
 Nothing to repair.,Onarılacak bir şey yok.,scripts/autoload/game_state/GameStateBreach.gd:182
 Not enough Gold.,Yeterli Altın yok.,scripts/autoload/game_state/GameStateBreach.gd:185
-Not enough Gold,Yeterli Altın yok,scripts/autoload/game_state/GameStateCore.gd:167
-Not enough Essence,Yeterli Öz yok,scripts/autoload/game_state/GameStateCore.gd:167
-Day %d: %s,Gün %d: %s,scripts/autoload/game_state/GameStateCore.gd:300
-That doesn't look like a Guildhold save,Bu bir Guildhold kaydına benzemiyor,scripts/autoload/game_state/GameStateCore.gd:678
-That save is from a newer version of the game,Bu kayıt oyunun daha yeni bir sürümünden,scripts/autoload/game_state/GameStateCore.gd:680
-Couldn't write the save slot,Kayıt yuvasına yazılamadı,scripts/autoload/game_state/GameStateCore.gd:683
+Not enough Gold,Yeterli Altın yok,scripts/autoload/game_state/GameStateCore.gd:168
+Not enough Essence,Yeterli Öz yok,scripts/autoload/game_state/GameStateCore.gd:168
+Day %d: %s,Gün %d: %s,scripts/autoload/game_state/GameStateCore.gd:301
+That doesn't look like a Guildhold save,Bu bir Guildhold kaydına benzemiyor,scripts/autoload/game_state/GameStateCore.gd:680
+That save is from a newer version of the game,Bu kayıt oyunun daha yeni bir sürümünden,scripts/autoload/game_state/GameStateCore.gd:682
+Couldn't write the save slot,Kayıt yuvasına yazılamadı,scripts/autoload/game_state/GameStateCore.gd:685
 %s earned %s!,%s kazandı: %s!,scripts/autoload/game_state/GameStateHeroes.gd:26
 Quirk earned: %s,Huy kazanıldı: %s,scripts/autoload/game_state/GameStateHeroes.gd:27
 Build the Arcane Lab first,Önce Gizem Laboratuvarı'nı kur,scripts/autoload/game_state/GameStateHeroes.gd:46
@@ -2937,16 +2938,16 @@ Most damage dealt this fight,Bu dövüşte en çok hasar veren,scripts/ui/Battle
 Max level,En üst seviye,scripts/ui/BattleView.gd:2793
 %d / %d XP to Lv%d,%d / %d TP (Sv%d için),scripts/ui/BattleView.gd:2793
 %d dmg · %d kill%s,%d hasar · %d öldürme%s,scripts/ui/BattleView.gd:2798
-"For three hundred years, the guilds of the Accord kept the rifts shut.",Üç yüz yıl boyunca Ahit'in loncaları yarıkları kapalı tuttu.,scripts/ui/Cinematic.gd:14
-"They swore one oath: close what opens, share what you find, never sell a rift.","Tek bir yemin ettiler: açılanı kapat, bulduğunu paylaş, asla bir yarık satma.",scripts/ui/Cinematic.gd:15
-"Then, in a single night, every rift in the Vale opened at once.",Sonra tek bir gecede Vadi'deki bütün yarıklar aynı anda açıldı.,scripts/ui/Cinematic.gd:16
-Every guild of the Accord went in.,Ahit'in bütün loncaları içeri girdi.,scripts/ui/Cinematic.gd:17
-"What they found there, no one living remembers.",Orada ne bulduklarını yaşayan kimse hatırlamıyor.,scripts/ui/Cinematic.gd:18
-"By morning, their halls stood empty.",Sabah olduğunda salonları bomboştu.,scripts/ui/Cinematic.gd:19
-The villages still need a guild.,Köylerin hâlâ bir loncaya ihtiyacı var.,scripts/ui/Cinematic.gd:20
-Skip,Atla,scripts/ui/Cinematic.gd:93
-Esc skips the opening; Space or a click goes to the next scene.,Esc açılışı atlar; Boşluk tuşu ya da bir tıklama sonraki sahneye geçer.,scripts/ui/Cinematic.gd:94
-They have yours.,Seninki var.,scripts/ui/Cinematic.gd:195
+"For three hundred years, the guilds of the Accord kept the rifts shut.",Üç yüz yıl boyunca Ahit'in loncaları yarıkları kapalı tuttu.,scripts/ui/Cinematic.gd:20
+"They swore one oath: close what opens, share what you find, never sell a rift.","Tek bir yemin ettiler: açılanı kapat, bulduğunu paylaş, asla bir yarık satma.",scripts/ui/Cinematic.gd:21
+"Then, in a single night, every rift in the Vale opened at once.",Sonra tek bir gecede Vadi'deki bütün yarıklar aynı anda açıldı.,scripts/ui/Cinematic.gd:22
+Every guild of the Accord went in.,Ahit'in bütün loncaları içeri girdi.,scripts/ui/Cinematic.gd:23
+"What they found there, no one living remembers.",Orada ne bulduklarını yaşayan kimse hatırlamıyor.,scripts/ui/Cinematic.gd:24
+"By morning, their halls stood empty.",Sabah olduğunda salonları bomboştu.,scripts/ui/Cinematic.gd:25
+The villages still need a guild.,Köylerin hâlâ bir loncaya ihtiyacı var.,scripts/ui/Cinematic.gd:26
+Skip,Atla,scripts/ui/Cinematic.gd:99
+Esc skips the opening; Space or a click goes to the next scene.,Esc açılışı atlar; Boşluk tuşu ya da bir tıklama sonraki sahneye geçer.,scripts/ui/Cinematic.gd:100
+They have yours.,Seninki var.,scripts/ui/Cinematic.gd:208
 Guild tier reached,Lonca kademesi yükseldi,scripts/ui/GuildViews.gd:14
 Welcome to your guild,Loncana hoş geldin,scripts/ui/GuildViews.gd:19
 "Rifts are tearing open across the land. Your first three heroes have signed on (Roster, key 1). Head to the Rift Hall (key 3) to seal a rift.","Diyarın dört bir yanında yarıklar açılıyor. İlk üç kahramanın loncaya katıldı (Kadro, tuş 1). Bir yarığı mühürlemek için Yarık Salonu'na git (tuş 3).",scripts/ui/GuildViews.gd:19
@@ -3338,65 +3339,65 @@ Next: %s%s,Sonraki: %s%s,scripts/ui/GuildViews.gd:2153
 "
 Unlocks: ","
 Açar: ",scripts/ui/GuildViews.gd:2153
-navigator.storage && navigator.storage.persist && navigator.storage.persist();,,scripts/ui/Main.gd:34
-Click to dismiss,Kapatmak için tıkla,scripts/ui/Main.gd:226
-"%d achievements, see Records","%d başarım, Kayıtlar'a bak",scripts/ui/Main.gd:294
-Achievement: %s,Başarım: %s,scripts/ui/Main.gd:299
-Achievement earned,Başarım kazanıldı,scripts/ui/Main.gd:301
-Back up your guild,Loncanı yedekle,scripts/ui/Main.gd:305
-It lives in this browser only. Settings > Backup > Export save keeps a copy.,Yalnızca bu tarayıcıda duruyor. Ayarlar > Yedek > Kaydı dışa aktar bir kopya tutar.,scripts/ui/Main.gd:306
-Turn your phone sideways,Telefonunu yan çevir,scripts/ui/Main.gd:443
-Guildhold plays in landscape.,Guildhold yatay ekranda oynanır.,scripts/ui/Main.gd:449
-Give it back (+%d Renown),Geri ver (+%d Ün),scripts/ui/Main.gd:519
-Keep it (+%d Essence),Sakla (+%d Öz),scripts/ui/Main.gd:523
-Who takes the forty-first post?,Kırk birinci nöbeti kim devralacak?,scripts/ui/Main.gd:540
-"%s — Rank %s, Lv%d","%s — Rütbe %s, Sv%d",scripts/ui/Main.gd:542
-They leave the guild forever and go on the Memorial. Riftbreaks end.,Loncadan sonsuza dek ayrılır ve Anıt'a yazılır. Yarık Taşmaları sona erer.,scripts/ui/Main.gd:548
+navigator.storage && navigator.storage.persist && navigator.storage.persist();,,scripts/ui/Main.gd:35
+Click to dismiss,Kapatmak için tıkla,scripts/ui/Main.gd:227
+"%d achievements, see Records","%d başarım, Kayıtlar'a bak",scripts/ui/Main.gd:295
+Achievement: %s,Başarım: %s,scripts/ui/Main.gd:300
+Achievement earned,Başarım kazanıldı,scripts/ui/Main.gd:302
+Back up your guild,Loncanı yedekle,scripts/ui/Main.gd:306
+It lives in this browser only. Settings > Backup > Export save keeps a copy.,Yalnızca bu tarayıcıda duruyor. Ayarlar > Yedek > Kaydı dışa aktar bir kopya tutar.,scripts/ui/Main.gd:307
+Turn your phone sideways,Telefonunu yan çevir,scripts/ui/Main.gd:444
+Guildhold plays in landscape.,Guildhold yatay ekranda oynanır.,scripts/ui/Main.gd:450
+Give it back (+%d Renown),Geri ver (+%d Ün),scripts/ui/Main.gd:520
+Keep it (+%d Essence),Sakla (+%d Öz),scripts/ui/Main.gd:524
+Who takes the forty-first post?,Kırk birinci nöbeti kim devralacak?,scripts/ui/Main.gd:541
+"%s — Rank %s, Lv%d","%s — Rütbe %s, Sv%d",scripts/ui/Main.gd:543
+They leave the guild forever and go on the Memorial. Riftbreaks end.,Loncadan sonsuza dek ayrılır ve Anıt'a yazılır. Yarık Taşmaları sona erer.,scripts/ui/Main.gd:549
 Back,Geri,locale/extra_msgids.txt
-Renew the Accord,Ahit'i yenile,scripts/ui/Main.gd:554
-Sign the last line. One of your heroes holds the forty-first post forever; Riftbreaks end.,Son satırı imzala. Kahramanlarından biri kırk birinci nöbeti sonsuza dek tutar; Yarık Taşmaları sona erer.,scripts/ui/Main.gd:557
-Break the Accord,Ahit'i boz,scripts/ui/Main.gd:559
-Burn the Terms. Every champion of the old guilds comes home; Riftbreaks come twice as often.,Şartları yak. Eski loncaların bütün şampiyonları eve döner; Yarık Taşmaları iki kat sık gelir.,scripts/ui/Main.gd:562
-Party Assembly,Ekip Kurma,scripts/ui/Main.gd:622
-Riftbreak,Yarık Taşması,scripts/ui/Main.gd:623
-Tower of Trials — Floor %d,Sınav Kulesi — Kat %d,scripts/ui/Main.gd:1980
-Rift Run — Floor %d/%d,Yarık Koşusu — Kat %d/%d,scripts/ui/Main.gd:625
-Settings,Ayarlar,scripts/ui/Main.gd:1039
-Camp,Kamp,scripts/ui/Main.gd:628
-Camp — %s,Kamp — %s,scripts/ui/Main.gd:628
-★ RANK S ★,★ RÜTBE S ★,scripts/ui/Main.gd:676
-is offered as a Champion!,Şampiyon olarak sunuluyor!,scripts/ui/Main.gd:679
-is available to recruit!,işe alınabilir!,scripts/ui/Main.gd:679
-"Gold — recruit and train heroes, buy from rift shops and supplies, reroll offers.","Altın — kahraman işe al ve eğit, yarık dükkânlarından ve ikmalden satın al, teklifleri yenile.",scripts/ui/Main.gd:708
-"Essence — earned by fighting and sealing rifts. Evolves heroes, upgrades relics and the guild, reforges gear, resets attributes.","Öz — dövüşerek ve yarık mühürleyerek kazanılır. Kahramanları evrimleştirir, kalıntıları ve loncayı geliştirir, teçhizatı yeniden döver, nitelikleri sıfırlar.",scripts/ui/Main.gd:709
-Roster,Kadro,scripts/ui/Main.gd:737
-Library,Kütüphane,scripts/ui/Main.gd:741
-%s  (key %s),%s  (tuş %s),scripts/ui/Main.gd:824
-Tower,Kule,scripts/ui/Main.gd:909
-Back to %s,Geri: %s,scripts/ui/Main.gd:956
-%d Guild Management levels,%d Lonca Yönetimi seviyesi,scripts/ui/Main.gd:977
- · %d more to %s, · %d seviye daha: %s,scripts/ui/Main.gd:979
-. The tier grows with Guild Management levels; the Guild Hall grows with it.,. Kademe Lonca Yönetimi seviyeleriyle büyür; Lonca Salonu da onunla büyür.,scripts/ui/Main.gd:980
-Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d),Lonca unvanları — Sınav Kulesi (en iyi kat %d) ve Sonsuz Yarık (en iyi %d:%02d),scripts/ui/Main.gd:995
-Renown %d — %s %s (%d). The leader at payday gets the better recruits; every 20 arms an Epic at your next rift shop. See Guild > Ledger.,Ün %d — %s: %s (%d). Maaş gününde önde olan daha iyi acemileri alır; her 20 Ün bir sonraki yarık dükkânında bir Destansı garantiler. Bkz. Lonca > Defter.,scripts/ui/Main.gd:1027
-you lead,öndesin,scripts/ui/Main.gd:1028
-you trail,geridesin,scripts/ui/Main.gd:1028
-level with,berabersin,scripts/ui/Main.gd:1028
-Guildhold,Guildhold,scripts/ui/Main.gd:1075
-A guild-management roguelite,Bir lonca yönetimi roguelite oyunu,scripts/ui/Main.gd:1083
-Test build %s · what's new is %s,Test sürümü %s · yenilikler %s,scripts/ui/Main.gd:1084
-below,aşağıda,scripts/ui/Main.gd:1084
-on the right,sağda,scripts/ui/Main.gd:1084
-New Game,Yeni Oyun,scripts/ui/Main.gd:1092
-Load Game,Oyun Yükle,scripts/ui/Main.gd:1100
-Credits,Emeği Geçenler,scripts/ui/Main.gd:1104
-Feedback,Geri Bildirim,scripts/ui/Main.gd:1109
-Quit,Çıkış,scripts/ui/Main.gd:1116
-"This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped.",Bu test sürümü klavye ve fareli (ya da oyun kollu) bir bilgisayar için yapıldı. Telefonda da çalışır ama küçük ekranlar sıkışık kalır.,scripts/ui/Main.gd:1121
-What's new in %s,%s sürümünde yenilikler,scripts/ui/Main.gd:1203
-"Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then.",Kaydın bu tarayıcıda duruyor. Site verilerini temizlemek onu siler; ara sıra Oyun Yükle > Yedek'ten yedekle.,scripts/ui/Main.gd:1208
-Version %s (%s),Sürüm %s (%s),scripts/ui/Main.gd:1220
-"Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d","Gün %d, Perde %d, %d kahraman, %d yarık mühürlendi, en iyi rütbe %s, Sonsuz en iyi %d:%02d, Kule katı %d",scripts/ui/Main.gd:1222
+Renew the Accord,Ahit'i yenile,scripts/ui/Main.gd:555
+Sign the last line. One of your heroes holds the forty-first post forever; Riftbreaks end.,Son satırı imzala. Kahramanlarından biri kırk birinci nöbeti sonsuza dek tutar; Yarık Taşmaları sona erer.,scripts/ui/Main.gd:558
+Break the Accord,Ahit'i boz,scripts/ui/Main.gd:560
+Burn the Terms. Every champion of the old guilds comes home; Riftbreaks come twice as often.,Şartları yak. Eski loncaların bütün şampiyonları eve döner; Yarık Taşmaları iki kat sık gelir.,scripts/ui/Main.gd:563
+Party Assembly,Ekip Kurma,scripts/ui/Main.gd:623
+Riftbreak,Yarık Taşması,scripts/ui/Main.gd:624
+Tower of Trials — Floor %d,Sınav Kulesi — Kat %d,scripts/ui/Main.gd:1981
+Rift Run — Floor %d/%d,Yarık Koşusu — Kat %d/%d,scripts/ui/Main.gd:626
+Settings,Ayarlar,scripts/ui/Main.gd:1040
+Camp,Kamp,scripts/ui/Main.gd:629
+Camp — %s,Kamp — %s,scripts/ui/Main.gd:629
+★ RANK S ★,★ RÜTBE S ★,scripts/ui/Main.gd:677
+is offered as a Champion!,Şampiyon olarak sunuluyor!,scripts/ui/Main.gd:680
+is available to recruit!,işe alınabilir!,scripts/ui/Main.gd:680
+"Gold — recruit and train heroes, buy from rift shops and supplies, reroll offers.","Altın — kahraman işe al ve eğit, yarık dükkânlarından ve ikmalden satın al, teklifleri yenile.",scripts/ui/Main.gd:709
+"Essence — earned by fighting and sealing rifts. Evolves heroes, upgrades relics and the guild, reforges gear, resets attributes.","Öz — dövüşerek ve yarık mühürleyerek kazanılır. Kahramanları evrimleştirir, kalıntıları ve loncayı geliştirir, teçhizatı yeniden döver, nitelikleri sıfırlar.",scripts/ui/Main.gd:710
+Roster,Kadro,scripts/ui/Main.gd:738
+Library,Kütüphane,scripts/ui/Main.gd:742
+%s  (key %s),%s  (tuş %s),scripts/ui/Main.gd:825
+Tower,Kule,scripts/ui/Main.gd:910
+Back to %s,Geri: %s,scripts/ui/Main.gd:957
+%d Guild Management levels,%d Lonca Yönetimi seviyesi,scripts/ui/Main.gd:978
+ · %d more to %s, · %d seviye daha: %s,scripts/ui/Main.gd:980
+. The tier grows with Guild Management levels; the Guild Hall grows with it.,. Kademe Lonca Yönetimi seviyeleriyle büyür; Lonca Salonu da onunla büyür.,scripts/ui/Main.gd:981
+Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d),Lonca unvanları — Sınav Kulesi (en iyi kat %d) ve Sonsuz Yarık (en iyi %d:%02d),scripts/ui/Main.gd:996
+Renown %d — %s %s (%d). The leader at payday gets the better recruits; every 20 arms an Epic at your next rift shop. See Guild > Ledger.,Ün %d — %s: %s (%d). Maaş gününde önde olan daha iyi acemileri alır; her 20 Ün bir sonraki yarık dükkânında bir Destansı garantiler. Bkz. Lonca > Defter.,scripts/ui/Main.gd:1028
+you lead,öndesin,scripts/ui/Main.gd:1029
+you trail,geridesin,scripts/ui/Main.gd:1029
+level with,berabersin,scripts/ui/Main.gd:1029
+Guildhold,Guildhold,scripts/ui/Main.gd:1076
+A guild-management roguelite,Bir lonca yönetimi roguelite oyunu,scripts/ui/Main.gd:1084
+Test build %s · what's new is %s,Test sürümü %s · yenilikler %s,scripts/ui/Main.gd:1085
+below,aşağıda,scripts/ui/Main.gd:1085
+on the right,sağda,scripts/ui/Main.gd:1085
+New Game,Yeni Oyun,scripts/ui/Main.gd:1093
+Load Game,Oyun Yükle,scripts/ui/Main.gd:1101
+Credits,Emeği Geçenler,scripts/ui/Main.gd:1105
+Feedback,Geri Bildirim,scripts/ui/Main.gd:1110
+Quit,Çıkış,scripts/ui/Main.gd:1117
+"This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped.",Bu test sürümü klavye ve fareli (ya da oyun kollu) bir bilgisayar için yapıldı. Telefonda da çalışır ama küçük ekranlar sıkışık kalır.,scripts/ui/Main.gd:1122
+What's new in %s,%s sürümünde yenilikler,scripts/ui/Main.gd:1204
+"Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then.",Kaydın bu tarayıcıda duruyor. Site verilerini temizlemek onu siler; ara sıra Oyun Yükle > Yedek'ten yedekle.,scripts/ui/Main.gd:1209
+Version %s (%s),Sürüm %s (%s),scripts/ui/Main.gd:1221
+"Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d","Gün %d, Perde %d, %d kahraman, %d yarık mühürlendi, en iyi rütbe %s, Sonsuz en iyi %d:%02d, Kule katı %d",scripts/ui/Main.gd:1223
 "
 
 What happened:
@@ -3411,238 +3412,238 @@ Ne oldu:
 Ne bekliyordun:
 
 Kafa karıştıran, çok zor ya da çok kolay bir şey:
-",scripts/ui/Main.gd:1226
-Played %dh %02dm,Oynama süresi: %d sa %02d dk,scripts/ui/Main.gd:1234
-"Fights: %d by hand (%d won), %d on Auto (%d won)","Dövüşler: %d elle (%d kazanıldı), %d Otomatik (%d kazanıldı)",scripts/ui/Main.gd:1235
-Last %d runs: %s,Son %d sefer: %s,scripts/ui/Main.gd:1241
-"Unspent: %d Gold, %d Essence, %d skill points, %d attribute points","Harcanmamış: %d Altın, %d Öz, %d beceri puanı, %d nitelik puanı",scripts/ui/Main.gd:1247
-Renown %d vs rival %d; heroes lost %d,"Ün %d, rakip %d; kaybedilen kahraman %d",scripts/ui/Main.gd:1248
-Send feedback,Geri bildirim gönder,scripts/ui/Main.gd:1257
-"Found a bug, or something felt off? Tell us on Discord. This report already says which build you're on and how far your guild is: copy it, then paste it into your message.","Bir hata mı buldun, ya da bir şey tuhaf mı geldi? Discord'da bize anlat. Bu rapor hangi sürümde olduğunu ve loncanın ne kadar ilerlediğini zaten içeriyor: kopyala, sonra mesajına yapıştır.",scripts/ui/Main.gd:1258
-Copy report,Raporu kopyala,scripts/ui/Main.gd:1264
-Copied. Paste it into a message on the Discord.,Kopyalandı. Discord'daki bir mesaja yapıştır.,scripts/ui/Main.gd:1266
-Copy and open Discord,Kopyala ve Discord'u aç,scripts/ui/Main.gd:1268
-Leave fullscreen,Tam ekrandan çık,scripts/ui/Main.gd:1285
-Fullscreen,Tam ekran,scripts/ui/Main.gd:1285
-"setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);","setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);",scripts/ui/Main.gd:1289
-"A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.","Bir roguelite lonca yönetimi oyunu — kahraman topla, alt sınıflarını evrimleştir ve onları Yarıklara gönder.",scripts/ui/Main.gd:1307
-Version %s,Sürüm %s,scripts/ui/Main.gd:1309
-Built with Godot Engine 4.7,Godot Engine 4.7 ile yapıldı,scripts/ui/Main.gd:1310
-Pixel art generated with PixelLab,Piksel sanat PixelLab ile üretildi,scripts/ui/Main.gd:1311
-Ashen,,scripts/ui/Main.gd:1335
-Silver,,scripts/ui/Main.gd:1335
-Iron,,scripts/ui/Main.gd:1335
-Dawn,,scripts/ui/Main.gd:1335
-Hollow,,scripts/ui/Main.gd:1335
-Raven,,scripts/ui/Main.gd:1335
-Gilded,,scripts/ui/Main.gd:1335
-Last,,scripts/ui/Main.gd:1335
-Lantern,,scripts/ui/Main.gd:1336
-Crows,,scripts/ui/Main.gd:1336
-Wardens,,scripts/ui/Main.gd:1336
-Blades,,scripts/ui/Main.gd:1336
-Oath,,scripts/ui/Main.gd:1336
-Company,,scripts/ui/Main.gd:1336
-Watch,,scripts/ui/Main.gd:1336
-Hearth,,scripts/ui/Main.gd:1336
-Banner,,scripts/ui/Main.gd:1336
-Vigil,,scripts/ui/Main.gd:1336
-Save Slot %d,Kayıt Yuvası %d,scripts/ui/Main.gd:1342
-Name Your Guild,Loncana İsim Ver,scripts/ui/Main.gd:1352
-Guild name,Lonca adı,scripts/ui/Main.gd:1354
-Random name,Rastgele ad,scripts/ui/Main.gd:1362
-The %s %s,%s %s,scripts/ui/Main.gd:1363
-Choose a Crest,Bir Arma Seç,scripts/ui/Main.gd:1367
-Randomize,Rastgele,scripts/ui/Main.gd:1371
-Found the Guild,Loncayı Kur,scripts/ui/Main.gd:1377
-Name your guild first,Önce loncana bir ad ver,scripts/ui/Main.gd:1381
-"The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on quests.","Küllü Taç paramparça. Yarıklar hâlâ açılıyor — Sonsuz Yarık'ta sınırlarını zorla, yarık merdiveninde SSS'ye tırman ve görevler üstlen.",scripts/ui/Main.gd:1415
-Face the finale: %s,Finalle yüzleş: %s,scripts/ui/Main.gd:1439
-Recommended power %d,Önerilen güç %d,scripts/ui/Main.gd:1450
-Complete every objective above first,Önce yukarıdaki tüm hedefleri tamamla,scripts/ui/Main.gd:1450
-"Payday in %d day%s: %d Gold due, you have %d — ","Maaş gününe %d gün%s: %d Altın ödenecek, sende %d var — ",scripts/ui/Main.gd:1463
+",scripts/ui/Main.gd:1227
+Played %dh %02dm,Oynama süresi: %d sa %02d dk,scripts/ui/Main.gd:1235
+"Fights: %d by hand (%d won), %d on Auto (%d won)","Dövüşler: %d elle (%d kazanıldı), %d Otomatik (%d kazanıldı)",scripts/ui/Main.gd:1236
+Last %d runs: %s,Son %d sefer: %s,scripts/ui/Main.gd:1242
+"Unspent: %d Gold, %d Essence, %d skill points, %d attribute points","Harcanmamış: %d Altın, %d Öz, %d beceri puanı, %d nitelik puanı",scripts/ui/Main.gd:1248
+Renown %d vs rival %d; heroes lost %d,"Ün %d, rakip %d; kaybedilen kahraman %d",scripts/ui/Main.gd:1249
+Send feedback,Geri bildirim gönder,scripts/ui/Main.gd:1258
+"Found a bug, or something felt off? Tell us on Discord. This report already says which build you're on and how far your guild is: copy it, then paste it into your message.","Bir hata mı buldun, ya da bir şey tuhaf mı geldi? Discord'da bize anlat. Bu rapor hangi sürümde olduğunu ve loncanın ne kadar ilerlediğini zaten içeriyor: kopyala, sonra mesajına yapıştır.",scripts/ui/Main.gd:1259
+Copy report,Raporu kopyala,scripts/ui/Main.gd:1265
+Copied. Paste it into a message on the Discord.,Kopyalandı. Discord'daki bir mesaja yapıştır.,scripts/ui/Main.gd:1267
+Copy and open Discord,Kopyala ve Discord'u aç,scripts/ui/Main.gd:1269
+Leave fullscreen,Tam ekrandan çık,scripts/ui/Main.gd:1286
+Fullscreen,Tam ekran,scripts/ui/Main.gd:1286
+"setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);","setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);",scripts/ui/Main.gd:1290
+"A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts.","Bir roguelite lonca yönetimi oyunu — kahraman topla, alt sınıflarını evrimleştir ve onları Yarıklara gönder.",scripts/ui/Main.gd:1308
+Version %s,Sürüm %s,scripts/ui/Main.gd:1310
+Built with Godot Engine 4.7,Godot Engine 4.7 ile yapıldı,scripts/ui/Main.gd:1311
+Pixel art generated with PixelLab,Piksel sanat PixelLab ile üretildi,scripts/ui/Main.gd:1312
+Ashen,,scripts/ui/Main.gd:1336
+Silver,,scripts/ui/Main.gd:1336
+Iron,,scripts/ui/Main.gd:1336
+Dawn,,scripts/ui/Main.gd:1336
+Hollow,,scripts/ui/Main.gd:1336
+Raven,,scripts/ui/Main.gd:1336
+Gilded,,scripts/ui/Main.gd:1336
+Last,,scripts/ui/Main.gd:1336
+Lantern,,scripts/ui/Main.gd:1337
+Crows,,scripts/ui/Main.gd:1337
+Wardens,,scripts/ui/Main.gd:1337
+Blades,,scripts/ui/Main.gd:1337
+Oath,,scripts/ui/Main.gd:1337
+Company,,scripts/ui/Main.gd:1337
+Watch,,scripts/ui/Main.gd:1337
+Hearth,,scripts/ui/Main.gd:1337
+Banner,,scripts/ui/Main.gd:1337
+Vigil,,scripts/ui/Main.gd:1337
+Save Slot %d,Kayıt Yuvası %d,scripts/ui/Main.gd:1343
+Name Your Guild,Loncana İsim Ver,scripts/ui/Main.gd:1353
+Guild name,Lonca adı,scripts/ui/Main.gd:1355
+Random name,Rastgele ad,scripts/ui/Main.gd:1363
+The %s %s,%s %s,scripts/ui/Main.gd:1364
+Choose a Crest,Bir Arma Seç,scripts/ui/Main.gd:1368
+Randomize,Rastgele,scripts/ui/Main.gd:1372
+Found the Guild,Loncayı Kur,scripts/ui/Main.gd:1378
+Name your guild first,Önce loncana bir ad ver,scripts/ui/Main.gd:1382
+"The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on quests.","Küllü Taç paramparça. Yarıklar hâlâ açılıyor — Sonsuz Yarık'ta sınırlarını zorla, yarık merdiveninde SSS'ye tırman ve görevler üstlen.",scripts/ui/Main.gd:1416
+Face the finale: %s,Finalle yüzleş: %s,scripts/ui/Main.gd:1440
+Recommended power %d,Önerilen güç %d,scripts/ui/Main.gd:1451
+Complete every objective above first,Önce yukarıdaki tüm hedefleri tamamla,scripts/ui/Main.gd:1451
+"Payday in %d day%s: %d Gold due, you have %d — ","Maaş gününe %d gün%s: %d Altın ödenecek, sende %d var — ",scripts/ui/Main.gd:1464
 covered.,karşılanıyor.,locale/extra_msgids.txt
-short %d; about %d rift%s at your recent pay (%d each) covers it.,%d eksik; yaklaşık %d yarık%s son kazancınla (her biri %d) bunu karşılar.,scripts/ui/Main.gd:1467
-short %d.,%d eksik.,scripts/ui/Main.gd:1469
-Choosing a rift,Yarık seçmek,scripts/ui/Main.gd:1483
-"Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.","Yarıklar F'den SSS'ye rütbelere ayrılır. Bir rütbeyi mühürlemek bir sonrakini açar. Gösterge en iyi ekibinin gücünü yarığın beklentisiyle karşılaştırır — Ölümcül, Riskli, Denk ya da Avantajlı. İlk yarığın daha kısa bir eğitim koşusudur.",scripts/ui/Main.gd:1483
-Rank %s Rift,Rütbe %s Yarığı,scripts/ui/Main.gd:1516
-Endless Rift — locked,Sonsuz Yarık — kilitli,scripts/ui/Main.gd:1517
-Ranks C-SSS — locked,Rütbe C-SSS — kilitli,scripts/ui/Main.gd:1519
-Rank C — %s,Rütbe C — %s,scripts/ui/Main.gd:1519
-Steer your party through endless waves · best %d:%02d,Ekibini bitmeyen dalgalar arasında yönet · en iyi %d:%02d,scripts/ui/Main.gd:1650
-Opens when you complete Act II,II. Perde'yi bitirince açılır,scripts/ui/Main.gd:1651
-Assemble party,Ekip kur,scripts/ui/Main.gd:1651
-100 fixed floors · best floor %d,100 sabit kat · en iyi kat %d,scripts/ui/Main.gd:1652
-Enter the Tower,Kuleye gir,scripts/ui/Main.gd:1653
-Your best party,En iyi ekibin,scripts/ui/Main.gd:1674
-Your best,En iyin,scripts/ui/Main.gd:1709
-Go,Git,scripts/ui/Main.gd:1714
-Next: Rank %s — %s,Sonraki: Rütbe %s — %s,scripts/ui/Main.gd:1738
-Rank %s — %s,Rütbe %s — %s,scripts/ui/Main.gd:1749
-Rank %s — sealed,Rütbe %s — mühürlendi,scripts/ui/Main.gd:1751
-Rank %s · %d floors,Rütbe %s · %d kat,scripts/ui/Main.gd:1763
-Foes: base,Düşmanlar: temel,scripts/ui/Main.gd:1778
-"Foes: ×%s health, ×%s damage","Düşmanlar: ×%s can, ×%s hasar",scripts/ui/Main.gd:1778
-%s%s · Rewards ×%s%s,%s%s · Ödüller ×%s%s,scripts/ui/Main.gd:1779
-Best floor %d / %d%s,En iyi kat %d / %d%s,scripts/ui/Main.gd:1794
-The Tower,Kule,scripts/ui/Main.gd:1795
-"Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic.","Her kat hep aynı dövüştür — kaybedersen incele, ekibini değiştir ve geri gel. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır, yani kaybetmenin bedeli yok. Her kat ilk temizlediğinde ödül verir; her 10. kat kendi kalıntısı olan bir muhafızdır.",scripts/ui/Main.gd:1795
-You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s.,Bu haftanın merdivenini temizledin. %d–%d katlarının kuralları %d gün%s sonra değişir.,scripts/ui/Main.gd:1799
-Guardians,Muhafızlar,scripts/ui/Main.gd:1806
-Floor %d,Kat %d,scripts/ui/Main.gd:1817
-%s (floor %d),%s (kat %d),scripts/ui/Main.gd:1830
-Titles: ,Unvanlar: ,scripts/ui/Main.gd:1831
-Guardian: ,Muhafız: ,scripts/ui/Main.gd:1849
-Elite fight,Seçkin dövüşü,scripts/ui/Main.gd:1849
-Fight,Dövüş,scripts/ui/Main.gd:1849
-  ·  weekly ladder,  ·  haftalık merdiven,scripts/ui/Main.gd:1850
-Rule · %s — %s,Kural · %s — %s,scripts/ui/Main.gd:1859
-No special rules on this floor.,Bu katta özel kural yok.,scripts/ui/Main.gd:1863
-Assemble party (up to %d),Ekip kur (en fazla %d),scripts/ui/Main.gd:1869
-First clear:,İlk temizleme:,scripts/ui/Main.gd:1888
-This week's re-clear:,Bu haftanın tekrar temizlemesi:,scripts/ui/Main.gd:1888
-Floor %d — %s,Kat %d — %s,scripts/ui/Main.gd:1925
- · streak %d, · seri %d,scripts/ui/Main.gd:1939
-Today's twist is done%s. A new one tomorrow.,Günün cilvesi tamam%s. Yarın yenisi gelir.,scripts/ui/Main.gd:1941
-"Today's twist: %s, start with %s · +%d Essence%s","Günün cilvesi: %s, %s ile başla · +%d Öz%s",scripts/ui/Main.gd:1943
+short %d; about %d rift%s at your recent pay (%d each) covers it.,%d eksik; yaklaşık %d yarık%s son kazancınla (her biri %d) bunu karşılar.,scripts/ui/Main.gd:1468
+short %d.,%d eksik.,scripts/ui/Main.gd:1470
+Choosing a rift,Yarık seçmek,scripts/ui/Main.gd:1484
+"Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run.","Yarıklar F'den SSS'ye rütbelere ayrılır. Bir rütbeyi mühürlemek bir sonrakini açar. Gösterge en iyi ekibinin gücünü yarığın beklentisiyle karşılaştırır — Ölümcül, Riskli, Denk ya da Avantajlı. İlk yarığın daha kısa bir eğitim koşusudur.",scripts/ui/Main.gd:1484
+Rank %s Rift,Rütbe %s Yarığı,scripts/ui/Main.gd:1517
+Endless Rift — locked,Sonsuz Yarık — kilitli,scripts/ui/Main.gd:1518
+Ranks C-SSS — locked,Rütbe C-SSS — kilitli,scripts/ui/Main.gd:1520
+Rank C — %s,Rütbe C — %s,scripts/ui/Main.gd:1520
+Steer your party through endless waves · best %d:%02d,Ekibini bitmeyen dalgalar arasında yönet · en iyi %d:%02d,scripts/ui/Main.gd:1651
+Opens when you complete Act II,II. Perde'yi bitirince açılır,scripts/ui/Main.gd:1652
+Assemble party,Ekip kur,scripts/ui/Main.gd:1652
+100 fixed floors · best floor %d,100 sabit kat · en iyi kat %d,scripts/ui/Main.gd:1653
+Enter the Tower,Kuleye gir,scripts/ui/Main.gd:1654
+Your best party,En iyi ekibin,scripts/ui/Main.gd:1675
+Your best,En iyin,scripts/ui/Main.gd:1710
+Go,Git,scripts/ui/Main.gd:1715
+Next: Rank %s — %s,Sonraki: Rütbe %s — %s,scripts/ui/Main.gd:1739
+Rank %s — %s,Rütbe %s — %s,scripts/ui/Main.gd:1750
+Rank %s — sealed,Rütbe %s — mühürlendi,scripts/ui/Main.gd:1752
+Rank %s · %d floors,Rütbe %s · %d kat,scripts/ui/Main.gd:1764
+Foes: base,Düşmanlar: temel,scripts/ui/Main.gd:1779
+"Foes: ×%s health, ×%s damage","Düşmanlar: ×%s can, ×%s hasar",scripts/ui/Main.gd:1779
+%s%s · Rewards ×%s%s,%s%s · Ödüller ×%s%s,scripts/ui/Main.gd:1780
+Best floor %d / %d%s,En iyi kat %d / %d%s,scripts/ui/Main.gd:1795
+The Tower,Kule,scripts/ui/Main.gd:1796
+"Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic.","Her kat hep aynı dövüştür — kaybedersen incele, ekibini değiştir ve geri gel. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır, yani kaybetmenin bedeli yok. Her kat ilk temizlediğinde ödül verir; her 10. kat kendi kalıntısı olan bir muhafızdır.",scripts/ui/Main.gd:1796
+You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s.,Bu haftanın merdivenini temizledin. %d–%d katlarının kuralları %d gün%s sonra değişir.,scripts/ui/Main.gd:1800
+Guardians,Muhafızlar,scripts/ui/Main.gd:1807
+Floor %d,Kat %d,scripts/ui/Main.gd:1818
+%s (floor %d),%s (kat %d),scripts/ui/Main.gd:1831
+Titles: ,Unvanlar: ,scripts/ui/Main.gd:1832
+Guardian: ,Muhafız: ,scripts/ui/Main.gd:1850
+Elite fight,Seçkin dövüşü,scripts/ui/Main.gd:1850
+Fight,Dövüş,scripts/ui/Main.gd:1850
+  ·  weekly ladder,  ·  haftalık merdiven,scripts/ui/Main.gd:1851
+Rule · %s — %s,Kural · %s — %s,scripts/ui/Main.gd:1860
+No special rules on this floor.,Bu katta özel kural yok.,scripts/ui/Main.gd:1864
+Assemble party (up to %d),Ekip kur (en fazla %d),scripts/ui/Main.gd:1870
+First clear:,İlk temizleme:,scripts/ui/Main.gd:1889
+This week's re-clear:,Bu haftanın tekrar temizlemesi:,scripts/ui/Main.gd:1889
+Floor %d — %s,Kat %d — %s,scripts/ui/Main.gd:1926
+ · streak %d, · seri %d,scripts/ui/Main.gd:1940
+Today's twist is done%s. A new one tomorrow.,Günün cilvesi tamam%s. Yarın yenisi gelir.,scripts/ui/Main.gd:1942
+"Today's twist: %s, start with %s · +%d Essence%s","Günün cilvesi: %s, %s ile başla · +%d Öz%s",scripts/ui/Main.gd:1944
 "Rule: %s
 Starting boon: %s (%s)
 One try a day, any rank. Every guild faces the same twist today; seal it for +%d Essence and a longer streak.","Kural: %s
 Başlangıç lütfu: %s (%s)
-Günde bir deneme, herhangi bir rütbe. Bugün her lonca aynı cilveyle karşılaşıyor; mühürlersen +%d Öz ve daha uzun bir seri.",scripts/ui/Main.gd:1948
-Rank %s Rift — today's twist: %s,Rütbe %s Yarığı — günün cilvesi: %s,scripts/ui/Main.gd:1977
-Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence. Up to 4 heroes.,Kural: %s Başlangıç lütfu: %s (%s). Mühürlemek +%d Öz kazandırır. En fazla 4 kahraman.,scripts/ui/Main.gd:1978
-Up to %d heroes. Everyone fights at full HP and leaves as they came.%s,En fazla %d kahraman. Herkes tam canla dövüşür ve geldiği gibi ayrılır.%s,scripts/ui/Main.gd:1982
- Rules: , Kurallar: ,scripts/ui/Main.gd:1982
-Finale — %s,Final — %s,scripts/ui/Main.gd:1984
-A harder %s Rift that ends in %s. Up to 4 heroes.,Daha zor bir %s Yarığı; sonunda %s var. En fazla 4 kahraman.,scripts/ui/Main.gd:1985
-Assemble Party (up to 4),Ekip Kur (en fazla 4),scripts/ui/Main.gd:1987
-Pick your party,Ekibini seç,scripts/ui/Main.gd:1988
-"Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less.","Kahraman ekle, sonra Yarığa Gir. Ön sıra darbelerin çoğunu alır; arka sıraya çok daha az saldırılır.",scripts/ui/Main.gd:1988
-%s row (%d) — %s,%s sıra (%d) — %s,scripts/ui/Main.gd:2023
-takes most of the enemy's attacks,düşman saldırılarının çoğunu alır,scripts/ui/Main.gd:2024
-attacked far less often,çok daha seyrek saldırıya uğrar,scripts/ui/Main.gd:2024
-Drag a hero here,Buraya bir kahraman sürükle,scripts/ui/Main.gd:2033
-No heroes yet — recruit some under Roster > Recruits first.,Henüz kahraman yok — önce Kadro > Adaylar'dan birkaç tane işe al.,scripts/ui/Main.gd:2040
-"Roster — drag into a row, or Add (they keep the row they stood in last)",Kadro — bir sıraya sürükle ya da Ekle (en son durdukları sırada kalırlar),scripts/ui/Main.gd:2044
-Add strongest,En güçlüleri ekle,scripts/ui/Main.gd:2050
-"Fill the party with your strongest ready heroes, each in the row they stood in last.","Ekibi en güçlü hazır kahramanlarınla doldur, her biri en son durduğu sırada.",scripts/ui/Main.gd:2056
-Your overseer,Gözetmenin,scripts/ui/Main.gd:2071
-"A champion never fights in a rift run. They oversee it: their Boon lifts the whole party, and any hero can spend a turn on their Call. (In the Endless Rift champions are the party; in a defense you steer one.)","Şampiyonlar yarık seferlerinde savaşmaz, seferi gözetir: Lütfu tüm grubu güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. (Sonsuz Yarık'ta grup şampiyonların kendisidir; bir savunmada birini sen yönetirsin.)",scripts/ui/Main.gd:2071
-"Starting Relic (pick one, optional)","Başlangıç Kalıntısı (birini seç, isteğe bağlı)",scripts/ui/Main.gd:2076
-Loadouts,Dizilimler,scripts/ui/Main.gd:2110
-%d · %s,%d · %s,scripts/ui/Main.gd:2123
-%d · empty,%d · boş,scripts/ui/Main.gd:2123
-"Left out (recovering, away or over the cap): %s","Dışarıda kaldı (iyileşiyor, uzakta ya da sınır dolu): %s",scripts/ui/Main.gd:2127
-"Load this party, each hero in their saved row.",Bu grubu yükle; her kahraman kayıtlı sırasında.,scripts/ui/Main.gd:2130
-Save,Kaydet,scripts/ui/Main.gd:2133
-Loadout %d saved.,%d. dizilim kaydedildi.,scripts/ui/Main.gd:2135
-"Save the party above, with their rows, as loadout %d.",Yukarıdaki grubu sıralarıyla birlikte %d. dizilim olarak kaydet.,scripts/ui/Main.gd:2139
-Overseer: %s,Gözetmen: %s,scripts/ui/Main.gd:2151
-none,yok,scripts/ui/Main.gd:2151
-Boon: %s  ·  Call: %s — %s,Lütuf: %s  ·  Çağrı: %s — %s,scripts/ui/Main.gd:2154
-None,Yok,scripts/ui/Main.gd:2171
-Endless Rift — your champions (up to 4),Sonsuz Yarık — şampiyonların (en fazla 4),scripts/ui/Main.gd:2182
-Champions only,Yalnızca şampiyonlar,scripts/ui/Main.gd:2183
-"Only champions go into the Endless Rift. You steer the first one you pick; the others follow and fight on their own, each with their Call as a signature move. Somewhere in the rift, lost champions wait in pillars of light: stand in one to free them. A run costs the guild a day.","Sonsuz Yarık'a yalnızca şampiyonlar girer. İlk seçtiğini sen yönetirsin; diğerleri onu izler ve kendi başlarına savaşır, her birinin imza hamlesi Çağrısıdır. Yarığın bir yerinde kayıp şampiyonlar ışık sütunlarında bekler: kurtarmak için birinin içinde dur. Bir sefer loncaya bir güne mal olur.",scripts/ui/Main.gd:2183
-Party power %d,Ekip gücü %d,scripts/ui/Main.gd:2199
-%d lost champions still wait in the rift.,Yarıkta hâlâ %d kayıp şampiyon bekliyor.,scripts/ui/Main.gd:2202
-Every lost champion has been found.,Bütün kayıp şampiyonlar bulundu.,scripts/ui/Main.gd:2202
-Rift strength %d%% — it grows with every champion you free and every act you pass.,Yarık gücü %%%d — kurtardığın her şampiyon ve geçtiğin her perdeyle artar.,scripts/ui/Main.gd:2203
-Enter the Rift,Yarığa Gir,scripts/ui/Main.gd:2205
-%s · Level %d,%s · Seviye %d,scripts/ui/Main.gd:2236
-Signature: %s,İmza hamlesi: %s,scripts/ui/Main.gd:2237
-You steer this one,Bunu sen yönetiyorsun,scripts/ui/Main.gd:2239
-Remove,Çıkar,scripts/ui/Main.gd:2240
-Add,Ekle,scripts/ui/Main.gd:2240
-You have no champions yet. The first is freed at the end of Act I.,Henüz şampiyonun yok. İlki I. Perde'nin sonunda kurtarılır.,scripts/ui/Main.gd:2253
-Add at least one hero to the party.,Ekibe en az bir kahraman ekle.,scripts/ui/Main.gd:2283
-Wounded: %s — they start the rift hurt.,Yaralı: %s — yarığa yaralı başlarlar.,scripts/ui/Main.gd:2285
-"Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift.","Sonsuz Yarık: %s karakterini sen yönetirsin (ilk seçtiğin kahraman); diğerleri takip eder ve kendi başına dövüşür. Donanımın seninle gelir: teçhizat, beceriler, kuşanılmış kalıntılar, kaçınma ve iyileşme, her kahramanın Yeteneği. Dalgalara dayan ve yarığı mühürlemek için 20:00'de Yarık Bekçisini yen.",scripts/ui/Main.gd:2293
-Begin the trial,Sınava başla,scripts/ui/Main.gd:2295
-Region:,Bölge:,scripts/ui/Main.gd:2359
-The ,,scripts/ui/Main.gd:2365
-Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s).,%s bölgesindeki en iyi süren. Karşılaşacağın düşmanları ve 20:00'deki Yarık Bekçisini (%s) belirler.,scripts/ui/Main.gd:2368
-%d gold,%d altın,scripts/ui/Main.gd:2380
-%d essence,%d öz,scripts/ui/Main.gd:2381
-the relic %s,%s kalıntısı,scripts/ui/Main.gd:2383
-"the title ""%s""","""%s"" unvanı",scripts/ui/Main.gd:2385
-Beat the Rift Warden at 20:00,20:00'de Yarık Bekçisini yen,scripts/ui/Main.gd:2386
-Survive %d:00,%d:00'a kadar dayan,scripts/ui/Main.gd:2386
-Next milestone: %s for %s.,Sonraki kilometre taşı: %s — ödül: %s.,scripts/ui/Main.gd:2387
-⚠ A Rank %s rift near %s breaks in %d day%s — seal a Rank %s rift or higher to close it,⚠ %s rütbeli bir yarık %s yakınında %d gün%s içinde taşacak — kapatmak için %s rütbeli ya da daha yüksek bir yarığı mühürle,scripts/ui/Main.gd:2406
-"Or let it break and defend: build towers, post idle heroes, steer a champion (Guild > Manage > Defenses researches towers).","Ya da taşmasına izin ver ve savun: kuleler kur, boştaki kahramanları nöbete koy, bir şampiyonu yönet (Lonca > Yönetim > Savunma kuleleri araştırır).",scripts/ui/Main.gd:2407
-The rift has broken! Rank %s near %s,"Yarık taştı! %s rütbe, %s yakınında",scripts/ui/Main.gd:2427
-Monsters are pouring out. Rift runs wait until your guild defends.,Canavarlar akın ediyor. Loncan savunana dek yarık seferleri bekler.,scripts/ui/Main.gd:2430
-Riftbreak — Rank %s near %s,"Yarık Taşması — %s rütbe, %s yakınında",scripts/ui/Main.gd:2453
-"Foes walk the roads toward your outpost. Build towers on the round pads with supplies: you start with some and earn more for every kill. Tap a built tower to upgrade or sell it. Heroes at posts stand by the road: warriors and rogues hold foes in place, rangers and mages shoot. Tap the ground to send your champion. Every foe that gets through costs integrity; at 0 the defense is lost.","Düşmanlar yollardan karakoluna doğru yürür. Yuvarlak kaidelere erzakla kuleler kur: bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın. Geliştirmek ya da satmak için kurulu bir kuleye dokun. Nöbetteki kahramanlar yol kenarında durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Şampiyonunu göndermek için yere dokun. Geçen her düşman bütünlüğe mal olur; 0'da savunma kaybedilir.",scripts/ui/Main.gd:2454
-%d waves · integrity %d · %d starting supplies,%d dalga · bütünlük %d · %d başlangıç erzakı,scripts/ui/Main.gd:2459
-Towers: %s · up to tier %d,Kuleler: %s · en fazla %d. kademe,scripts/ui/Main.gd:2460
-"Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded.","Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d'ini kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner.",scripts/ui/Main.gd:2462
-Posts (%d/%d),Nöbet yerleri (%d/%d),scripts/ui/Main.gd:2464
-No idle heroes can stand guard: towers and your champion will have to hold.,Nöbet tutabilecek boşta kahraman yok: kuleler ve şampiyonun dayanmak zorunda.,scripts/ui/Main.gd:2466
-%s · Lv%d · Power %d,%s · Sv%d · Güç %d,scripts/ui/Main.gd:2481
-Stand down,Nöbetten al,scripts/ui/Main.gd:2482
-Post,Nöbete koy,scripts/ui/Main.gd:2482
-Champion: %s,Şampiyon: %s,scripts/ui/Main.gd:2494
-The Night of Breaking: how the old guilds vanished. About a minute; Esc skips.,Kırılma Gecesi: eski loncalar nasıl kayboldu. Yaklaşık bir dakika; Esc atlar.,scripts/ui/Main.gd:2615
-Hide feedback,Geri bildirimi gizle,scripts/ui/Main.gd:2617
-Audio,Ses,scripts/ui/Main.gd:2625
-Battle speed,Savaş hızı,scripts/ui/Main.gd:2639
-Instant,Anında,scripts/ui/Main.gd:2641
-Fights resolve with no animation; the screen updates when it's your turn,Dövüşler animasyonsuz çözülür; sıra sana gelince ekran güncellenir,scripts/ui/Main.gd:2648
-Battle animations at %d× speed,Savaş animasyonları %d× hızda,scripts/ui/Main.gd:2648
-Display,Görüntü,scripts/ui/Main.gd:2653
-Text & UI size,Yazı ve arayüz boyutu,scripts/ui/Main.gd:2658
-The game fits your browser window automatically.,Oyun tarayıcı pencerene kendiliğinden sığar.,scripts/ui/Main.gd:2673
-Resolution: %s,Çözünürlük: %s,scripts/ui/Main.gd:2678
-Accessibility,Erişilebilirlik,scripts/ui/Main.gd:2687
-Reduce motion: %s,Hareketi azalt: %s,scripts/ui/Main.gd:2690
-on,açık,scripts/ui/Main.gd:2690
-off,kapalı,scripts/ui/Main.gd:2690
-"No screen shake, zooms, knockbacks, idle sway or flashing in fights","Dövüşlerde ekran sarsıntısı, yakınlaştırma, geri itilme, bekleme salınımı ya da yanıp sönme olmaz",scripts/ui/Main.gd:2694
-Colour-blind mode: %s,Renk körü modu: %s,scripts/ui/Main.gd:2696
-"Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item","Kırmızının karşısındaki her yerde yeşil yerine mavi (can, dövüş göstergeleri, istatistik değişimleri) ve her eşyada bir nadirlik harfi",scripts/ui/Main.gd:2700
-Key hints: %s,Tuş ipuçları: %s,scripts/ui/Main.gd:2702
-"Show each fight command's key (1-9, Space, A) on its button. Off, the keys still work and every tooltip names them.","Her dövüş komutunun tuşunu (1-9, Boşluk, A) düğmesinde göster. Kapalıyken tuşlar yine çalışır ve her ipucu onları söyler.",scripts/ui/Main.gd:2706
-Hearing aid: %s,İşitme desteği: %s,scripts/ui/Main.gd:2708
-"Sounds that tell you something also show as captions at the bottom of the screen (a boss arriving, a heavy blow, a hero going down, a wind-up, a chest dropping), and the biggest ones pulse the screen's edges","Bilgi veren sesler ekranın altında altyazı olarak da görünür (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama, düşen bir sandık); en önemlileri ekranın kenarlarını da yanıp söndürür",scripts/ui/Main.gd:2712
-Tips,İpuçları,scripts/ui/Main.gd:2717
-Tips: %s,İpuçları: %s,scripts/ui/Main.gd:2720
-Show all tips again,Tüm ipuçlarını yeniden göster,scripts/ui/Main.gd:2725
-Save Slots,Kayıt Yuvaları,scripts/ui/Main.gd:2734
-Backup,Yedek,scripts/ui/Main.gd:2750
-Saves live in this browser/device only; clearing site data erases them. Export one to keep a copy or move it to another device. The previous save is also kept automatically in case one gets damaged.,Kayıtlar yalnızca bu tarayıcıda/cihazda durur; site verilerini temizlemek onları siler. Bir kopya tutmak ya da başka cihaza taşımak için dışa aktar. Bir kayıt bozulursa diye önceki kayıt da kendiliğinden saklanır.,scripts/ui/Main.gd:2751
-Last exported: %s,Son dışa aktarım: %s,scripts/ui/Main.gd:2753
-day %d (today is day %d),gün %d (bugün gün %d),scripts/ui/Main.gd:2753
-Export save,Kaydı dışa aktar,scripts/ui/Main.gd:2758
-Nothing to export in this slot yet.,Bu yuvada henüz dışa aktarılacak bir şey yok.,scripts/ui/Main.gd:2761
-"Downloaded, and copied to the clipboard.",İndirildi ve panoya kopyalandı.,scripts/ui/Main.gd:2766
-Copied to the clipboard — paste it somewhere safe.,Panoya kopyalandı — güvenli bir yere yapıştır.,scripts/ui/Main.gd:2768
-Import save…,Kayıt içe aktar…,scripts/ui/Main.gd:2773
-Cancel import,İçe aktarmayı iptal et,scripts/ui/Main.gd:2773
-Paste an exported save below%s. It replaces Slot %d%s.,Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d'nin yerine geçer%s.,scripts/ui/Main.gd:2782
- or pick the file, ya da dosyayı seç,scripts/ui/Main.gd:2782
-Choose file…,Dosya seç…,scripts/ui/Main.gd:2784
-"{""guild_name"": ...}",,scripts/ui/Main.gd:2787
-Replace Slot %d with this save,Yuva %d'yi bu kayıtla değiştir,scripts/ui/Main.gd:2791
-Save imported.,Kayıt içe aktarıldı.,scripts/ui/Main.gd:2799
-Slot %d — Empty,Yuva %d — Boş,scripts/ui/Main.gd:2829
-Slot %d — %s (%d rift%s sealed),Yuva %d — %s (%d yarık%s mühürlendi),scripts/ui/Main.gd:2832
-  (Active),  (Etkin),scripts/ui/Main.gd:2834
-Play,Oyna,scripts/ui/Main.gd:2842
-Click again to confirm delete,Silmeyi onaylamak için tekrar tıkla,scripts/ui/Main.gd:2848
-Delete,Sil,scripts/ui/Main.gd:2848
-Drag onto the Front or Back row,Ön ya da Arka sıraya sürükle,scripts/ui/Main.gd:2901
-Lv%d %s · %d/%d HP%s,Sv%d %s · %d/%d Can%s,scripts/ui/Main.gd:2908
- · out %d run%s, · %d koşu%s dışarıda,scripts/ui/Main.gd:2908
- · away %d run%s, · %d koşu%s uzakta,scripts/ui/Main.gd:2908
-Wounded — %d%% HP,Yaralı — %%%d Can,scripts/ui/Main.gd:2910
-Starts the rift at this HP. A Medical Bay bed or a rest heals them.,Yarığa bu canla başlar. Revirde bir yatak ya da dinlenme iyileştirir.,scripts/ui/Main.gd:2912
-Power %d,Güç %d,scripts/ui/Main.gd:2914
-Move %s,Taşı: %s,scripts/ui/Main.gd:2927
-In party · Remove,Ekipte · Çıkar,scripts/ui/Main.gd:2936
+Günde bir deneme, herhangi bir rütbe. Bugün her lonca aynı cilveyle karşılaşıyor; mühürlersen +%d Öz ve daha uzun bir seri.",scripts/ui/Main.gd:1949
+Rank %s Rift — today's twist: %s,Rütbe %s Yarığı — günün cilvesi: %s,scripts/ui/Main.gd:1978
+Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence. Up to 4 heroes.,Kural: %s Başlangıç lütfu: %s (%s). Mühürlemek +%d Öz kazandırır. En fazla 4 kahraman.,scripts/ui/Main.gd:1979
+Up to %d heroes. Everyone fights at full HP and leaves as they came.%s,En fazla %d kahraman. Herkes tam canla dövüşür ve geldiği gibi ayrılır.%s,scripts/ui/Main.gd:1983
+ Rules: , Kurallar: ,scripts/ui/Main.gd:1983
+Finale — %s,Final — %s,scripts/ui/Main.gd:1985
+A harder %s Rift that ends in %s. Up to 4 heroes.,Daha zor bir %s Yarığı; sonunda %s var. En fazla 4 kahraman.,scripts/ui/Main.gd:1986
+Assemble Party (up to 4),Ekip Kur (en fazla 4),scripts/ui/Main.gd:1988
+Pick your party,Ekibini seç,scripts/ui/Main.gd:1989
+"Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less.","Kahraman ekle, sonra Yarığa Gir. Ön sıra darbelerin çoğunu alır; arka sıraya çok daha az saldırılır.",scripts/ui/Main.gd:1989
+%s row (%d) — %s,%s sıra (%d) — %s,scripts/ui/Main.gd:2024
+takes most of the enemy's attacks,düşman saldırılarının çoğunu alır,scripts/ui/Main.gd:2025
+attacked far less often,çok daha seyrek saldırıya uğrar,scripts/ui/Main.gd:2025
+Drag a hero here,Buraya bir kahraman sürükle,scripts/ui/Main.gd:2034
+No heroes yet — recruit some under Roster > Recruits first.,Henüz kahraman yok — önce Kadro > Adaylar'dan birkaç tane işe al.,scripts/ui/Main.gd:2041
+"Roster — drag into a row, or Add (they keep the row they stood in last)",Kadro — bir sıraya sürükle ya da Ekle (en son durdukları sırada kalırlar),scripts/ui/Main.gd:2045
+Add strongest,En güçlüleri ekle,scripts/ui/Main.gd:2051
+"Fill the party with your strongest ready heroes, each in the row they stood in last.","Ekibi en güçlü hazır kahramanlarınla doldur, her biri en son durduğu sırada.",scripts/ui/Main.gd:2057
+Your overseer,Gözetmenin,scripts/ui/Main.gd:2072
+"A champion never fights in a rift run. They oversee it: their Boon lifts the whole party, and any hero can spend a turn on their Call. (In the Endless Rift champions are the party; in a defense you steer one.)","Şampiyonlar yarık seferlerinde savaşmaz, seferi gözetir: Lütfu tüm grubu güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. (Sonsuz Yarık'ta grup şampiyonların kendisidir; bir savunmada birini sen yönetirsin.)",scripts/ui/Main.gd:2072
+"Starting Relic (pick one, optional)","Başlangıç Kalıntısı (birini seç, isteğe bağlı)",scripts/ui/Main.gd:2077
+Loadouts,Dizilimler,scripts/ui/Main.gd:2111
+%d · %s,%d · %s,scripts/ui/Main.gd:2124
+%d · empty,%d · boş,scripts/ui/Main.gd:2124
+"Left out (recovering, away or over the cap): %s","Dışarıda kaldı (iyileşiyor, uzakta ya da sınır dolu): %s",scripts/ui/Main.gd:2128
+"Load this party, each hero in their saved row.",Bu grubu yükle; her kahraman kayıtlı sırasında.,scripts/ui/Main.gd:2131
+Save,Kaydet,scripts/ui/Main.gd:2134
+Loadout %d saved.,%d. dizilim kaydedildi.,scripts/ui/Main.gd:2136
+"Save the party above, with their rows, as loadout %d.",Yukarıdaki grubu sıralarıyla birlikte %d. dizilim olarak kaydet.,scripts/ui/Main.gd:2140
+Overseer: %s,Gözetmen: %s,scripts/ui/Main.gd:2152
+none,yok,scripts/ui/Main.gd:2152
+Boon: %s  ·  Call: %s — %s,Lütuf: %s  ·  Çağrı: %s — %s,scripts/ui/Main.gd:2155
+None,Yok,scripts/ui/Main.gd:2172
+Endless Rift — your champions (up to 4),Sonsuz Yarık — şampiyonların (en fazla 4),scripts/ui/Main.gd:2183
+Champions only,Yalnızca şampiyonlar,scripts/ui/Main.gd:2184
+"Only champions go into the Endless Rift. You steer the first one you pick; the others follow and fight on their own, each with their Call as a signature move. Somewhere in the rift, lost champions wait in pillars of light: stand in one to free them. A run costs the guild a day.","Sonsuz Yarık'a yalnızca şampiyonlar girer. İlk seçtiğini sen yönetirsin; diğerleri onu izler ve kendi başlarına savaşır, her birinin imza hamlesi Çağrısıdır. Yarığın bir yerinde kayıp şampiyonlar ışık sütunlarında bekler: kurtarmak için birinin içinde dur. Bir sefer loncaya bir güne mal olur.",scripts/ui/Main.gd:2184
+Party power %d,Ekip gücü %d,scripts/ui/Main.gd:2200
+%d lost champions still wait in the rift.,Yarıkta hâlâ %d kayıp şampiyon bekliyor.,scripts/ui/Main.gd:2203
+Every lost champion has been found.,Bütün kayıp şampiyonlar bulundu.,scripts/ui/Main.gd:2203
+Rift strength %d%% — it grows with every champion you free and every act you pass.,Yarık gücü %%%d — kurtardığın her şampiyon ve geçtiğin her perdeyle artar.,scripts/ui/Main.gd:2204
+Enter the Rift,Yarığa Gir,scripts/ui/Main.gd:2206
+%s · Level %d,%s · Seviye %d,scripts/ui/Main.gd:2237
+Signature: %s,İmza hamlesi: %s,scripts/ui/Main.gd:2238
+You steer this one,Bunu sen yönetiyorsun,scripts/ui/Main.gd:2240
+Remove,Çıkar,scripts/ui/Main.gd:2241
+Add,Ekle,scripts/ui/Main.gd:2241
+You have no champions yet. The first is freed at the end of Act I.,Henüz şampiyonun yok. İlki I. Perde'nin sonunda kurtarılır.,scripts/ui/Main.gd:2254
+Add at least one hero to the party.,Ekibe en az bir kahraman ekle.,scripts/ui/Main.gd:2284
+Wounded: %s — they start the rift hurt.,Yaralı: %s — yarığa yaralı başlarlar.,scripts/ui/Main.gd:2286
+"Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift.","Sonsuz Yarık: %s karakterini sen yönetirsin (ilk seçtiğin kahraman); diğerleri takip eder ve kendi başına dövüşür. Donanımın seninle gelir: teçhizat, beceriler, kuşanılmış kalıntılar, kaçınma ve iyileşme, her kahramanın Yeteneği. Dalgalara dayan ve yarığı mühürlemek için 20:00'de Yarık Bekçisini yen.",scripts/ui/Main.gd:2294
+Begin the trial,Sınava başla,scripts/ui/Main.gd:2296
+Region:,Bölge:,scripts/ui/Main.gd:2360
+The ,,scripts/ui/Main.gd:2366
+Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s).,%s bölgesindeki en iyi süren. Karşılaşacağın düşmanları ve 20:00'deki Yarık Bekçisini (%s) belirler.,scripts/ui/Main.gd:2369
+%d gold,%d altın,scripts/ui/Main.gd:2381
+%d essence,%d öz,scripts/ui/Main.gd:2382
+the relic %s,%s kalıntısı,scripts/ui/Main.gd:2384
+"the title ""%s""","""%s"" unvanı",scripts/ui/Main.gd:2386
+Beat the Rift Warden at 20:00,20:00'de Yarık Bekçisini yen,scripts/ui/Main.gd:2387
+Survive %d:00,%d:00'a kadar dayan,scripts/ui/Main.gd:2387
+Next milestone: %s for %s.,Sonraki kilometre taşı: %s — ödül: %s.,scripts/ui/Main.gd:2388
+⚠ A Rank %s rift near %s breaks in %d day%s — seal a Rank %s rift or higher to close it,⚠ %s rütbeli bir yarık %s yakınında %d gün%s içinde taşacak — kapatmak için %s rütbeli ya da daha yüksek bir yarığı mühürle,scripts/ui/Main.gd:2407
+"Or let it break and defend: build towers, post idle heroes, steer a champion (Guild > Manage > Defenses researches towers).","Ya da taşmasına izin ver ve savun: kuleler kur, boştaki kahramanları nöbete koy, bir şampiyonu yönet (Lonca > Yönetim > Savunma kuleleri araştırır).",scripts/ui/Main.gd:2408
+The rift has broken! Rank %s near %s,"Yarık taştı! %s rütbe, %s yakınında",scripts/ui/Main.gd:2428
+Monsters are pouring out. Rift runs wait until your guild defends.,Canavarlar akın ediyor. Loncan savunana dek yarık seferleri bekler.,scripts/ui/Main.gd:2431
+Riftbreak — Rank %s near %s,"Yarık Taşması — %s rütbe, %s yakınında",scripts/ui/Main.gd:2454
+"Foes walk the roads toward your outpost. Build towers on the round pads with supplies: you start with some and earn more for every kill. Tap a built tower to upgrade or sell it. Heroes at posts stand by the road: warriors and rogues hold foes in place, rangers and mages shoot. Tap the ground to send your champion. Every foe that gets through costs integrity; at 0 the defense is lost.","Düşmanlar yollardan karakoluna doğru yürür. Yuvarlak kaidelere erzakla kuleler kur: bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın. Geliştirmek ya da satmak için kurulu bir kuleye dokun. Nöbetteki kahramanlar yol kenarında durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Şampiyonunu göndermek için yere dokun. Geçen her düşman bütünlüğe mal olur; 0'da savunma kaybedilir.",scripts/ui/Main.gd:2455
+%d waves · integrity %d · %d starting supplies,%d dalga · bütünlük %d · %d başlangıç erzakı,scripts/ui/Main.gd:2460
+Towers: %s · up to tier %d,Kuleler: %s · en fazla %d. kademe,scripts/ui/Main.gd:2461
+"Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded.","Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d'ini kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner.",scripts/ui/Main.gd:2463
+Posts (%d/%d),Nöbet yerleri (%d/%d),scripts/ui/Main.gd:2465
+No idle heroes can stand guard: towers and your champion will have to hold.,Nöbet tutabilecek boşta kahraman yok: kuleler ve şampiyonun dayanmak zorunda.,scripts/ui/Main.gd:2467
+%s · Lv%d · Power %d,%s · Sv%d · Güç %d,scripts/ui/Main.gd:2482
+Stand down,Nöbetten al,scripts/ui/Main.gd:2483
+Post,Nöbete koy,scripts/ui/Main.gd:2483
+Champion: %s,Şampiyon: %s,scripts/ui/Main.gd:2495
+The Night of Breaking: how the old guilds vanished. About a minute; Esc skips.,Kırılma Gecesi: eski loncalar nasıl kayboldu. Yaklaşık bir dakika; Esc atlar.,scripts/ui/Main.gd:2616
+Hide feedback,Geri bildirimi gizle,scripts/ui/Main.gd:2618
+Audio,Ses,scripts/ui/Main.gd:2626
+Battle speed,Savaş hızı,scripts/ui/Main.gd:2645
+Instant,Anında,scripts/ui/Main.gd:2647
+Fights resolve with no animation; the screen updates when it's your turn,Dövüşler animasyonsuz çözülür; sıra sana gelince ekran güncellenir,scripts/ui/Main.gd:2654
+Battle animations at %d× speed,Savaş animasyonları %d× hızda,scripts/ui/Main.gd:2654
+Display,Görüntü,scripts/ui/Main.gd:2659
+Text & UI size,Yazı ve arayüz boyutu,scripts/ui/Main.gd:2664
+The game fits your browser window automatically.,Oyun tarayıcı pencerene kendiliğinden sığar.,scripts/ui/Main.gd:2679
+Resolution: %s,Çözünürlük: %s,scripts/ui/Main.gd:2684
+Accessibility,Erişilebilirlik,scripts/ui/Main.gd:2693
+Reduce motion: %s,Hareketi azalt: %s,scripts/ui/Main.gd:2696
+on,açık,scripts/ui/Main.gd:2696
+off,kapalı,scripts/ui/Main.gd:2696
+"No screen shake, zooms, knockbacks, idle sway or flashing in fights","Dövüşlerde ekran sarsıntısı, yakınlaştırma, geri itilme, bekleme salınımı ya da yanıp sönme olmaz",scripts/ui/Main.gd:2700
+Colour-blind mode: %s,Renk körü modu: %s,scripts/ui/Main.gd:2702
+"Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item","Kırmızının karşısındaki her yerde yeşil yerine mavi (can, dövüş göstergeleri, istatistik değişimleri) ve her eşyada bir nadirlik harfi",scripts/ui/Main.gd:2706
+Key hints: %s,Tuş ipuçları: %s,scripts/ui/Main.gd:2708
+"Show each fight command's key (1-9, Space, A) on its button. Off, the keys still work and every tooltip names them.","Her dövüş komutunun tuşunu (1-9, Boşluk, A) düğmesinde göster. Kapalıyken tuşlar yine çalışır ve her ipucu onları söyler.",scripts/ui/Main.gd:2712
+Hearing aid: %s,İşitme desteği: %s,scripts/ui/Main.gd:2714
+"Sounds that tell you something also show as captions at the bottom of the screen (a boss arriving, a heavy blow, a hero going down, a wind-up, a chest dropping), and the biggest ones pulse the screen's edges","Bilgi veren sesler ekranın altında altyazı olarak da görünür (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama, düşen bir sandık); en önemlileri ekranın kenarlarını da yanıp söndürür",scripts/ui/Main.gd:2718
+Tips,İpuçları,scripts/ui/Main.gd:2723
+Tips: %s,İpuçları: %s,scripts/ui/Main.gd:2726
+Show all tips again,Tüm ipuçlarını yeniden göster,scripts/ui/Main.gd:2731
+Save Slots,Kayıt Yuvaları,scripts/ui/Main.gd:2740
+Backup,Yedek,scripts/ui/Main.gd:2756
+Saves live in this browser/device only; clearing site data erases them. Export one to keep a copy or move it to another device. The previous save is also kept automatically in case one gets damaged.,Kayıtlar yalnızca bu tarayıcıda/cihazda durur; site verilerini temizlemek onları siler. Bir kopya tutmak ya da başka cihaza taşımak için dışa aktar. Bir kayıt bozulursa diye önceki kayıt da kendiliğinden saklanır.,scripts/ui/Main.gd:2757
+Last exported: %s,Son dışa aktarım: %s,scripts/ui/Main.gd:2759
+day %d (today is day %d),gün %d (bugün gün %d),scripts/ui/Main.gd:2759
+Export save,Kaydı dışa aktar,scripts/ui/Main.gd:2764
+Nothing to export in this slot yet.,Bu yuvada henüz dışa aktarılacak bir şey yok.,scripts/ui/Main.gd:2767
+"Downloaded, and copied to the clipboard.",İndirildi ve panoya kopyalandı.,scripts/ui/Main.gd:2772
+Copied to the clipboard — paste it somewhere safe.,Panoya kopyalandı — güvenli bir yere yapıştır.,scripts/ui/Main.gd:2774
+Import save…,Kayıt içe aktar…,scripts/ui/Main.gd:2779
+Cancel import,İçe aktarmayı iptal et,scripts/ui/Main.gd:2779
+Paste an exported save below%s. It replaces Slot %d%s.,Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d'nin yerine geçer%s.,scripts/ui/Main.gd:2788
+ or pick the file, ya da dosyayı seç,scripts/ui/Main.gd:2788
+Choose file…,Dosya seç…,scripts/ui/Main.gd:2790
+"{""guild_name"": ...}",,scripts/ui/Main.gd:2793
+Replace Slot %d with this save,Yuva %d'yi bu kayıtla değiştir,scripts/ui/Main.gd:2797
+Save imported.,Kayıt içe aktarıldı.,scripts/ui/Main.gd:2805
+Slot %d — Empty,Yuva %d — Boş,scripts/ui/Main.gd:2835
+Slot %d — %s (%d rift%s sealed),Yuva %d — %s (%d yarık%s mühürlendi),scripts/ui/Main.gd:2838
+  (Active),  (Etkin),scripts/ui/Main.gd:2840
+Play,Oyna,scripts/ui/Main.gd:2848
+Click again to confirm delete,Silmeyi onaylamak için tekrar tıkla,scripts/ui/Main.gd:2854
+Delete,Sil,scripts/ui/Main.gd:2854
+Drag onto the Front or Back row,Ön ya da Arka sıraya sürükle,scripts/ui/Main.gd:2907
+Lv%d %s · %d/%d HP%s,Sv%d %s · %d/%d Can%s,scripts/ui/Main.gd:2914
+ · out %d run%s, · %d koşu%s dışarıda,scripts/ui/Main.gd:2914
+ · away %d run%s, · %d koşu%s uzakta,scripts/ui/Main.gd:2914
+Wounded — %d%% HP,Yaralı — %%%d Can,scripts/ui/Main.gd:2916
+Starts the rift at this HP. A Medical Bay bed or a rest heals them.,Yarığa bu canla başlar. Revirde bir yatak ya da dinlenme iyileştirir.,scripts/ui/Main.gd:2918
+Power %d,Güç %d,scripts/ui/Main.gd:2920
+Move %s,Taşı: %s,scripts/ui/Main.gd:2933
+In party · Remove,Ekipte · Çıkar,scripts/ui/Main.gd:2942
 "Combat — 1-3 monsters. Gold, Essence and a loot pick.","Dövüş — 1-3 canavar. Altın, Öz ve bir ganimet seçimi.",scripts/ui/RiftRunView.gd:12
 "Elite — one tough foe (double HP, harder hits). +40% rewards.","Seçkin — tek ama zorlu bir düşman (iki kat can, daha sert darbeler). Ödüller +%40.",scripts/ui/RiftRunView.gd:13
 Shop — spend Gold on items and relics. No fighting.,Dükkân — eşya ve kalıntılara Altın harca. Dövüş yok.,scripts/ui/RiftRunView.gd:14

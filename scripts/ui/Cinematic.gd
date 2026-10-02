@@ -6,6 +6,12 @@ extends CanvasLayer
 ## Esc (or Skip) ends it. Respects Reduce motion (no pans or shaking).
 
 const SHOT_FADE := 0.6
+## Shot lengths follow the opening's track (opening.ogg, 60s): the Night's
+## flash lands on its hit at ~13.8s and the last shot ends in its fade.
+## Narration: line N of the opening for the game's language, if recorded
+## (shots 1-7 speak lines 1-7; the guild's name brings line 8). A language
+## without files plays with captions only.
+const VOICE_PATH := "res://assets/audio/vo/%s/opening_%d.ogg"
 ## Its music: a dedicated track if one is ever added, else a camp track.
 const MUSIC := ["res://assets/audio/music/opening.ogg", "res://assets/audio/music/nocturnal_dread.ogg"]
 ## [image, seconds, zoom from, zoom to, pan from, pan to (fractions of the
@@ -13,11 +19,11 @@ const MUSIC := ["res://assets/audio/music/opening.ogg", "res://assets/audio/musi
 const SHOTS := [
 	["res://assets/cinematic/hall.png", 6.5, 1.12, 1.0, Vector2(-0.4, 0.2), Vector2(0.3, -0.1), "For three hundred years, the guilds of the Accord kept the rifts shut.", "glow_warm"],
 	["res://assets/cinematic/oath.png", 6.5, 1.0, 1.15, Vector2.ZERO, Vector2(0.0, -0.3), "They swore one oath: close what opens, share what you find, never sell a rift.", "glow"],
-	["res://assets/cinematic/night.png", 7.0, 1.0, 1.1, Vector2(0.3, 0.0), Vector2(-0.3, 0.0), "Then, in a single night, every rift in the Vale opened at once.", "night"],
-	["res://assets/cinematic/march.png", 6.5, 1.15, 1.0, Vector2(0.0, 0.3), Vector2(0.0, 0.0), "Every guild of the Accord went in.", "embers"],
-	["res://assets/cinematic/pillars.png", 7.0, 1.0, 1.18, Vector2(-0.3, 0.0), Vector2(0.35, -0.1), "What they found there, no one living remembers.", "glow"],
-	["res://assets/cinematic/empty.png", 6.5, 1.1, 1.0, Vector2(0.3, 0.2), Vector2(-0.2, 0.0), "By morning, their halls stood empty.", "dust"],
-	["res://assets/hamlet/backdrop.png", 8.0, 1.05, 1.0, Vector2(0.0, 0.2), Vector2.ZERO, "The villages still need a guild.", "finale"],
+	["res://assets/cinematic/night.png", 7.5, 1.0, 1.1, Vector2(0.3, 0.0), Vector2(-0.3, 0.0), "Then, in a single night, every rift in the Vale opened at once.", "night"],
+	["res://assets/cinematic/march.png", 7.5, 1.15, 1.0, Vector2(0.0, 0.3), Vector2(0.0, 0.0), "Every guild of the Accord went in.", "embers"],
+	["res://assets/cinematic/pillars.png", 8.0, 1.0, 1.18, Vector2(-0.3, 0.0), Vector2(0.35, -0.1), "What they found there, no one living remembers.", "glow"],
+	["res://assets/cinematic/empty.png", 7.5, 1.1, 1.0, Vector2(0.3, 0.2), Vector2(-0.2, 0.0), "By morning, their halls stood empty.", "dust"],
+	["res://assets/hamlet/backdrop.png", 14.0, 1.05, 1.0, Vector2(0.0, 0.2), Vector2.ZERO, "The villages still need a guild.", "finale"],
 ]
 
 var guild_name := ""
@@ -99,7 +105,7 @@ func _ready() -> void:
 	_ground.add_child(_skip)
 	for m in MUSIC:
 		if ResourceLoader.exists(m):
-			AudioManager.play_music(m, 1.5)
+			AudioManager.play_music(m, 0.5, false)
 			break
 	_next()
 
@@ -170,7 +176,9 @@ func _play(i: int) -> void:
 		_pic.position = -spare * 0.5 + Vector2(spare.x * 0.5 * p.x, spare.y * 0.5 * p.y)
 	place.call(z0, p0)
 	_pic.modulate = Color.WHITE
-	var dur := float(s[1])
+	AudioManager.stop_voice()
+	var spoken := AudioManager.play_voice(_voice_path(i + 1))
+	var dur := maxf(float(s[1]), spoken + 2.2)   # the shot waits for its line
 	var cam := _tw()
 	cam.tween_method(func(k: float): place.call(lerpf(z0, z1, k), p0.lerp(p1, k)), 0.0, 1.0, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_effect(str(s[7]), vp, dur, still)
@@ -180,11 +188,16 @@ func _play(i: int) -> void:
 	show.tween_callback(func(): _busy = false)
 	show.tween_property(_caption, "modulate:a", 1.0, 0.8).set_delay(0.3)
 	if str(s[7]) == "finale":
-		show.tween_interval(2.4)
+		var last := ResourceLoader.exists(_voice_path(i + 2))
+		show.tween_interval(maxf(2.4, spoken - 0.6))
 		show.tween_property(_caption, "modulate:a", 0.0, 0.5)
 		show.tween_callback(func(): _title_card(vp))
 		show.tween_property(_caption, "modulate:a", 1.0, 0.8)
-		show.tween_interval(dur - 4.0)
+		var tail := maxf(4.0, dur - 5.4)   # the rest of the shot (fades in, caption, name)
+		if last:
+			var stream: AudioStream = load(_voice_path(i + 2))
+			tail = maxf(tail, stream.get_length() + 2.5)
+		show.tween_interval(tail)
 	else:
 		show.tween_interval(maxf(1.0, dur - SHOT_FADE - 1.1 - SHOT_FADE))
 	show.tween_callback(_next)
@@ -193,6 +206,7 @@ func _play(i: int) -> void:
 ## The last shot: the guild's crest and name, then "They have yours."
 func _title_card(vp: Vector2) -> void:
 	_caption.text = tr("They have yours.")
+	AudioManager.play_voice(_voice_path(SHOTS.size() + 1))
 	if guild_name == "":   # watched from the title screen, before any guild
 		return
 	var box := VBoxContainer.new()
@@ -239,12 +253,12 @@ func _effect(kind: String, vp: Vector2, dur: float, still: bool) -> void:
 			flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			_fx.add_child(flash)
 			var f := _tw()
-			f.tween_interval(1.4)
+			f.tween_interval(0.8)
 			f.tween_property(flash, "color:a", 0.55, 0.08)
 			f.tween_property(flash, "color:a", 0.0, 0.9)
 			if not still:
 				var sh := _tw()
-				sh.tween_interval(1.4)
+				sh.tween_interval(0.8)
 				for k in 10:
 					sh.tween_property(_fx, "position", Vector2(randf_range(-6, 6), randf_range(-4, 4)), 0.05)
 				sh.tween_property(_fx, "position", Vector2.ZERO, 0.05)
@@ -281,10 +295,15 @@ func _particles(vp: Vector2, col: Color, n: int, vel: Vector2, life: float, anyw
 	_fx.add_child(p)
 
 
+func _voice_path(line: int) -> String:
+	return VOICE_PATH % [str(GameState.language).substr(0, 2), line]
+
+
 func _finish(skipped: bool) -> void:
 	if not is_inside_tree():
 		return
 	_kill_tweens()
+	AudioManager.stop_voice()
 	var cb := on_done
 	queue_free()
 	if cb.is_valid():

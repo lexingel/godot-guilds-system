@@ -7,11 +7,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: scripts/autoload/AudioManager.gd:86 scripts/ui/Main.gd:2626
+#: scripts/autoload/AudioManager.gd:123 scripts/autoload/AudioManager.gd:93 scripts/ui/Main.gd:2627
 msgid "Music"
 msgstr "Müzik"
 
-#: scripts/autoload/AudioManager.gd:90 scripts/ui/Main.gd:2631
+#: scripts/autoload/AudioManager.gd:97 scripts/ui/Main.gd:2637
+msgid "Voice"
+msgstr ""
+
+#: scripts/autoload/AudioManager.gd:132 scripts/ui/Main.gd:2632
 msgid "SFX"
 msgstr "Efektler"
 
@@ -947,7 +951,7 @@ msgstr "Mahsur Tüccar"
 msgid "Frightened Pilgrim"
 msgstr "Korkmuş Hacı"
 
-#: scripts/autoload/game_data/GameDataArt.gd:64 scripts/ui/Main.gd:738
+#: scripts/autoload/game_data/GameDataArt.gd:64 scripts/ui/Main.gd:739
 msgid "Inventory"
 msgstr "Envanter"
 
@@ -959,7 +963,7 @@ msgstr "İlk eşyanı ya da kalıntını bulunca açılır"
 msgid "Loot you find is kept here — equip items on the Roster's Hero tab."
 msgstr "Bulduğun ganimet burada saklanır — eşyaları Kadro'nun Kahraman sekmesinde kuşan."
 
-#: scripts/autoload/game_data/GameDataArt.gd:65 scripts/autoload/game_data/GameDataModes.gd:602 scripts/ui/Main.gd:615
+#: scripts/autoload/game_data/GameDataArt.gd:65 scripts/autoload/game_data/GameDataModes.gd:602 scripts/ui/Main.gd:616
 msgid "Medical Bay"
 msgstr "Revir"
 
@@ -1039,7 +1043,7 @@ msgstr "Rakip lonca haftada bir kahramanlarından birine göz dikebilir, sana me
 msgid "Tower of Trials"
 msgstr "Sınav Kulesi"
 
-#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateRuns.gd:1180 scripts/ui/Main.gd:1653
+#: scripts/autoload/game_data/GameDataArt.gd:72 scripts/autoload/game_state/GameStateRuns.gd:1180 scripts/ui/Main.gd:1654
 msgid "Opens when you complete Act I"
 msgstr "I. Perde'yi bitirince açılır"
 
@@ -3911,7 +3915,7 @@ msgstr "Kan"
 msgid "Steel"
 msgstr "Çelik"
 
-#: scripts/autoload/game_data/GameDataModes.gd:14 scripts/ui/Main.gd:1335
+#: scripts/autoload/game_data/GameDataModes.gd:14 scripts/ui/Main.gd:1336
 msgid "Storm"
 msgstr "Fırtına"
 
@@ -5899,7 +5903,7 @@ msgstr "Ünlü Lonca"
 msgid "Legendary Guild"
 msgstr "Efsanevi Lonca"
 
-#: scripts/autoload/game_data/GameDataModes.gd:598 scripts/ui/Main.gd:737
+#: scripts/autoload/game_data/GameDataModes.gd:598 scripts/ui/Main.gd:738
 msgid "Recruits"
 msgstr "Adaylar"
 
@@ -5907,7 +5911,7 @@ msgstr "Adaylar"
 msgid "Guild Hall"
 msgstr "Lonca Salonu"
 
-#: scripts/autoload/game_data/GameDataModes.gd:601 scripts/ui/GuildViews.gd:1011 scripts/ui/Main.gd:615
+#: scripts/autoload/game_data/GameDataModes.gd:601 scripts/ui/GuildViews.gd:1011 scripts/ui/Main.gd:616
 msgid "Heroes"
 msgstr "Kahramanlar"
 
@@ -5919,7 +5923,7 @@ msgstr "Beceriler"
 msgid "Quest Board"
 msgstr "Görev Panosu"
 
-#: scripts/autoload/game_data/GameDataModes.gd:606 scripts/ui/Main.gd:1460 scripts/ui/Main.gd:620
+#: scripts/autoload/game_data/GameDataModes.gd:606 scripts/ui/Main.gd:1461 scripts/ui/Main.gd:621
 msgid "Rift Hall"
 msgstr "Yarık Salonu"
 
@@ -9299,27 +9303,27 @@ msgstr "Onarılacak bir şey yok."
 msgid "Not enough Gold."
 msgstr "Yeterli Altın yok."
 
-#: scripts/autoload/game_state/GameStateCore.gd:167 scripts/autoload/game_state/GameStateHeroes.gd:779 scripts/autoload/game_state/GameStateItems.gd:12
+#: scripts/autoload/game_state/GameStateCore.gd:168 scripts/autoload/game_state/GameStateHeroes.gd:779 scripts/autoload/game_state/GameStateItems.gd:12
 msgid "Not enough Gold"
 msgstr "Yeterli Altın yok"
 
-#: scripts/autoload/game_state/GameStateCore.gd:167 scripts/autoload/game_state/GameStateHeroes.gd:496 scripts/autoload/game_state/GameStateHeroes.gd:751
+#: scripts/autoload/game_state/GameStateCore.gd:168 scripts/autoload/game_state/GameStateHeroes.gd:496 scripts/autoload/game_state/GameStateHeroes.gd:751
 msgid "Not enough Essence"
 msgstr "Yeterli Öz yok"
 
-#: scripts/autoload/game_state/GameStateCore.gd:300
+#: scripts/autoload/game_state/GameStateCore.gd:301
 msgid "Day %d: %s"
 msgstr "Gün %d: %s"
 
-#: scripts/autoload/game_state/GameStateCore.gd:678
+#: scripts/autoload/game_state/GameStateCore.gd:680
 msgid "That doesn't look like a Guildhold save"
 msgstr "Bu bir Guildhold kaydına benzemiyor"
 
-#: scripts/autoload/game_state/GameStateCore.gd:680
+#: scripts/autoload/game_state/GameStateCore.gd:682
 msgid "That save is from a newer version of the game"
 msgstr "Bu kayıt oyunun daha yeni bir sürümünden"
 
-#: scripts/autoload/game_state/GameStateCore.gd:683
+#: scripts/autoload/game_state/GameStateCore.gd:685
 msgid "Couldn't write the save slot"
 msgstr "Kayıt yuvasına yazılamadı"
 
@@ -9551,7 +9555,7 @@ msgstr "Bir yankı saklandı: %s (+%d Öz)."
 msgid "The End"
 msgstr "Son"
 
-#: scripts/autoload/game_state/GameStateModes.gd:217 scripts/ui/Main.gd:1414
+#: scripts/autoload/game_state/GameStateModes.gd:217 scripts/ui/Main.gd:1415
 msgid "The campaign is complete"
 msgstr "Hikâye tamamlandı"
 
@@ -9571,11 +9575,11 @@ msgstr "Loncanın en az bir kahramana ihtiyacı var."
 msgid "Took the forty-first post"
 msgstr "Kırk birinci nöbeti devraldı"
 
-#: scripts/autoload/game_state/GameStateModes.gd:258 scripts/ui/Main.gd:1426
+#: scripts/autoload/game_state/GameStateModes.gd:258 scripts/ui/Main.gd:1427
 msgid "Act %s — %s"
 msgstr "%s. Perde — %s"
 
-#: scripts/autoload/game_state/GameStateModes.gd:258 scripts/ui/Main.gd:1429
+#: scripts/autoload/game_state/GameStateModes.gd:258 scripts/ui/Main.gd:1430
 msgid "Foe: %s"
 msgstr "Düşman: %s"
 
@@ -9599,7 +9603,7 @@ msgstr " · günün cilvesi"
 msgid "Act %s finale"
 msgstr "%s. Perde finali"
 
-#: scripts/autoload/game_state/GameStateModes.gd:317 scripts/ui/Main.gd:918
+#: scripts/autoload/game_state/GameStateModes.gd:317 scripts/ui/Main.gd:919
 msgid "Rift"
 msgstr "Yarık"
 
@@ -10987,7 +10991,7 @@ msgstr "%s sağ salim çıktı — +2 Ün, +1 Nişan."
 msgid "Choose a reward:"
 msgstr "Bir ödül seç:"
 
-#: scripts/ui/BattleView.gd:1213 scripts/ui/Main.gd:2838 scripts/ui/Main.gd:498
+#: scripts/ui/BattleView.gd:1213 scripts/ui/Main.gd:2844 scripts/ui/Main.gd:499
 msgid "Continue"
 msgstr "Devam"
 
@@ -11423,7 +11427,7 @@ msgstr "Yetenek"
 msgid "%s (%s) — %d Momentum. %s%s"
 msgstr "%s (%s) — %d İvme. %s%s"
 
-#: scripts/ui/BattleView.gd:2502 scripts/ui/Main.gd:2431 scripts/ui/Main.gd:2513
+#: scripts/ui/BattleView.gd:2502 scripts/ui/Main.gd:2432 scripts/ui/Main.gd:2514
 msgid "Defend"
 msgstr "Savun"
 
@@ -11591,43 +11595,43 @@ msgstr "%d / %d TP (Sv%d için)"
 msgid "%d dmg · %d kill%s"
 msgstr "%d hasar · %d öldürme%s"
 
-#: scripts/ui/Cinematic.gd:14
+#: scripts/ui/Cinematic.gd:20
 msgid "For three hundred years, the guilds of the Accord kept the rifts shut."
 msgstr "Üç yüz yıl boyunca Ahit'in loncaları yarıkları kapalı tuttu."
 
-#: scripts/ui/Cinematic.gd:15
+#: scripts/ui/Cinematic.gd:21
 msgid "They swore one oath: close what opens, share what you find, never sell a rift."
 msgstr "Tek bir yemin ettiler: açılanı kapat, bulduğunu paylaş, asla bir yarık satma."
 
-#: scripts/ui/Cinematic.gd:16
+#: scripts/ui/Cinematic.gd:22
 msgid "Then, in a single night, every rift in the Vale opened at once."
 msgstr "Sonra tek bir gecede Vadi'deki bütün yarıklar aynı anda açıldı."
 
-#: scripts/ui/Cinematic.gd:17
+#: scripts/ui/Cinematic.gd:23
 msgid "Every guild of the Accord went in."
 msgstr "Ahit'in bütün loncaları içeri girdi."
 
-#: scripts/ui/Cinematic.gd:18
+#: scripts/ui/Cinematic.gd:24
 msgid "What they found there, no one living remembers."
 msgstr "Orada ne bulduklarını yaşayan kimse hatırlamıyor."
 
-#: scripts/ui/Cinematic.gd:19
+#: scripts/ui/Cinematic.gd:25
 msgid "By morning, their halls stood empty."
 msgstr "Sabah olduğunda salonları bomboştu."
 
-#: scripts/ui/Cinematic.gd:20
+#: scripts/ui/Cinematic.gd:26
 msgid "The villages still need a guild."
 msgstr "Köylerin hâlâ bir loncaya ihtiyacı var."
 
-#: scripts/ui/Cinematic.gd:93
+#: scripts/ui/Cinematic.gd:99
 msgid "Skip"
 msgstr "Atla"
 
-#: scripts/ui/Cinematic.gd:94
+#: scripts/ui/Cinematic.gd:100
 msgid "Esc skips the opening; Space or a click goes to the next scene."
 msgstr "Esc açılışı atlar; Boşluk tuşu ya da bir tıklama sonraki sahneye geçer."
 
-#: scripts/ui/Cinematic.gd:195
+#: scripts/ui/Cinematic.gd:208
 msgid "They have yours."
 msgstr "Seninki var."
 
@@ -11779,7 +11783,7 @@ msgstr "Geliştirme hazır: %s (%d Öz)"
 msgid "Tower of Trials: floor %d next"
 msgstr "Sınav Kulesi: sıradaki kat %d"
 
-#: scripts/ui/GuildViews.gd:1020 scripts/ui/GuildViews.gd:383 scripts/ui/Main.gd:740
+#: scripts/ui/GuildViews.gd:1020 scripts/ui/GuildViews.gd:383 scripts/ui/Main.gd:741
 msgid "Records"
 msgstr "Kayıtlar"
 
@@ -11895,7 +11899,7 @@ msgstr "Ekip: "
 msgid "\nBoons: "
 msgstr "\nLütuflar: "
 
-#: scripts/ui/GuildViews.gd:1021 scripts/ui/GuildViews.gd:498 scripts/ui/Main.gd:740
+#: scripts/ui/GuildViews.gd:1021 scripts/ui/GuildViews.gd:498 scripts/ui/Main.gd:741
 msgid "Memorial"
 msgstr "Anıt"
 
@@ -12207,7 +12211,7 @@ msgstr "Taç'ın tellalı Ünü Kraliyet Beratı için sayıyor: tek lonca, her 
 msgid "Guild Standings"
 msgstr "Lonca Sıralaması"
 
-#: scripts/ui/GuildViews.gd:909 scripts/ui/Main.gd:740
+#: scripts/ui/GuildViews.gd:909 scripts/ui/Main.gd:741
 msgid "Guild"
 msgstr "Lonca"
 
@@ -12283,11 +12287,11 @@ msgstr "Ödülü alınabilir %d görev"
 msgid "Command Tent"
 msgstr "Komuta Çadırı"
 
-#: scripts/ui/GuildViews.gd:1018 scripts/ui/Main.gd:740
+#: scripts/ui/GuildViews.gd:1018 scripts/ui/Main.gd:741
 msgid "Ledger"
 msgstr "Defter"
 
-#: scripts/ui/GuildViews.gd:1019 scripts/ui/GuildViews.gd:1039 scripts/ui/Main.gd:615
+#: scripts/ui/GuildViews.gd:1019 scripts/ui/GuildViews.gd:1039 scripts/ui/Main.gd:616
 msgid "Codex"
 msgstr "Kodeks"
 
@@ -12635,7 +12639,7 @@ msgstr "Sistemler"
 msgid "Compendium"
 msgstr "Derleme"
 
-#: scripts/ui/GuildViews.gd:1574 scripts/ui/Main.gd:2613
+#: scripts/ui/GuildViews.gd:1574 scripts/ui/Main.gd:2614
 msgid "Watch the opening"
 msgstr "Açılışı izle"
 
@@ -12791,7 +12795,7 @@ msgstr "9 geliştirmeye (4 dal) Öz, Yarık Taşmaları için Savunma dalına (C
 msgid "Once you have sealed a rift, the Rift Ladder offers a twist each day: a rule and a starting boon that come from the date, so every guild faces the same one. Tick it and your next ladder rift (any rank) carries it; one try a day. Sealing it pays bonus Essence and grows your streak. Records (in the Guild Hall) track achievements, lifetime statistics and your last 30 runs; the Memorial remembers heroes lost for good."
 msgstr "İlk yarığını mühürledikten sonra Yarık Merdiveni her gün bir cilve sunar: tarihe göre belirlenen bir kural ve başlangıç lütfu, böylece her lonca aynısıyla karşılaşır. İşaretlersen bir sonraki merdiven yarığın (herhangi bir rütbe) onu taşır; günde bir deneme. Mühürlemek ek Öz kazandırır ve serini uzatır. Kayıtlar (Lonca Salonu'nda) başarıları, genel istatistikleri ve son 30 seferini tutar; Anıt, sonsuza dek kaybedilen kahramanları anar."
 
-#: scripts/ui/GuildViews.gd:1770 scripts/ui/Main.gd:1517 scripts/ui/Main.gd:1650
+#: scripts/ui/GuildViews.gd:1770 scripts/ui/Main.gd:1518 scripts/ui/Main.gd:1651
 msgid "Endless Rift"
 msgstr "Sonsuz Yarık"
 
@@ -12855,7 +12859,7 @@ msgstr "Lonca Emirleri"
 msgid "Lv2 of the Infirmary, Drill Yard, Trade Network and Scouts' Lodge each unlock an order you can call inside a rift: Supply Drop (heal 35% between fights), Rally (act first and hit 30% harder this round), Requisition (reroll a fight's loot) and Scout Ahead (reroll a fork). 1 order per rift, 2 at Renowned tier, 3 at Legendary."
 msgstr "Revir, Talim Alanı, Ticaret Ağı ve İzci Köşkü'nün Sv2'si, yarık içinde verebileceğin bir emir açar: İkmal Atışı (dövüşler arasında %35 iyileş), Toparlan (bu tur önce davran ve %30 daha sert vur), Talep (bir dövüşün ganimetini yenile) ve Öncü Keşif (bir ayrımı yenile). Yarık başına 1 emir, Ünlü kademede 2, Efsanevide 3."
 
-#: scripts/ui/GuildViews.gd:1778 scripts/ui/Main.gd:1729
+#: scripts/ui/GuildViews.gd:1778 scripts/ui/Main.gd:1730
 msgid "Rift Ladder"
 msgstr "Yarık Merdiveni"
 
@@ -12963,7 +12967,7 @@ msgstr "Yarık Taşmaları"
 msgid "From Act II a rift swells every so often: a rank, a place and a countdown in days (Rift Hall and the camp's status board). Seal a rift of that rank or higher before it runs out to close it, for a little Essence. Otherwise it breaks, and every rift run waits until your guild defends. Ranks below S break out in a region; from S up they break at your camp. Holding pays Gold and Essence. Losing costs a share of your Essence and of the Gold beyond the coming payday's wages, damages a building (two at the camp) and wounds the posted heroes who fell."
 msgstr "II. Perde'den itibaren ara sıra bir yarık kabarır: bir rütbe, bir yer ve günlerle bir geri sayım (Yarık Salonu ve kampın durum panosu). Süre bitmeden o rütbede ya da daha yüksek bir yarığı mühürlersen kapanır ve biraz Öz kazanırsın. Yoksa taşar ve loncan savunana dek her yarık seferi bekler. S'nin altındaki rütbeler bir bölgede taşar; S ve üstü kampında taşar. Dayanmak Altın ve Öz kazandırır. Kaybetmek Özünden ve yaklaşan maaş gününün ücretleri dışındaki Altınından bir pay alır, bir yapıya (kampta ikisine) hasar verir ve düşen nöbetçi kahramanları yaralar."
 
-#: scripts/ui/GuildViews.gd:1794 scripts/ui/Main.gd:2454
+#: scripts/ui/GuildViews.gd:1794 scripts/ui/Main.gd:2455
 msgid "Defending"
 msgstr "Savunma"
 
@@ -13179,1151 +13183,1151 @@ msgstr "Sonraki: %s%s"
 msgid "\nUnlocks: "
 msgstr "\nAçar: "
 
-#: scripts/ui/Main.gd:34
+#: scripts/ui/Main.gd:35
 msgid "navigator.storage && navigator.storage.persist && navigator.storage.persist();"
 msgstr ""
 
-#: scripts/ui/Main.gd:226
+#: scripts/ui/Main.gd:227
 msgid "Click to dismiss"
 msgstr "Kapatmak için tıkla"
 
-#: scripts/ui/Main.gd:294
+#: scripts/ui/Main.gd:295
 msgid "%d achievements, see Records"
 msgstr "%d başarım, Kayıtlar'a bak"
 
-#: scripts/ui/Main.gd:299
+#: scripts/ui/Main.gd:300
 msgid "Achievement: %s"
 msgstr "Başarım: %s"
 
-#: scripts/ui/Main.gd:301
+#: scripts/ui/Main.gd:302
 msgid "Achievement earned"
 msgstr "Başarım kazanıldı"
 
-#: scripts/ui/Main.gd:305
+#: scripts/ui/Main.gd:306
 msgid "Back up your guild"
 msgstr "Loncanı yedekle"
 
-#: scripts/ui/Main.gd:306
+#: scripts/ui/Main.gd:307
 msgid "It lives in this browser only. Settings > Backup > Export save keeps a copy."
 msgstr "Yalnızca bu tarayıcıda duruyor. Ayarlar > Yedek > Kaydı dışa aktar bir kopya tutar."
 
-#: scripts/ui/Main.gd:443
+#: scripts/ui/Main.gd:444
 msgid "Turn your phone sideways"
 msgstr "Telefonunu yan çevir"
 
-#: scripts/ui/Main.gd:449
+#: scripts/ui/Main.gd:450
 msgid "Guildhold plays in landscape."
 msgstr "Guildhold yatay ekranda oynanır."
 
-#: scripts/ui/Main.gd:519
+#: scripts/ui/Main.gd:520
 msgid "Give it back (+%d Renown)"
 msgstr "Geri ver (+%d Ün)"
 
-#: scripts/ui/Main.gd:523
+#: scripts/ui/Main.gd:524
 msgid "Keep it (+%d Essence)"
 msgstr "Sakla (+%d Öz)"
 
-#: scripts/ui/Main.gd:540
+#: scripts/ui/Main.gd:541
 msgid "Who takes the forty-first post?"
 msgstr "Kırk birinci nöbeti kim devralacak?"
 
-#: scripts/ui/Main.gd:542
+#: scripts/ui/Main.gd:543
 msgid "%s — Rank %s, Lv%d"
 msgstr "%s — Rütbe %s, Sv%d"
 
-#: scripts/ui/Main.gd:548
+#: scripts/ui/Main.gd:549
 msgid "They leave the guild forever and go on the Memorial. Riftbreaks end."
 msgstr "Loncadan sonsuza dek ayrılır ve Anıt'a yazılır. Yarık Taşmaları sona erer."
 
-#: locale/extra_msgids.txt scripts/ui/Main.gd:1298 scripts/ui/Main.gd:1313
+#: locale/extra_msgids.txt scripts/ui/Main.gd:1299 scripts/ui/Main.gd:1314
 msgid "Back"
 msgstr "Geri"
 
-#: scripts/ui/Main.gd:554
+#: scripts/ui/Main.gd:555
 msgid "Renew the Accord"
 msgstr "Ahit'i yenile"
 
-#: scripts/ui/Main.gd:557
+#: scripts/ui/Main.gd:558
 msgid "Sign the last line. One of your heroes holds the forty-first post forever; Riftbreaks end."
 msgstr "Son satırı imzala. Kahramanlarından biri kırk birinci nöbeti sonsuza dek tutar; Yarık Taşmaları sona erer."
 
-#: scripts/ui/Main.gd:559
+#: scripts/ui/Main.gd:560
 msgid "Break the Accord"
 msgstr "Ahit'i boz"
 
-#: scripts/ui/Main.gd:562
+#: scripts/ui/Main.gd:563
 msgid "Burn the Terms. Every champion of the old guilds comes home; Riftbreaks come twice as often."
 msgstr "Şartları yak. Eski loncaların bütün şampiyonları eve döner; Yarık Taşmaları iki kat sık gelir."
 
-#: scripts/ui/Main.gd:622 scripts/ui/Main.gd:919
+#: scripts/ui/Main.gd:623 scripts/ui/Main.gd:920
 msgid "Party Assembly"
 msgstr "Ekip Kurma"
 
-#: scripts/ui/Main.gd:623
+#: scripts/ui/Main.gd:624
 msgid "Riftbreak"
 msgstr "Yarık Taşması"
 
-#: scripts/ui/Main.gd:1980 scripts/ui/Main.gd:624
+#: scripts/ui/Main.gd:1981 scripts/ui/Main.gd:625
 msgid "Tower of Trials — Floor %d"
 msgstr "Sınav Kulesi — Kat %d"
 
-#: scripts/ui/Main.gd:625
+#: scripts/ui/Main.gd:626
 msgid "Rift Run — Floor %d/%d"
 msgstr "Yarık Koşusu — Kat %d/%d"
 
-#: scripts/ui/Main.gd:1039 scripts/ui/Main.gd:1345 scripts/ui/Main.gd:2611
+#: scripts/ui/Main.gd:1040 scripts/ui/Main.gd:1346 scripts/ui/Main.gd:2612
 msgid "Settings"
 msgstr "Ayarlar"
 
-#: scripts/ui/Main.gd:628 scripts/ui/Main.gd:900 scripts/ui/Main.gd:902
+#: scripts/ui/Main.gd:629 scripts/ui/Main.gd:901 scripts/ui/Main.gd:903
 msgid "Camp"
 msgstr "Kamp"
 
-#: scripts/ui/Main.gd:628
+#: scripts/ui/Main.gd:629
 msgid "Camp — %s"
 msgstr "Kamp — %s"
 
-#: scripts/ui/Main.gd:676
+#: scripts/ui/Main.gd:677
 msgid "★ RANK S ★"
 msgstr "★ RÜTBE S ★"
 
-#: scripts/ui/Main.gd:679
+#: scripts/ui/Main.gd:680
 msgid "is offered as a Champion!"
 msgstr "Şampiyon olarak sunuluyor!"
 
-#: scripts/ui/Main.gd:679
+#: scripts/ui/Main.gd:680
 msgid "is available to recruit!"
 msgstr "işe alınabilir!"
 
-#: scripts/ui/Main.gd:708
+#: scripts/ui/Main.gd:709
 msgid "Gold — recruit and train heroes, buy from rift shops and supplies, reroll offers."
 msgstr "Altın — kahraman işe al ve eğit, yarık dükkânlarından ve ikmalden satın al, teklifleri yenile."
 
-#: scripts/ui/Main.gd:709
+#: scripts/ui/Main.gd:710
 msgid "Essence — earned by fighting and sealing rifts. Evolves heroes, upgrades relics and the guild, reforges gear, resets attributes."
 msgstr "Öz — dövüşerek ve yarık mühürleyerek kazanılır. Kahramanları evrimleştirir, kalıntıları ve loncayı geliştirir, teçhizatı yeniden döver, nitelikleri sıfırlar."
 
-#: scripts/ui/Main.gd:737
+#: scripts/ui/Main.gd:738
 msgid "Roster"
 msgstr "Kadro"
 
-#: scripts/ui/Main.gd:741
+#: scripts/ui/Main.gd:742
 msgid "Library"
 msgstr "Kütüphane"
 
-#: scripts/ui/Main.gd:824
+#: scripts/ui/Main.gd:825
 msgid "%s  (key %s)"
 msgstr "%s  (tuş %s)"
 
-#: scripts/ui/Main.gd:909 scripts/ui/Main.gd:918
+#: scripts/ui/Main.gd:910 scripts/ui/Main.gd:919
 msgid "Tower"
 msgstr "Kule"
 
-#: scripts/ui/Main.gd:956
+#: scripts/ui/Main.gd:957
 msgid "Back to %s"
 msgstr "Geri: %s"
 
-#: scripts/ui/Main.gd:977
+#: scripts/ui/Main.gd:978
 msgid "%d Guild Management levels"
 msgstr "%d Lonca Yönetimi seviyesi"
 
-#: scripts/ui/Main.gd:979
+#: scripts/ui/Main.gd:980
 msgid " · %d more to %s"
 msgstr " · %d seviye daha: %s"
 
-#: scripts/ui/Main.gd:980
+#: scripts/ui/Main.gd:981
 msgid ". The tier grows with Guild Management levels; the Guild Hall grows with it."
 msgstr ". Kademe Lonca Yönetimi seviyeleriyle büyür; Lonca Salonu da onunla büyür."
 
-#: scripts/ui/Main.gd:995
+#: scripts/ui/Main.gd:996
 msgid "Guild titles — Tower of Trials (best floor %d) and the Endless Rift (best %d:%02d)"
 msgstr "Lonca unvanları — Sınav Kulesi (en iyi kat %d) ve Sonsuz Yarık (en iyi %d:%02d)"
 
-#: scripts/ui/Main.gd:1027
+#: scripts/ui/Main.gd:1028
 msgid "Renown %d — %s %s (%d). The leader at payday gets the better recruits; every 20 arms an Epic at your next rift shop. See Guild > Ledger."
 msgstr "Ün %d — %s: %s (%d). Maaş gününde önde olan daha iyi acemileri alır; her 20 Ün bir sonraki yarık dükkânında bir Destansı garantiler. Bkz. Lonca > Defter."
 
-#: scripts/ui/Main.gd:1028
+#: scripts/ui/Main.gd:1029
 msgid "you lead"
 msgstr "öndesin"
 
-#: scripts/ui/Main.gd:1028
+#: scripts/ui/Main.gd:1029
 msgid "you trail"
 msgstr "geridesin"
 
-#: scripts/ui/Main.gd:1028
+#: scripts/ui/Main.gd:1029
 msgid "level with"
 msgstr "berabersin"
 
-#: scripts/ui/Main.gd:1075 scripts/ui/Main.gd:1306
+#: scripts/ui/Main.gd:1076 scripts/ui/Main.gd:1307
 msgid "Guildhold"
 msgstr "Guildhold"
 
-#: scripts/ui/Main.gd:1083
+#: scripts/ui/Main.gd:1084
 msgid "A guild-management roguelite"
 msgstr "Bir lonca yönetimi roguelite oyunu"
 
-#: scripts/ui/Main.gd:1084
+#: scripts/ui/Main.gd:1085
 msgid "Test build %s · what's new is %s"
 msgstr "Test sürümü %s · yenilikler %s"
 
-#: scripts/ui/Main.gd:1084
+#: scripts/ui/Main.gd:1085
 msgid "below"
 msgstr "aşağıda"
 
-#: scripts/ui/Main.gd:1084
+#: scripts/ui/Main.gd:1085
 msgid "on the right"
 msgstr "sağda"
 
-#: scripts/ui/Main.gd:1092
+#: scripts/ui/Main.gd:1093
 msgid "New Game"
 msgstr "Yeni Oyun"
 
-#: scripts/ui/Main.gd:1100 scripts/ui/Main.gd:1294
+#: scripts/ui/Main.gd:1101 scripts/ui/Main.gd:1295
 msgid "Load Game"
 msgstr "Oyun Yükle"
 
-#: scripts/ui/Main.gd:1104 scripts/ui/Main.gd:1305
+#: scripts/ui/Main.gd:1105 scripts/ui/Main.gd:1306
 msgid "Credits"
 msgstr "Emeği Geçenler"
 
-#: scripts/ui/Main.gd:1109
+#: scripts/ui/Main.gd:1110
 msgid "Feedback"
 msgstr "Geri Bildirim"
 
-#: scripts/ui/Main.gd:1116
+#: scripts/ui/Main.gd:1117
 msgid "Quit"
 msgstr "Çıkış"
 
-#: scripts/ui/Main.gd:1121
+#: scripts/ui/Main.gd:1122
 msgid "This test build is made for a computer with a keyboard and mouse (or a gamepad). It runs on a phone, but small screens are cramped."
 msgstr "Bu test sürümü klavye ve fareli (ya da oyun kollu) bir bilgisayar için yapıldı. Telefonda da çalışır ama küçük ekranlar sıkışık kalır."
 
-#: scripts/ui/Main.gd:1203
+#: scripts/ui/Main.gd:1204
 msgid "What's new in %s"
 msgstr "%s sürümünde yenilikler"
 
-#: scripts/ui/Main.gd:1208
+#: scripts/ui/Main.gd:1209
 msgid "Your save lives in this browser. Clearing site data erases it, so back it up under Load Game > Backup now and then."
 msgstr "Kaydın bu tarayıcıda duruyor. Site verilerini temizlemek onu siler; ara sıra Oyun Yükle > Yedek'ten yedekle."
 
-#: scripts/ui/Main.gd:1220
+#: scripts/ui/Main.gd:1221
 msgid "Version %s (%s)"
 msgstr "Sürüm %s (%s)"
 
-#: scripts/ui/Main.gd:1222
+#: scripts/ui/Main.gd:1223
 msgid "Day %d, Act %d, %d heroes, %d rifts sealed, best rank %s, Endless best %d:%02d, Tower floor %d"
 msgstr "Gün %d, Perde %d, %d kahraman, %d yarık mühürlendi, en iyi rütbe %s, Sonsuz en iyi %d:%02d, Kule katı %d"
 
-#: scripts/ui/Main.gd:1226
+#: scripts/ui/Main.gd:1227
 msgid "\n\nWhat happened:\n\nWhat you expected:\n\nAnything confusing, too hard or too easy:\n"
 msgstr "\n\nNe oldu:\n\nNe bekliyordun:\n\nKafa karıştıran, çok zor ya da çok kolay bir şey:\n"
 
-#: scripts/ui/Main.gd:1234
+#: scripts/ui/Main.gd:1235
 msgid "Played %dh %02dm"
 msgstr "Oynama süresi: %d sa %02d dk"
 
-#: scripts/ui/Main.gd:1235
+#: scripts/ui/Main.gd:1236
 msgid "Fights: %d by hand (%d won), %d on Auto (%d won)"
 msgstr "Dövüşler: %d elle (%d kazanıldı), %d Otomatik (%d kazanıldı)"
 
-#: scripts/ui/Main.gd:1241
+#: scripts/ui/Main.gd:1242
 msgid "Last %d runs: %s"
 msgstr "Son %d sefer: %s"
 
-#: scripts/ui/Main.gd:1247
+#: scripts/ui/Main.gd:1248
 msgid "Unspent: %d Gold, %d Essence, %d skill points, %d attribute points"
 msgstr "Harcanmamış: %d Altın, %d Öz, %d beceri puanı, %d nitelik puanı"
 
-#: scripts/ui/Main.gd:1248
+#: scripts/ui/Main.gd:1249
 msgid "Renown %d vs rival %d; heroes lost %d"
 msgstr "Ün %d, rakip %d; kaybedilen kahraman %d"
 
-#: scripts/ui/Main.gd:1257 scripts/ui/Main.gd:2617
+#: scripts/ui/Main.gd:1258 scripts/ui/Main.gd:2618
 msgid "Send feedback"
 msgstr "Geri bildirim gönder"
 
-#: scripts/ui/Main.gd:1258
+#: scripts/ui/Main.gd:1259
 msgid "Found a bug, or something felt off? Tell us on Discord. This report already says which build you're on and how far your guild is: copy it, then paste it into your message."
 msgstr "Bir hata mı buldun, ya da bir şey tuhaf mı geldi? Discord'da bize anlat. Bu rapor hangi sürümde olduğunu ve loncanın ne kadar ilerlediğini zaten içeriyor: kopyala, sonra mesajına yapıştır."
 
-#: scripts/ui/Main.gd:1264
+#: scripts/ui/Main.gd:1265
 msgid "Copy report"
 msgstr "Raporu kopyala"
 
-#: scripts/ui/Main.gd:1266 scripts/ui/Main.gd:1270
+#: scripts/ui/Main.gd:1267 scripts/ui/Main.gd:1271
 msgid "Copied. Paste it into a message on the Discord."
 msgstr "Kopyalandı. Discord'daki bir mesaja yapıştır."
 
-#: scripts/ui/Main.gd:1268
+#: scripts/ui/Main.gd:1269
 msgid "Copy and open Discord"
 msgstr "Kopyala ve Discord'u aç"
 
-#: scripts/ui/Main.gd:1285
+#: scripts/ui/Main.gd:1286
 msgid "Leave fullscreen"
 msgstr "Tam ekrandan çık"
 
-#: scripts/ui/Main.gd:1285
+#: scripts/ui/Main.gd:1286
 msgid "Fullscreen"
 msgstr "Tam ekran"
 
-#: scripts/ui/Main.gd:1289
+#: scripts/ui/Main.gd:1290
 msgid "setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);"
 msgstr "setTimeout(function(){ try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {} }, 400);"
 
-#: scripts/ui/Main.gd:1307
+#: scripts/ui/Main.gd:1308
 msgid "A roguelite guild-management game — recruit heroes, evolve their subclasses, and send them through the Rifts."
 msgstr "Bir roguelite lonca yönetimi oyunu — kahraman topla, alt sınıflarını evrimleştir ve onları Yarıklara gönder."
 
-#: scripts/ui/Main.gd:1309
+#: scripts/ui/Main.gd:1310
 msgid "Version %s"
 msgstr "Sürüm %s"
 
-#: scripts/ui/Main.gd:1310
+#: scripts/ui/Main.gd:1311
 msgid "Built with Godot Engine 4.7"
 msgstr "Godot Engine 4.7 ile yapıldı"
 
-#: scripts/ui/Main.gd:1311
+#: scripts/ui/Main.gd:1312
 msgid "Pixel art generated with PixelLab"
 msgstr "Piksel sanat PixelLab ile üretildi"
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Ashen"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Silver"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Iron"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Dawn"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Hollow"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Raven"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Gilded"
 msgstr ""
 
-#: scripts/ui/Main.gd:1335
+#: scripts/ui/Main.gd:1336
 msgid "Last"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Lantern"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Crows"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Wardens"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Blades"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Oath"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Company"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Watch"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Hearth"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Banner"
 msgstr ""
 
-#: scripts/ui/Main.gd:1336
+#: scripts/ui/Main.gd:1337
 msgid "Vigil"
 msgstr ""
 
-#: scripts/ui/Main.gd:1342
+#: scripts/ui/Main.gd:1343
 msgid "Save Slot %d"
 msgstr "Kayıt Yuvası %d"
 
-#: scripts/ui/Main.gd:1352
+#: scripts/ui/Main.gd:1353
 msgid "Name Your Guild"
 msgstr "Loncana İsim Ver"
 
-#: scripts/ui/Main.gd:1354
+#: scripts/ui/Main.gd:1355
 msgid "Guild name"
 msgstr "Lonca adı"
 
-#: scripts/ui/Main.gd:1362
+#: scripts/ui/Main.gd:1363
 msgid "Random name"
 msgstr "Rastgele ad"
 
-#: scripts/ui/Main.gd:1363
+#: scripts/ui/Main.gd:1364
 msgid "The %s %s"
 msgstr "%s %s"
 
-#: scripts/ui/Main.gd:1367
+#: scripts/ui/Main.gd:1368
 msgid "Choose a Crest"
 msgstr "Bir Arma Seç"
 
-#: scripts/ui/Main.gd:1371
+#: scripts/ui/Main.gd:1372
 msgid "Randomize"
 msgstr "Rastgele"
 
-#: scripts/ui/Main.gd:1377
+#: scripts/ui/Main.gd:1378
 msgid "Found the Guild"
 msgstr "Loncayı Kur"
 
-#: scripts/ui/Main.gd:1381
+#: scripts/ui/Main.gd:1382
 msgid "Name your guild first"
 msgstr "Önce loncana bir ad ver"
 
-#: scripts/ui/Main.gd:1415
+#: scripts/ui/Main.gd:1416
 msgid "The Ashen Crown is shattered. Rifts still open — push the Endless Rift, climb the rift ladder to SSS, and take on quests."
 msgstr "Küllü Taç paramparça. Yarıklar hâlâ açılıyor — Sonsuz Yarık'ta sınırlarını zorla, yarık merdiveninde SSS'ye tırman ve görevler üstlen."
 
-#: scripts/ui/Main.gd:1439
+#: scripts/ui/Main.gd:1440
 msgid "Face the finale: %s"
 msgstr "Finalle yüzleş: %s"
 
-#: scripts/ui/Main.gd:1450
+#: scripts/ui/Main.gd:1451
 msgid "Recommended power %d"
 msgstr "Önerilen güç %d"
 
-#: scripts/ui/Main.gd:1450
+#: scripts/ui/Main.gd:1451
 msgid "Complete every objective above first"
 msgstr "Önce yukarıdaki tüm hedefleri tamamla"
 
-#: scripts/ui/Main.gd:1463
+#: scripts/ui/Main.gd:1464
 msgid "Payday in %d day%s: %d Gold due, you have %d — "
 msgstr "Maaş gününe %d gün%s: %d Altın ödenecek, sende %d var — "
 
-#: locale/extra_msgids.txt scripts/ui/Main.gd:1465
+#: locale/extra_msgids.txt scripts/ui/Main.gd:1466
 msgid "covered."
 msgstr "karşılanıyor."
 
-#: scripts/ui/Main.gd:1467
+#: scripts/ui/Main.gd:1468
 msgid "short %d; about %d rift%s at your recent pay (%d each) covers it."
 msgstr "%d eksik; yaklaşık %d yarık%s son kazancınla (her biri %d) bunu karşılar."
 
-#: scripts/ui/Main.gd:1469
+#: scripts/ui/Main.gd:1470
 msgid "short %d."
 msgstr "%d eksik."
 
-#: scripts/ui/Main.gd:1483
+#: scripts/ui/Main.gd:1484
 msgid "Choosing a rift"
 msgstr "Yarık seçmek"
 
-#: scripts/ui/Main.gd:1483
+#: scripts/ui/Main.gd:1484
 msgid "Rifts come in ranks, F to SSS. Seal a rank to open the next. The readout compares your best party's power with what the rift expects — Deadly, Risky, Even or Favored. Your very first rift is a shorter training run."
 msgstr "Yarıklar F'den SSS'ye rütbelere ayrılır. Bir rütbeyi mühürlemek bir sonrakini açar. Gösterge en iyi ekibinin gücünü yarığın beklentisiyle karşılaştırır — Ölümcül, Riskli, Denk ya da Avantajlı. İlk yarığın daha kısa bir eğitim koşusudur."
 
-#: scripts/ui/Main.gd:1516 scripts/ui/Main.gd:1519
+#: scripts/ui/Main.gd:1517 scripts/ui/Main.gd:1520
 msgid "Rank %s Rift"
 msgstr "Rütbe %s Yarığı"
 
-#: scripts/ui/Main.gd:1517
+#: scripts/ui/Main.gd:1518
 msgid "Endless Rift — locked"
 msgstr "Sonsuz Yarık — kilitli"
 
-#: scripts/ui/Main.gd:1519
+#: scripts/ui/Main.gd:1520
 msgid "Ranks C-SSS — locked"
 msgstr "Rütbe C-SSS — kilitli"
 
-#: scripts/ui/Main.gd:1519
+#: scripts/ui/Main.gd:1520
 msgid "Rank C — %s"
 msgstr "Rütbe C — %s"
 
-#: scripts/ui/Main.gd:1650
+#: scripts/ui/Main.gd:1651
 msgid "Steer your party through endless waves · best %d:%02d"
 msgstr "Ekibini bitmeyen dalgalar arasında yönet · en iyi %d:%02d"
 
-#: scripts/ui/Main.gd:1651
+#: scripts/ui/Main.gd:1652
 msgid "Opens when you complete Act II"
 msgstr "II. Perde'yi bitirince açılır"
 
-#: scripts/ui/Main.gd:1651 scripts/ui/Main.gd:1774
+#: scripts/ui/Main.gd:1652 scripts/ui/Main.gd:1775
 msgid "Assemble party"
 msgstr "Ekip kur"
 
-#: scripts/ui/Main.gd:1652
+#: scripts/ui/Main.gd:1653
 msgid "100 fixed floors · best floor %d"
 msgstr "100 sabit kat · en iyi kat %d"
 
-#: scripts/ui/Main.gd:1653
+#: scripts/ui/Main.gd:1654
 msgid "Enter the Tower"
 msgstr "Kuleye gir"
 
-#: scripts/ui/Main.gd:1674 scripts/ui/Main.gd:1770 scripts/ui/Main.gd:1865
+#: scripts/ui/Main.gd:1675 scripts/ui/Main.gd:1771 scripts/ui/Main.gd:1866
 msgid "Your best party"
 msgstr "En iyi ekibin"
 
-#: scripts/ui/Main.gd:1709
+#: scripts/ui/Main.gd:1710
 msgid "Your best"
 msgstr "En iyin"
 
-#: scripts/ui/Main.gd:1714
+#: scripts/ui/Main.gd:1715
 msgid "Go"
 msgstr "Git"
 
-#: scripts/ui/Main.gd:1738
+#: scripts/ui/Main.gd:1739
 msgid "Next: Rank %s — %s"
 msgstr "Sonraki: Rütbe %s — %s"
 
-#: scripts/ui/Main.gd:1749
+#: scripts/ui/Main.gd:1750
 msgid "Rank %s — %s"
 msgstr "Rütbe %s — %s"
 
-#: scripts/ui/Main.gd:1751
+#: scripts/ui/Main.gd:1752
 msgid "Rank %s — sealed"
 msgstr "Rütbe %s — mühürlendi"
 
-#: scripts/ui/Main.gd:1763
+#: scripts/ui/Main.gd:1764
 msgid "Rank %s · %d floors"
 msgstr "Rütbe %s · %d kat"
 
-#: scripts/ui/Main.gd:1778
+#: scripts/ui/Main.gd:1779
 msgid "Foes: base"
 msgstr "Düşmanlar: temel"
 
-#: scripts/ui/Main.gd:1778
+#: scripts/ui/Main.gd:1779
 msgid "Foes: ×%s health, ×%s damage"
 msgstr "Düşmanlar: ×%s can, ×%s hasar"
 
-#: scripts/ui/Main.gd:1779
+#: scripts/ui/Main.gd:1780
 msgid "%s%s · Rewards ×%s%s"
 msgstr "%s%s · Ödüller ×%s%s"
 
-#: scripts/ui/Main.gd:1794
+#: scripts/ui/Main.gd:1795
 msgid "Best floor %d / %d%s"
 msgstr "En iyi kat %d / %d%s"
 
-#: scripts/ui/Main.gd:1795
+#: scripts/ui/Main.gd:1796
 msgid "The Tower"
 msgstr "Kule"
 
-#: scripts/ui/Main.gd:1795
+#: scripts/ui/Main.gd:1796
 msgid "Every floor is always the same fight — if you lose, study it, change your party and come back. Heroes fight at full HP and leave exactly as they came, so a loss costs nothing. Each floor pays the first time you clear it; every 10th floor is a guardian with its own relic."
 msgstr "Her kat hep aynı dövüştür — kaybedersen incele, ekibini değiştir ve geri gel. Kahramanlar tam canla dövüşür ve geldikleri gibi ayrılır, yani kaybetmenin bedeli yok. Her kat ilk temizlediğinde ödül verir; her 10. kat kendi kalıntısı olan bir muhafızdır."
 
-#: scripts/ui/Main.gd:1799
+#: scripts/ui/Main.gd:1800
 msgid "You've cleared this week's ladder. Floors %d–%d reshuffle their rules in %d day%s."
 msgstr "Bu haftanın merdivenini temizledin. %d–%d katlarının kuralları %d gün%s sonra değişir."
 
-#: scripts/ui/Main.gd:1806
+#: scripts/ui/Main.gd:1807
 msgid "Guardians"
 msgstr "Muhafızlar"
 
-#: scripts/ui/Main.gd:1817 scripts/ui/Main.gd:1845
+#: scripts/ui/Main.gd:1818 scripts/ui/Main.gd:1846
 msgid "Floor %d"
 msgstr "Kat %d"
 
-#: scripts/ui/Main.gd:1830
+#: scripts/ui/Main.gd:1831
 msgid "%s (floor %d)"
 msgstr "%s (kat %d)"
 
-#: scripts/ui/Main.gd:1831
+#: scripts/ui/Main.gd:1832
 msgid "Titles: "
 msgstr "Unvanlar: "
 
-#: scripts/ui/Main.gd:1849
+#: scripts/ui/Main.gd:1850
 msgid "Guardian: "
 msgstr "Muhafız: "
 
-#: scripts/ui/Main.gd:1849 scripts/ui/Main.gd:1925
+#: scripts/ui/Main.gd:1850 scripts/ui/Main.gd:1926
 msgid "Elite fight"
 msgstr "Seçkin dövüşü"
 
-#: scripts/ui/Main.gd:1849 scripts/ui/Main.gd:1925
+#: scripts/ui/Main.gd:1850 scripts/ui/Main.gd:1926
 msgid "Fight"
 msgstr "Dövüş"
 
-#: scripts/ui/Main.gd:1850
+#: scripts/ui/Main.gd:1851
 msgid "  ·  weekly ladder"
 msgstr "  ·  haftalık merdiven"
 
-#: scripts/ui/Main.gd:1859 scripts/ui/RiftRunView.gd:415
+#: scripts/ui/Main.gd:1860 scripts/ui/RiftRunView.gd:415
 msgid "Rule · %s — %s"
 msgstr "Kural · %s — %s"
 
-#: scripts/ui/Main.gd:1863
+#: scripts/ui/Main.gd:1864
 msgid "No special rules on this floor."
 msgstr "Bu katta özel kural yok."
 
-#: scripts/ui/Main.gd:1869
+#: scripts/ui/Main.gd:1870
 msgid "Assemble party (up to %d)"
 msgstr "Ekip kur (en fazla %d)"
 
-#: scripts/ui/Main.gd:1888
+#: scripts/ui/Main.gd:1889
 msgid "First clear:"
 msgstr "İlk temizleme:"
 
-#: scripts/ui/Main.gd:1888
+#: scripts/ui/Main.gd:1889
 msgid "This week's re-clear:"
 msgstr "Bu haftanın tekrar temizlemesi:"
 
-#: scripts/ui/Main.gd:1925
+#: scripts/ui/Main.gd:1926
 msgid "Floor %d — %s"
 msgstr "Kat %d — %s"
 
-#: scripts/ui/Main.gd:1939
+#: scripts/ui/Main.gd:1940
 msgid " · streak %d"
 msgstr " · seri %d"
 
-#: scripts/ui/Main.gd:1941
+#: scripts/ui/Main.gd:1942
 msgid "Today's twist is done%s. A new one tomorrow."
 msgstr "Günün cilvesi tamam%s. Yarın yenisi gelir."
 
-#: scripts/ui/Main.gd:1943
+#: scripts/ui/Main.gd:1944
 msgid "Today's twist: %s, start with %s · +%d Essence%s"
 msgstr "Günün cilvesi: %s, %s ile başla · +%d Öz%s"
 
-#: scripts/ui/Main.gd:1948
+#: scripts/ui/Main.gd:1949
 msgid "Rule: %s\nStarting boon: %s (%s)\nOne try a day, any rank. Every guild faces the same twist today; seal it for +%d Essence and a longer streak."
 msgstr "Kural: %s\nBaşlangıç lütfu: %s (%s)\nGünde bir deneme, herhangi bir rütbe. Bugün her lonca aynı cilveyle karşılaşıyor; mühürlersen +%d Öz ve daha uzun bir seri."
 
-#: scripts/ui/Main.gd:1977
+#: scripts/ui/Main.gd:1978
 msgid "Rank %s Rift — today's twist: %s"
 msgstr "Rütbe %s Yarığı — günün cilvesi: %s"
 
-#: scripts/ui/Main.gd:1978
+#: scripts/ui/Main.gd:1979
 msgid "Rule: %s Starting boon: %s (%s). Sealing it pays +%d Essence. Up to 4 heroes."
 msgstr "Kural: %s Başlangıç lütfu: %s (%s). Mühürlemek +%d Öz kazandırır. En fazla 4 kahraman."
 
-#: scripts/ui/Main.gd:1982
+#: scripts/ui/Main.gd:1983
 msgid "Up to %d heroes. Everyone fights at full HP and leaves as they came.%s"
 msgstr "En fazla %d kahraman. Herkes tam canla dövüşür ve geldiği gibi ayrılır.%s"
 
-#: scripts/ui/Main.gd:1982
+#: scripts/ui/Main.gd:1983
 msgid " Rules: "
 msgstr " Kurallar: "
 
-#: scripts/ui/Main.gd:1984
+#: scripts/ui/Main.gd:1985
 msgid "Finale — %s"
 msgstr "Final — %s"
 
-#: scripts/ui/Main.gd:1985
+#: scripts/ui/Main.gd:1986
 msgid "A harder %s Rift that ends in %s. Up to 4 heroes."
 msgstr "Daha zor bir %s Yarığı; sonunda %s var. En fazla 4 kahraman."
 
-#: scripts/ui/Main.gd:1987
+#: scripts/ui/Main.gd:1988
 msgid "Assemble Party (up to 4)"
 msgstr "Ekip Kur (en fazla 4)"
 
-#: scripts/ui/Main.gd:1988
+#: scripts/ui/Main.gd:1989
 msgid "Pick your party"
 msgstr "Ekibini seç"
 
-#: scripts/ui/Main.gd:1988
+#: scripts/ui/Main.gd:1989
 msgid "Add heroes, then Enter the Rift. The front row takes most of the hits; the back row is attacked far less."
 msgstr "Kahraman ekle, sonra Yarığa Gir. Ön sıra darbelerin çoğunu alır; arka sıraya çok daha az saldırılır."
 
-#: scripts/ui/Main.gd:2023
+#: scripts/ui/Main.gd:2024
 msgid "%s row (%d) — %s"
 msgstr "%s sıra (%d) — %s"
 
-#: scripts/ui/Main.gd:2024
+#: scripts/ui/Main.gd:2025
 msgid "takes most of the enemy's attacks"
 msgstr "düşman saldırılarının çoğunu alır"
 
-#: scripts/ui/Main.gd:2024
+#: scripts/ui/Main.gd:2025
 msgid "attacked far less often"
 msgstr "çok daha seyrek saldırıya uğrar"
 
-#: scripts/ui/Main.gd:2033
+#: scripts/ui/Main.gd:2034
 msgid "Drag a hero here"
 msgstr "Buraya bir kahraman sürükle"
 
-#: scripts/ui/Main.gd:2040
+#: scripts/ui/Main.gd:2041
 msgid "No heroes yet — recruit some under Roster > Recruits first."
 msgstr "Henüz kahraman yok — önce Kadro > Adaylar'dan birkaç tane işe al."
 
-#: scripts/ui/Main.gd:2044
+#: scripts/ui/Main.gd:2045
 msgid "Roster — drag into a row, or Add (they keep the row they stood in last)"
 msgstr "Kadro — bir sıraya sürükle ya da Ekle (en son durdukları sırada kalırlar)"
 
-#: scripts/ui/Main.gd:2050
+#: scripts/ui/Main.gd:2051
 msgid "Add strongest"
 msgstr "En güçlüleri ekle"
 
-#: scripts/ui/Main.gd:2056
+#: scripts/ui/Main.gd:2057
 msgid "Fill the party with your strongest ready heroes, each in the row they stood in last."
 msgstr "Ekibi en güçlü hazır kahramanlarınla doldur, her biri en son durduğu sırada."
 
-#: scripts/ui/Main.gd:2071
+#: scripts/ui/Main.gd:2072
 msgid "Your overseer"
 msgstr "Gözetmenin"
 
-#: scripts/ui/Main.gd:2071
+#: scripts/ui/Main.gd:2072
 msgid "A champion never fights in a rift run. They oversee it: their Boon lifts the whole party, and any hero can spend a turn on their Call. (In the Endless Rift champions are the party; in a defense you steer one.)"
 msgstr "Şampiyonlar yarık seferlerinde savaşmaz, seferi gözetir: Lütfu tüm grubu güçlendirir ve herhangi bir kahraman sırasını onun Çağrısına harcayabilir. (Sonsuz Yarık'ta grup şampiyonların kendisidir; bir savunmada birini sen yönetirsin.)"
 
-#: scripts/ui/Main.gd:2076
+#: scripts/ui/Main.gd:2077
 msgid "Starting Relic (pick one, optional)"
 msgstr "Başlangıç Kalıntısı (birini seç, isteğe bağlı)"
 
-#: scripts/ui/Main.gd:2110
+#: scripts/ui/Main.gd:2111
 msgid "Loadouts"
 msgstr "Dizilimler"
 
-#: scripts/ui/Main.gd:2123
+#: scripts/ui/Main.gd:2124
 msgid "%d · %s"
 msgstr "%d · %s"
 
-#: scripts/ui/Main.gd:2123
+#: scripts/ui/Main.gd:2124
 msgid "%d · empty"
 msgstr "%d · boş"
 
-#: scripts/ui/Main.gd:2127
+#: scripts/ui/Main.gd:2128
 msgid "Left out (recovering, away or over the cap): %s"
 msgstr "Dışarıda kaldı (iyileşiyor, uzakta ya da sınır dolu): %s"
 
-#: scripts/ui/Main.gd:2130
+#: scripts/ui/Main.gd:2131
 msgid "Load this party, each hero in their saved row."
 msgstr "Bu grubu yükle; her kahraman kayıtlı sırasında."
 
-#: scripts/ui/Main.gd:2133
+#: scripts/ui/Main.gd:2134
 msgid "Save"
 msgstr "Kaydet"
 
-#: scripts/ui/Main.gd:2135
+#: scripts/ui/Main.gd:2136
 msgid "Loadout %d saved."
 msgstr "%d. dizilim kaydedildi."
 
-#: scripts/ui/Main.gd:2139
+#: scripts/ui/Main.gd:2140
 msgid "Save the party above, with their rows, as loadout %d."
 msgstr "Yukarıdaki grubu sıralarıyla birlikte %d. dizilim olarak kaydet."
 
-#: scripts/ui/Main.gd:2151
+#: scripts/ui/Main.gd:2152
 msgid "Overseer: %s"
 msgstr "Gözetmen: %s"
 
-#: scripts/ui/Main.gd:2151 scripts/ui/Main.gd:2494
+#: scripts/ui/Main.gd:2152 scripts/ui/Main.gd:2495
 msgid "none"
 msgstr "yok"
 
-#: scripts/ui/Main.gd:2154
+#: scripts/ui/Main.gd:2155
 msgid "Boon: %s  ·  Call: %s — %s"
 msgstr "Lütuf: %s  ·  Çağrı: %s — %s"
 
-#: scripts/ui/Main.gd:2171 scripts/ui/Main.gd:2509 scripts/ui/UiKit.gd:920
+#: scripts/ui/Main.gd:2172 scripts/ui/Main.gd:2510 scripts/ui/UiKit.gd:920
 msgid "None"
 msgstr "Yok"
 
-#: scripts/ui/Main.gd:2182
+#: scripts/ui/Main.gd:2183
 msgid "Endless Rift — your champions (up to 4)"
 msgstr "Sonsuz Yarık — şampiyonların (en fazla 4)"
 
-#: scripts/ui/Main.gd:2183
+#: scripts/ui/Main.gd:2184
 msgid "Champions only"
 msgstr "Yalnızca şampiyonlar"
 
-#: scripts/ui/Main.gd:2183
+#: scripts/ui/Main.gd:2184
 msgid "Only champions go into the Endless Rift. You steer the first one you pick; the others follow and fight on their own, each with their Call as a signature move. Somewhere in the rift, lost champions wait in pillars of light: stand in one to free them. A run costs the guild a day."
 msgstr "Sonsuz Yarık'a yalnızca şampiyonlar girer. İlk seçtiğini sen yönetirsin; diğerleri onu izler ve kendi başlarına savaşır, her birinin imza hamlesi Çağrısıdır. Yarığın bir yerinde kayıp şampiyonlar ışık sütunlarında bekler: kurtarmak için birinin içinde dur. Bir sefer loncaya bir güne mal olur."
 
-#: scripts/ui/Main.gd:2199
+#: scripts/ui/Main.gd:2200
 msgid "Party power %d"
 msgstr "Ekip gücü %d"
 
-#: scripts/ui/Main.gd:2202
+#: scripts/ui/Main.gd:2203
 msgid "%d lost champions still wait in the rift."
 msgstr "Yarıkta hâlâ %d kayıp şampiyon bekliyor."
 
-#: scripts/ui/Main.gd:2202
+#: scripts/ui/Main.gd:2203
 msgid "Every lost champion has been found."
 msgstr "Bütün kayıp şampiyonlar bulundu."
 
-#: scripts/ui/Main.gd:2203
+#: scripts/ui/Main.gd:2204
 msgid "Rift strength %d%% — it grows with every champion you free and every act you pass."
 msgstr "Yarık gücü %%%d — kurtardığın her şampiyon ve geçtiğin her perdeyle artar."
 
-#: scripts/ui/Main.gd:2205 scripts/ui/Main.gd:2295
+#: scripts/ui/Main.gd:2206 scripts/ui/Main.gd:2296
 msgid "Enter the Rift"
 msgstr "Yarığa Gir"
 
-#: scripts/ui/Main.gd:2236
+#: scripts/ui/Main.gd:2237
 msgid "%s · Level %d"
 msgstr "%s · Seviye %d"
 
-#: scripts/ui/Main.gd:2237
+#: scripts/ui/Main.gd:2238
 msgid "Signature: %s"
 msgstr "İmza hamlesi: %s"
 
-#: scripts/ui/Main.gd:2239
+#: scripts/ui/Main.gd:2240
 msgid "You steer this one"
 msgstr "Bunu sen yönetiyorsun"
 
-#: scripts/ui/Main.gd:2240 scripts/ui/Main.gd:2931
+#: scripts/ui/Main.gd:2241 scripts/ui/Main.gd:2937
 msgid "Remove"
 msgstr "Çıkar"
 
-#: scripts/ui/Main.gd:2240 scripts/ui/Main.gd:2941
+#: scripts/ui/Main.gd:2241 scripts/ui/Main.gd:2947
 msgid "Add"
 msgstr "Ekle"
 
-#: scripts/ui/Main.gd:2253
+#: scripts/ui/Main.gd:2254
 msgid "You have no champions yet. The first is freed at the end of Act I."
 msgstr "Henüz şampiyonun yok. İlki I. Perde'nin sonunda kurtarılır."
 
-#: scripts/ui/Main.gd:2283
+#: scripts/ui/Main.gd:2284
 msgid "Add at least one hero to the party."
 msgstr "Ekibe en az bir kahraman ekle."
 
-#: scripts/ui/Main.gd:2285
+#: scripts/ui/Main.gd:2286
 msgid "Wounded: %s — they start the rift hurt."
 msgstr "Yaralı: %s — yarığa yaralı başlarlar."
 
-#: scripts/ui/Main.gd:2293
+#: scripts/ui/Main.gd:2294
 msgid "Endless Rift: you steer %s (the first hero you picked); the others follow and fight on their own. Your build comes along: gear, skills, equipped relics, dodge and mending, and each hero's Ability. Survive the waves, and beat the Rift Warden at 20:00 to seal the rift."
 msgstr "Sonsuz Yarık: %s karakterini sen yönetirsin (ilk seçtiğin kahraman); diğerleri takip eder ve kendi başına dövüşür. Donanımın seninle gelir: teçhizat, beceriler, kuşanılmış kalıntılar, kaçınma ve iyileşme, her kahramanın Yeteneği. Dalgalara dayan ve yarığı mühürlemek için 20:00'de Yarık Bekçisini yen."
 
-#: scripts/ui/Main.gd:2295
+#: scripts/ui/Main.gd:2296
 msgid "Begin the trial"
 msgstr "Sınava başla"
 
-#: scripts/ui/Main.gd:2359
+#: scripts/ui/Main.gd:2360
 msgid "Region:"
 msgstr "Bölge:"
 
-#: scripts/ui/Main.gd:2365
+#: scripts/ui/Main.gd:2366
 msgid "The "
 msgstr ""
 
-#: scripts/ui/Main.gd:2368
+#: scripts/ui/Main.gd:2369
 msgid "Your best time in %s. It sets the foes you'll meet and the Rift Warden at 20:00 (%s)."
 msgstr "%s bölgesindeki en iyi süren. Karşılaşacağın düşmanları ve 20:00'deki Yarık Bekçisini (%s) belirler."
 
-#: scripts/ui/Main.gd:2380
+#: scripts/ui/Main.gd:2381
 msgid "%d gold"
 msgstr "%d altın"
 
-#: scripts/ui/Main.gd:2381
+#: scripts/ui/Main.gd:2382
 msgid "%d essence"
 msgstr "%d öz"
 
-#: scripts/ui/Main.gd:2383
+#: scripts/ui/Main.gd:2384
 msgid "the relic %s"
 msgstr "%s kalıntısı"
 
-#: scripts/ui/Main.gd:2385
+#: scripts/ui/Main.gd:2386
 msgid "the title \"%s\""
 msgstr "\"%s\" unvanı"
 
-#: scripts/ui/Main.gd:2386
+#: scripts/ui/Main.gd:2387
 msgid "Beat the Rift Warden at 20:00"
 msgstr "20:00'de Yarık Bekçisini yen"
 
-#: scripts/ui/Main.gd:2386
+#: scripts/ui/Main.gd:2387
 msgid "Survive %d:00"
 msgstr "%d:00'a kadar dayan"
 
-#: scripts/ui/Main.gd:2387
+#: scripts/ui/Main.gd:2388
 msgid "Next milestone: %s for %s."
 msgstr "Sonraki kilometre taşı: %s — ödül: %s."
 
-#: scripts/ui/Main.gd:2406
+#: scripts/ui/Main.gd:2407
 msgid "⚠ A Rank %s rift near %s breaks in %d day%s — seal a Rank %s rift or higher to close it"
 msgstr "⚠ %s rütbeli bir yarık %s yakınında %d gün%s içinde taşacak — kapatmak için %s rütbeli ya da daha yüksek bir yarığı mühürle"
 
-#: scripts/ui/Main.gd:2407
+#: scripts/ui/Main.gd:2408
 msgid "Or let it break and defend: build towers, post idle heroes, steer a champion (Guild > Manage > Defenses researches towers)."
 msgstr "Ya da taşmasına izin ver ve savun: kuleler kur, boştaki kahramanları nöbete koy, bir şampiyonu yönet (Lonca > Yönetim > Savunma kuleleri araştırır)."
 
-#: scripts/ui/Main.gd:2427
+#: scripts/ui/Main.gd:2428
 msgid "The rift has broken! Rank %s near %s"
 msgstr "Yarık taştı! %s rütbe, %s yakınında"
 
-#: scripts/ui/Main.gd:2430
+#: scripts/ui/Main.gd:2431
 msgid "Monsters are pouring out. Rift runs wait until your guild defends."
 msgstr "Canavarlar akın ediyor. Loncan savunana dek yarık seferleri bekler."
 
-#: scripts/ui/Main.gd:2453
+#: scripts/ui/Main.gd:2454
 msgid "Riftbreak — Rank %s near %s"
 msgstr "Yarık Taşması — %s rütbe, %s yakınında"
 
-#: scripts/ui/Main.gd:2454
+#: scripts/ui/Main.gd:2455
 msgid "Foes walk the roads toward your outpost. Build towers on the round pads with supplies: you start with some and earn more for every kill. Tap a built tower to upgrade or sell it. Heroes at posts stand by the road: warriors and rogues hold foes in place, rangers and mages shoot. Tap the ground to send your champion. Every foe that gets through costs integrity; at 0 the defense is lost."
 msgstr "Düşmanlar yollardan karakoluna doğru yürür. Yuvarlak kaidelere erzakla kuleler kur: bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın. Geliştirmek ya da satmak için kurulu bir kuleye dokun. Nöbetteki kahramanlar yol kenarında durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Şampiyonunu göndermek için yere dokun. Geçen her düşman bütünlüğe mal olur; 0'da savunma kaybedilir."
 
-#: scripts/ui/Main.gd:2459
+#: scripts/ui/Main.gd:2460
 msgid "%d waves · integrity %d · %d starting supplies"
 msgstr "%d dalga · bütünlük %d · %d başlangıç erzakı"
 
-#: scripts/ui/Main.gd:2460
+#: scripts/ui/Main.gd:2461
 msgid "Towers: %s · up to tier %d"
 msgstr "Kuleler: %s · en fazla %d. kademe"
 
-#: scripts/ui/Main.gd:2462
+#: scripts/ui/Main.gd:2463
 msgid "Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded."
 msgstr "Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d'ini kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner."
 
-#: scripts/ui/Main.gd:2464
+#: scripts/ui/Main.gd:2465
 msgid "Posts (%d/%d)"
 msgstr "Nöbet yerleri (%d/%d)"
 
-#: scripts/ui/Main.gd:2466
+#: scripts/ui/Main.gd:2467
 msgid "No idle heroes can stand guard: towers and your champion will have to hold."
 msgstr "Nöbet tutabilecek boşta kahraman yok: kuleler ve şampiyonun dayanmak zorunda."
 
-#: scripts/ui/Main.gd:2481
+#: scripts/ui/Main.gd:2482
 msgid "%s · Lv%d · Power %d"
 msgstr "%s · Sv%d · Güç %d"
 
-#: scripts/ui/Main.gd:2482
+#: scripts/ui/Main.gd:2483
 msgid "Stand down"
 msgstr "Nöbetten al"
 
-#: scripts/ui/Main.gd:2482
+#: scripts/ui/Main.gd:2483
 msgid "Post"
 msgstr "Nöbete koy"
 
-#: scripts/ui/Main.gd:2494
+#: scripts/ui/Main.gd:2495
 msgid "Champion: %s"
 msgstr "Şampiyon: %s"
 
-#: scripts/ui/Main.gd:2615
+#: scripts/ui/Main.gd:2616
 msgid "The Night of Breaking: how the old guilds vanished. About a minute; Esc skips."
 msgstr "Kırılma Gecesi: eski loncalar nasıl kayboldu. Yaklaşık bir dakika; Esc atlar."
 
-#: scripts/ui/Main.gd:2617
+#: scripts/ui/Main.gd:2618
 msgid "Hide feedback"
 msgstr "Geri bildirimi gizle"
 
-#: scripts/ui/Main.gd:2625
+#: scripts/ui/Main.gd:2626
 msgid "Audio"
 msgstr "Ses"
 
-#: scripts/ui/Main.gd:2639
+#: scripts/ui/Main.gd:2645
 msgid "Battle speed"
 msgstr "Savaş hızı"
 
-#: scripts/ui/Main.gd:2641 scripts/ui/UiKit.gd:1513
+#: scripts/ui/Main.gd:2647 scripts/ui/UiKit.gd:1513
 msgid "Instant"
 msgstr "Anında"
 
-#: scripts/ui/Main.gd:2648
+#: scripts/ui/Main.gd:2654
 msgid "Fights resolve with no animation; the screen updates when it's your turn"
 msgstr "Dövüşler animasyonsuz çözülür; sıra sana gelince ekran güncellenir"
 
-#: scripts/ui/Main.gd:2648
+#: scripts/ui/Main.gd:2654
 msgid "Battle animations at %d× speed"
 msgstr "Savaş animasyonları %d× hızda"
 
-#: scripts/ui/Main.gd:2653
+#: scripts/ui/Main.gd:2659
 msgid "Display"
 msgstr "Görüntü"
 
-#: scripts/ui/Main.gd:2658
+#: scripts/ui/Main.gd:2664
 msgid "Text & UI size"
 msgstr "Yazı ve arayüz boyutu"
 
-#: scripts/ui/Main.gd:2673
+#: scripts/ui/Main.gd:2679
 msgid "The game fits your browser window automatically."
 msgstr "Oyun tarayıcı pencerene kendiliğinden sığar."
 
-#: scripts/ui/Main.gd:2678
+#: scripts/ui/Main.gd:2684
 msgid "Resolution: %s"
 msgstr "Çözünürlük: %s"
 
-#: scripts/ui/Main.gd:2687
+#: scripts/ui/Main.gd:2693
 msgid "Accessibility"
 msgstr "Erişilebilirlik"
 
-#: scripts/ui/Main.gd:2690
+#: scripts/ui/Main.gd:2696
 msgid "Reduce motion: %s"
 msgstr "Hareketi azalt: %s"
 
-#: scripts/ui/Main.gd:2690 scripts/ui/Main.gd:2696 scripts/ui/Main.gd:2702
+#: scripts/ui/Main.gd:2696 scripts/ui/Main.gd:2702 scripts/ui/Main.gd:2708
 msgid "on"
 msgstr "açık"
 
-#: scripts/ui/Main.gd:2690 scripts/ui/Main.gd:2696 scripts/ui/Main.gd:2702
+#: scripts/ui/Main.gd:2696 scripts/ui/Main.gd:2702 scripts/ui/Main.gd:2708
 msgid "off"
 msgstr "kapalı"
 
-#: scripts/ui/Main.gd:2694
+#: scripts/ui/Main.gd:2700
 msgid "No screen shake, zooms, knockbacks, idle sway or flashing in fights"
 msgstr "Dövüşlerde ekran sarsıntısı, yakınlaştırma, geri itilme, bekleme salınımı ya da yanıp sönme olmaz"
 
-#: scripts/ui/Main.gd:2696
+#: scripts/ui/Main.gd:2702
 msgid "Colour-blind mode: %s"
 msgstr "Renk körü modu: %s"
 
-#: scripts/ui/Main.gd:2700
+#: scripts/ui/Main.gd:2706
 msgid "Blue instead of green wherever it sits against red (HP, fight readouts, stat changes), and a rarity letter on every item"
 msgstr "Kırmızının karşısındaki her yerde yeşil yerine mavi (can, dövüş göstergeleri, istatistik değişimleri) ve her eşyada bir nadirlik harfi"
 
-#: scripts/ui/Main.gd:2702
+#: scripts/ui/Main.gd:2708
 msgid "Key hints: %s"
 msgstr "Tuş ipuçları: %s"
 
-#: scripts/ui/Main.gd:2706
+#: scripts/ui/Main.gd:2712
 msgid "Show each fight command's key (1-9, Space, A) on its button. Off, the keys still work and every tooltip names them."
 msgstr "Her dövüş komutunun tuşunu (1-9, Boşluk, A) düğmesinde göster. Kapalıyken tuşlar yine çalışır ve her ipucu onları söyler."
 
-#: scripts/ui/Main.gd:2708
+#: scripts/ui/Main.gd:2714
 msgid "Hearing aid: %s"
 msgstr "İşitme desteği: %s"
 
-#: scripts/ui/Main.gd:2712
+#: scripts/ui/Main.gd:2718
 msgid "Sounds that tell you something also show as captions at the bottom of the screen (a boss arriving, a heavy blow, a hero going down, a wind-up, a chest dropping), and the biggest ones pulse the screen's edges"
 msgstr "Bilgi veren sesler ekranın altında altyazı olarak da görünür (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama, düşen bir sandık); en önemlileri ekranın kenarlarını da yanıp söndürür"
 
-#: scripts/ui/Main.gd:2717
+#: scripts/ui/Main.gd:2723
 msgid "Tips"
 msgstr "İpuçları"
 
-#: scripts/ui/Main.gd:2720
+#: scripts/ui/Main.gd:2726
 msgid "Tips: %s"
 msgstr "İpuçları: %s"
 
-#: scripts/ui/Main.gd:2725
+#: scripts/ui/Main.gd:2731
 msgid "Show all tips again"
 msgstr "Tüm ipuçlarını yeniden göster"
 
-#: scripts/ui/Main.gd:2734
+#: scripts/ui/Main.gd:2740
 msgid "Save Slots"
 msgstr "Kayıt Yuvaları"
 
-#: scripts/ui/Main.gd:2750
+#: scripts/ui/Main.gd:2756
 msgid "Backup"
 msgstr "Yedek"
 
-#: scripts/ui/Main.gd:2751
+#: scripts/ui/Main.gd:2757
 msgid "Saves live in this browser/device only; clearing site data erases them. Export one to keep a copy or move it to another device. The previous save is also kept automatically in case one gets damaged."
 msgstr "Kayıtlar yalnızca bu tarayıcıda/cihazda durur; site verilerini temizlemek onları siler. Bir kopya tutmak ya da başka cihaza taşımak için dışa aktar. Bir kayıt bozulursa diye önceki kayıt da kendiliğinden saklanır."
 
-#: scripts/ui/Main.gd:2753
+#: scripts/ui/Main.gd:2759
 msgid "Last exported: %s"
 msgstr "Son dışa aktarım: %s"
 
-#: scripts/ui/Main.gd:2753
+#: scripts/ui/Main.gd:2759
 msgid "day %d (today is day %d)"
 msgstr "gün %d (bugün gün %d)"
 
-#: scripts/ui/Main.gd:2758
+#: scripts/ui/Main.gd:2764
 msgid "Export save"
 msgstr "Kaydı dışa aktar"
 
-#: scripts/ui/Main.gd:2761
+#: scripts/ui/Main.gd:2767
 msgid "Nothing to export in this slot yet."
 msgstr "Bu yuvada henüz dışa aktarılacak bir şey yok."
 
-#: scripts/ui/Main.gd:2766
+#: scripts/ui/Main.gd:2772
 msgid "Downloaded, and copied to the clipboard."
 msgstr "İndirildi ve panoya kopyalandı."
 
-#: scripts/ui/Main.gd:2768
+#: scripts/ui/Main.gd:2774
 msgid "Copied to the clipboard — paste it somewhere safe."
 msgstr "Panoya kopyalandı — güvenli bir yere yapıştır."
 
-#: scripts/ui/Main.gd:2773
+#: scripts/ui/Main.gd:2779
 msgid "Import save…"
 msgstr "Kayıt içe aktar…"
 
-#: scripts/ui/Main.gd:2773
+#: scripts/ui/Main.gd:2779
 msgid "Cancel import"
 msgstr "İçe aktarmayı iptal et"
 
-#: scripts/ui/Main.gd:2782
+#: scripts/ui/Main.gd:2788
 msgid "Paste an exported save below%s. It replaces Slot %d%s."
 msgstr "Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d'nin yerine geçer%s."
 
-#: scripts/ui/Main.gd:2782
+#: scripts/ui/Main.gd:2788
 msgid " or pick the file"
 msgstr " ya da dosyayı seç"
 
-#: scripts/ui/Main.gd:2784
+#: scripts/ui/Main.gd:2790
 msgid "Choose file…"
 msgstr "Dosya seç…"
 
-#: scripts/ui/Main.gd:2787
+#: scripts/ui/Main.gd:2793
 msgid "{\"guild_name\": ...}"
 msgstr ""
 
-#: scripts/ui/Main.gd:2791
+#: scripts/ui/Main.gd:2797
 msgid "Replace Slot %d with this save"
 msgstr "Yuva %d'yi bu kayıtla değiştir"
 
-#: scripts/ui/Main.gd:2799
+#: scripts/ui/Main.gd:2805
 msgid "Save imported."
 msgstr "Kayıt içe aktarıldı."
 
-#: scripts/ui/Main.gd:2829
+#: scripts/ui/Main.gd:2835
 msgid "Slot %d — Empty"
 msgstr "Yuva %d — Boş"
 
-#: scripts/ui/Main.gd:2832
+#: scripts/ui/Main.gd:2838
 msgid "Slot %d — %s (%d rift%s sealed)"
 msgstr "Yuva %d — %s (%d yarık%s mühürlendi)"
 
-#: scripts/ui/Main.gd:2834
+#: scripts/ui/Main.gd:2840
 msgid "  (Active)"
 msgstr "  (Etkin)"
 
-#: scripts/ui/Main.gd:2842
+#: scripts/ui/Main.gd:2848
 msgid "Play"
 msgstr "Oyna"
 
-#: scripts/ui/Main.gd:2848
+#: scripts/ui/Main.gd:2854
 msgid "Click again to confirm delete"
 msgstr "Silmeyi onaylamak için tekrar tıkla"
 
-#: scripts/ui/Main.gd:2848
+#: scripts/ui/Main.gd:2854
 msgid "Delete"
 msgstr "Sil"
 
-#: scripts/ui/Main.gd:2901
+#: scripts/ui/Main.gd:2907
 msgid "Drag onto the Front or Back row"
 msgstr "Ön ya da Arka sıraya sürükle"
 
-#: scripts/ui/Main.gd:2908
+#: scripts/ui/Main.gd:2914
 msgid "Lv%d %s · %d/%d HP%s"
 msgstr "Sv%d %s · %d/%d Can%s"
 
-#: scripts/ui/Main.gd:2908
+#: scripts/ui/Main.gd:2914
 msgid " · out %d run%s"
 msgstr " · %d koşu%s dışarıda"
 
-#: scripts/ui/Main.gd:2908 scripts/ui/RosterView.gd:782
+#: scripts/ui/Main.gd:2914 scripts/ui/RosterView.gd:782
 msgid " · away %d run%s"
 msgstr " · %d koşu%s uzakta"
 
-#: scripts/ui/Main.gd:2910
+#: scripts/ui/Main.gd:2916
 msgid "Wounded — %d%% HP"
 msgstr "Yaralı — %%%d Can"
 
-#: scripts/ui/Main.gd:2912
+#: scripts/ui/Main.gd:2918
 msgid "Starts the rift at this HP. A Medical Bay bed or a rest heals them."
 msgstr "Yarığa bu canla başlar. Revirde bir yatak ya da dinlenme iyileştirir."
 
-#: scripts/ui/Main.gd:2914 scripts/ui/RosterView.gd:77
+#: scripts/ui/Main.gd:2920 scripts/ui/RosterView.gd:77
 msgid "Power %d"
 msgstr "Güç %d"
 
-#: scripts/ui/Main.gd:2927
+#: scripts/ui/Main.gd:2933
 msgid "Move %s"
 msgstr "Taşı: %s"
 
-#: scripts/ui/Main.gd:2936
+#: scripts/ui/Main.gd:2942
 msgid "In party · Remove"
 msgstr "Ekipte · Çıkar"
 
