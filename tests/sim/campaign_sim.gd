@@ -33,6 +33,8 @@ var bold := false
 var hand := false
 var force_attr := ""
 var charter := ""        # the sim's answer to Mother Ilse's page ("" = leave it)
+var founding := "free"   # the founding charter (founding=mercenary, ...)
+var oaths: Array = []    # oaths sworn (oaths=by_hand,lean_purse)
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -59,6 +61,10 @@ func _ready() -> void:
 			GameData.RANK_THREAT_DMG = float(a.substr(4))
 		elif a.begins_with("attr="):
 			force_attr = a.substr(5)
+		elif a.begins_with("oaths="):
+			oaths = Array(a.substr(6).split(","))
+		elif a.begins_with("founding="):
+			founding = a.substr(9)
 		elif a.begins_with("charter="):
 			charter = a.substr(8)
 		elif a == "hand":
@@ -91,7 +97,7 @@ func _ready() -> void:
 					ratios.append(float(bill_paid.get(w, 0)) / float(gross_gold[w]))
 			for a in acts:
 				acts[a].append(int(act_day.get(a, -1)))
-		print("== %s%s%s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", (" all points in " + force_attr) if force_attr != "" else "", (" charter=" + charter) if charter != "" else "", seeds, days])
+		print("== %s%s%s%s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", (" all points in " + force_attr) if force_attr != "" else "", (" charter=" + charter) if charter != "" else "", (" founding=" + founding) if founding != "free" else "", seeds, days])
 		print("   Act I done on days %s · Act II %s · Act III %s · Act IV %s   (-1 = not reached)" % [acts[2], acts[3], acts[4], acts[5]])
 		ratios.sort()
 		if not ratios.is_empty():
@@ -127,6 +133,9 @@ func _guild(p: String, s: int) -> void:
 	GameState.reset()
 	GameState.guild_name = "Sim"
 	GameState.tips_off = true
+	GameState.legacy["charters"] = GameData.FOUNDINGS.keys()   # the sim may found under any charter
+	GameState.apply_founding(founding)
+	GameState.oaths = oaths.duplicate()
 	GameState.hire_starters()
 	GameState.refresh_recruit_pool()
 	var act := GameState.campaign_act
@@ -315,6 +324,10 @@ func _invest() -> void:
 		if GameState.training_left() > 0 and GameState.coins - GameState.attr_train_cost(h) > bill + 200:
 			GameState.train_attr(h.id)
 			_spend_attrs(h)
+	if GameState.accord_ending == "renew":   # Keepers of the Vale
+		for hall in GameData.ACCORD_HALLS:
+			if GameState.hall_lock(str(hall["id"])) == "":
+				GameState.restore_hall(str(hall["id"]))
 	for id in GameState.champions:
 		var c := GameState.champion_level_cost(str(id))
 		if c > 0 and GameState.crystals > c + 200:

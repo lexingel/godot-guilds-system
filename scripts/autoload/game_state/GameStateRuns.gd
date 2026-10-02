@@ -201,6 +201,8 @@ func run_snapshot(hero_ids: Array) -> Dictionary:
 ## so the frontier is where that matters. Only regular fights offer it at all
 ## (BattleView); this function itself doesn't refuse, so the sims can use it.
 func quick_fight_lock() -> String:
+	if sworn("by_hand"):
+		return tr("Sworn to fight By Hand: no Quick fight")
 	if int(run.get("finale", 0)) > 0:
 		return tr("A finale is fought in full")
 	var rank := str(run.get("rift_rank", ""))
@@ -1113,7 +1115,7 @@ func assign_to_bed(hero_id: String) -> void:
 		return
 	# A bed takes one run off a downed hero's recovery (never below one), and
 	# heals a wounded one fully the next time time passes (see pass_time).
-	if h.is_downed():
+	if h.is_downed() and not sworn("no_rest"):
 		h.down_runs = max(1, h.down_runs - 1)
 	h.bedded = true
 	save()
@@ -1165,12 +1167,12 @@ func pass_time() -> void:
 			continue   # a day passing mid-rift (carrying someone out) doesn't rest the party
 		var mx := Combat.max_hp(h)
 		if h.down_runs > 0:
-			h.down_runs -= 1
+			h.down_runs = maxi(0, h.down_runs - 1 - int(founding_rule("recover", 0)))   # a Temple Order mends faster
 			if h.down_runs == 0:
 				h.hp = mx
 				h.bedded = false
 		elif h.hp > 0 and h.hp < mx:
-			h.hp = mx if h.bedded or full_heal_between_runs() else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
+			h.hp = mx if (h.bedded and not sworn("no_rest")) or full_heal_between_runs() else min(mx, h.hp + int(ceil(mx * GameData.WOUND_HEAL_PER_RUN)))
 			if h.hp >= mx:
 				h.bedded = false
 	resolve_guild_board()

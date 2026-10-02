@@ -154,13 +154,18 @@ func _complete_act(act_num: int) -> void:
 	if act_num == 3 and feature_unlocked("rival"):
 		pending_stories.append(_charter_hearing())
 	if act_num == 2 and feature_unlocked("rival") and charter_choice == "":
-		pending_stories.append(GameData.CHARTER_TURN.duplicate(true))   # after Act III's intro (below)
+		var turn_card: Dictionary = GameData.CHARTER_TURN.duplicate(true)
+		if sworn("never_sell"):
+			turn_card["choices"] = ["expose"]   # the oath: the page goes to the Crown
+		pending_stories.append(turn_card)   # after Act III's intro (below)
 	if act_num == 4:
 		pending_stories.append(GameData.ACCORD_CHOICE.duplicate(true))   # the ending, then The End
 	elif campaign_done():
 		pending_stories.append(_the_end_card())
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
+		if campaign_act == 2 and founding == "mercenary":
+			pending_stories.append(GameData.MERCENARY_OFFER.duplicate())
 		# The Charter War's turn waits until after Act III's intro.
 		var turn := pending_stories.filter(func(c): return str(c.get("kind", "")) == "charter")
 		for c in turn:
@@ -180,7 +185,7 @@ func maybe_find_ledger_page(finale: bool) -> void:
 	if accord_pages >= GameData.LEDGER_PAGES.size():
 		return
 	var page: Dictionary = GameData.LEDGER_PAGES[accord_pages]
-	if campaign_act < int(page["act"]) or (not finale and randf() >= GameData.LEDGER_PAGE_CHANCE):
+	if campaign_act < int(page["act"]) or (not finale and randf() >= GameData.LEDGER_PAGE_CHANCE * float(founding_rule("ledger", 1.0))):
 		return
 	accord_pages += 1
 	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A page of the Grandmaster's ledger"),
@@ -213,13 +218,14 @@ func answer_echo(choice: String) -> void:
 	var card: Dictionary = pending_stories.pop_front()
 	var e: Array = GameData.ECHOES.filter(func(x): return str(x["id"]) == str(card["echo"]))
 	if choice == "return":
-		add_reputation(GameData.ECHO_RENOWN)
+		var renown := int(round(GameData.ECHO_RENOWN * float(founding_rule("echo_renown", 1.0))))
+		add_reputation(renown)
 		echoes_returned += 1
 		if not e.is_empty():
-			pending_stories.push_front({"title": tr(str(e[0]["title"])), "subtitle": tr("Given back · +%d Renown") % GameData.ECHO_RENOWN, "text": str(e[0]["returned"])})
+			pending_stories.push_front({"title": tr(str(e[0]["title"])), "subtitle": tr("Given back · +%d Renown") % renown, "text": str(e[0]["returned"])})
 		_news(tr("An echo was given back to the village: %s.") % tr(str(card["title"])))
 	else:
-		crystals += int(card.get("essence", echo_essence()))
+		crystals += int(round(int(card.get("essence", echo_essence())) * float(founding_rule("echo_essence", 1.0))))
 		_news(tr("An echo was kept: %s (+%d Essence).") % [tr(str(card["title"])), int(card.get("essence", 0))])
 		_echo_touch(str(card["echo"]))
 	if echoes_seen.size() == 3:   # the third echo brings Ezra
@@ -252,7 +258,7 @@ func _vale_remembers() -> Dictionary:
 ## The Charter War's turn: "expose" the Hollow Crown Company or keep "quiet"
 ## (the choice card that opens Act III).
 func choose_charter(choice: String) -> void:
-	if charter_choice != "" or not GameData.CHARTER_RESULT.has(choice):
+	if charter_choice != "" or not GameData.CHARTER_RESULT.has(choice) or (choice == "quiet" and sworn("never_sell")):
 		return
 	charter_choice = choice
 	if choice == "expose":
@@ -635,7 +641,15 @@ func laurels_earned() -> int:
 	n += int(L["charter"]) if charter_result == "won" else 0
 	n += int(L["morrow"]) if morrow_defeated else 0
 	n += echoes_returned * int(L["echo"])
-	return n
+	return int(round(n * (1.0 + oath_bonus())))
+
+
+## The Laurels bonus for the oaths sworn (GameData.OATHS, capped).
+func oath_bonus() -> float:
+	var b := 0.0
+	for o in oaths:
+		b += float(GameData.OATHS.get(o, {}).get("laurels", 0.0))
+	return minf(b, GameData.OATH_LAURELS_CAP)
 
 
 ## Heroes the Vale can remember: Rank C or higher, or 25 rifts sealed.
@@ -686,7 +700,8 @@ func write_legacy(hero_ids: Array, retired: bool = false) -> int:
 	legacy["laurels"] = int(legacy["laurels"]) + earned
 	(legacy["guilds"] as Array).append({"id": "g%d_%d" % [int(Time.get_unix_time_from_system()), randi() % 100000],
 		"name": guild_name, "crest": guild_crest, "ending": accord_ending, "retired": retired, "day": day, "act": campaign_act,
-		"rifts": rifts_sealed, "laurels": earned, "remembered": names, "fallen": fallen.size(), "charter": charter_result})
+		"rifts": rifts_sealed, "laurels": earned, "remembered": names, "fallen": fallen.size(), "charter": charter_result,
+		"quiet": charter_choice == "quiet", "founding": founding, "oaths": oaths.duplicate()})
 	legacy_written = true
 	save_legacy()
 	save()
@@ -745,3 +760,140 @@ func apply_legacy_gifts(ids: Array) -> Array:
 		save_legacy()
 		save()
 	return applied
+
+
+## ---- Founding charters ----
+## Whether `id` can be picked: Free Company always; others once bought with
+## Laurels, or by a deed a guild in the Hall of Guilds did.
+func founding_unlocked(id: String) -> bool:
+	var f: Dictionary = GameData.FOUNDINGS.get(id, {})
+	if f.is_empty():
+		return false
+	if not f.has("laurels") and not f.has("deed"):
+		return true
+	if (legacy.get("charters", []) as Array).has(id):
+		return true
+	match str(f.get("deed", "")):
+		"quiet":
+			return (legacy.get("guilds", []) as Array).any(func(g): return g.get("quiet", false))
+		"ending":
+			return (legacy.get("guilds", []) as Array).any(func(g): return str(g.get("ending", "")) != "")
+	return false
+
+
+## Buys `id` with Laurels for good. Returns "" or why not.
+func unlock_founding(id: String) -> String:
+	var f: Dictionary = GameData.FOUNDINGS.get(id, {})
+	if f.is_empty() or founding_unlocked(id):
+		return ""
+	if not f.has("laurels"):
+		return tr("This charter is earned by a deed, not bought.")
+	if int(legacy.get("laurels", 0)) < int(f["laurels"]):
+		return tr("Not enough Laurels.")
+	legacy["laurels"] = int(legacy["laurels"]) - int(f["laurels"])
+	if not legacy.has("charters"):
+		legacy["charters"] = []
+	(legacy["charters"] as Array).append(id)
+	save_legacy()
+	return ""
+
+
+## Founds this guild under charter `id` (before hiring the starters, whose
+## first week's wages follow the charter): its Gold, its rival, its prologue.
+func apply_founding(id: String) -> void:
+	if not founding_unlocked(id):
+		id = "free"
+	founding = id
+	coins += int(founding_rule("gold", 0))
+	if id == "smugglers" and rival_name == "The Last Lantern":
+		var others: Array = GameData.RIVAL_NAMES.filter(func(n): return n != "The Last Lantern")
+		rival_name = str(others[randi() % others.size()])
+	if id == "accord":
+		for i in pending_stories.size():
+			if str(pending_stories[i].get("title", "")) == str(GameData.PROLOGUE["title"]):
+				pending_stories[i] = GameData.ACCORD_PROLOGUE.duplicate()
+
+
+## ---- Keepers of the Vale (the Accord renewed) ----
+## [Gold, Essence] to restore hall `id` next.
+func hall_cost(id: String) -> Array:
+	if id == "grandmaster":
+		return GameData.GRANDMASTER_HALL_COST
+	var n := halls_restored.filter(func(h): return h != "grandmaster").size()
+	return [int(GameData.HALL_COST[0]) + int(GameData.HALL_COST_STEP[0]) * n, int(GameData.HALL_COST[1]) + int(GameData.HALL_COST_STEP[1]) * n]
+
+
+## "" if hall `id` can be restored now, else why not.
+func hall_lock(id: String) -> String:
+	if accord_ending != "renew":
+		return tr("Only Keepers of the Vale restore the old halls")
+	if halls_restored.has(id):
+		return tr("Restored")
+	if id == "grandmaster" and halls_restored.size() < GameData.ACCORD_HALLS.size() - 1:
+		return tr("Restore the other six halls first")
+	var c := hall_cost(id)
+	if coins < int(c[0]) or crystals < int(c[1]):
+		return tr("Needs %d Gold and %d Essence") % [int(c[0]), int(c[1])]
+	return ""
+
+
+func restore_hall(id: String) -> String:
+	var lock := hall_lock(id)
+	if lock != "":
+		return lock
+	var c := hall_cost(id)
+	coins -= int(c[0])
+	crystals -= int(c[1])
+	halls_restored.append(id)
+	var hall: Dictionary = GameData.ACCORD_HALLS.filter(func(h): return h["id"] == id)[0]
+	pending_stories.append({"title": tr(str(hall["name"])), "subtitle": tr("Keepers of the Vale"), "text": tr(str(hall["text"]))})
+	_news(tr("%s is restored.") % tr(str(hall["name"])))
+	if id == "grandmaster":
+		_add_postgame_laurels(GameData.GRANDMASTER_LAURELS, {"title": "Keepers of the Vale"})
+	save()
+	state_changed.emit()
+	return ""
+
+
+## Laurels earned after the legacy was written go straight to the legacy,
+## and the guild's Hall of Guilds record notes them (and `note`).
+func _add_postgame_laurels(n: int, note: Dictionary = {}) -> void:
+	if legacy.is_empty() or n <= 0:
+		return
+	legacy["laurels"] = int(legacy["laurels"]) + n
+	for g in legacy.get("guilds", []):
+		if str(g.get("name", "")) == guild_name and not g.get("retired", false):
+			g["laurels"] = int(g.get("laurels", 0)) + n
+			g.merge(note, true)
+	save_legacy()
+
+
+## ---- The completion board (both endings) ----
+func board_done(id: String) -> bool:
+	match id:
+		"champions": return champions.size() >= champion_roll.size()
+		"ledger": return accord_pages >= GameData.LEDGER_PAGES.size()
+		"echoes": return echoes_seen.size() >= GameData.ECHOES.size()
+		"morrow": return morrow_defeated
+		"charter": return charter_result == "won"
+		"halls": return halls_restored.size() >= GameData.ACCORD_HALLS.size()
+		"tides": return tides_held >= 5
+	return false
+
+
+## Lines for this guild's ending, in board order.
+func board_lines() -> Array:
+	return GameData.COMPLETION_BOARD.filter(func(l): return str(l.get("ending", accord_ending)) == accord_ending)
+
+
+## Pays BOARD_LAURELS for each line finished since the legacy was written.
+func check_completion_board() -> void:
+	if not legacy_written:
+		return
+	for l in board_lines():
+		var id := str(l["id"])
+		if board_done(id) and not board_claimed.has(id):
+			board_claimed.append(id)
+			_add_postgame_laurels(GameData.BOARD_LAURELS)
+			pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("The Chronicle grows"),
+				"text": tr("%s: +%d Laurels.") % [tr(str(l["label"])), GameData.BOARD_LAURELS]})

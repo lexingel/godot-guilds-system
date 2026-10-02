@@ -74,6 +74,12 @@ var charter_choice: String = ""   # the Charter War's turn: "", "expose" or "qui
 var charter_result: String = ""
 var morrow_defeated: bool = false
 var legacy_written: bool = false     # this guild's legacy is in the Vale's history
+var founding: String = "free"        # the founding charter (GameData.FOUNDINGS)
+var oaths: Array = []                # oaths sworn at founding (GameData.OATHS)
+var halls_restored: Array = []       # Keepers of the Vale (GameData.ACCORD_HALLS ids)
+var tide_count := 0                  # tides of the Open Hollow so far
+var tides_held := 0
+var board_claimed: Array = []        # completion board lines already paid
 ## Across guilds (user://legacy.json, not a save slot): Laurels, the Hall of
 ## Guilds and the remembered heroes as champions. See write_legacy.
 var legacy: Dictionary = {}
@@ -186,7 +192,7 @@ func upgrade_node(key: String) -> String:
 # ---------------- Guild Management-derived formulas ----------------
 ## Two more than a party holds from the start, so there's a bench to choose from.
 func hero_slot_cap() -> int:
-	return 6 + 2 * lvl("ops.barracks")
+	return 6 + 2 * lvl("ops.barracks") + int(hall_bonus("slots"))
 
 
 func relic_slot_cap() -> int:
@@ -219,7 +225,7 @@ func knock_out(h: Hero) -> void:
 
 
 func medical_bed_cap() -> int:
-	return 1 + int(ceil(lvl("ops.infirmary") / 2.0))
+	return 1 + int(ceil(lvl("ops.infirmary") / 2.0)) + int(hall_bonus("beds"))
 
 
 func guild_mentor() -> bool:
@@ -292,7 +298,7 @@ func black_market_unlocked() -> bool:
 
 
 func merchant_price_reduction() -> float:
-	return 0.06 * lvl("log.trade")
+	return 0.06 * lvl("log.trade") + float(founding_rule("prices", 0.0)) + hall_bonus("prices")
 
 
 func cache_chance_bonus() -> float:
@@ -305,10 +311,32 @@ func shop_guaranteed_epic() -> bool:
 
 ## What contracts pay, by the Charter War: x1.25 Gold for keeping quiet,
 ## x1.2 Gold and Essence for holding the Royal Charter.
+func sworn(oath: String) -> bool:
+	return oaths.has(oath)
+
+
+## The restored Accord halls' bonus of `kind` (GameData.ACCORD_HALLS), summed.
+func hall_bonus(kind: String) -> float:
+	var b := 0.0
+	for h in GameData.ACCORD_HALLS:
+		if str(h["kind"]) == kind and halls_restored.has(h["id"]):
+			b += float(h["value"])
+	return b
+
+
+## A rule of this guild's founding charter, or `default` when it has none.
+func founding_rule(key: String, default: Variant) -> Variant:
+	return (GameData.FOUNDINGS.get(founding, {}) as Dictionary).get(key, default)
+
+
 func charter_pay(essence: bool) -> float:
 	var m := GameData.CHARTER_PAY if charter_result == "won" else 1.0
+	if not essence:
+		m *= float(founding_rule("contract_gold", 1.0)) * (1.0 + hall_bonus("gold"))
+	else:
+		m *= 1.0 + hall_bonus("essence")
 	if not essence and charter_choice == "quiet":
-		m *= GameData.CHARTER_QUIET_PAY
+		m *= float(founding_rule("quiet_pay", GameData.CHARTER_QUIET_PAY))
 	return m
 
 
@@ -649,7 +677,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "pay_rate": pay_rate, "contest_start": contest_start, "rival_event": rival_event, "session": session, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
-		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "morrow_defeated": morrow_defeated, "legacy_written": legacy_written, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
+		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "morrow_defeated": morrow_defeated, "legacy_written": legacy_written, "founding": founding, "oaths": oaths, "halls_restored": halls_restored, "tide_count": tide_count, "tides_held": tides_held, "board_claimed": board_claimed, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
 		"run": _run_for_save(),
 		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,
@@ -726,6 +754,9 @@ func merge_legacy(other: Dictionary) -> void:
 		if not have.has(str(g["id"])):
 			(legacy["guilds"] as Array).append(g)
 	(legacy["champions"] as Dictionary).merge(other.get("champions", {}))
+	for c in other.get("charters", []):
+		if not (legacy.get("charters", []) as Array).has(c):
+			legacy["charters"] = (legacy.get("charters", []) as Array) + [c]
 	GameData.LEGACY_CHAMPIONS = legacy["champions"]
 
 

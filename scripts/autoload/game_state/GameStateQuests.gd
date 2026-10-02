@@ -10,6 +10,7 @@ func add_reputation(amount: int) -> void:
 	if amount <= 0:
 		reputation = maxi(0, reputation + amount)
 		return
+	amount = maxi(1, int(round(amount * float(founding_rule("renown", 1.0)))))
 	var before := reputation / 20
 	reputation += amount
 	if reputation / 20 > before:
@@ -268,7 +269,7 @@ func wage_of(h: Hero) -> int:
 
 
 func wage_at(h: Hero, rate: String) -> int:
-	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1)) * (1.0 + float(wage_raise.get(h.id, 0.0))) * float(GameData.PAY_RATES[rate][0])))
+	return int(round(float(GameData.WAGE_BY_RANK.get(h.rank, 15)) * (1.0 + GameData.WAGE_PER_LEVEL * (h.level - 1)) * (1.0 + float(wage_raise.get(h.id, 0.0))) * float(GameData.PAY_RATES[rate][0]) * float(founding_rule("wages", 1.0)) * (1.5 if sworn("lean_purse") else 1.0) * (1.0 - hall_bonus("wages"))))
 
 
 func pay_rate_of(h: Hero) -> String:

@@ -602,6 +602,8 @@ func _accord_choice(cv: VBoxContainer) -> void:
 var _retire_open := false
 var _legacy_pick: Array = []     # heroes picked to be remembered
 var _pending_gifts: Array = []   # founding gifts chosen with Laurels
+var _pending_founding := "free"  # the founding charter picked
+var _pending_oaths: Array = []   # oaths to swear at founding
 
 
 ## The legacy moment: after the Accord's ending (or when retiring), pick up
@@ -690,6 +692,84 @@ func _legacy_overlay(retire: bool) -> void:
 			render()))
 	col.add_child(row)
 	root.add_child(overlay)
+
+
+## The founding screen's charters: what kind of guild this is. Locked ones
+## show how they're earned, and can be bought when the Laurels allow.
+func _founding_charters() -> Control:
+	var col := _vbox(6)
+	col.add_child(_label("Charter", 14))
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 6)
+	if not GameState.founding_unlocked(_pending_founding):
+		_pending_founding = "free"
+	for id in GameData.FOUNDINGS:
+		var f: Dictionary = GameData.FOUNDINGS[id]
+		var open := GameState.founding_unlocked(id)
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = id == _pending_founding
+		b.text = tr(str(f["name"])) if open else tr("%s · locked") % tr(str(f["name"]))
+		b.disabled = not open
+		b.tooltip_text = tr(str(f["desc"]))
+		b.pressed.connect(func(k=id):
+			_pending_founding = k
+			render())
+		row.add_child(b)
+		if not open and f.has("laurels") and int(GameState.legacy.get("laurels", 0)) >= int(f["laurels"]):
+			row.add_child(_button(tr("Unlock · %d Laurels") % int(f["laurels"]), func(k=id):
+				_flavor_toast = GameState.unlock_founding(k)
+				if _flavor_toast == "":
+					_pending_founding = k
+				render()))
+	col.add_child(row)
+	var cur: Dictionary = GameData.FOUNDINGS[_pending_founding]
+	col.add_child(_wrap_label(str(cur["desc"]), 12, true))
+	var locked: Array = []
+	for id in GameData.FOUNDINGS:
+		var f: Dictionary = GameData.FOUNDINGS[id]
+		if not GameState.founding_unlocked(id):
+			var how: Array = []
+			if f.has("laurels"):
+				how.append(tr("%d Laurels") % int(f["laurels"]))
+			if f.has("deed"):
+				how.append(tr(str(GameData.FOUNDING_DEEDS[f["deed"]])))
+			locked.append(tr("%s: %s") % [tr(str(f["name"])), tr(" or ").join(how)])
+	if not locked.is_empty():
+		col.add_child(_wrap_label(tr("Still locked — %s") % "; ".join(locked), 11, true))
+	return col
+
+
+## The founding screen's oaths: optional vows, each harder and worth more
+## Laurels. They can't be dropped once the guild is founded.
+func _founding_oaths() -> Control:
+	var col := _vbox(6)
+	var bonus := 0.0
+	for o in _pending_oaths:
+		bonus += float(GameData.OATHS[o]["laurels"])
+	col.add_child(_label(tr("Oaths · +%d%% Laurels") % int(round(minf(bonus, GameData.OATH_LAURELS_CAP) * 100.0)) if not _pending_oaths.is_empty() else tr("Oaths (optional; they can't be dropped later)"), 14))
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 6)
+	row.add_theme_constant_override("v_separation", 6)
+	for id in GameData.OATHS:
+		var o: Dictionary = GameData.OATHS[id]
+		var b := Button.new()
+		b.toggle_mode = true
+		b.button_pressed = _pending_oaths.has(id)
+		b.text = tr("%s · +%d%%") % [tr(str(o["name"])), int(round(float(o["laurels"]) * 100.0))]
+		b.tooltip_text = tr(str(o["desc"]))
+		b.pressed.connect(func(k=id):
+			if _pending_oaths.has(k):
+				_pending_oaths.erase(k)
+			else:
+				_pending_oaths.append(k)
+			render())
+		row.add_child(b)
+	col.add_child(row)
+	for id in _pending_oaths:
+		col.add_child(_wrap_label(tr("%s: %s") % [tr(str(GameData.OATHS[id]["name"])), tr(str(GameData.OATHS[id]["desc"]))], 11, true))
+	return col
 
 
 ## The founding screen's Laurels: one-guild gifts from past guilds' legacy.
@@ -1547,6 +1627,8 @@ func _render_onboard(v: VBoxContainer) -> void:
 	v.add_child(crest_row)
 
 	if not (GameState.legacy.get("guilds", []) as Array).is_empty():
+		v.add_child(_founding_charters())
+		v.add_child(_founding_oaths())
 		v.add_child(_founding_gifts())
 	var found := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Found the Guild", func():
 		var n := edit.text.strip_edges()
@@ -1558,6 +1640,10 @@ func _render_onboard(v: VBoxContainer) -> void:
 			return
 		GameState.guild_name = n
 		GameState.guild_crest = pending_crest
+		GameState.apply_founding(_pending_founding)
+		_pending_founding = "free"
+		GameState.oaths = _pending_oaths.duplicate()
+		_pending_oaths.clear()
 		GameState.hire_starters()
 		GameState.apply_legacy_gifts(_pending_gifts)
 		_pending_gifts.clear()

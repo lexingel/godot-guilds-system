@@ -13,6 +13,7 @@ const FOE_R := {"combat": 14.0, "elite": 22.0, "boss": 36.0}
 var rng := RandomNumberGenerator.new()
 var region := "vale"
 var rank := 0
+var foe_mult := 1.0
 var map: Dictionary = {}
 var routes: Array = []     # entry to goal: {pts: Array[Vector2], cum: Array[float], len}
 var pads: Array = []       # {pos, tower ("" = empty), tier, cd, spent, cover}
@@ -56,6 +57,7 @@ func _init(region_id: String, rank_idx: int, defenders: Array, champion: Hero = 
 	cost_mult = float(opts.get("cost", 1.0))
 	sell_back = float(opts.get("sell_back", GameData.DEFENSE_SELL_BACK))
 	var hero_hp := float(opts.get("hero_hp", 1.0))
+	foe_mult = float(opts.get("foe_mult", 1.0))   # a tide of the Open Hollow
 	waves_total = GameData.DEFENSE_WAVES + (GameData.DEFENSE_CAMP_WAVES if region == "camp" else 0)
 	build_t = GameData.DEFENSE_FIRST_BUILD
 	_build_routes()
@@ -203,10 +205,10 @@ func _spawn(dt: float) -> void:
 func _add_foe(tier: String, r: int) -> Dictionary:
 	var b: Dictionary = GameData.BIOMES.get(region, GameData.BIOMES[["vale", "marsh", "ashen"][rng.randi() % 3]])
 	var name := str(GameData.BOSS_NAMES[rng.randi() % GameData.BOSS_NAMES.size()]) if tier == "boss" else str((b["elites"] if tier == "elite" else b["monsters"])[rng.randi() % (b["elites"] if tier == "elite" else b["monsters"]).size()])
-	var hp := GameData.DEFENSE_HP0 * (1.0 + GameData.DEFENSE_HP_PER_RANK * rank) * (1.0 + GameData.DEFENSE_HP_PER_WAVE * (wave - 1)) * float(GameData.DEFENSE_TIER_HP[tier]) * rng.randf_range(0.9, 1.1)
+	var hp := foe_mult * GameData.DEFENSE_HP0 * (1.0 + GameData.DEFENSE_HP_PER_RANK * rank) * (1.0 + GameData.DEFENSE_HP_PER_WAVE * (wave - 1)) * float(GameData.DEFENSE_TIER_HP[tier]) * rng.randf_range(0.9, 1.1)
 	_next_id += 1
 	var f := {"id": _next_id, "name": name, "tier": tier, "route": r, "d": 0.0, "pos": route_pos(r, 0.0), "hp": hp, "max_hp": hp,
-		"dmg": GameData.DEFENSE_DMG0 * (1.0 + GameData.DEFENSE_DMG_PER_RANK * rank) * float(GameData.DEFENSE_TIER_DMG[tier]),
+		"dmg": foe_mult * GameData.DEFENSE_DMG0 * (1.0 + GameData.DEFENSE_DMG_PER_RANK * rank) * float(GameData.DEFENSE_TIER_DMG[tier]),
 		"speed": float(GameData.DEFENSE_TIER_SPEED[tier]) * rng.randf_range(0.9, 1.15), "r": float(FOE_R[tier]),
 		"slow_t": 0.0, "slow": 0.0, "stun_t": 0.0, "burn_t": 0.0, "burn_dps": 0.0, "held_by": -1, "hit_cd": 0.5, "facing": 1.0, "dead": false, "flash": 0.0}
 	foes.append(f)

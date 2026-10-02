@@ -393,6 +393,10 @@ func _render_records(v: VBoxContainer) -> void:
 		b.button_pressed = records_tab == t[0]
 		tabs.add_child(b)
 	v.add_child(tabs)
+	if not GameState.oaths.is_empty():
+		var sworn_l := _wrap_label(tr("Oaths sworn: %s") % ", ".join(GameState.oaths.map(func(o): return tr(str(GameData.OATHS.get(o, {}).get("name", o))))), 13)
+		sworn_l.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		v.add_child(sworn_l)
 	match records_tab:
 		"stats": _render_stats(v)
 		"history": _render_history(v)
@@ -1596,11 +1600,14 @@ func _render_hall_of_guilds(v: VBoxContainer) -> void:
 		row.add_child(_icon(GameData.CREST_PATH[clampi(crest - 1, 0, GameData.CREST_PATH.size() - 1)], 32))
 		var col := _vbox(0)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_child(_label(str(g["name"]), 14))
+		var fd := str(g.get("founding", "free"))
+		col.add_child(_label(str(g["name"]) + ("" if fd == "free" else "  ·  " + tr(str(GameData.FOUNDINGS.get(fd, {}).get("name", "")))), 14))
 		var how := tr("Renewed the Accord") if str(g.get("ending", "")) == "renew" else tr("Broke the Accord") if str(g.get("ending", "")) == "break" else tr("Retired in Act %s") % tr(GameState._roman(maxi(1, int(g.get("act", 1)) - 1)))
 		var names: Array = g.get("remembered", [])
+		var kept: Array = g.get("oaths", [])
+		var oath_txt := (tr(" · oaths kept: %d") % kept.size()) if not kept.is_empty() else ""
 		col.add_child(_wrap_label(tr("%s · day %d · %d rifts sealed · +%d Laurels%s") % [how, int(g.get("day", 0)), int(g.get("rifts", 0)), int(g.get("laurels", 0)),
-			(tr(" · remembered: %s") % ", ".join(names)) if not names.is_empty() else ""], 12, true))
+			((tr(" · remembered: %s") % ", ".join(names)) if not names.is_empty() else "") + oath_txt], 12, true))
 		row.add_child(col)
 		v.add_child(row)
 	v.add_child(_hsep())
@@ -1611,6 +1618,15 @@ func _render_chronicle(v: VBoxContainer) -> void:
 	watch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	v.add_child(watch)
 	_render_hall_of_guilds(v)
+	if GameState.accord_ending != "":
+		v.add_child(_label(tr("What this guild can still finish · +%d Laurels each") % GameData.BOARD_LAURELS, 16))
+		for l in GameState.board_lines():
+			var done := GameState.board_done(str(l["id"]))
+			var ll := _label(("✓ " if done else "○ ") + tr(str(l["label"])), 13, not done)
+			v.add_child(ll)
+		if GameState.accord_ending == "break":
+			v.add_child(_label(tr("Tides of the Open Hollow: %d held of %d") % [GameState.tides_held, GameState.tide_count], 12, true))
+		v.add_child(_hsep())
 	v.add_child(_label("The world", 16))
 	for e in GameData.CHRONICLE_WORLD:
 		v.add_child(_label(str(e[0]), 14))
@@ -2058,7 +2074,42 @@ func _quest_note(q: Dictionary, w: float, h: float, taken_count: int) -> Control
 var _mgmt_last := "ops"   # the Management branch opened last (the strip opens on it)
 
 
+## Keepers of the Vale: the seven old Accord halls, what each costs and
+## gives, and Restore.
+func _render_accord_halls(v: VBoxContainer) -> void:
+	v.add_child(_label(tr("Keepers of the Vale · %d/%d halls restored") % [GameState.halls_restored.size(), GameData.ACCORD_HALLS.size()], 18))
+	v.add_child(_wrap_label("The rifts are shut. The old Accord guilds' halls stand empty across the Vale; restore them, and each keeps giving.", 12, true))
+	for h in GameData.ACCORD_HALLS:
+		var id := str(h["id"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var col := _vbox(0)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var done := GameState.halls_restored.has(id)
+		var nm := _label(tr(str(h["name"])), 14)
+		if done:
+			nm.add_theme_color_override("font_color", Palette.RANK_S)
+		col.add_child(nm)
+		col.add_child(_label(tr(str(h["bonus"])), 12, true))
+		row.add_child(col)
+		if done:
+			row.add_child(_label("Restored", 12, true))
+		else:
+			var c := GameState.hall_cost(id)
+			var lock := GameState.hall_lock(id)
+			var b := _button(tr("Restore · %d Gold · %d Essence") % [int(c[0]), int(c[1])], func(k=id):
+				_flavor_toast = GameState.restore_hall(k)
+				render())
+			b.disabled = lock != ""
+			b.tooltip_text = lock
+			row.add_child(b)
+		v.add_child(row)
+	v.add_child(_hsep())
+
+
 func _render_management(v: VBoxContainer) -> void:
+	if GameState.accord_ending == "renew":
+		_render_accord_halls(v)
 	if mgmt_branch == "":
 		mgmt_branch = _mgmt_last
 	_mgmt_last = mgmt_branch

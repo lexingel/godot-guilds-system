@@ -1035,3 +1035,84 @@ const FIFTY_RIFTS := [
 	"Fifty rifts. Dobbs works out what %s has cost the guild in wages and what they have brought home, then quietly tears up the page. Wen asks why. 'Some sums you don't show anyone,' says Dobbs. %s pretends not to hear.",
 	"Hesper gives %s her old Accord pin for their fiftieth rift. It is bent and tarnished and nobody has ever seen her take it off. %s wears it on the inside of their coat.",
 ]
+
+## Founding charters ("The Vale Remembers", section 2): what kind of guild
+## this is, picked at founding. Each rule is a multiplier read where that
+## system pays out (GameState.founding_rule). Free Company is today's game;
+## the others unlock with Laurels or by a deed in a past guild.
+const FOUNDINGS := {
+	"free": {"name": "Free Company", "desc": "As the Vale knows guilds: three heroes and 280 Gold."},
+	"mercenary": {"name": "Mercenary Company", "gold": 320, "contract_gold": 1.2, "wages": 1.15, "renown": 0.8, "laurels": 25,
+		"desc": "Hired swords: start with 600 Gold. Contracts pay 20% more Gold, wages are 15% higher, and Renown comes 20% slower. The Hollow Crown Company will make you an offer."},
+	"temple": {"name": "Temple Order", "gold": -80, "wages": 0.8, "recover": 1, "echo_renown": 2.0, "echo_essence": 0.5, "laurels": 25,
+		"desc": "Sworn to mend: start with 200 Gold. Wages are 20% lower and downed heroes are back a run sooner. An echo given back earns twice the Renown; one kept, half the Essence."},
+	"smugglers": {"name": "The Lantern's Smugglers", "gold": 70, "prices": 0.25, "quiet_pay": 1.4, "laurels": 30, "deed": "quiet",
+		"desc": "Mother Ilse's people: start with 350 Gold. Shop prices are 25% lower, the Last Lantern is never your rival, and keeping quiet in the Charter War pays 40% more Gold instead of 25%."},
+	"accord": {"name": "Last of the Accord", "ledger": 2.0, "breach_sooner": 1, "deed": "ending",
+		"desc": "Old Hesper's own guild: the Grandmaster's ledger pages turn up twice as often, but the Hollow knows you, and Riftbreaks come a day sooner."},
+}
+## How a charter is unlocked by a deed (a guild in the Hall of Guilds did it).
+const FOUNDING_DEEDS := {"quiet": "Kept quiet in a Charter War", "ending": "Finish a campaign"}
+## The Last of the Accord's own prologue (instead of PROLOGUE).
+const ACCORD_PROLOGUE := {"title": "The Night of Breaking", "subtitle": "Old Hesper remembers",
+	"text": "Hesper had a fever on the Night of Breaking and missed it. Every other guild of the Accord went into the rifts that night, hers too, and none came back. Twenty years on she has a hall again, three recruits, and the old oath: close what opens, share what you find, never sell a rift. She means to keep it this time."}
+## A Mercenary Company's Act II: the Hollow Crown Company comes calling.
+const MERCENARY_OFFER := {"title": "An offer from the Company", "subtitle": "Captain Morrow",
+	"text": "Captain Morrow sends a man with a ledger and a good coat. The Hollow Crown Company would take your contracts off your hands, and your guild with them, at a fair price. He leaves the paper on the table. Nobody signs it. Dobbs reads it twice."}
+
+## Oaths ("The Vale Remembers", section 3): optional vows sworn at founding,
+## each harder in one way and worth more Laurels (+%, capped). They can't be
+## dropped; the Hall of Guilds shows which a guild kept.
+const OATHS := {
+	"never_sell": {"name": "Never Sell a Rift", "laurels": 0.10, "desc": "The Accord's own rule: in the Charter War, keeping quiet is not an option."},
+	"by_hand": {"name": "By Hand", "laurels": 0.15, "desc": "No Quick fight: every fight is played, or set to Auto."},
+	"lean_purse": {"name": "Lean Purse", "laurels": 0.15, "desc": "Wages are 50% higher."},
+	"no_rest": {"name": "No Rest", "laurels": 0.10, "desc": "Medical Bay beds don't speed recovery."},
+	"hollow_touched": {"name": "Hollow-Touched", "laurels": 0.20, "desc": "Every foe has 15% more health."},
+	"long_watch": {"name": "The Long Watch", "laurels": 0.15, "desc": "Riftbreaks come twice as often."},
+}
+const OATH_LAURELS_CAP := 0.6
+
+## The ending sets the postgame ("The Vale Remembers", section 4).
+## Renew: Keepers of the Vale. Seven halls of the old Accord guilds stand
+## empty; restoring one costs Gold and Essence (more for each one before
+## it) and gives a lasting bonus. The Grandmaster's comes last.
+const ACCORD_HALLS := [
+	{"id": "iron_oath", "name": "Hall of the Iron Oath", "kind": "slots", "value": 1, "bonus": "+1 hero slot",
+		"text": "The Iron Oath trained shield-walls. Their drill yard is still marked out in white stones, and Hesper walks it once, end to end, before she lets the recruits in."},
+	{"id": "green_hand", "name": "Hall of the Green Hand", "kind": "beds", "value": 1, "bonus": "+1 Medical Bay bed",
+		"text": "The Green Hand were healers. Their shelves still smell of feverfew. Wen finds a ledger of everyone they ever patched up, and reads names out loud for an hour."},
+	{"id": "quiet_coin", "name": "Hall of Quiet Coin", "kind": "gold", "value": 0.10, "bonus": "Contracts pay 10% more Gold",
+		"text": "Quiet Coin kept the Accord's accounts. Dobbs is in their counting room before the dust settles, and comes out holding a pen like a holy relic."},
+	{"id": "ninth_lamp", "name": "Hall of the Ninth Lamp", "kind": "essence", "value": 0.10, "bonus": "Contracts pay 10% more Essence",
+		"text": "The Ninth Lamp studied Essence. Their lamps still hold a little of it, and light themselves when someone they would have liked walks in."},
+	{"id": "long_roads", "name": "Hall of Long Roads", "kind": "wages", "value": 0.10, "bonus": "Wages 10% lower",
+		"text": "Long Roads took in strays and taught them a trade. Word gets around: heroes ask to work for the guild that opened it again, and ask for less."},
+	{"id": "open_hand", "name": "Hall of the Open Hand", "kind": "prices", "value": 0.10, "bonus": "Shop prices 10% lower",
+		"text": "The Open Hand traded with every village in the Vale. The merchants remember the sign over the door, and start giving the guild their old prices."},
+	{"id": "grandmaster", "name": "The Grandmaster's Hall", "kind": "title", "value": 0, "bonus": "The title Keepers of the Vale, and 20 Laurels",
+		"text": "The last hall is the one the Accord was sworn in. Its doors open with the key Pip stole from Morrow. Inside is a long table, forty-one chairs, and one that someone has dusted every year. The Vale has its keepers again."},
+]
+const HALL_COST := [5000, 2000]          # the first hall: Gold, Essence
+const HALL_COST_STEP := [3000, 1500]     # each hall after it costs this much more
+const GRANDMASTER_HALL_COST := [25000, 12000]
+const GRANDMASTER_LAURELS := 20
+## Break: the Open Hollow. Every TIDE_DAYS a tide breaks over the Vale, a
+## Riftbreak of Rank A strength that grows TIDE_GROWTH with each tide. It
+## can't be closed early; holding it pays TIDE_LAURELS.
+const TIDE_DAYS := 7
+const TIDE_RANK := "A"
+const TIDE_GROWTH := 0.10
+const TIDE_LAURELS := 2
+## The Chronicle as a completion board once the legacy is written: each line
+## finished afterwards adds BOARD_LAURELS to the legacy.
+const BOARD_LAURELS := 2
+const COMPLETION_BOARD := [
+	{"id": "champions", "label": "Every champion freed"},
+	{"id": "ledger", "label": "Every page of the Grandmaster's ledger"},
+	{"id": "echoes", "label": "Every echo answered"},
+	{"id": "morrow", "label": "Captain Morrow beaten"},
+	{"id": "charter", "label": "The Royal Charter won"},
+	{"id": "halls", "label": "Every Accord hall restored", "ending": "renew"},
+	{"id": "tides", "label": "Five tides of the Open Hollow held", "ending": "break"},
+]

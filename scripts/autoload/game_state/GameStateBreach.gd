@@ -52,7 +52,7 @@ func defense_opts() -> Dictionary:
 			towers.append(pair[1])
 	return {"towers": towers, "max_tier": 3 if e >= 3 else 2, "supplies": 20 * p, "integrity": 2 * p,
 		"tower_dmg": 1.0 + 0.06 * a, "cost": 1.0 - 0.06 * e, "sell_back": 1.0 if e >= 5 else GameData.DEFENSE_SELL_BACK,
-		"hero_hp": 1.0 + 0.06 * lvl("def.watch")}
+		"hero_hp": 1.0 + 0.06 * lvl("def.watch"), "foe_mult": tide_strength()}
 
 
 ## Idle heroes fit to stand at a post (not wounded), strongest first.
@@ -62,15 +62,21 @@ func defense_candidates() -> Array[Hero]:
 	return out
 
 
-## Rewards scale with the breach's ladder rank.
+## Rewards scale with the breach's ladder rank (and a tide's strength).
 func breach_scale() -> float:
-	return 1.0 + GameData.BREACH_RANK_SCALE * int(breach.get("rank", 0))
+	return (1.0 + GameData.BREACH_RANK_SCALE * int(breach.get("rank", 0))) * tide_strength()
+
+
+## How much stronger this tide is than the first (1.0 for a normal breach).
+func tide_strength() -> float:
+	return 1.0 + GameData.TIDE_GROWTH * (int(breach.get("tide", 1)) - 1)
 
 
 var _resolving := false
 
 
 func _on_day_passed() -> void:
+	check_completion_board()
 	if not breach_unlocked() or _resolving or accord_ending == "renew":   # the Accord renewed: the rifts stay shut
 		return
 	if breach.is_empty():
@@ -88,6 +94,14 @@ func _on_day_passed() -> void:
 
 ## A new breach: your best sealed rank, sometimes one above if it's open.
 func _swell_breach() -> void:
+	if accord_ending == "break":   # the Open Hollow: a tide, stronger each time
+		tide_count += 1
+		var tr_idx := GameData.rift_rank_index(GameData.TIDE_RANK)
+		breach = {"rank": tr_idx, "region": "camp" if tr_idx >= GameData.rift_rank_index(GameData.BREACH_CAMP_RANK) else pick_biome(),
+			"started": day, "breaks_on": day + breach_warn_days(), "broken": false, "tide": tide_count}
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Tide %d of the Open Hollow") % tide_count,
+			"text": tr("It breaks over %s in %d days, %d%% stronger than the first. A tide can't be sealed away; it has to be held.") % [breach_place(), breach_days_left(), int(round(GameData.TIDE_GROWTH * 100.0 * (tide_count - 1)))]})
+		return
 	var best := maxi(0, best_rift_rank_sealed)
 	var idx := best
 	if randf() < GameData.BREACH_UP_CHANCE and best + 1 < GameData.RIFT_RANKS.size() and ladder_rank_lock(str(GameData.RIFT_RANKS[best + 1]["id"])) == "":
@@ -100,7 +114,7 @@ func _swell_breach() -> void:
 
 ## Sealing a ladder rift at or above the breach's rank closes it in time.
 func _on_rift_sealed(rank_idx: int) -> void:
-	if not breach_active() or breach_broken() or rank_idx < int(breach["rank"]):
+	if not breach_active() or breach_broken() or rank_idx < int(breach["rank"]) or breach.has("tide"):
 		return
 	var ess := int(round(GameData.BREACH_PREVENT_ESSENCE * breach_scale()))
 	crystals += ess
@@ -113,7 +127,10 @@ func _on_rift_sealed(rank_idx: int) -> void:
 func _close_breach() -> void:
 	breach = {}
 	var wait := randi_range(GameData.BREACH_EVERY_MIN, GameData.BREACH_EVERY_MAX)
-	breach_next_day = day + (maxi(2, wait / 2) if accord_ending == "break" else wait)   # the Accord broken: the Hollow rises
+	wait -= int(founding_rule("breach_sooner", 0))   # the Hollow knows the Last of the Accord
+	if sworn("long_watch"):
+		wait = maxi(2, wait / 2)
+	breach_next_day = day + (GameData.TIDE_DAYS if accord_ending == "break" else wait)   # the Accord broken: a tide every week
 
 
 ## The defense's outcome. result: {held: bool, integrity: 0-1 kept,
@@ -138,6 +155,10 @@ func resolve_breach(result: Dictionary) -> Dictionary:
 		out["crystals"] = int(round(GameData.BREACH_HELD_ESSENCE * breach_scale() * (0.5 + 0.5 * keep)))
 		coins += int(out["coins"])
 		crystals += int(out["crystals"])
+		if breach.has("tide"):
+			tides_held += 1
+			_add_postgame_laurels(GameData.TIDE_LAURELS, {"best_tide": tides_held})
+			out["laurels"] = GameData.TIDE_LAURELS
 		_news(tr("The guild held against a Rank %s Riftbreak.") % tr(breach_rank_id()))
 	else:
 		# Never the coming payday's wages: the loss comes out of what's above the bill.
