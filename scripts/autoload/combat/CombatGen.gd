@@ -454,9 +454,13 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 func _designed_encounter(diff: Dictionary, floor_idx: int) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var pool: Array = (GameData.ENCOUNTERS.get(str(diff.get("biome", "")), []) as Array).filter(func(e): return int(e["min_floor"]) <= floor_idx)
-	if pool.is_empty() or randf() >= GameData.ENCOUNTER_CHANCE:
+	var enc: Dictionary = {}
+	if GameState.company_hunting() and not GameState.run.has("tower") and randf() < GameData.COMPANY_AMBUSH_CHANCE:
+		enc = GameData.COMPANY_AMBUSH   # the Charter War: the exposed Company strikes back
+	elif pool.is_empty() or randf() >= GameData.ENCOUNTER_CHANCE:
 		return out
-	var enc: Dictionary = pool[randi() % pool.size()]
+	else:
+		enc = pool[randi() % pool.size()]
 	for k in (enc["members"] as Array).size():
 		var mem: Array = enc["members"][k]
 		var m := gen_monster(diff, floor_idx, "combat")

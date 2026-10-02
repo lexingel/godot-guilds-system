@@ -40,6 +40,9 @@ func _diff() -> Dictionary:
 		diff = _apply_daily(diff)
 	if int(run.get("finale", 0)) > 0:
 		return _apply_finale(diff)
+	if run.get("morrow", false):   # the Charter War: Morrow is this rift's boss
+		diff = diff.duplicate()
+		diff["boss_name"] = GameData.MORROW_BOSS
 	return _apply_training(diff) if run.get("training", false) else diff
 
 
@@ -218,8 +221,32 @@ func answer_echo(choice: String) -> void:
 	else:
 		crystals += int(card.get("essence", echo_essence()))
 		_news(tr("An echo was kept: %s (+%d Essence).") % [tr(str(card["title"])), int(card.get("essence", 0))])
+		_echo_touch(str(card["echo"]))
+	if echoes_seen.size() == 3:   # the third echo brings Ezra
+		var ez: Dictionary = GameData.EZRA_VISIT["gave" if echoes_returned * 2 >= echoes_seen.size() else "kept"]
+		pending_stories.append({"title": tr(str(ez["title"])), "subtitle": tr(str(ez["subtitle"])), "text": tr(str(ez["text"]))})
 	save()
 	state_changed.emit()
+
+
+## A kept echo may touch a hero who recognises what's in it (Echo-Touched).
+func _echo_touch(echo_id: String) -> void:
+	var pool: Array = heroes.filter(func(h): return not h.is_champion and not h.quirks.has("Echo-Touched"))
+	if pool.is_empty() or randf() >= GameData.ECHO_TOUCH_CHANCE:
+		return
+	var h: Hero = pool[randi() % pool.size()]
+	h.history["echoes"] = 1
+	check_earned_quirks(h)
+	var n := tr(str(h.name.split(" the ")[0]))
+	var t: Dictionary = GameData.ECHO_TOUCH
+	pending_stories.append({"title": tr(str(t["title"])) % n, "subtitle": tr(str(t["subtitle"])),
+		"text": tr(str(t["text"])) % [n, tr(str(GameData.ECHO_HOLDS.get(echo_id, "something"))), n, n]})
+
+
+## What the Vale remembers (the campaign's end, after three echoes or more).
+func _vale_remembers() -> Dictionary:
+	var v: Dictionary = GameData.VALE_REMEMBERS["gave" if echoes_returned * 2 >= echoes_seen.size() else "kept"]
+	return {"title": tr(str(v["title"])), "subtitle": tr(str(v["subtitle"])), "text": tr(str(v["text"]))}
 
 
 ## The Charter War's turn: "expose" the Hollow Crown Company or keep "quiet"
@@ -296,6 +323,8 @@ func choose_accord_ending(choice: String, hero_id: String = "") -> String:
 	if not pending_stories.is_empty() and pending_stories[0].has("choices"):
 		pending_stories.pop_front()
 	pending_stories.push_front(_the_end_card())
+	if echoes_seen.size() >= 3:
+		pending_stories.push_front(_vale_remembers())
 	pending_stories.push_front(card)
 	_news(card["title"] + ".")
 	save()

@@ -71,7 +71,8 @@ var guide_hidden: bool = false   # the camp's "Getting started" checklist was di
 var last_party: Array[String] = []   # the heroes who went out last (party assembly opens on them)
 var party_presets: Array = [[], [], []]   # saved loadouts: [[hero id, row], ...] each
 var charter_choice: String = ""   # the Charter War's turn: "", "expose" or "quiet"
-var charter_result: String = ""   # the Crown's hearing after Act III: "", "won" or "lost"
+var charter_result: String = ""
+var morrow_defeated: bool = false   # the Charter War's last fight (after exposing the Company)   # the Crown's hearing after Act III: "", "won" or "lost"
 var echoes_seen: Array = []      # What the Rifts Take: echoes met (GameData.ECHOES ids)
 var echoes_returned: int = 0
 var accord_hero: String = ""     # who took the forty-first post (renew)
@@ -304,6 +305,12 @@ func charter_pay(essence: bool) -> float:
 	if not essence and charter_choice == "quiet":
 		m *= GameData.CHARTER_QUIET_PAY
 	return m
+
+
+## The exposed Hollow Crown Company hunts the guild (Act III on, until
+## Captain Morrow is beaten): ambushes in rifts, and Morrow as a boss.
+func company_hunting() -> bool:
+	return charter_choice == "expose" and not morrow_defeated and campaign_act >= 3
 
 
 ## A line in the guild's news (the Ledger), newest first.
@@ -637,7 +644,7 @@ func save() -> void:
 		"rifts_sealed": rifts_sealed, "best_rift_rank_sealed": best_rift_rank_sealed, "rival_name": rival_name, "rival_renown": rival_renown, "rival_ahead": rival_ahead, "feast_week": feast_week, "training_week": training_week, "trained_this_week": trained_this_week, "payday_report": payday_report, "week_start_coins": week_start_coins, "hero_request": hero_request, "wage_raise": wage_raise, "pay_rate": pay_rate, "contest_start": contest_start, "rival_event": rival_event, "session": session, "guild_news": guild_news, "breach": breach, "breach_next_day": breach_next_day, "damaged": damaged,
 		"triage_used_this_cycle": triage_used_this_cycle,
 		"pending_shop_boost": pending_shop_boost,
-		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
+		"guide_hidden": guide_hidden, "last_party": last_party, "relics_found": relics_found, "accord_pages": accord_pages, "accord_ending": accord_ending, "echoes_seen": echoes_seen, "charter_choice": charter_choice, "charter_result": charter_result, "morrow_defeated": morrow_defeated, "echoes_returned": echoes_returned, "accord_hero": accord_hero,
 		"run": _run_for_save(),
 		
 		"monsters_seen": monsters_seen, "bosses_defeated": bosses_defeated, "hazards_seen": hazards_seen,

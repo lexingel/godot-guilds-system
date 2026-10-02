@@ -989,3 +989,49 @@ const MEMORIAL_LINES := {
 	"devout": ["%s prayed before every rift. We hope someone answered.", "%s kept the candles lit in the hall. We have kept them lit since."],
 	"arcane": ["%s left a notebook full of questions. Wen is working through them.", "%s understood the Hollow better than any of us, and went to see it anyway."],
 }
+
+
+## The Charter War's last move. A guild that exposed the Hollow Crown
+## Company has made an enemy: from Act III its sellswords sometimes ambush
+## the guild's rifts, and Captain Morrow waits at the bottom of the next
+## Rank C+ rift, holding the key he opens rifts with. Beat him and the
+## Company is finished.
+const COMPANY_AMBUSH_CHANCE := 0.25
+const COMPANY_AMBUSH := {"name": "Company Ambush", "min_floor": 0,
+	"hint": "Morrow's sellswords, sent to settle a debt. The crossbowman snipes from the back; close on him first.",
+	"members": [["Company Sellsword", 0.4, 0.4], ["Company Sellsword", 0.3, 0.3], ["Company Crossbowman", 0.3, 0.4]]}
+const MORROW_BOSS := "Captain Morrow, of the Hollow Crown"
+const MORROW_REWARD := {"coins": 300, "reputation": 10}
+const MORROW_WAITS := {"title": "Morrow is waiting", "text": "Word comes as you set out: Captain Morrow is at the bottom of this rift, and he has brought friends."}
+const MORROW_DOWN := {"title": "Morrow's key", "subtitle": "The Charter War",
+	"text": "Morrow goes down laughing, which is somehow worse. On his belt hangs an old iron key with the Accord's sigil: the key Pip swears she stole from a rift-lord, and the one he has been opening rifts with. By the end of the week the Company's banners are gone from the Vale.\n\n(+300 Gold, +10 Renown. No more Company ambushes.)"}
+
+
+## What the Rifts Take, followed up. A kept echo may touch a hero (they
+## recognise what's in it; the Echo-Touched quirk). The third echo brings
+## Ezra the Pale, and the campaign's end says what the Vale remembers, both
+## by how much was given back.
+const ECHO_TOUCH_CHANCE := 0.5
+## What each echo holds, for the scene ("There was %s in it").
+const ECHO_HOLDS := {"name": "a child's name", "street": "a street with a blue door", "song": "a song",
+	"face": "a young ranger's face", "bread": "the smell of bread", "oath": "the Accord's oath"}
+const ECHO_TOUCH := {"title": "%s remembers", "subtitle": "An echo, kept",
+	"text": "%s has been quiet since you kept the echo. There was %s in it, and %s knew it, from a life they don't remember living.\n\n(%s is Echo-Touched: +6%% ability power.)"}
+const EZRA_VISIT := {
+	"gave": {"title": "Ezra the Pale", "subtitle": "What the Rifts Take",
+		"text": "A pale man with a lantern has been following the echoes. Ezra studies what the rifts take from people, and he keeps a little of it in the lantern, for safekeeping. He asks what you did with yours. When you tell him, he bows, which nobody in the Vale has seen him do."},
+	"kept": {"title": "Ezra the Pale", "subtitle": "What the Rifts Take",
+		"text": "A pale man with a lantern has been following the echoes. Ezra studies what the rifts take from people. He asks to see your vault, goes very still, and asks how much of it you have spent, and on what, and whether you kept a list. 'It was yours to spend,' he says at the door. 'I hope it was worth what it cost them.'"},
+}
+const VALE_REMEMBERS := {
+	"gave": {"title": "What the Vale remembers", "subtitle": "What the Rifts Take",
+		"text": "In the weeks after, people stop in the street and say names out loud. A song nobody knew is sung at every harvest. The empty guild halls fill with flowers, and yours gets the most, from people who never met you."},
+	"kept": {"title": "What the Vale remembers", "subtitle": "What the Rifts Take",
+		"text": "Something leaves the Vale with the last of the rifts, quietly, and nobody can say what. Your guild is the strongest the Vale has ever had. Ezra's lantern is found on your doorstep one morning, empty, with no note."},
+}
+## The Guildhold Chronicle: a hero's fiftieth sealed rift (%s: the hero).
+const FIFTY_RIFTS := [
+	"Wen asks %s for a line for the chronicle: something learned in fifty rifts. %s thinks about it for a long time. 'Bring more bandages than you think,' they say. Wen writes it down exactly.",
+	"Fifty rifts. Dobbs works out what %s has cost the guild in wages and what they have brought home, then quietly tears up the page. Wen asks why. 'Some sums you don't show anyone,' says Dobbs. %s pretends not to hear.",
+	"Hesper gives %s her old Accord pin for their fiftieth rift. It is bent and tarnished and nobody has ever seen her take it off. %s wears it on the inside of their coat.",
+]

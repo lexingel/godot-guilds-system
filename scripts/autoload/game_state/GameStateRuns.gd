@@ -291,6 +291,12 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 					bosses_defeated.append(bname)
 				bosses_won += 1
 				_bump("boss:" + bname)
+				if bname == "Captain Morrow" and run.get("morrow", false) and not morrow_defeated:
+					morrow_defeated = true
+					coins += int(GameData.MORROW_REWARD["coins"])
+					add_reputation(int(GameData.MORROW_REWARD["reputation"]))
+					pending_stories.append({"title": tr(str(GameData.MORROW_DOWN["title"])), "subtitle": tr(str(GameData.MORROW_DOWN["subtitle"])), "text": tr(str(GameData.MORROW_DOWN["text"]))})
+					_news(tr("Captain Morrow is beaten; the Hollow Crown Company is finished."))
 			elif kind == "elite":
 				elites_won += 1
 				if not run.has("tower"):
@@ -849,6 +855,10 @@ func seal_rift() -> void:
 	sealers.assign(current_party())
 	for i in sealers.size():
 		sealers[i].history["rifts_cleared"] = int(sealers[i].history.get("rifts_cleared", 0)) + 1
+		if int(sealers[i].history["rifts_cleared"]) == 50 and not sealers[i].is_champion:   # the Chronicle
+			var fn := tr(str(sealers[i].name.split(" the ")[0]))
+			pending_stories.append({"title": tr("Fifty rifts"), "subtitle": tr(str(sealers[i].name)),
+				"text": tr(str(GameData.FIFTY_RIFTS[randi() % GameData.FIFTY_RIFTS.size()])) % [fn, fn]})
 		for j in range(i + 1, sealers.size()):
 			var key := _bond_key(sealers[i].id, sealers[j].id)
 			var before := GameData.bond_level(int(bonds.get(key, 0)))
@@ -1199,6 +1209,11 @@ func highest_open_rank() -> String:
 
 func start_ladder_rift(rank_id: String, hero_ids: Array[String], starting_relic: Relic) -> void:
 	start_run(str(GameData.find_rift_rank(rank_id)["base"]), hero_ids, starting_relic, rank_id)
+	# The Charter War: Morrow waits at the bottom of the next Rank C+ rift.
+	if company_hunting() and GameData.rift_rank_index(rank_id) >= GameData.rift_rank_index("C") and not run.is_empty():
+		run["morrow"] = true
+		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr(str(GameData.MORROW_WAITS["title"])), "text": tr(str(GameData.MORROW_WAITS["text"]))})
+		save()
 
 
 func retreat_now() -> void:

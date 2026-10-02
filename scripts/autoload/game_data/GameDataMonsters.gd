@@ -319,6 +319,8 @@ const BOSS_PROFILES := {
 		"hint": "Sunder tears the wards off the front row and hits hard, and he angers every round. Rotate the front row and end it quickly."},
 	"Drevok": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Ember Oracle", "Ash Harrier"], "kit": ["brand", "roar"],
 		"hint": "Brand marks a hero to take 50% more damage. At half health he calls fire cultists. Guard the branded hero."},
+	"Captain Morrow": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Company Sellsword", "Company Crossbowman"], "kit": ["snipe", "brand", "sweep"],
+		"hint": "Morrow brands his mark and his crossbowmen take the shot. At half health he whistles up his sellswords. Guard the branded hero."},
 	"The Terms": {"mechanics": ["warded", "regen"], "phase": "summon", "summons": ["Hollow Reaver", "Rift Wisp"], "kit": ["harvest", "drown", "brand", "immolate"],
 		"hint": "The bargain fights with every move it ever bought: Harvest, the Drowning Tide, Brand and Immolate. At half health it calls up what it has claimed. Cleanse, guard the branded, and keep the pressure on."},
 	"Sythrane": {"mechanics": ["enrage", "regen"], "phase": "barrier", "summons": [], "kit": ["immolate", "roar", "sweep"],

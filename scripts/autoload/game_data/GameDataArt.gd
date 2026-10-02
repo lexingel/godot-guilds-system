@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"The Hollow Crown Company strikes back: expose them and from Act III their sellswords ambush your rifts, and Captain Morrow waits at the bottom of a Rank C+ rift with the key he opens rifts with. A kept echo can now touch a hero who recognises what's in it (Echo-Touched); the third echo brings Ezra the Pale, and the campaign's end says what the Vale remembers. A hero's fiftieth rift gets a line in the Chronicle.",
 	"New sound effects throughout (free CC0 sounds, picked by ear). The Charter War comes to a head: as Act III opens, Mother Ilse brings proof the Hollow Crown Company opens rifts for profit. Expose them or keep quiet; when Act III ends, the Crown grants its Royal Charter to the guild with the most Renown. Wen now writes a line for every hero on the Memorial, and a scene when a bond reaches its peak.",
 	"The opening is narrated now, over its own music, with two new scenes: the Accord sealing a rift, and the villagers waiting for a guild. Watch it again from Settings or the Chronicle.",
 	"An opening cinematic: the Night of Breaking, how the old guilds of the Accord vanished, ending on your own guild. It plays when you found a guild; watch it again from Settings or Library > Codex > Chronicle.",
@@ -407,6 +408,9 @@ static func hero_combat_frames(cls_id: String, pool_id: String, action: String) 
 		return subclass_anim_frames(pool_id, action)
 	return hero_anim_frames(cls_id, action)
 const MONSTER_SPRITE_PATH := {
+	"company_sellsword": "res://assets/monsters/company_sellsword.png",
+	"company_crossbowman": "res://assets/monsters/company_crossbowman.png",
+	"captain_morrow": "res://assets/monsters/captain_morrow.png",
 	"ember_whelp": "res://assets/monsters/ember_whelp.png",
 	"sable_fang": "res://assets/monsters/sable_fang.png",
 	"marrow_crawler": "res://assets/monsters/marrow_crawler.png",
@@ -467,6 +471,7 @@ const MONSTER_NAME_SPRITE := {
 	"Storm-Called Elite": "storm_called_elite", "Ashen Broodlord": "ashen_broodlord",
 	"Vaelith": "vaelith", "Korrath": "korrath", "Nyxara": "nyxara",
 	"Drevok": "drevok", "Sythrane": "sythrane", "The Terms": "sythrane",
+	"Company Sellsword": "company_sellsword", "Company Crossbowman": "company_crossbowman", "Captain Morrow": "captain_morrow",
 	"Hedge Warden": "hedge_warden", "Carrion Crier": "carrion_crier", "Rootbound Thrall": "rootbound_thrall",
 	"Leech Priest": "leech_priest", "Mire Sniper": "mire_sniper", "Drowned Bellringer": "drowned_bellringer",
 	"Slag Golem": "slag_golem", "Ember Oracle": "ember_oracle", "Ash Harrier": "ash_harrier",

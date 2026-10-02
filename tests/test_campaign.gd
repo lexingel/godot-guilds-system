@@ -221,3 +221,59 @@ func run() -> void:
 	for sc in GameData.BOND_SCENES:
 		bond_ok = bond_ok and str(sc).count("%s") in [2, 3]
 	check(bond_ok, "bond scenes name the pair")
+
+	# The Charter War's last move: the exposed Company hunts the guild.
+	GameState.campaign_act = 3
+	GameState.charter_choice = "expose"
+	GameState.morrow_defeated = false
+	check(GameState.company_hunting(), "exposing the Company makes an enemy (Act III on)")
+	var ambushed := false
+	var cdiff := {"biome": "vale", "monster_hp": 50.0, "monster_dmg": 8.0}
+	for i in 80:
+		var enc := Combat._designed_encounter(cdiff, 1)
+		if not enc.is_empty() and str(enc[0].get("encounter", {}).get("name", "")) == "Company Ambush":
+			ambushed = true
+			check(enc.any(func(m): return str(m["name"]) == "Company Crossbowman"), "its sellswords and a crossbowman")
+			break
+	check(ambushed, "the Company ambushes the guild's rifts")
+	for nm in ["Company Sellsword", "Company Crossbowman", "Captain Morrow"]:
+		check(GameData.MONSTER_NAME_SPRITE.has(nm) and ResourceLoader.exists(GameData.sprite_for_monster(nm)), "%s has art" % nm)
+	GameState.finish_run()
+	GameState.run = {}
+	GameState.start_ladder_rift("C", ids, null)
+	check(GameState.run.get("morrow", false) and str(GameState._diff().get("boss_name", "")) == GameData.MORROW_BOSS, "Morrow waits at the bottom of the next Rank C+ rift")
+	GameState.finish_run()
+	GameState.morrow_defeated = true
+	check(not GameState.company_hunting(), "beating Morrow ends it")
+	GameState.charter_choice = ""
+
+	# What the Rifts Take, followed up: an echo can touch a hero, the third
+	# brings Ezra, and the end says what the Vale remembers.
+	GameState.campaign_act = 2
+	GameState.echoes_seen.clear()
+	GameState.echoes_returned = 0
+	var touched := false
+	for i in 30:
+		GameState.pending_stories.clear()
+		GameState.echoes_seen.clear()
+		GameState.maybe_echo()
+		while GameState.pending_stories.is_empty():
+			GameState.maybe_echo()
+		GameState.answer_echo("keep")
+		if GameState.heroes.any(func(h): return h.quirks.has("Echo-Touched")):
+			touched = true
+			break
+	check(touched, "a kept echo can touch a hero (Echo-Touched)")
+	check(GameState.quirk_text("Echo-Touched") != "", "and the quirk says what it does")
+	GameState.pending_stories.clear()
+	GameState.echoes_seen.assign(["name", "street"])
+	GameState.echoes_returned = 2
+	GameState.pending_stories.append({"kind": "echo", "echo": "song", "title": "A Song", "text": "", "choices": ["return", "keep"], "essence": 50})
+	GameState.echoes_seen.append("song")
+	GameState.answer_echo("return")
+	check(GameState.pending_stories.any(func(c): return str(c["title"]) == "Ezra the Pale"), "the third echo brings Ezra")
+	check(str(GameState._vale_remembers()["text"]).contains("flowers"), "giving most back: the Vale remembers")
+	GameState.echoes_returned = 0
+	check(str(GameState._vale_remembers()["text"]).contains("lantern"), "keeping most: something leaves the Vale")
+	for sc in GameData.FIFTY_RIFTS:
+		check(str(sc).count("%s") == 2, "a fifty-rift scene names its hero twice")

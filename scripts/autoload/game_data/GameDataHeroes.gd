@@ -58,6 +58,8 @@ const QUIRKS := {
 		"effects": [{"kind": "dodge_pct", "value": 0.20, "cond": {"hp_below": 0.3}}]},
 	"Veteran": {"origin": "earned", "id": "veteran", "stat": "rifts_cleared", "need": 5, "arch": "guardian", "stats": {"hp_pct": 0.08}},
 	"Old Guard": {"origin": "earned", "id": "old_guard", "stat": "rifts_cleared", "need": 15, "arch": "guardian", "stats": {"wipe_guard": 0.05}},
+	# What the Rifts Take: a kept echo that a hero recognised (GameState.answer_echo).
+	"Echo-Touched": {"origin": "earned", "id": "echo_touched", "stat": "echoes", "need": 1, "arch": "sustain", "stats": {"ability_power": 0.06}},
 }
 const SCARS_MAX := 2
 const QUIRK_TREAT_COST := 30

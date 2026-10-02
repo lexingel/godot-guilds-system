@@ -71,6 +71,7 @@ func reset() -> void:
 	echoes_seen = []
 	charter_choice = ""
 	charter_result = ""
+	morrow_defeated = false
 	echoes_returned = 0
 	run = {}
 	monsters_seen = []
@@ -276,6 +277,7 @@ func load_save() -> bool:
 	echoes_seen = data.get("echoes_seen", [])
 	charter_choice = str(data.get("charter_choice", ""))
 	charter_result = str(data.get("charter_result", ""))
+	morrow_defeated = bool(data.get("morrow_defeated", false))
 	echoes_returned = int(data.get("echoes_returned", 0))
 	# Guilds that finished the campaign before Act IV existed start it now.
 	if campaign_act == 4 and not hints_seen.has("act4_intro"):
