@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Easier to read: the game's text is now set in Lato, wider and clearer at 1080p and below, and the opening's captions sit on a dark plate in a sturdier book face. Back on Settings works again after pressing the gear a second time.",
 	"The Hollow Crown Company strikes back: expose them and from Act III their sellswords ambush your rifts, and Captain Morrow waits at the bottom of a Rank C+ rift with the key he opens rifts with. A kept echo can now touch a hero who recognises what's in it (Echo-Touched); the third echo brings Ezra the Pale, and the campaign's end says what the Vale remembers. A hero's fiftieth rift gets a line in the Chronicle.",
 	"New sound effects throughout (free CC0 sounds, picked by ear). The Charter War comes to a head: as Act III opens, Mother Ilse brings proof the Hollow Crown Company opens rifts for profit. Expose them or keep quiet; when Act III ends, the Crown grants its Royal Charter to the guild with the most Renown. Wen now writes a line for every hero on the Memorial, and a scene when a bond reaches its peak.",
 	"The opening is narrated now, over its own music, with two new scenes: the Accord sealing a rift, and the villagers waiting for a guild. Watch it again from Settings or the Chronicle.",

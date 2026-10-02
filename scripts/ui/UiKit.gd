@@ -11,7 +11,7 @@ extends Control
 const DISPLAY_FONT := preload("res://assets/fonts/Cinzel-Bold.ttf")
 
 
-const BODY_FONT := preload("res://assets/fonts/Overpass-Regular.ttf")
+const BODY_FONT := preload("res://assets/fonts/Lato-Regular.ttf")
 
 
 var screen: String = "title"     # title | load_game | credits | onboard | rift_hall | party_assembly | rift_run | camp | crafting_hall | settings

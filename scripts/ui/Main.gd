@@ -1,7 +1,7 @@
 extends GuildViews
 ## Root UI controller — mirrors guild-system.html's render() function: one
 ## place that clears and rebuilds the current screen's Controls from
-## GameState, rather than a scene per screen. Uses the Cinzel/Overpass font
+## GameState, rather than a scene per screen. Uses the Cinzel/Lato font
 ## pairing and a themed panel hierarchy (CardPanelViolet/CardPanelEmber/
 ## StatTileViolet/StatTileEmber) via guild_theme.tres.
 ##
@@ -904,6 +904,15 @@ func _quick_nav() -> Control:
 	return col
 
 
+## Settings remembers where it was opened from; pressing the gear again on
+## Settings must not overwrite that, or Back would lead back to Settings.
+func _open_settings() -> void:
+	if screen != "settings":
+		_pre_settings_screen = screen
+	screen = "settings"
+	render()
+
+
 ## The header's back button for this screen: [callback, destination name],
 ## or [] for none. Every screen's "back" lives here, so it's always in the
 ## same place instead of at the bottom of a long page.
@@ -1060,9 +1069,7 @@ func _topbar(container: Control, breadcrumb: String = "") -> void:
 	settings_btn.tooltip_text = "Settings"
 	settings_btn.pressed.connect(func():
 		AudioManager.play_sfx(GameData.SFX_PATH["ui_click"])
-		_pre_settings_screen = screen
-		screen = "settings"
-		render()
+		_open_settings()
 	)
 	row.add_child(settings_btn)
 	bar_v.add_child(row)

@@ -12,6 +12,9 @@ extends Node
 ##   ... -- attr=agility          every attribute point into one attribute
 ##   ... -- hand                  fight like a careful player (see _hand_action)
 ##                                instead of Quick fight
+##   ... -- charter=expose|quiet  the Charter War's turn (default: never
+##                                answered, as before 0.32.0); echoes are
+##                                given back or kept 50/50, the Accord renewed
 ## Profiles: "investor" spends like a player who reads the tooltips (quests,
 ## skills, upgrades, training, recruits, champion levels); "casual" takes
 ## quests, spends skill and attribute points, equips gear and hires up to 6,
@@ -26,6 +29,7 @@ var log_days := false
 var bold := false
 var hand := false
 var force_attr := ""
+var charter := ""        # the sim's answer to Mother Ilse's page ("" = leave it)
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -52,6 +56,8 @@ func _ready() -> void:
 			GameData.RANK_THREAT_DMG = float(a.substr(4))
 		elif a.begins_with("attr="):
 			force_attr = a.substr(5)
+		elif a.begins_with("charter="):
+			charter = a.substr(8)
 		elif a == "hand":
 			hand = true
 		elif a == "bold":
@@ -65,7 +71,7 @@ func _ready() -> void:
 		var all_runs := {}
 		var all_rounds := {}
 		var ratios: Array = []
-		var acts := {2: [], 3: [], 4: []}
+		var acts := {2: [], 3: [], 4: [], 5: []}
 		for s in seeds:
 			_guild(p, 7000 + s)
 			for r in fights:
@@ -82,8 +88,8 @@ func _ready() -> void:
 					ratios.append(float(bill_paid.get(w, 0)) / float(gross_gold[w]))
 			for a in acts:
 				acts[a].append(int(act_day.get(a, -1)))
-		print("== %s%s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", (" all points in " + force_attr) if force_attr != "" else "", seeds, days])
-		print("   Act I done on days %s · Act II %s · Act III %s   (-1 = not reached)" % [acts[2], acts[3], acts[4]])
+		print("== %s%s%s%s%s, %d guilds x %d days" % [p, " (bold)" if bold else "", " (by hand)" if hand else " (Quick fight)", (" all points in " + force_attr) if force_attr != "" else "", (" charter=" + charter) if charter != "" else "", seeds, days])
+		print("   Act I done on days %s · Act II %s · Act III %s · Act IV %s   (-1 = not reached)" % [acts[2], acts[3], acts[4], acts[5]])
 		ratios.sort()
 		if not ratios.is_empty():
 			print("   wages+upkeep / Gold income, weeks 2-6: median %d%% (min %d%%, max %d%%)" % [int(ratios[ratios.size() / 2] * 100), int(ratios[0] * 100), int(ratios[-1] * 100)])
@@ -109,6 +115,9 @@ func _guild(p: String, s: int) -> void:
 	rounds = {}
 	act_day = {}
 	notes = []
+	ambush = [0, 0]
+	morrow_day = -1
+	morrow_lost = 0
 	GameState.active_slot = 9
 	GameState.reset()
 	GameState.guild_name = "Sim"
@@ -134,10 +143,17 @@ func _guild(p: String, s: int) -> void:
 			act_day[act] = GameState.day
 	GameState.active_slot = 9
 	var last := (GameState.day - 1) / GameData.PAYDAY_DAYS
-	print("   [%s seed %d] day %d act %d · %d Gold %d Essence · roster %d · week %d bill %d of income %d%s" % [p, s, GameState.day, GameState.campaign_act, GameState.coins, GameState.crystals, GameState.heroes.size(),
-		last - 1, int(bill_paid.get(last - 1, 0)), int(gross_gold.get(last - 1, 0)), ("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
+	print("   [%s seed %d] day %d act %d · %d Gold %d Essence · roster %d · week %d bill %d of income %d · Renown %d vs rival %d · charter %s/%s · echoes %d (%d back) · ambushes %d/%d won · Morrow %s%s" % [p, s, GameState.day, GameState.campaign_act, GameState.coins, GameState.crystals, GameState.heroes.size(),
+		last - 1, int(bill_paid.get(last - 1, 0)), int(gross_gold.get(last - 1, 0)), GameState.reputation, GameState.rival_renown,
+		GameState.charter_choice if GameState.charter_choice != "" else "-", GameState.charter_result if GameState.charter_result != "" else "-",
+		GameState.echoes_seen.size(), GameState.echoes_returned, ambush[0], ambush[0] + ambush[1],
+		"beaten day %d" % morrow_day if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
+		("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
 
 
+var ambush := [0, 0]     # Company Ambush fights [won, lost]
+var morrow_day := -1
+var morrow_lost := 0
 var _party_power := 0
 var _spent := 0   # Gold spent at camp and in shops today (not a loss of income)
 
@@ -145,6 +161,7 @@ var _spent := 0   # Gold spent at camp and in shops today (not a loss of income)
 func _day(p: String) -> void:
 	GameState.check_feature_unlocks()
 	GameState.check_milestones()
+	_answer_stories()
 	GameState.pending_stories.clear()
 	GameState.pending_toasts.clear()
 	_answer_matters()
@@ -186,6 +203,27 @@ func _day(p: String) -> void:
 	runs[rank] = rt
 	if log_days:
 		print("     day %d %s (party power %d, recommended %d): %s · %d Gold" % [GameState.day, rank, _party_power, Combat.recommended_power("", rank) if rank != "finale" else 0, res, GameState.coins])
+
+
+## Story cards that ask something: the echo (back or keep, 50/50), the
+## Charter War's turn (the `charter=` policy) and the Accord's ending (renew).
+func _answer_stories() -> void:
+	while not GameState.pending_stories.is_empty():
+		var c: Dictionary = GameState.pending_stories[0]
+		if not c.has("choices"):
+			GameState.pending_stories.pop_front()
+			continue
+		match str(c.get("kind", "")):
+			"echo":
+				GameState.answer_echo("return" if randf() < 0.5 else "keep")
+			"charter":
+				if charter == "":
+					return
+				GameState.choose_charter(charter)
+			_:
+				GameState.choose_accord_ending("renew", GameState.heroes[0].id)
+		if not GameState.pending_stories.is_empty() and GameState.pending_stories[0] == c:
+			GameState.pending_stories.pop_front()   # an answer that didn't take
 
 
 func _answer_matters() -> void:
@@ -351,6 +389,14 @@ func _play_run(rank: String) -> String:
 				if not ns.get("tallied", false):
 					ns["tallied"] = true
 					_tally(rank, bool(result.get("won", false)))
+					var ms: Array = ns.get("combat_state", {}).get("monsters", [])
+					if ms.any(func(m): return str(m["name"]) == "Company Crossbowman"):
+						ambush[0 if result.get("won", false) else 1] += 1
+					if kind == "boss" and GameState.run.get("morrow", false):
+						if result.get("won", false):
+							morrow_day = GameState.day
+						else:
+							morrow_lost += 1
 					var rt: Array = rounds.get(rank, [0, 0, 0])
 					rounds[rank] = [rt[0] + 1, rt[1] + int(result.get("rounds", 0)), rt[2] + (1 if int(result.get("rounds", 0)) <= 1 else 0)]
 				if not result.get("won", false):

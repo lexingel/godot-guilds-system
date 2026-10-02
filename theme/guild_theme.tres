@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://ylqyobg3xify" path="res://assets/ui/button_hover.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://d2d48qurvcy52" path="res://assets/ui/button_pressed.png" id="4"]
 [ext_resource type="Texture2D" uid="uid://bcp4swwd5kkrr" path="res://assets/ui/button_disabled.png" id="5"]
-[ext_resource type="FontFile" path="res://assets/fonts/Overpass-Regular.ttf" id="8"]
+[ext_resource type="FontFile" path="res://assets/fonts/Lato-Regular.ttf" id="8"]
 [ext_resource type="Texture2D" path="res://assets/ui/panel_violet.png" id="9"]
 [ext_resource type="Texture2D" path="res://assets/ui/panel_ember.png" id="10"]
 [ext_resource type="Texture2D" path="res://assets/ui/stat_tile_violet.png" id="11"]

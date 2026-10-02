@@ -7,6 +7,10 @@ extends CanvasLayer
 ## Respects Reduce motion (no pans or shaking).
 
 const SHOT_FADE := 0.6
+## Captions: Alegreya Bold (OFL, assets/fonts/Alegreya-OFL.txt) on a dark
+## plate, so they read over any shot; Cinzel's small caps broke up over busy
+## art in small windows.
+const CAPTION_FONT := preload("res://assets/fonts/Alegreya-Variable.ttf")
 ## The narrated track (made with Suno, 69.7s). Each shot is cut in the pause
 ## before its line and its caption appears as the line begins: the times
 ## below come from a speech-recognition pass over the track (word starts),
@@ -44,6 +48,7 @@ var _track := ""          # the opening track playing, followed for timing
 var _clock := 0.0         # seconds since the start, when there's no track
 var _cuts: Array[float] = []     # when each shot starts, from SHOTS
 var _cap_shown := false
+var _cap_max_w := 900.0
 
 
 func _ready() -> void:
@@ -87,14 +92,26 @@ func _ready() -> void:
 	_ground.add_child(_black)
 	_caption = Label.new()
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_caption.add_theme_font_override("font", UiKit.DISPLAY_FONT)
-	_caption.add_theme_font_size_override("font_size", int(clampf(vp.y / 26.0, 16.0, 30.0)))
-	_caption.add_theme_color_override("font_color", Color(0.95, 0.92, 1.0))
+	var bold := FontVariation.new()
+	bold.base_font = CAPTION_FONT
+	bold.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
+	_caption.add_theme_font_override("font", bold)
+	_caption.add_theme_font_size_override("font_size", int(clampf(vp.y / 23.0, 18.0, 34.0)))
+	_caption.add_theme_color_override("font_color", Color(0.97, 0.94, 1.0))
 	_caption.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_caption.add_theme_constant_override("outline_size", 6)
-	_caption.size = Vector2(minf(vp.x - 48.0, 900.0), vp.y * 0.2)
-	_caption.position = Vector2((vp.x - _caption.size.x) * 0.5, vp.y * 0.76)
+	_caption.add_theme_constant_override("outline_size", 8)
+	_caption.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.75))
+	_caption.add_theme_constant_override("shadow_offset_x", 0)
+	_caption.add_theme_constant_override("shadow_offset_y", 3)
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color(0.04, 0.03, 0.07, 0.8)
+	plate.set_corner_radius_all(6)
+	plate.content_margin_left = 22
+	plate.content_margin_right = 22
+	plate.content_margin_top = 6
+	plate.content_margin_bottom = 8
+	_caption.add_theme_stylebox_override("normal", plate)
+	_cap_max_w = minf(vp.x - 48.0, 1100.0)
 	_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caption.modulate.a = 0.0
 	_ground.add_child(_caption)
@@ -203,7 +220,7 @@ func _play(i: int) -> void:
 	var cam := _tw()
 	cam.tween_method(func(k: float): place.call(lerpf(z0, z1, k), p0.lerp(p1, k)), 0.0, 1.0, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_effect(str(s[7]), vp, dur, still)
-	_caption.text = tr(str(s[6]))
+	_set_caption(tr(str(s[6])), vp)
 	# In from black; _process brings the caption in as its line begins and
 	# cuts to the next shot, both by the track's position.
 	_cap_shown = false
@@ -212,6 +229,21 @@ func _play(i: int) -> void:
 	show.tween_callback(func(): _busy = false)
 	if str(s[7]) == "finale":
 		show.tween_callback(func(): _title_card(vp))
+
+
+## The plate hugs the line: one line when it fits, else wrapped into lines
+## of even length (no lone last word).
+func _set_caption(text: String, vp: Vector2) -> void:
+	_caption.text = text
+	_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_caption.size = Vector2.ZERO
+	var w := _caption.get_minimum_size().x
+	if w > _cap_max_w:
+		_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		w = minf(_cap_max_w, w / ceilf(w / _cap_max_w) + 60.0)
+		_caption.size = Vector2(w, 0)
+	_caption.size = Vector2(w, _caption.get_minimum_size().y)
+	_caption.position = Vector2((vp.x - w) * 0.5, vp.y * 0.78)
 
 
 ## The last shot: the guild's crest and name, just before "They have yours."

@@ -88,6 +88,11 @@ func run() -> void:
 	await _show(main, "party_assembly")
 	main._pending_endless = false
 	check(drawn >= 19, "every camp tab and front-end screen draws (%d)" % drawn)
+	main.screen = "rift_hall"
+	main._open_settings()
+	main._open_settings()   # the gear pressed again on Settings
+	(main._header_back()[0] as Callable).call()
+	check(main.screen == "rift_hall", "Back from Settings returns where it was opened, even after a second gear press")
 
 	# A ranked fight: the command bar, More, the Guard picker, a gamepad button.
 	GameState.start_ladder_rift("A", ids, null)
