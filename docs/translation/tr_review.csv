@@ -109,7 +109,7 @@ The %s hits %s for %d.,"%s, %s hedefine %d vuruyor.",scripts/autoload/Combat.gd:
 "%s ripostes, striking %s for %d!","%s karşılık veriyor, %s hedefine %d vuruyor!",scripts/autoload/Combat.gd:1429
 Underpowered: party power %d vs %d recommended,"Güç yetersiz: ekip gücü %d, önerilen %d",scripts/autoload/Combat.gd:1453
 %d heavy blow%s landed undefended (%d damage),%d ağır darbe%s savunmasız yere indi (%d hasar),scripts/autoload/Combat.gd:1457
-Burn and poison did %d damage (%d%% of the total),Yanma ve zehir %d hasar verdi (toplamın %%%d'i),scripts/autoload/Combat.gd:1462
+Burn and poison did %d damage (%d%% of the total),Yanma ve zehir %d hasar verdi (toplamda %%%d),scripts/autoload/Combat.gd:1462
 Your foes healed %d HP,Düşmanların %d can iyileşti,scripts/autoload/Combat.gd:1469
 The party started the fight at %d%% HP,Ekip dövüşe %%%d canla başladı,scripts/autoload/Combat.gd:1473
 No Abilities were used,Hiç Yetenek kullanılmadı,scripts/autoload/Combat.gd:1476
@@ -209,7 +209,7 @@ Relic ward: survive a wipe at %d%% HP,Kalıntı koruması: tüm ekip düşerken 
 +%d%% opening volley vs Bosses,Bosslara karşı +%%%d açılış yaylımı,scripts/autoload/combat/CombatGen.gd:106
 +%d%% chance to counter when evading or hit hard,Kaçınınca ya da sert darbe alınca +%%%d karşı saldırı şansı,scripts/autoload/combat/CombatGen.gd:107
 +%d%% chance to gain 1 Momentum when evading or hit hard,Kaçınınca ya da sert darbe alınca +%%%d ihtimalle 1 İvme kazan,scripts/autoload/combat/CombatGen.gd:108
-"On a kill, shield the weakest ally for %d%% of max HP",Öldürünce en zayıf müttefike en yüksek canının %%%d'i kadar kalkan ver,scripts/autoload/combat/CombatGen.gd:109
+"On a kill, shield the weakest ally for %d%% of max HP",Öldürünce en zayıf müttefike en yüksek canının %%%d kadarı kalkan ver,scripts/autoload/combat/CombatGen.gd:109
 Skill: %s,Beceri: %s,scripts/autoload/combat/CombatStats.gd:64
 Combo: %s,Kombo: %s,scripts/autoload/combat/CombatStats.gd:71
 Keystone drawback: %s,Kilit taşı dezavantajı: %s,scripts/autoload/combat/CombatStats.gd:77
@@ -1579,7 +1579,7 @@ Captain Morrow,Kaptan Morrow,scripts/autoload/game_data/GameDataModes.gd:770
 "Seal the small rifts, %s. Leave the real ones to us.","Küçük yarıkları sen mühürle, %s. Gerçeklerini bize bırak.",scripts/autoload/game_data/GameDataModes.gd:774
 "%s pays its heroes in promises, I hear.",Duyduğuma göre %s kahramanlarına vaatle ödüyormuş.,scripts/autoload/game_data/GameDataModes.gd:775
 Our recruits ask about %s. Then they sign with us.,Acemilerimiz %s hakkında soru soruyor. Sonra bizimle imzalıyorlar.,scripts/autoload/game_data/GameDataModes.gd:776
-Tell %s the quest board isn't a charity.,"%s'e söyleyin, görev panosu bir hayır kurumu değil.",scripts/autoload/game_data/GameDataModes.gd:777
+Tell %s the quest board isn't a charity.,"%s loncasına söyleyin, görev panosu bir hayır kurumu değil.",scripts/autoload/game_data/GameDataModes.gd:777
 We'll send flowers when %s closes its doors.,%s kapılarını kapattığında çiçek göndereceğiz.,scripts/autoload/game_data/GameDataModes.gd:778
 %s? I thought they'd disbanded.,%s mi? Dağıldıklarını sanıyordum.,scripts/autoload/game_data/GameDataModes.gd:779
 The Night of Breaking,Kırılma Gecesi,scripts/autoload/game_data/GameDataModes.gd:798
@@ -1641,13 +1641,13 @@ I've told the taverns you can seal a Rank %s rift by payday. Don't make an old w
 "The Wolves will try for this one tomorrow. Take it first and I'll know you can be trusted with better news. Let it go and I'll take it, and I'll know that too. — Ilse","Kurtlar yarın bunu almaya çalışacak. Önce siz alın, size daha iyi haberler emanet edilebileceğini bileyim. Bırakırsanız ben alırım ve onu da bilirim. — Ilse",scripts/autoload/game_data/GameDataModes.gd:858
 "Mother Ilse sends her regards to %s, and a small bill.","Ilse Ana, %s için selamlarını ve küçük bir hesap pusulasını gönderiyor.",scripts/autoload/game_data/GameDataModes.gd:859
 Everyone owes the Lantern something. %s just doesn't know what yet.,Herkesin Fener'e bir borcu var. %s henüz neyi borçlu olduğunu bilmiyor.,scripts/autoload/game_data/GameDataModes.gd:859
-The Lantern hears %s is short this week. The Lantern lends.,"Fener, bu hafta %s'in sıkıştığını duydu. Fener borç verir.",scripts/autoload/game_data/GameDataModes.gd:859
+The Lantern hears %s is short this week. The Lantern lends.,"Fener, bu hafta %s loncasının sıkıştığını duydu. Fener borç verir.",scripts/autoload/game_data/GameDataModes.gd:859
 "%s deserves a company that values them. Ours does: twice the wage, half the danger. I can't explain the half. Trade secret. — Capt. Morrow","%s kendisine değer veren bir bölüğü hak ediyor. Bizimki verir: iki kat maaş, yarı tehlike. Yarısını açıklayamam. Meslek sırrı. — Yzb. Morrow",scripts/autoload/game_data/GameDataModes.gd:861
 "Rank %s by payday? A friendly wager. There is always another rift, after all. We make sure of it. — Morrow",Maaş gününe kadar %s Rütbesi mi? Dostça bir iddia. Sonuçta her zaman bir yarık daha vardır. Biz bundan emin oluruz. — Morrow,scripts/autoload/game_data/GameDataModes.gd:862
 "We'll take this one off your hands. Plenty of work for everyone; there always seems to be, near us. — Morrow",Bunu sizin yerinize biz hallederiz. Herkese yetecek kadar iş var; bizim yakınımızda hep var gibi. — Morrow,scripts/autoload/game_data/GameDataModes.gd:863
 "Plenty of work for everyone, %s. There always is.","Herkese yetecek kadar iş var, %s. Hep vardır.",scripts/autoload/game_data/GameDataModes.gd:864
 The Company wishes %s a quiet week. Truly.,"Bölük, %s için sakin bir hafta diler. Gerçekten.",scripts/autoload/game_data/GameDataModes.gd:864
-Captain Morrow sent %s a bottle of good wine. No note.,"Yüzbaşı Morrow, %s'e bir şişe iyi şarap gönderdi. Notsuz.",scripts/autoload/game_data/GameDataModes.gd:864
+Captain Morrow sent %s a bottle of good wine. No note.,"Yüzbaşı Morrow, %s loncasına bir şişe iyi şarap gönderdi. Notsuz.",scripts/autoload/game_data/GameDataModes.gd:864
 Dobbs,,scripts/autoload/game_data/GameDataModes.gd:872
 First payday. I'm Dobbs; I keep the books. The one with the ink is Wen.,İlk maaş günü. Ben Dobbs; defterleri tutarım. Mürekkepli olan da Wen.,scripts/autoload/game_data/GameDataModes.gd:872
 Wen,,scripts/autoload/game_data/GameDataModes.gd:872
@@ -2050,7 +2050,7 @@ Priest,Rahip,scripts/autoload/game_data/GameDataMonsters.gd:220
 Wight,,scripts/autoload/game_data/GameDataMonsters.gd:220
 Caller,,scripts/autoload/game_data/GameDataMonsters.gd:220
 Sweep,Süpürme,scripts/autoload/game_data/GameDataMonsters.gd:232
-Hits every hero for %d%% of a normal hit. Defend halves it for whoever Defends.,Her kahramana normal darbenin %%%d'i kadar vurur. Savunan kahraman için Savun bunu yarıya indirir.,scripts/autoload/game_data/GameDataMonsters.gd:232
+Hits every hero for %d%% of a normal hit. Defend halves it for whoever Defends.,Her kahramana normal darbenin %%%d kadarı vurur. Savunan kahraman için Savun bunu yarıya indirir.,scripts/autoload/game_data/GameDataMonsters.gd:232
 Snipe,Nişan,scripts/autoload/game_data/GameDataMonsters.gd:233
 A heavier shot at the most-hurt hero in the back row. Guard can take it for them.,Arka sıradaki en yaralı kahramana daha ağır bir atış. Koru onun yerine alabilir.,scripts/autoload/game_data/GameDataMonsters.gd:233
 Curse,Lanet,scripts/autoload/game_data/GameDataMonsters.gd:234
@@ -2608,7 +2608,7 @@ New at camp,Kampta yeni,scripts/autoload/game_state/GameStateRuns.gd:87
 A finale is fought in full,Final baştan sona dövüşülür,scripts/autoload/game_state/GameStateRuns.gd:205
 "Quick fight opens once you seal a Rank %s rift, or with a party at %d%% of Recommended power",Hızlı dövüş bir Rütbe %s yarığı mühürleyince ya da Önerilen gücün %%%d düzeyindeki bir ekiple açılır,scripts/autoload/game_state/GameStateRuns.gd:209
 Captain Morrow is beaten; the Hollow Crown Company is finished.,Yüzbaşı Morrow yenildi; Oyuk Taç Bölüğü'nün işi bitti.,scripts/autoload/game_state/GameStateRuns.gd:299
-The party rests by the fire and recovers %d%% HP.,Ekip ateşin başında dinleniyor ve canının %%%d'ini geri kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:411
+The party rests by the fire and recovers %d%% HP.,Ekip ateşin başında dinleniyor ve canının %%%d kadarını geri kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:411
 The party drills together: +%d XP each.,Ekip birlikte talim yapıyor: her birine +%d TP.,scripts/autoload/game_state/GameStateRuns.gd:415
 "Weapons sharpened, focus restored — the next fight starts with +4 Momentum.","Silahlar bilendi, odak yerine geldi — sonraki dövüş +4 İvme ile başlıyor.",scripts/autoload/game_state/GameStateRuns.gd:418
 "%s check (%s, %d vs %d): %s.","%s sınaması (%s, %d / %d): %s.",scripts/autoload/game_state/GameStateRuns.gd:467
@@ -2619,8 +2619,8 @@ You move on.,Yoluna devam ediyorsun.,scripts/autoload/game_state/GameStateRuns.g
 +%d Essence.,+%d Öz.,scripts/autoload/game_state/GameStateRuns.gd:518
 %+d Renown.,%+d Ün.,scripts/autoload/game_state/GameStateRuns.gd:522
 Every hero gains %d XP.,Her kahraman %d TP kazanıyor.,scripts/autoload/game_state/GameStateRuns.gd:526
-The party heals %d%% HP.,Ekip canının %%%d'ini iyileştiriyor.,scripts/autoload/game_state/GameStateRuns.gd:530
-Everyone loses %d%% HP.,Herkes canının %%%d'ini kaybediyor.,scripts/autoload/game_state/GameStateRuns.gd:534
+The party heals %d%% HP.,Ekip canının %%%d kadarını iyileştiriyor.,scripts/autoload/game_state/GameStateRuns.gd:530
+Everyone loses %d%% HP.,Herkes canının %%%d kadarını kaybediyor.,scripts/autoload/game_state/GameStateRuns.gd:534
 The next fight starts with +3 Momentum.,Sonraki dövüş +3 İvme ile başlıyor.,scripts/autoload/game_state/GameStateRuns.gd:537
 +%d Healing Tonic.,+%d Şifa Toniği.,scripts/autoload/game_state/GameStateRuns.gd:540
 You can't carry another tonic.,Bir tonik daha taşıyamazsın.,scripts/autoload/game_state/GameStateRuns.gd:540
@@ -2830,7 +2830,7 @@ Upgrades: ,Geliştirmeler: ,scripts/survivors/SurvivorsView.gd:813
 none yet,henüz yok,scripts/survivors/SurvivorsView.gd:813
 Leave the rift (keep what you've earned),Yarıktan ayrıl (kazandıkların sende kalır),scripts/survivors/SurvivorsView.gd:822
 The rift closes,Yarık kapanıyor,scripts/survivors/SurvivorsView.gd:855
-Sealed at %d:%02d,%d:%02d'da mühürlendi,scripts/survivors/SurvivorsView.gd:857
+Sealed at %d:%02d,Mühürlendi: %d:%02d,scripts/survivors/SurvivorsView.gd:857
 Survived %d:%02d,%d:%02d dayanıldı,scripts/survivors/SurvivorsView.gd:857
   — a new best!,  — yeni rekor!,scripts/survivors/SurvivorsView.gd:857
 %d kills · %d elites · %d wardens · reached level %d,%d öldürme · %d seçkin · %d bekçi · ulaşılan seviye %d,scripts/survivors/SurvivorsView.gd:858
@@ -2903,7 +2903,7 @@ Down,,scripts/ui/BattleView.gd:1579
 Found: ,Bulunanlar: ,scripts/ui/BattleView.gd:1594
 Found: nothing this time,Bulunanlar: bu sefer hiçbir şey,scripts/ui/BattleView.gd:1594
 %d hero%s lost,%d kahraman%s kaybedildi,scripts/ui/BattleView.gd:1597
-Floor %d/%d reached,Kat %d/%d'ye ulaşıldı,scripts/ui/BattleView.gd:1608
+Floor %d/%d reached,Ulaşılan kat: %d/%d,scripts/ui/BattleView.gd:1608
 "%+d Gold, %+d Essence this run","Bu koşuda %+d Altın, %+d Öz",scripts/ui/BattleView.gd:1611
 Shield: absorbs the next %d damage,Kalkan: sonraki %d hasarı emer,scripts/ui/BattleView.gd:1679
 Defending — takes reduced damage this round,Savunuyor — bu tur daha az hasar alır,scripts/ui/BattleView.gd:1768
@@ -2922,7 +2922,7 @@ Branded — takes %d%% more damage for %d more round(s). Guard them.,"Damgalı �
 "Taunting — every foe's attacks come here this round, %d%% weaker","Kışkırtıyor — bu tur tüm düşman saldırıları buraya gelir, %%%d daha zayıf",scripts/ui/BattleView.gd:1800
 Enough Momentum for their Ability,Yeteneği için yeterli İvme var,scripts/ui/BattleView.gd:1802
  (active), (etkin),scripts/ui/BattleView.gd:1818
-Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor.,Zırhlı — temel saldırıların %%%d'ini savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar.,scripts/ui/BattleView.gd:1829
+Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor.,Zırhlı — temel saldırıların %%%d kadarını savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar.,scripts/ui/BattleView.gd:1829
 Its hits can set a hero ablaze (damage over time),Darbeleri bir kahramanı tutuşturabilir (zamanla hasar),scripts/ui/BattleView.gd:1831
 Its hits can chill a hero (acts late next round),Darbeleri bir kahramanı üşütebilir (sonraki tur geç davranır),scripts/ui/BattleView.gd:1832
 "Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it.","Ağır bir darbe için güç topluyor. Kalkan Darbesi, Buz Novası ya da Sırttan Bıçak bunu cezalandırabilir.",scripts/ui/BattleView.gd:1834
@@ -3269,7 +3269,7 @@ Every bed is taken,Bütün yataklar dolu,scripts/ui/GuildViews.gd:1327
 A downed hero comes back a run sooner; a wounded one is fully healed after the next run.,Yere serilmiş bir kahraman bir koşu erken döner; yaralı biri sonraki koşudan sonra tamamen iyileşir.,scripts/ui/GuildViews.gd:1327
 Rest the guild (pass one run's time),Loncayı dinlendir (bir koşu süresi geçir),scripts/ui/GuildViews.gd:1333
 Heroes recover as if a run had ended.,Kahramanlar bir koşu bitmiş gibi toparlanır.,scripts/ui/GuildViews.gd:1337
-"Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed).",Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d'ini geri kazanır (yatakta hepsini).,scripts/ui/GuildViews.gd:1340
+"Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed).",Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d kadarını geri kazanır (yatakta hepsini).,scripts/ui/GuildViews.gd:1340
 back in %d run%s,%d koşu%s sonra döner,scripts/ui/GuildViews.gd:1346
 full after next run,sonraki koşudan sonra tam,scripts/ui/GuildViews.gd:1348
 +%d%% HP per run,Koşu başına +%%%d Can,scripts/ui/GuildViews.gd:1349
@@ -3430,7 +3430,7 @@ Each level: %s · upkeep +%d Gold a week,Her seviye: %s · bakım haftada +%d Al
 %s Lv%d — %s,%s Sv%d — %s,scripts/ui/GuildViews.gd:2134
 ⌂ Camp: the %s is rebuilt at Lv3 and Lv5 (now tier %d/3),⌂ Kamp: %s Sv3 ve Sv5'te yeniden yapılır (şu an kademe %d/3),scripts/ui/GuildViews.gd:2140
 ⌂ Camp: every level grows the Guild Hall (guild tier),⌂ Kamp: her seviye Lonca Salonu'nu büyütür (lonca kademesi),scripts/ui/GuildViews.gd:2142
-Upgrade to Lv%d — %d Gold,Sv%d'ye geliştir — %d Altın,scripts/ui/GuildViews.gd:2147
+Upgrade to Lv%d — %d Gold,Geliştir: Sv%d — %d Altın,scripts/ui/GuildViews.gd:2147
 Upgrade to Lv%d — %d Essence,Yükselt: Sv%d — %d Öz,scripts/ui/GuildViews.gd:2147
 %s — Lv%d,%s — Sv%d,scripts/ui/GuildViews.gd:2154
 Next: %s%s,Sonraki: %s%s,scripts/ui/GuildViews.gd:2157
@@ -3706,7 +3706,7 @@ Riftbreak — Rank %s near %s,"Yarık Taşması — %s rütbe, %s yakınında",s
 "Foes walk the roads toward your outpost. Build towers on the round pads with supplies: you start with some and earn more for every kill. Tap a built tower to upgrade or sell it. Heroes at posts stand by the road: warriors and rogues hold foes in place, rangers and mages shoot. Tap the ground to send your champion. Every foe that gets through costs integrity; at 0 the defense is lost.","Düşmanlar yollardan karakoluna doğru yürür. Yuvarlak kaidelere erzakla kuleler kur: bir miktarla başlarsın, her öldürmede daha fazlasını kazanırsın. Geliştirmek ya da satmak için kurulu bir kuleye dokun. Nöbetteki kahramanlar yol kenarında durur: savaşçılar ve düzenbazlar düşmanları yerinde tutar, korucular ve büyücüler ateş eder. Şampiyonunu göndermek için yere dokun. Geçen her düşman bütünlüğe mal olur; 0'da savunma kaybedilir.",scripts/ui/Main.gd:2772
 %d waves · integrity %d · %d starting supplies,%d dalga · bütünlük %d · %d başlangıç erzakı,scripts/ui/Main.gd:2777
 Towers: %s · up to tier %d,Kuleler: %s · en fazla %d. kademe,scripts/ui/Main.gd:2778
-"Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded.","Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d'ini kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner.",scripts/ui/Main.gd:2780
+"Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded.","Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d kadarını kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner.",scripts/ui/Main.gd:2780
 Posts (%d/%d),Nöbet yerleri (%d/%d),scripts/ui/Main.gd:2782
 No idle heroes can stand guard: towers and your champion will have to hold.,Nöbet tutabilecek boşta kahraman yok: kuleler ve şampiyonun dayanmak zorunda.,scripts/ui/Main.gd:2784
 %s · Lv%d · Power %d,%s · Sv%d · Güç %d,scripts/ui/Main.gd:2799
@@ -3749,11 +3749,11 @@ Nothing to export in this slot yet.,Bu yuvada henüz dışa aktarılacak bir şe
 Copied to the clipboard — paste it somewhere safe.,Panoya kopyalandı — güvenli bir yere yapıştır.,scripts/ui/Main.gd:3093
 Import save…,Kayıt içe aktar…,scripts/ui/Main.gd:3098
 Cancel import,İçe aktarmayı iptal et,scripts/ui/Main.gd:3098
-Paste an exported save below%s. It replaces Slot %d%s.,Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d'nin yerine geçer%s.,scripts/ui/Main.gd:3108
+Paste an exported save below%s. It replaces Slot %d%s.,Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d içindeki kaydın yerine geçer%s.,scripts/ui/Main.gd:3108
  or pick the file, ya da dosyayı seç,scripts/ui/Main.gd:3108
 Choose file…,Dosya seç…,scripts/ui/Main.gd:3110
 "{""guild_name"": ...}",,scripts/ui/Main.gd:3113
-Replace Slot %d with this save,Yuva %d'yi bu kayıtla değiştir,scripts/ui/Main.gd:3117
+Replace Slot %d with this save,Yuva %d içeriğini bu kayıtla değiştir,scripts/ui/Main.gd:3117
 Save imported.,Kayıt içe aktarıldı.,scripts/ui/Main.gd:3125
 Send to another device,Başka bir cihaza gönder,scripts/ui/Main.gd:3140
 Gives you a code (and a QR code) to open this guild on your phone or another computer.,Bu loncayı telefonunda veya başka bir bilgisayarda açmak için bir kod (ve bir QR kodu) verir.,scripts/ui/Main.gd:3142
@@ -3844,7 +3844,7 @@ A new guild can't leave anyone behind (seal 3 rifts first).,Yeni bir lonca kimse
 Campfire,Kamp ateşi,scripts/ui/RiftRunView.gd:658
 A sheltered corner of the rift. There's time for one thing before moving on.,Yarığın korunaklı bir köşesi. Devam etmeden önce tek bir şeye vakit var.,scripts/ui/RiftRunView.gd:663
 Rest,Dinlen,scripts/ui/RiftRunView.gd:668
-Every hero heals %d%% HP,Her kahraman canının %%%d'ini iyileştirir,scripts/ui/RiftRunView.gd:669
+Every hero heals %d%% HP,Her kahraman canının %%%d kadarını iyileştirir,scripts/ui/RiftRunView.gd:669
 %d of %d hurt right now,Şu an %d / %d yaralı,scripts/ui/RiftRunView.gd:669
 Train,Eğit,scripts/ui/RiftRunView.gd:671
 Every hero gains %d XP,Her kahraman %d TP kazanır,scripts/ui/RiftRunView.gd:672
@@ -3880,7 +3880,7 @@ Build: ,Yapı: ,scripts/ui/RosterView.gd:130
 Skill: %s · %d Momentum%s,Beceri: %s · %d İvme%s,scripts/ui/RosterView.gd:142
  · %s row, · %s sıra,scripts/ui/RosterView.gd:142
  %s twist: %s., %s dokunuşu: %s.,scripts/ui/RosterView.gd:143
-Unlocks at Lv%d,Sv%d'de açılır,scripts/ui/RosterView.gd:146
+Unlocks at Lv%d,Sv%d olunca açılır,scripts/ui/RosterView.gd:146
 Ability: %s,Yetenek: %s,scripts/ui/RosterView.gd:155
 Unlocks at Lv3,Sv3'te açılır,scripts/ui/RosterView.gd:159
 Awakened (%s),Uyandı (%s),scripts/ui/RosterView.gd:161
@@ -3905,7 +3905,7 @@ Equip best (%d),En iyisini kuşan (%d),scripts/ui/RosterView.gd:293
 Equipped best gear,En iyi teçhizat kuşanıldı,scripts/ui/RosterView.gd:296
 Power %d → %d,Güç %d → %d,scripts/ui/RosterView.gd:296
 Fill this hero's slots with the strongest free gear that fits them. Gear worn by other heroes is left alone.,Bu kahramanın yuvalarını ona uyan en güçlü boştaki teçhizatla doldur. Diğer kahramanların kuşandıklarına dokunulmaz.,scripts/ui/RosterView.gd:298
-Another gear slot opens at rank %s,Rütbe %s'de bir teçhizat yuvası daha açılır,scripts/ui/RosterView.gd:310
+Another gear slot opens at rank %s,%s rütbesinde bir teçhizat yuvası daha açılır,scripts/ui/RosterView.gd:310
 No unequipped gear this hero can use.,Bu kahramanın kullanabileceği boşta teçhizat yok.,scripts/ui/RosterView.gd:340
 "Unequipped gear that fits · %d usable%s — drag onto a slot, or click a slot","Uyan, kuşanılmamış teçhizat · %d kullanılabilir%s — bir yuvaya sürükle ya da bir yuvaya tıkla",scripts/ui/RosterView.gd:343
  · %d need more attributes, · %d daha fazla nitelik istiyor,scripts/ui/RosterView.gd:343
@@ -4018,7 +4018,7 @@ Combo: stronger with %s%s,Kombo: %s%s ile daha güçlü,scripts/ui/RosterView.gd
  (active!), (etkin!),scripts/ui/RosterView.gd:1425
 Reroll,Yenile,scripts/ui/RosterView.gd:1438
 Reroll this effect for %d Essence (each reroll costs more),Bu etkiyi %d Öz karşılığında yenile (her yenileme daha pahalı),scripts/ui/RosterView.gd:1445
-Reaches Lv%d: awakens with one more effect.,Sv%d'ye ulaşınca bir etki daha kazanarak uyanır.,scripts/ui/RosterView.gd:1449
+Reaches Lv%d: awakens with one more effect.,Sv%d olunca bir etki daha kazanarak uyanır.,scripts/ui/RosterView.gd:1449
 Place on the altar,Sunağa koy,scripts/ui/RosterView.gd:1462
 Every altar slot is full — take a relic off first,Sunaktaki tüm yuvalar dolu — önce bir kalıntıyı kaldır,scripts/ui/RosterView.gd:1468
 Its power is fixed: Legendary relics like this one don't level.,Gücü sabittir: bunun gibi Efsanevi kalıntılar seviye atlamaz.,scripts/ui/RosterView.gd:1471

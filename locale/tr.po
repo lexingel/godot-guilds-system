@@ -449,7 +449,7 @@ msgstr "%d ağır darbe%s savunmasız yere indi (%d hasar)"
 
 #: scripts/autoload/Combat.gd:1462
 msgid "Burn and poison did %d damage (%d%% of the total)"
-msgstr "Yanma ve zehir %d hasar verdi (toplamın %%%d'i)"
+msgstr "Yanma ve zehir %d hasar verdi (toplamda %%%d)"
 
 #: scripts/autoload/Combat.gd:1469
 msgid "Your foes healed %d HP"
@@ -849,7 +849,7 @@ msgstr "Kaçınınca ya da sert darbe alınca +%%%d ihtimalle 1 İvme kazan"
 
 #: scripts/autoload/combat/CombatGen.gd:109
 msgid "On a kill, shield the weakest ally for %d%% of max HP"
-msgstr "Öldürünce en zayıf müttefike en yüksek canının %%%d'i kadar kalkan ver"
+msgstr "Öldürünce en zayıf müttefike en yüksek canının %%%d kadarı kalkan ver"
 
 #: scripts/autoload/combat/CombatStats.gd:64 scripts/autoload/combat/CombatStats.gd:69 scripts/autoload/combat/CombatStats.gd:74
 msgid "Skill: %s"
@@ -6329,7 +6329,7 @@ msgstr "Acemilerimiz %s hakkında soru soruyor. Sonra bizimle imzalıyorlar."
 
 #: scripts/autoload/game_data/GameDataModes.gd:777
 msgid "Tell %s the quest board isn't a charity."
-msgstr "%s'e söyleyin, görev panosu bir hayır kurumu değil."
+msgstr "%s loncasına söyleyin, görev panosu bir hayır kurumu değil."
 
 #: scripts/autoload/game_data/GameDataModes.gd:778
 msgid "We'll send flowers when %s closes its doors."
@@ -6545,7 +6545,7 @@ msgstr "Herkesin Fener'e bir borcu var. %s henüz neyi borçlu olduğunu bilmiyo
 
 #: scripts/autoload/game_data/GameDataModes.gd:859
 msgid "The Lantern hears %s is short this week. The Lantern lends."
-msgstr "Fener, bu hafta %s'in sıkıştığını duydu. Fener borç verir."
+msgstr "Fener, bu hafta %s loncasının sıkıştığını duydu. Fener borç verir."
 
 #: scripts/autoload/game_data/GameDataModes.gd:861
 msgid "%s deserves a company that values them. Ours does: twice the wage, half the danger. I can't explain the half. Trade secret. — Capt. Morrow"
@@ -6569,7 +6569,7 @@ msgstr "Bölük, %s için sakin bir hafta diler. Gerçekten."
 
 #: scripts/autoload/game_data/GameDataModes.gd:864
 msgid "Captain Morrow sent %s a bottle of good wine. No note."
-msgstr "Yüzbaşı Morrow, %s'e bir şişe iyi şarap gönderdi. Notsuz."
+msgstr "Yüzbaşı Morrow, %s loncasına bir şişe iyi şarap gönderdi. Notsuz."
 
 #: scripts/autoload/game_data/GameDataModes.gd:872 scripts/autoload/game_data/GameDataModes.gd:873 scripts/autoload/game_data/GameDataModes.gd:874
 msgid "Dobbs"
@@ -8037,7 +8037,7 @@ msgstr "Süpürme"
 
 #: scripts/autoload/game_data/GameDataMonsters.gd:232
 msgid "Hits every hero for %d%% of a normal hit. Defend halves it for whoever Defends."
-msgstr "Her kahramana normal darbenin %%%d'i kadar vurur. Savunan kahraman için Savun bunu yarıya indirir."
+msgstr "Her kahramana normal darbenin %%%d kadarı vurur. Savunan kahraman için Savun bunu yarıya indirir."
 
 #: scripts/autoload/game_data/GameDataMonsters.gd:233
 msgid "Snipe"
@@ -10237,7 +10237,7 @@ msgstr "Yüzbaşı Morrow yenildi; Oyuk Taç Bölüğü'nün işi bitti."
 
 #: scripts/autoload/game_state/GameStateRuns.gd:411
 msgid "The party rests by the fire and recovers %d%% HP."
-msgstr "Ekip ateşin başında dinleniyor ve canının %%%d'ini geri kazanıyor."
+msgstr "Ekip ateşin başında dinleniyor ve canının %%%d kadarını geri kazanıyor."
 
 #: scripts/autoload/game_state/GameStateRuns.gd:415
 msgid "The party drills together: +%d XP each."
@@ -10281,11 +10281,11 @@ msgstr "Her kahraman %d TP kazanıyor."
 
 #: scripts/autoload/game_state/GameStateRuns.gd:530
 msgid "The party heals %d%% HP."
-msgstr "Ekip canının %%%d'ini iyileştiriyor."
+msgstr "Ekip canının %%%d kadarını iyileştiriyor."
 
 #: scripts/autoload/game_state/GameStateRuns.gd:534
 msgid "Everyone loses %d%% HP."
-msgstr "Herkes canının %%%d'ini kaybediyor."
+msgstr "Herkes canının %%%d kadarını kaybediyor."
 
 #: scripts/autoload/game_state/GameStateRuns.gd:537
 msgid "The next fight starts with +3 Momentum."
@@ -11109,7 +11109,7 @@ msgstr "Yarık kapanıyor"
 
 #: scripts/survivors/SurvivorsView.gd:857
 msgid "Sealed at %d:%02d"
-msgstr "%d:%02d'da mühürlendi"
+msgstr "Mühürlendi: %d:%02d"
 
 #: scripts/survivors/SurvivorsView.gd:857
 msgid "Survived %d:%02d"
@@ -11401,7 +11401,7 @@ msgstr "%d kahraman%s kaybedildi"
 
 #: scripts/ui/BattleView.gd:1608
 msgid "Floor %d/%d reached"
-msgstr "Kat %d/%d'ye ulaşıldı"
+msgstr "Ulaşılan kat: %d/%d"
 
 #: scripts/ui/BattleView.gd:1611
 msgid "%+d Gold, %+d Essence this run"
@@ -11477,7 +11477,7 @@ msgstr " (etkin)"
 
 #: scripts/ui/BattleView.gd:1829
 msgid "Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor."
-msgstr "Zırhlı — temel saldırıların %%%d'ini savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar."
+msgstr "Zırhlı — temel saldırıların %%%d kadarını savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar."
 
 #: scripts/ui/BattleView.gd:1831
 msgid "Its hits can set a hero ablaze (damage over time)"
@@ -12817,7 +12817,7 @@ msgstr "Kahramanlar bir koşu bitmiş gibi toparlanır."
 
 #: scripts/ui/GuildViews.gd:1340
 msgid "Recovery counts rift runs, not real time: a downed hero sits out %d run(s) (a bed takes one off); a wounded hero regains %d%% HP each run (all of it in a bed)."
-msgstr "Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d'ini geri kazanır (yatakta hepsini)."
+msgstr "Toparlanma gerçek zamanla değil yarık koşularıyla sayılır: düşmüş bir kahraman %d koşu dışarıda kalır (yatak birini düşürür); yaralı bir kahraman her koşuda canının %%%d kadarını geri kazanır (yatakta hepsini)."
 
 #: scripts/ui/GuildViews.gd:1346
 msgid "back in %d run%s"
@@ -13461,7 +13461,7 @@ msgstr "⌂ Kamp: her seviye Lonca Salonu'nu büyütür (lonca kademesi)"
 
 #: scripts/ui/GuildViews.gd:2147
 msgid "Upgrade to Lv%d — %d Gold"
-msgstr "Sv%d'ye geliştir — %d Altın"
+msgstr "Geliştir: Sv%d — %d Altın"
 
 #: scripts/ui/GuildViews.gd:2147
 msgid "Upgrade to Lv%d — %d Essence"
@@ -14485,7 +14485,7 @@ msgstr "Kuleler: %s · en fazla %d. kademe"
 
 #: scripts/ui/Main.gd:2780
 msgid "Holding pays Gold and Essence. If it falls, you lose %d%% of your spare Gold and your Essence, %d building%s is damaged, and posted heroes who fell come back wounded."
-msgstr "Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d'ini kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner."
+msgstr "Dayanmak Altın ve Öz kazandırır. Düşerse artan Altınının ve Özünün %%%d kadarını kaybedersin, %d yapı%s hasar görür ve düşen nöbetçi kahramanlar yaralı döner."
 
 #: scripts/ui/Main.gd:2782
 msgid "Posts (%d/%d)"
@@ -14657,7 +14657,7 @@ msgstr "İçe aktarmayı iptal et"
 
 #: scripts/ui/Main.gd:3108
 msgid "Paste an exported save below%s. It replaces Slot %d%s."
-msgstr "Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d'nin yerine geçer%s."
+msgstr "Dışa aktarılmış bir kaydı aşağıya yapıştır%s. Yuva %d içindeki kaydın yerine geçer%s."
 
 #: scripts/ui/Main.gd:3108
 msgid " or pick the file"
@@ -14673,7 +14673,7 @@ msgstr ""
 
 #: scripts/ui/Main.gd:3117
 msgid "Replace Slot %d with this save"
-msgstr "Yuva %d'yi bu kayıtla değiştir"
+msgstr "Yuva %d içeriğini bu kayıtla değiştir"
 
 #: scripts/ui/Main.gd:3125
 msgid "Save imported."
@@ -15029,7 +15029,7 @@ msgstr "Dinlen"
 
 #: scripts/ui/RiftRunView.gd:669
 msgid "Every hero heals %d%% HP"
-msgstr "Her kahraman canının %%%d'ini iyileştirir"
+msgstr "Her kahraman canının %%%d kadarını iyileştirir"
 
 #: scripts/ui/RiftRunView.gd:669
 msgid "%d of %d hurt right now"
@@ -15173,7 +15173,7 @@ msgstr " %s dokunuşu: %s."
 
 #: scripts/ui/RosterView.gd:146
 msgid "Unlocks at Lv%d"
-msgstr "Sv%d'de açılır"
+msgstr "Sv%d olunca açılır"
 
 #: scripts/ui/RosterView.gd:155
 msgid "Ability: %s"
@@ -15273,7 +15273,7 @@ msgstr "Bu kahramanın yuvalarını ona uyan en güçlü boştaki teçhizatla do
 
 #: scripts/ui/RosterView.gd:310
 msgid "Another gear slot opens at rank %s"
-msgstr "Rütbe %s'de bir teçhizat yuvası daha açılır"
+msgstr "%s rütbesinde bir teçhizat yuvası daha açılır"
 
 #: scripts/ui/RosterView.gd:340
 msgid "No unequipped gear this hero can use."
@@ -15677,7 +15677,7 @@ msgstr "Bu etkiyi %d Öz karşılığında yenile (her yenileme daha pahalı)"
 
 #: scripts/ui/RosterView.gd:1449
 msgid "Reaches Lv%d: awakens with one more effect."
-msgstr "Sv%d'ye ulaşınca bir etki daha kazanarak uyanır."
+msgstr "Sv%d olunca bir etki daha kazanarak uyanır."
 
 #: scripts/ui/RosterView.gd:1462
 msgid "Place on the altar"
