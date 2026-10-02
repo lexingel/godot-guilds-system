@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"After a won fight, choosing your reward is now its own pop-up: the loot as cards with every stat on its own line, who it suits, and a Take button (or keys 1-3).",
 	"Move a guild between devices: Settings > Backup > Send to another device gives a short code and a QR code. Scan it with your phone, or choose Receive a guild on the title screen and type the code. A code works once, for 15 minutes.",
 	"Easier to read: the game's text is now set in Lato, wider and clearer at 1080p and below, and the opening's captions sit on a dark plate in a sturdier book face. Back on Settings works again after pressing the gear a second time.",
 	"The Hollow Crown Company strikes back: expose them and from Act III their sellswords ambush your rifts, and Captain Morrow waits at the bottom of a Rank C+ rift with the key he opens rifts with. A kept echo can now touch a hero who recognises what's in it (Echo-Touched); the third echo brings Ezra the Pale, and the campaign's end says what the Vale remembers. A hero's fiftieth rift gets a line in the Chronicle.",

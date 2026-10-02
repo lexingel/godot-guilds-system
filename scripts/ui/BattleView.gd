@@ -1173,40 +1173,9 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			left.add_child(_label(GameData.narrative_line("boss_defeated" if kind == "boss" else "elite_defeated"), 12, true))
 		var options: Array = result.get("reward_options", [])
 		if not options.is_empty() and not ns.get("reward_chosen", false):
-			right.add_child(_label("Choose a reward:", 14))
-			var reward_row := HFlowContainer.new()
-			reward_row.add_theme_constant_override("h_separation", 10)
-			reward_row.add_theme_constant_override("v_separation", 10)
-			for i in options.size():
-				var opt: Dictionary = options[i]
-				var obj = opt["obj"]
-				var is_relic: bool = opt["loot_type"] == "relic"
-				var desc: String = _loot_desc(obj, is_relic)
-				var icon_path: String = GameData.relic_icon(obj) if is_relic else GameData.item_icon(obj)
-				var note := _loot_fit_note(obj, is_relic, GameState.current_party())
-				reward_row.add_child(_reward_tile(icon_path, _loot_display_name(obj), str(obj.rarity), desc, func(idx=i, legendary=(obj.rarity == "legendary")):
-					GameState.pick_combat_reward(idx)
-					if legendary:
-						_flavor_toast = GameData.narrative_line("legendary_drop")
-					render()
-				, "" if is_relic else _item_card(obj, note[2]), note))
-			right.add_child(reward_row)
-			# Flip each reward card in, one after another, the first time this
-			# result is shown (a re-render after that shows them instantly).
-			# Legendaries land with a gold flash.
-			if not is_same(options, _revealed_rewards):
-				_revealed_rewards = options
-				# The row is a container, which resets its direct children's
-				# scale on every layout — so flip each tile's own (freely
-				# positioned) children instead of the tile itself.
-				for ri in reward_row.get_child_count():
-					var tile: Control = reward_row.get_child(ri)
-					var tw := tile.create_tween().set_parallel(true)
-					tile.modulate.a = 0.0
-					tw.tween_property(tile, "modulate:a", 1.0, 0.25).set_delay(0.15 + 0.15 * ri)
-					if str(options[ri]["obj"].rarity) == "legendary":
-						tw.tween_property(tile, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.45 + 0.18 * ri)
-						tw.tween_property(tile, "modulate", Color.WHITE, 0.45).set_delay(0.6 + 0.18 * ri)
+			# The pick is a pop-up over the summary: inline, testers read the
+			# cards as more of the report and didn't see they had to choose.
+			_reward_overlay(options)
 		if GameState.boon_pending():
 			right.add_child(_boon_offer_row(result))
 		if (options.is_empty() or ns.get("reward_chosen", false)) and not GameState.boon_pending():
@@ -1244,6 +1213,133 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			screen = "tower" if in_tower else "camp"
 			render()
 		))
+
+
+## The reward pick after a won fight: a pop-up of loot cards over the
+## dimmed Victory summary, each with a Take button (keys 1-3 pick too).
+func _reward_overlay(options: Array) -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var overlay := Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.62)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(dim)
+	# Scrolls when the cards are taller than a small window.
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	overlay.add_child(scroll)
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
+	var small := _compact() or vp.y < 600.0
+	var col := _vbox(8 if small else 14)
+	center.add_child(col)
+	var head := _label("Choose your reward", 20 if small else 24)
+	head.add_theme_font_override("font", DISPLAY_FONT)
+	head.add_theme_color_override("font_color", Palette.RANK_S)
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(head)
+	var sub := _label("Take one. The others stay in the rift.", 13, true)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if not small:
+		col.add_child(sub)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(row)
+	var card_w := clampf((vp.x - 60.0) / options.size() - 14.0, 170.0, 260.0)
+	for i in options.size():
+		var pick := func(idx=i, legendary=(options[i]["obj"].rarity == "legendary")):
+			GameState.pick_combat_reward(idx)
+			if legendary:
+				_flavor_toast = GameData.narrative_line("legendary_drop")
+			render()
+		row.add_child(_reward_card(options[i], card_w, i + 1, pick, small))
+		_combat_hotkeys[str(i + 1)] = pick
+	root.add_child(overlay)
+	# Fade the pop-up in, then deal the cards one after another, the first
+	# time this result is shown; legendaries land with a gold flash.
+	if not is_same(options, _revealed_rewards):
+		_revealed_rewards = options
+		overlay.modulate.a = 0.0
+		overlay.create_tween().tween_property(overlay, "modulate:a", 1.0, 0.3).set_delay(0.35)
+		for ri in row.get_child_count():
+			var card: Control = row.get_child(ri)
+			card.modulate.a = 0.0
+			var tw := card.create_tween().set_parallel(true)
+			tw.tween_property(card, "modulate:a", 1.0, 0.25).set_delay(0.6 + 0.15 * ri)
+			if str(options[ri]["obj"].rarity) == "legendary":
+				tw.tween_property(card, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.9 + 0.18 * ri)
+				tw.tween_property(card, "modulate", Color.WHITE, 0.45).set_delay(1.05 + 0.18 * ri)
+
+
+## One loot card for the reward pick: rarity-coloured frame, a big icon, the
+## name, what it does, who it suits, and Take. The whole card clicks; hovering
+## shows the full item card with the comparison.
+func _reward_card(opt: Dictionary, w: float, key: int, pick: Callable, small: bool = false) -> Control:
+	var obj = opt["obj"]
+	var is_relic: bool = opt["loot_type"] == "relic"
+	var rc: Color = ITEM_RARITY_COLOR.get(str(obj.rarity), Palette.MUTED)
+	var note := _loot_fit_note(obj, is_relic, GameState.current_party())
+	var wrap := MarginContainer.new()
+	wrap.custom_minimum_size.x = w
+	var panel := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = rc
+	st.set_border_width_all(2)
+	st.set_corner_radius_all(10)
+	st.set_content_margin_all(8 if small else 14)
+	panel.add_theme_stylebox_override("panel", st)
+	var col := _vbox(3 if small else 6)
+	var icon_row := HBoxContainer.new()
+	icon_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	icon_row.add_child(_icon(GameData.relic_icon(obj) if is_relic else GameData.item_icon(obj), 36 if small else 64))
+	col.add_child(icon_row)
+	var name_l := _wrap_label(_loot_display_name(obj), 14 if small else 16)
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_l.add_theme_color_override("font_color", rc if str(obj.rarity) != "common" else Palette.TEXT)
+	col.add_child(name_l)
+	var slot_name := "Relic" if is_relic else ("Weapon" if (obj as Item).slot_type() == "weapon" else str(GameData.ITEM_CATEGORY_LABEL.get((obj as Item).category, "Gear")))
+	var kind_l := _label(tr("%s · %s") % [tr(str(obj.rarity).capitalize()), tr(slot_name)], 12, true)
+	kind_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(kind_l)
+	var stats := _vbox(1)   # one stat a line (a Label spaces its own paragraphs apart)
+	for part in _loot_desc_body(obj, is_relic).split(" · ", false):
+		var sl := _wrap_label(part, 12 if small else 13)
+		sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		stats.add_child(sl)
+	col.add_child(stats)
+	if not note.is_empty():
+		var nl := _wrap_label(str(note[0]), 12 if small else 13)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nl.add_theme_color_override("font_color", note[1])
+		col.add_child(nl)
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(gap)
+	var take := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], _no_keys(tr("Take  (%d)") % key), pick)
+	take.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(take)
+	panel.add_child(col)
+	wrap.add_child(panel)
+	var hit := Button.new()   # over the whole card (Take included): a click anywhere takes it
+	hit.flat = true
+	var clear := StyleBoxEmpty.new()
+	for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
+		hit.add_theme_stylebox_override(sn, clear)
+	hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if not is_relic:
+		_rich_tip(hit, _item_card(obj, note[2]))
+	hit.pressed.connect(pick)
+	hit.mouse_entered.connect(func(): st.bg_color = Palette.SURFACE2.lightened(0.08))
+	hit.mouse_exited.connect(func(): st.bg_color = Palette.SURFACE2)
+	hit.mouse_entered.connect(func(): take.add_theme_color_override("font_color", Color.WHITE))
+	wrap.add_child(hit)
+	return wrap
 
 
 ## "Why you lost": the fight's top causes, each with what to do about it.
