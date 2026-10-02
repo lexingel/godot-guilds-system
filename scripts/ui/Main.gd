@@ -1316,6 +1316,21 @@ func _render_credits(v: VBoxContainer) -> void:
 	))
 
 
+## The opening cinematic (Cinematic.gd) over everything. `founding`: a new
+## guild's first time; watched through, it stands in for the prologue card
+## (skipped early, the card still tells it).
+func _play_cinematic(founding: bool) -> void:
+	var c := Cinematic.new()
+	c.guild_name = GameState.guild_name
+	c.crest_path = GameData.CREST_PATH[clampi(GameState.guild_crest - 1, 0, GameData.CREST_PATH.size() - 1)] if GameState.guild_name != "" else ""
+	c.on_done = func(skipped: bool):
+		if founding and not skipped:
+			GameState.pending_stories = GameState.pending_stories.filter(func(st): return str(st.get("title", "")) != str(GameData.PROLOGUE["title"]))
+			GameState.save()
+		render()
+	add_child(c)
+
+
 # ---------------- Onboard ----------------
 const GUILD_NAME_A := ["Ashen", "Silver", "Iron", "Storm", "Ember", "Dawn", "Hollow", "Raven", "Gilded", "Last"]
 const GUILD_NAME_B := ["Lantern", "Crows", "Wardens", "Blades", "Oath", "Company", "Watch", "Hearth", "Banner", "Vigil"]
@@ -1377,6 +1392,7 @@ func _render_onboard(v: VBoxContainer) -> void:
 		_flavor_toast = GameData.narrative_line("guild_founded")
 		screen = "camp"
 		render()
+		_play_cinematic(true)   # the Night of Breaking, ending on this guild's name
 	)
 	v.add_child(found)
 	edit.text_submitted.connect(func(_t): found.pressed.emit())   # Enter founds it too
@@ -2594,6 +2610,10 @@ func _switch_slot(slot: int) -> void:
 func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_label("Settings", 20))
 	v.add_child(_language_row())
+	var watch := _button("Watch the opening", func(): _play_cinematic(false))
+	watch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	watch.tooltip_text = tr("The Night of Breaking: how the old guilds vanished. About a minute; Esc skips.")
+	v.add_child(watch)
 	var fb := _button(tr("Send feedback") if not _feedback_open else tr("Hide feedback"), func():
 		_feedback_open = not _feedback_open
 		render())

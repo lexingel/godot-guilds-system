@@ -165,5 +165,31 @@ func run() -> void:
 	await _frames(3)
 	check(v._panel != null and not v._summary.is_empty(), "the sealed-rift result draws")
 	v.queue_free()
+
+	# The opening cinematic: skipped early it leaves the prologue card to tell
+	# the story; watched to the end it stands in for it.
+	var prologue := str(GameData.PROLOGUE["title"])
+	GameState.pending_stories = [GameData.PROLOGUE.duplicate()]
+	main._play_cinematic(true)
+	await _frames()
+	var cin: Cinematic = null
+	for c in main.get_children():
+		if c is Cinematic:
+			cin = c
+	check(cin != null, "the opening cinematic plays")
+	cin._finish(true)
+	await _frames()
+	check(GameState.pending_stories.any(func(st): return str(st["title"]) == prologue), "skipped early: the prologue card still tells it")
+	main._play_cinematic(true)
+	await _frames()
+	for c in main.get_children():
+		if c is Cinematic:
+			cin = c
+	cin._shot = Cinematic.SHOTS.size()
+	cin._finish(false)
+	await _frames()
+	check(not GameState.pending_stories.any(func(st): return str(st["title"]) == prologue), "watched through: it stands in for the prologue card")
+	for i in Cinematic.SHOTS.size():
+		check(ResourceLoader.exists(str(Cinematic.SHOTS[i][0])), "shot %d has its picture" % (i + 1))
 	main.queue_free()
 	await _frames()

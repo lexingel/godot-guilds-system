@@ -1571,6 +1571,9 @@ func _render_compendium(v: VBoxContainer) -> void:
 ## what each sealed finale revealed, the Grandmaster's ledger pages found in
 ## rifts, and what the freed champions remember.
 func _render_chronicle(v: VBoxContainer) -> void:
+	var watch := _button("Watch the opening", func(): call("_play_cinematic", false))
+	watch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	v.add_child(watch)
 	v.add_child(_label("The world", 16))
 	for e in GameData.CHRONICLE_WORLD:
 		v.add_child(_label(str(e[0]), 14))
