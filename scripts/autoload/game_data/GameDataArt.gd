@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Move a guild between devices: Settings > Backup > Send to another device gives a short code and a QR code. Scan it with your phone, or choose Receive a guild on the title screen and type the code. A code works once, for 15 minutes.",
 	"Easier to read: the game's text is now set in Lato, wider and clearer at 1080p and below, and the opening's captions sit on a dark plate in a sturdier book face. Back on Settings works again after pressing the gear a second time.",
 	"The Hollow Crown Company strikes back: expose them and from Act III their sellswords ambush your rifts, and Captain Morrow waits at the bottom of a Rank C+ rift with the key he opens rifts with. A kept echo can now touch a hero who recognises what's in it (Echo-Touched); the third echo brings Ezra the Pale, and the campaign's end says what the Vale remembers. A hero's fiftieth rift gets a line in the Chronicle.",
 	"New sound effects throughout (free CC0 sounds, picked by ear). The Charter War comes to a head: as Act III opens, Mother Ilse brings proof the Hollow Crown Company opens rifts for profit. Expose them or keep quiet; when Act III ends, the Crown grants its Royal Charter to the guild with the most Renown. Wen now writes a line for every hero on the Memorial, and a scene when a bond reaches its peak.",
@@ -162,6 +163,11 @@ const WHATS_NEW := [
 	"Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest.",
 	"New music, larger text, and rank rules shown in the rift.",
 ]
+## Moving a guild between devices: a short code for a save held 15 minutes
+## by a tiny relay (tools/transfer-relay, a Cloudflare Worker), and the play
+## link a QR code opens to receive it.
+const TRANSFER_URL := "https://guildhold-transfer.lexingel.workers.dev"
+const TRANSFER_PLAY_URL := "https://lexingel.github.io/guildhold/"
 const FEEDBACK_DISCORD_URL := "https://discord.gg/85XrXjBUmk"   # the playtest Discord (the Feedback panel opens it)
 
 ## Looping background music (AudioManager.play_music loops it).

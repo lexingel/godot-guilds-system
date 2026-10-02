@@ -32,6 +32,15 @@ func _ready() -> void:
 	if OS.has_feature("web"):
 		# Ask the browser not to evict the saves when it runs low on space.
 		JavaScriptBridge.eval("navigator.storage && navigator.storage.persist && navigator.storage.persist();", true)
+	if OS.has_feature("web"):
+		# Opened from a transfer QR code (?receive=CODE): fetch that guild.
+		var rc := str(JavaScriptBridge.eval("(new URLSearchParams(location.search)).get('receive')||''", true))
+		if rc != "":
+			JavaScriptBridge.eval("history.replaceState(null,'',location.pathname)", true)
+			_receive_open = true
+			_receive_code = rc
+			screen = "load_game"
+			_receive_guild.call_deferred(rc)
 	if OS.get_cmdline_user_args().has("bench-survivors") or (OS.has_feature("web") and str(JavaScriptBridge.eval("location.search", true)).contains("bench=survivors")):
 		_start_bench.call_deferred()
 	# Portrait pop-ups live on their own CanvasLayer so render()'s
@@ -1126,6 +1135,11 @@ func _render_title(v: VBoxContainer) -> void:
 		render()
 	))
 	menu.add_child(_button("Load Game", func():
+		screen = "load_game"
+		render()
+	))
+	menu.add_child(_button("Receive a guild", func():
+		_receive_open = true
 		screen = "load_game"
 		render()
 	))
@@ -2769,6 +2783,13 @@ var _backup_msg := ""
 var _import_open := false
 var _import_text := ""
 var _js_file_cb   # keeps the browser file-picker callback alive
+var _send_code := ""          # this device's guild, waiting at the relay
+var _send_qr: Texture2D = null
+var _receive_open := false
+var _receive_code := ""
+var _received := {}           # a fetched guild waiting for a slot: text, name, sealed
+var _transfer_busy := false
+var _js_transfer_cb   # keeps the browser fetch callback alive
 
 
 ## Export the active save (clipboard, plus a download on the web) or import
@@ -2806,6 +2827,7 @@ func _render_save_backup(v: VBoxContainer) -> void:
 		render()
 	))
 	v.add_child(row)
+	_render_transfer(v)
 	if _import_open:
 		var slot := GameState.active_slot
 		v.add_child(_wrap_label(tr("Paste an exported save below%s. It replaces Slot %d%s.") % [tr(str(tr(" or pick the file") if OS.has_feature("web") else "")), slot + 1, tr(str(" (%s)" % tr(str(GameState.guild_name)) if GameState.guild_name != "" else ""))], 12))
@@ -2832,6 +2854,181 @@ func _render_save_backup(v: VBoxContainer) -> void:
 		v.add_child(go)
 	if _backup_msg != "":
 		v.add_child(_label(_backup_msg, 12, true))
+
+
+## Moving a guild to another device: Send puts it at the relay under a code
+## (and a QR code linking to the game with it); Receive takes it, once.
+func _render_transfer(v: VBoxContainer) -> void:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 8)
+	var send := _icon_domain_button("violet", "", "Send to another device", func(): _send_guild())
+	send.disabled = GameState.guild_name == "" or _transfer_busy
+	send.tooltip_text = tr("Gives you a code (and a QR code) to open this guild on your phone or another computer.")
+	row.add_child(send)
+	var recv := _button("Receive from another device" if not _receive_open else "Cancel receiving", func():
+		_receive_open = not _receive_open
+		_received = {}
+		_backup_msg = ""
+		render())
+	recv.disabled = _transfer_busy
+	row.add_child(recv)
+	v.add_child(row)
+	if _send_code != "":
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"CardPanelViolet"
+		var cc := HBoxContainer.new()
+		cc.add_theme_constant_override("separation", 16)
+		if _send_qr != null:
+			var qr := TextureRect.new()
+			qr.texture = _send_qr
+			qr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			qr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			qr.custom_minimum_size = Vector2(150, 150)
+			cc.add_child(qr)
+		var tc := _vbox(6)
+		tc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var code_l := _label("%s %s" % [_send_code.substr(0, 3), _send_code.substr(3)], 30)
+		code_l.add_theme_font_override("font", DISPLAY_FONT)
+		code_l.add_theme_color_override("font_color", Palette.RANK_S)
+		code_l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		tc.add_child(code_l)
+		tc.add_child(_wrap_label("On your other device, scan this with the camera, or open Guildhold, choose Receive a guild and type the code. It works once, for the next 15 minutes.", 12))
+		cc.add_child(tc)
+		card.add_child(cc)
+		v.add_child(card)
+	if _receive_open:
+		if _received.is_empty():
+			var rr := HBoxContainer.new()
+			rr.add_theme_constant_override("separation", 8)
+			var le := LineEdit.new()
+			le.placeholder_text = "ABC 123"
+			le.text = _receive_code
+			le.max_length = 8
+			le.custom_minimum_size.x = 160
+			le.text_changed.connect(func(t): _receive_code = t)
+			le.text_submitted.connect(func(t): _receive_guild(t))
+			rr.add_child(le)
+			var go := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Receive", func(): _receive_guild(_receive_code))
+			go.disabled = _transfer_busy
+			rr.add_child(go)
+			v.add_child(rr)
+		else:
+			v.add_child(_wrap_label(tr("%s arrived (%d rifts sealed). Where should it go?") % [tr(str(_received["name"])), int(_received["sealed"])], 13))
+			var slots := HFlowContainer.new()
+			slots.add_theme_constant_override("h_separation", 8)
+			slots.add_theme_constant_override("v_separation", 8)
+			for slot in GameState.SLOT_COUNT:
+				var sm := GameState.slot_summary(slot)
+				var empty: bool = sm.get("empty", true)
+				var b := _button(tr("Slot %d (empty)") % (slot + 1) if empty else tr("Replace Slot %d: %s") % [slot + 1, tr(str(sm.get("guild_name", "")))], func(s=slot): _place_received(s))
+				if empty:
+					b.theme_type_variation = &"ButtonViolet"
+				slots.add_child(b)
+			v.add_child(slots)
+
+
+## Puts the received guild in `slot` (the old one is kept as .bak) and opens it.
+func _place_received(slot: int) -> void:
+	var err := GameState.import_save_text(str(_received["text"]), slot)
+	if err != "":
+		_backup_msg = err
+		render()
+		return
+	_received = {}
+	_receive_open = false
+	_receive_code = ""
+	_backup_msg = ""
+	_switch_slot(slot)
+
+
+func _send_guild() -> void:
+	var text := GameState.export_save_text()
+	if text == "":
+		_backup_msg = "Nothing to send in this slot yet."
+		render()
+		return
+	_transfer_busy = true
+	_backup_msg = "Sending…"
+	render()
+	_transfer(HTTPClient.METHOD_POST, "/send", text, func(status: int, body: String):
+		_transfer_busy = false
+		var d = JSON.parse_string(body) if status == 200 else null
+		if typeof(d) != TYPE_DICTIONARY or not d.has("code"):
+			_backup_msg = "Couldn't reach the transfer service. Check your connection and try again."
+		else:
+			_send_code = str(d["code"])
+			_send_qr = _qr_texture(GameData.TRANSFER_PLAY_URL + "?receive=" + _send_code)
+			_backup_msg = ""
+		render())
+
+
+func _receive_guild(code: String) -> void:
+	code = code.strip_edges().replace(" ", "").replace("-", "").to_upper()
+	if code.length() != 6:
+		_backup_msg = "A transfer code is 6 letters and numbers."
+		render()
+		return
+	_transfer_busy = true
+	_backup_msg = "Receiving…"
+	render()
+	_transfer(HTTPClient.METHOD_GET, "/take/" + code, "", func(status: int, body: String):
+		_transfer_busy = false
+		_backup_msg = ""
+		var d = JSON.parse_string(body) if status == 200 else null
+		if status == 404:
+			_backup_msg = "That code has expired or was already used. Send the guild again from the other device."
+		elif status != 200:
+			_backup_msg = "Couldn't reach the transfer service. Check your connection and try again."
+		elif typeof(d) != TYPE_DICTIONARY or str(d.get("guild_name", "")) == "":
+			_backup_msg = "That doesn't look like a Guildhold save"
+		else:
+			_received = {"text": body, "name": str(d["guild_name"]), "sealed": int(d.get("rifts_sealed", 0))}
+		render())
+
+
+## One request to the transfer relay; done(status, body), status 0 when it
+## couldn't connect. On the web it goes through the page's own fetch():
+## Godot's web HTTPRequest reached the relay but never finished reading the
+## reply. Plain text, so the browser sends it without a preflight.
+func _transfer(method: int, path: String, body: String, done: Callable) -> void:
+	if OS.has_feature("web"):
+		_js_transfer_cb = JavaScriptBridge.create_callback(func(args): done.call(int(args[0]), str(args[1])))
+		var w := JavaScriptBridge.get_interface("window")
+		w.godotTransferCb = _js_transfer_cb
+		w.godotTransferBody = body
+		JavaScriptBridge.eval("""fetch(%s, {method: %s, headers: {'Content-Type': 'text/plain'}, body: %s ? window.godotTransferBody : undefined})
+			.then(function(r){ return r.text().then(function(t){ window.godotTransferCb(r.status, t); }); })
+			.catch(function(){ window.godotTransferCb(0, ''); });""" % [JSON.stringify(GameData.TRANSFER_URL + path), JSON.stringify("POST" if method == HTTPClient.METHOD_POST else "GET"), "true" if method == HTTPClient.METHOD_POST else "false"], true)
+		return
+	var h := HTTPRequest.new()
+	h.timeout = 20.0
+	add_child(h)
+	h.request_completed.connect(func(result: int, status: int, _headers, bytes: PackedByteArray):
+		h.queue_free()
+		done.call(status if result == HTTPRequest.RESULT_SUCCESS else 0, bytes.get_string_from_utf8()))
+	if h.request(GameData.TRANSFER_URL + path, ["Content-Type: text/plain"], method, body) != OK:
+		h.queue_free()
+		done.call(0, "")
+
+
+## A QR code for `text`, drawn by the page's qrcode-generator script (the
+## web export's head include); null off the web, where the code alone does.
+func _qr_texture(text: String) -> Texture2D:
+	if not OS.has_feature("web"):
+		return null
+	var js := "(function(u){if(typeof qrcode==='undefined')return '';var q=qrcode(0,'M');q.addData(u);q.make();var n=q.getModuleCount(),s='';for(var r=0;r<n;r++)for(var c=0;c<n;c++)s+=q.isDark(r,c)?'1':'0';return n+':'+s;})(" + JSON.stringify(text) + ")"
+	var s := str(JavaScriptBridge.eval(js, true))
+	var n := int(s.get_slice(":", 0))
+	var bits := s.get_slice(":", 1)
+	if n <= 0 or bits.length() != n * n:
+		return null
+	var img := Image.create(n + 8, n + 8, false, Image.FORMAT_RGBA8)   # a 4-module quiet zone
+	img.fill(Color.WHITE)
+	for i in bits.length():
+		if bits[i] == "1":
+			img.set_pixel(4 + i % n, 4 + i / n, Color.BLACK)
+	return ImageTexture.create_from_image(img)
 
 
 func _web_pick_save_file() -> void:

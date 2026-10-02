@@ -1,0 +1,7 @@
+name = "guildhold-transfer"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[[kv_namespaces]]
+binding = "SAVES"
+id = "b4a20c0d19e249c1880432bbb44950ba"

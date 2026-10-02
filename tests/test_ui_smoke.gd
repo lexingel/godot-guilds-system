@@ -93,6 +93,20 @@ func run() -> void:
 	main._open_settings()   # the gear pressed again on Settings
 	(main._header_back()[0] as Callable).call()
 	check(main.screen == "rift_hall", "Back from Settings returns where it was opened, even after a second gear press")
+	# A guild received from another device: pick a slot and it opens there.
+	var sent := GameState.export_save_text()
+	main._receive_open = true
+	main._received = {"text": sent, "name": GameState.guild_name, "sealed": GameState.rifts_sealed}
+	await _show(main, "load_game")
+	var slot := GameState.SLOT_COUNT - 1   # a real slot; what was there is put back
+	var keep := FileAccess.get_file_as_string(GameState._slot_path(slot)) if FileAccess.file_exists(GameState._slot_path(slot)) else ""
+	main._place_received(slot)
+	check(GameState.active_slot == slot and GameState.guild_name != "" and main._received.is_empty() and main.screen in ["camp", "rift_run"], "a received guild lands in the chosen slot and opens")
+	if keep != "":
+		GameState._write_slot(slot, keep)
+	else:
+		GameState.delete_slot(slot)
+	GameState.active_slot = 9
 
 	# A ranked fight: the command bar, More, the Guard picker, a gamepad button.
 	GameState.start_ladder_rift("A", ids, null)
