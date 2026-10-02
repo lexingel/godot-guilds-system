@@ -1068,206 +1068,210 @@ msgid "Türkçe (beta)"
 msgstr ""
 
 #: scripts/autoload/game_data/GameDataArt.gd:116
+msgid "The boon after an elite is now a pop-up too: one card per boon in its family's colours, with the set it would complete, Take (or keys 1-3) and Skip."
+msgstr "Seçkin bir düşmandan sonraki lütuf da artık açılır pencerede: her lütuf kendi ailesinin renklerinde bir kart, tamamlayacağı set, Al (ya da 1-3 tuşları) ve Atla."
+
+#: scripts/autoload/game_data/GameDataArt.gd:117
 msgid "After a won fight, choosing your reward is now its own pop-up: the loot as cards with every stat on its own line, who it suits, and a Take button (or keys 1-3)."
 msgstr "Kazanılan bir dövüşten sonra ödül seçimi artık kendi açılır penceresinde: ganimet kartlar halinde, her özellik ayrı satırda, kime uyduğu ve bir Al düğmesiyle (ya da 1-3 tuşları)."
 
-#: scripts/autoload/game_data/GameDataArt.gd:117
+#: scripts/autoload/game_data/GameDataArt.gd:118
 msgid "Move a guild between devices: Settings > Backup > Send to another device gives a short code and a QR code. Scan it with your phone, or choose Receive a guild on the title screen and type the code. A code works once, for 15 minutes."
 msgstr "Loncanı cihazlar arasında taşı: Ayarlar > Yedek > Başka bir cihaza gönder kısa bir kod ve bir QR kodu verir. Telefonunla tara ya da başlık ekranında Lonca al'ı seçip kodu yaz. Kod bir kez ve 15 dakika boyunca geçerli."
 
-#: scripts/autoload/game_data/GameDataArt.gd:118
+#: scripts/autoload/game_data/GameDataArt.gd:119
 msgid "Easier to read: the game's text is now set in Lato, wider and clearer at 1080p and below, and the opening's captions sit on a dark plate in a sturdier book face. Back on Settings works again after pressing the gear a second time."
 msgstr "Okuması daha kolay: oyunun yazıları artık Lato ile; 1080p ve altında daha geniş ve net. Açılışın altyazıları da koyu bir zemin üzerinde, daha sağlam bir kitap yazı tipiyle. Ayarlar'da dişliye ikinci kez basınca Geri düğmesi yeniden çalışıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:119
+#: scripts/autoload/game_data/GameDataArt.gd:120
 msgid "The Hollow Crown Company strikes back: expose them and from Act III their sellswords ambush your rifts, and Captain Morrow waits at the bottom of a Rank C+ rift with the key he opens rifts with. A kept echo can now touch a hero who recognises what's in it (Echo-Touched); the third echo brings Ezra the Pale, and the campaign's end says what the Vale remembers. A hero's fiftieth rift gets a line in the Chronicle."
 msgstr "Oyuk Taç Bölüğü karşılık veriyor: onları ifşa edersen III. Perde'den itibaren paralı askerleri yarıklarında pusu kuruyor ve Yüzbaşı Morrow, yarıkları açtığı anahtarla bir C+ Rütbe yarığın dibinde bekliyor. Saklanan bir yankı artık içindekini tanıyan bir kahramana dokunabiliyor (Yankı Dokunmuş); üçüncü yankı Solgun Ezra'yı getiriyor ve seferin sonu Vadi'nin neleri hatırladığını anlatıyor. Bir kahramanın ellinci yarığı Tarihçe'de bir satır kazanıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:120
+#: scripts/autoload/game_data/GameDataArt.gd:121
 msgid "New sound effects throughout (free CC0 sounds, picked by ear). The Charter War comes to a head: as Act III opens, Mother Ilse brings proof the Hollow Crown Company opens rifts for profit. Expose them or keep quiet; when Act III ends, the Crown grants its Royal Charter to the guild with the most Renown. Wen now writes a line for every hero on the Memorial, and a scene when a bond reaches its peak."
 msgstr "Her yerde yeni ses efektleri (kulakla seçilmiş ücretsiz CC0 sesler). Berat Savaşı doruğa ulaşıyor: III. Perde açılırken Ilse Ana, Oyuk Taç Bölüğü'nün para için yarık açtığının kanıtını getiriyor. Onları ifşa et ya da sessiz kal; III. Perde bittiğinde Taç, Kraliyet Beratı'nı en çok Üne sahip loncaya veriyor. Wen artık Anıt'taki her kahraman için bir satır yazıyor ve bir bağ zirveye ulaştığında bir sahne."
 
-#: scripts/autoload/game_data/GameDataArt.gd:121
+#: scripts/autoload/game_data/GameDataArt.gd:122
 msgid "The opening is narrated now, over its own music, with two new scenes: the Accord sealing a rift, and the villagers waiting for a guild. Watch it again from Settings or the Chronicle."
 msgstr "Açılış artık kendi müziği üzerinde anlatılıyor (İngilizce, Türkçe altyazılı) ve iki yeni sahnesi var: Ahit'in bir yarığı mühürlemesi ve bir lonca bekleyen köylüler. Ayarlar'dan ya da Tarihçe'den yeniden izle."
 
-#: scripts/autoload/game_data/GameDataArt.gd:122
+#: scripts/autoload/game_data/GameDataArt.gd:123
 msgid "An opening cinematic: the Night of Breaking, how the old guilds of the Accord vanished, ending on your own guild. It plays when you found a guild; watch it again from Settings or Library > Codex > Chronicle."
 msgstr "Bir açılış sineması: Kırılma Gecesi, Ahit'in eski loncalarının nasıl kaybolduğu ve sonunda senin loncan. Bir lonca kurduğunda oynar; Ayarlar'dan ya da Kütüphane > Kodeks > Tarihçe'den yeniden izleyebilirsin."
 
-#: scripts/autoload/game_data/GameDataArt.gd:123
+#: scripts/autoload/game_data/GameDataArt.gd:124
 msgid "From Act II a sealed rift sometimes leaves an echo: Essence that holds something the Hollow took from someone. Give it back to the village, or keep it. Stranger, gentler things now turn up in rifts too. And when a hero first reaches Rank B, the guild marks their new calling with a scene of its own."
 msgstr "II. Perde'den itibaren mühürlenen bir yarık bazen bir yankı bırakır: Oyuk'un birinden aldığı bir şeyi taşıyan Öz. Köye geri ver ya da sakla. Yarıklarda artık daha tuhaf, daha yumuşak şeyler de çıkıyor. Ve bir kahraman ilk kez B Rütbesine ulaştığında lonca yeni uzmanlığını kendine ait bir sahneyle kutluyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:124
+#: scripts/autoload/game_data/GameDataArt.gd:125
 msgid "Act IV: the Accord Hall. After Sythrane, the posts are tiring, and the Terms of the old bargain wait at the bottom of the Endless Rift (stronger for every post you've emptied). Beat them and choose how the story ends: renew the Accord, or break it. Guilds that already finished Act III can start it now."
 msgstr "IV. Perde: Ahit Salonu. Sythrane'den sonra nöbetler yoruluyor ve eski pazarlığın Şartları Sonsuz Yarık'ın dibinde bekliyor (boşalttığın her nöbetle daha güçlü). Onları yen ve hikâyenin nasıl biteceğini seç: Ahit'i yenile ya da boz. III. Perde'yi bitirmiş loncalar şimdi başlayabilir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:125
+#: scripts/autoload/game_data/GameDataArt.gd:126
 msgid "The guild has people now. Wen the Chronicler, Dobbs the Quartermaster and Old Hesper, the last of an Accord guild, talk at the pay table every payday (see the Ledger). The rival's leader signs every move with a letter of their own, and the Crown has promised a Royal Charter to the best guild. Freeing a champion in the Endless Rift leaves a post empty: the next Riftbreak comes sooner."
 msgstr "Loncada artık insanlar var. Tarihçi Wen, Levazımcı Dobbs ve bir Ahit loncasından kalan son kişi Yaşlı Hesper her maaş günü maaş masasında konuşuyor (Defter'e bak). Rakibin önderi her hamlesini kendi mektubuyla imzalıyor ve Taç en iyi loncaya bir Kraliyet Beratı sözü verdi. Sonsuz Yarık'ta bir şampiyonu kurtarmak bir nöbeti boş bırakır: bir sonraki Yarık Taşması daha erken gelir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:126
+#: scripts/autoload/game_data/GameDataArt.gd:127
 msgid "The story has a past now: the Broken Accord. Why the old guilds vanished on the Night of Breaking, what the champions remember of it, and pages of the Grandmaster's ledger to find in sealed rifts. Read it all in Library > Codex > Chronicle."
 msgstr "Hikâyenin artık bir geçmişi var: Bozulan Ahit. Eski loncaların Kırılma Gecesi'nde neden kaybolduğu, şampiyonların o geceden hatırladıkları ve mühürlenen yarıklarda bulunacak Büyük Üstat defterinin sayfaları. Hepsini Kütüphane > Kodeks > Tarihçe'den oku."
 
-#: scripts/autoload/game_data/GameDataArt.gd:127
+#: scripts/autoload/game_data/GameDataArt.gd:128
 msgid "Recruiting is a board now: new faces arrive every day and wait a few days before moving on, payday fills it, and the rival may sign your best offer first. Each card shows the recruit's attributes and born quirk. Rerolls double in price until payday. Party screens have three saved loadouts: save a party with its rows, load it in one click."
 msgstr "İşe alım artık bir pano: her gün yeni yüzler gelir ve gitmeden önce birkaç gün bekler, maaş günü pano dolar, rakip de en iyi adayını senden önce kapabilir. Her kart adayın niteliklerini ve doğuştan gelen huyunu gösterir. Yenilemeler maaş gününe kadar iki katına çıkar. Grup ekranlarında üç kayıtlı dizilim var: bir grubu sıralarıyla kaydet, tek tıkla yükle."
 
-#: scripts/autoload/game_data/GameDataArt.gd:128
+#: scripts/autoload/game_data/GameDataArt.gd:129
 msgid "The Guild Ledger runs the payroll now: put a hero on half pay to save Gold (it costs morale) or give a bonus to keep them Inspired, see the vault against payday at a glance, and who would go unpaid. Skills aimed at one foe ask which: click the foe. Any save can be deleted from Load Game."
 msgstr "Lonca Defteri artık maaş bordrosunu yönetiyor: Altın biriktirmek için bir kahramanı yarım maaşa al (morale mal olur) ya da İlhamlı kalsın diye prim ver; kasayı maaş gününe karşı tek bakışta gör ve kimin maaşsız kalacağını öğren. Tek bir düşmana yönelik beceriler artık hedef soruyor: düşmana tıkla. Her kayıt Oyun Yükle ekranından silinebilir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:129
+#: scripts/autoload/game_data/GameDataArt.gd:130
 msgid "A lighter interface: cards and buttons lose their outlines (an edge now means something needs you), the main tabs moved into the header, lists and ledgers sit on a calm background, the hero page says each number once, and notices stack less. Key numbers on fight buttons are a setting now (Settings > Key hints)."
 msgstr "Daha hafif bir arayüz: kartlar ve düğmeler çerçevelerini kaybetti (bir kenar artık bir şeyin seni beklediği anlamına geliyor), ana sekmeler başlığa taşındı, listeler ve defterler sakin bir zeminde duruyor, kahraman sayfası her sayıyı bir kez söylüyor ve bildirimler daha az üst üste biniyor. Dövüş düğmelerindeki tuş numaraları artık bir ayar (Ayarlar > Tuş ipuçları)."
 
-#: scripts/autoload/game_data/GameDataArt.gd:130
+#: scripts/autoload/game_data/GameDataArt.gd:131
 msgid "Act finales are real climaxes: each is built on the rank you sealed to reach it, a step harder (they had fallen below it, and a quarter of finale fights ended in the first round). The Recommended power on the party screen follows. Champion cards line up in an even grid."
 msgstr "Perde finalleri gerçek dorukları: her biri ona ulaşmak için mühürlediğin rütbenin üzerine, bir adım daha zor kuruldu (onun altına düşmüşlerdi ve final dövüşlerinin dörtte biri ilk turda bitiyordu). Ekip ekranındaki Önerilen güç de buna göre. Şampiyon kartları düzgün bir ızgarada hizalanıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:131
+#: scripts/autoload/game_data/GameDataArt.gd:132
 msgid "Inventory and Guild Management open straight on their contents: the room's art is a slim strip with its sections as buttons, and each opens where you left it."
 msgstr "Envanter ve Lonca Yönetimi doğrudan içerikleriyle açılıyor: odanın görseli, bölümleri düğme olarak taşıyan ince bir şerit ve her biri bıraktığın yerden açılıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:132
+#: scripts/autoload/game_data/GameDataArt.gd:133
 msgid "Cleaner screens on a laptop: shops, treasure, events and hazards no longer sit under the path map (it shows while you choose a path), Victory puts the rewards beside the results, the quest board fits every note, pre-fight art is shorter, and notices moved to the bottom right."
 msgstr "Dizüstünde daha derli toplu ekranlar: dükkânlar, hazineler, olaylar ve tehlikeler artık yol haritasının altında kalmıyor (harita yol seçerken görünüyor), Zafer ödülleri sonuçların yanına koyuyor, görev panosu her notu sığdırıyor, dövüş öncesi görsel daha kısa ve bildirimler sağ alta taşındı."
 
-#: scripts/autoload/game_data/GameDataArt.gd:133
+#: scripts/autoload/game_data/GameDataArt.gd:134
 msgid "Recruits: commission a hero of the role you want (3 rerolls' Gold), and each offer shows power, HP and wage. Hazards now hurt in line with the rift's rank and always pay about a fight's worth, with a chance of double. Agility gives +1.5% dodge a point (was 0.8%)."
 msgstr "Acemiler: istediğin roldeki bir kahramanı ısmarla (3 yeniden çekim parası); her teklif gücü, canı ve maaşı gösterir. Tehlikeler artık yarığın rütbesine göre can yakıyor ve her zaman bir dövüş kadar ödüyor, iki katı ihtimaliyle. Çeviklik puan başına +%1,5 kaçınma veriyor (önceden %0,8)."
 
-#: scripts/autoload/game_data/GameDataArt.gd:134
+#: scripts/autoload/game_data/GameDataArt.gd:135
 msgid "From player feedback: click a foe to target it (click again to attack). Auto lasts one fight. Quick fight also opens for a Favored party and says why when it can't. Every Ability shows its numbers. Shield Bash can't stun the same foe two rounds running. Fixed Legendary relics no longer take Essence for levels (refunded). Items say which slot they take. The party screen remembers your last party and rows. Clearer Medical Bay, rewards, run summary and skill tree."
 msgstr "Oyuncu geri bildiriminden: bir düşmanı hedef almak için üstüne tıkla (saldırmak için yeniden tıkla). Oto tek bir dövüş sürer. Hızlı dövüş Avantajlı bir ekip için de açılır ve neden açılmadığını söyler. Her Yetenek sayılarını gösterir. Kalkan Darbesi aynı düşmanı üst üste iki tur sersemletemez. Sabit Efsanevi kalıntılar artık seviye için Öz almaz (iade edildi). Eşyalar hangi yuvaya takıldığını söyler. Ekip ekranı son ekibini ve sıralarını hatırlar. Daha anlaşılır Revir, ödüller, koşu özeti ve beceri ağacı."
 
-#: scripts/autoload/game_data/GameDataArt.gd:135
+#: scripts/autoload/game_data/GameDataArt.gd:136
 msgid "The bonus for winning by hand (+30% Gold and Essence, no one down) now pays on elites, bosses and every fight on a rank you haven't sealed: the fights where playing by hand matters."
 msgstr "Elle kazanma bonusu (+%30 Altın ve Öz, kimse düşmeden) artık seçkinlerde, bosslarda ve henüz mühürlemediğin bir rütbedeki her dövüşte ödeniyor: elle oynamanın önemli olduğu dövüşlerde."
 
-#: scripts/autoload/game_data/GameDataArt.gd:136
+#: scripts/autoload/game_data/GameDataArt.gd:137
 msgid "Fights: Quick fight now opens on a rank once you've sealed it, so a new rank and the act finales are fought where you can see them. Auto pauses when a hero is about to fall. The bonus for winning by hand shows before every fight."
 msgstr "Dövüşler: Hızlı dövüş artık bir rütbeyi mühürledikten sonra o rütbede açılıyor; yeni bir rütbe ve perde finalleri gözünün önünde dövüşülür. Oto, bir kahraman düşmek üzereyken duraklar. Elle kazanmanın bonusu her dövüşten önce gösteriliyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:137
+#: scripts/autoload/game_data/GameDataArt.gd:138
 msgid "Balance: from Rank E up, monsters hit harder and last longer, so a party at Recommended power now seals about 3 rifts in 5 and Deadly means it. Hero wages are 50% higher, so a big roster has to earn its keep."
 msgstr "Denge: Rütbe E'den itibaren canavarlar daha sert vuruyor ve daha uzun dayanıyor; Önerilen güçteki bir grup artık 5 yarıktan yaklaşık 3'ünü mühürlüyor ve Ölümcül gerçekten ölümcül. Kahraman maaşları %50 daha yüksek; büyük bir kadro kendi masrafını çıkarmalı."
 
-#: scripts/autoload/game_data/GameDataArt.gd:138
+#: scripts/autoload/game_data/GameDataArt.gd:139
 msgid "A new guild meets its systems one at a time: Quests after your first seal, Management after the second, then Crafting, the daily twist and the rival's moves after the third. A broke guild with fewer than 3 heroes now gets free volunteers at payday."
 msgstr "Yeni bir lonca sistemleriyle tek tek tanışıyor: ilk mühürden sonra Görevler, ikinciden sonra Yönetim, üçüncüden sonra Zanaat, günün cilvesi ve rakibin hamleleri. 3'ten az kahramanı kalmış, parasız bir loncaya artık maaş gününde ücretsiz gönüllüler katılıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:139
+#: scripts/autoload/game_data/GameDataArt.gd:140
 msgid "Phones: no keyboard hints where there's no keyboard, and a larger turn-your-phone prompt."
 msgstr "Telefonlar: klavye olmayan yerde klavye ipuçları yok, ve telefonu çevirme uyarısı daha büyük."
 
-#: scripts/autoload/game_data/GameDataArt.gd:140
+#: scripts/autoload/game_data/GameDataArt.gd:141
 msgid "Phones: hold your phone sideways and the game now fits, with larger text and buttons and the whole fight on one screen. Press and hold anything to read what it does. A fight won by hand with no one down now pays +30% Essence as well as Gold."
 msgstr "Telefonlar: telefonunu yan tuttuğunda oyun artık ekrana sığıyor; yazılar ve düğmeler daha büyük, dövüşün tamamı tek ekranda. Bir şeyin ne işe yaradığını okumak için üstüne basılı tut. Kimse düşmeden elle kazanılan dövüş artık Altının yanında +%30 Öz de kazandırıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:141
+#: scripts/autoload/game_data/GameDataArt.gd:142
 msgid "A guild now holds 6 heroes from the start (a party is 4), so there's a bench to choose from. Act I and Act II have new goals. The Feedback report now includes how long you've played and how your fights and runs went."
 msgstr "Bir lonca artık baştan 6 kahraman barındırır (bir grup 4 kişidir), yani seçebileceğin bir yedek kadron olur. I. ve II. Perdenin hedefleri yenilendi. Geri bildirim raporu artık ne kadar oynadığını ve dövüşlerinle seferlerinin nasıl gittiğini de içeriyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:142
+#: scripts/autoload/game_data/GameDataArt.gd:143
 msgid "Fixes from a full play-through: a foe that has wound up keeps its red warning until the blow lands, the first fight's lessons come in order, the rival's contract grab can't point at a contract that's gone, rift bosses belong to their region (no Act III boss in the Vale), and the rival keeps pace in the Renown race. New: Add strongest on the party screen."
 msgstr "Tam bir oyun denemesinden düzeltmeler: güç toplayan bir düşman darbe inene kadar kırmızı uyarısını korur, ilk dövüşün dersleri sırayla gelir, rakibin sözleşme kapma hamlesi artık kalkmış bir sözleşmeyi göstermez, yarık bossları kendi bölgelerine aittir (Vadide III. Perde bossu yok) ve rakip Ün yarışında geri kalmaz. Yeni: grup ekranında En güçlüleri ekle."
 
-#: scripts/autoload/game_data/GameDataArt.gd:143
+#: scripts/autoload/game_data/GameDataArt.gd:144
 msgid "New foes and stories: six new monsters, two per region (Blight Hound, Lantern Wight, Tide Caller, Mudscale Brute, Cinder Hound, Obsidian Sentinel) in six new designed fights, and 21 new rift events, some found only in one region. Upgrading a facility, hiring a hero, levelling a champion or buying from a shop now lands with a banner and a burst of sparks."
 msgstr "Yeni düşmanlar ve hikâyeler: bölge başına iki olmak üzere altı yeni canavar (Veba Tazısı, Fener Hortlağı, Dalga Çağıran, Çamur Pullu Kaba, Kor Tazısı, Obsidyen Nöbetçi), altı yeni tasarlanmış dövüşte; ayrıca bazıları yalnızca tek bir bölgede karşına çıkan 21 yeni yarık olayı. Bir tesisi yükseltmek, kahraman tutmak, şampiyon seviyesi atlatmak ya da dükkândan alışveriş yapmak artık bir afiş ve kıvılcım patlamasıyla kutlanıyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:144
+#: scripts/autoload/game_data/GameDataArt.gd:145
 msgid "The rival acts: once a week it may court one of your heroes, dare you to seal a rift by payday, or go for a posted contract, and you decide how to answer. Hero requests and the rival's moves pop up as cards when you're home. The Ledger opens on a week board: every day to payday and what falls on it."
 msgstr "Rakip harekete geçiyor: haftada bir kahramanlarından birine göz dikebilir, maaş gününe kadar bir yarığı mühürlemen için sana meydan okuyabilir ya da ilandaki bir sözleşmenin peşine düşebilir; nasıl cevap vereceğine sen karar verirsin. Kahraman istekleri ve rakibin hamleleri, kampa döndüğünde kart olarak açılır. Defter artık bir hafta panosuyla açılır: maaş gününe kadar her gün ve o güne düşenler."
 
-#: scripts/autoload/game_data/GameDataArt.gd:145
+#: scripts/autoload/game_data/GameDataArt.gd:146
 msgid "Fewer, clearer modes: the Daily Rift is now a daily twist on the Rift Ladder (tick it and your next ladder rift, any rank, carries the day's rule and boon for bonus Essence). Echoes are gone: the Endless Rift pays Essence, and Essence levels champions (old Echoes were converted). Renown is the one race with the rival: the monthly contest counts Renown gained, and the Renown tile turns green when you lead."
 msgstr "Daha az, daha net modlar: Günlük Yarık artık Yarık Merdiveni'nde günün cilvesi (işaretlersen bir sonraki merdiven yarığın, hangi rütbe olursa olsun, günün kuralını ve lütfunu taşır ve ek Öz kazandırır). Yankılar kalktı: Sonsuz Yarık Öz öder ve şampiyonlar Öz ile seviye atlar (eski Yankılar Öz'e çevrildi). Rakiple tek yarış Ün: aylık yarışma kazanılan Ünü sayar ve öndeyken Ün kutucuğu yeşile döner."
 
-#: scripts/autoload/game_data/GameDataArt.gd:146
+#: scripts/autoload/game_data/GameDataArt.gd:147
 msgid "New loot: items roll fewer, bigger stats (two per item type), and Rare and Epic items carry a named effect such as Ambush, Thunderclap, Riposte or Renewal. Picking gear shows the Power change. Your current items are unchanged."
 msgstr "Yeni ganimet: eşyalar daha az ama daha büyük nitelik taşır (eşya türü başına iki) ve Nadir ile Destansı eşyalar Pusu, Gök Gürlemesi, Karşı Hamle ya da Yenilenme gibi adlı bir etki taşır. Teçhizat seçerken Güç değişimi görünür. Mevcut eşyaların değişmez."
 
-#: scripts/autoload/game_data/GameDataArt.gd:147
+#: scripts/autoload/game_data/GameDataArt.gd:148
 msgid "Phase 1 of the design pass: fights fit on screen without scrolling, notices sit in the top-right corner (two at a time, click to dismiss, never over a fight), new guilds start with three heroes, one tip at a time, and a tidier Rift Hall and Ledger."
 msgstr "Tasarım geçişinin 1. aşaması: savaşlar kaydırmadan ekrana sığıyor, bildirimler sağ üst köşede (aynı anda iki tane, tıklayınca kapanır, savaşın üstüne asla çıkmaz), yeni loncalar üç kahramanla başlıyor, ipuçları tek tek geliyor ve Yarık Salonu ile Defter daha derli toplu."
 
-#: scripts/autoload/game_data/GameDataArt.gd:148
+#: scripts/autoload/game_data/GameDataArt.gd:149
 msgid "Hero pages are tidier: the header is a row of chips, clicking a slot opens a pop-up of item cards (gains in green, losses in red), and the passive and build notes moved to the Skills tab."
 msgstr "Kahraman sayfaları daha derli toplu: başlık bir rozet sırası, bir yuvaya tıklamak eşya kartlarından oluşan bir pencere açar (kazanımlar yeşil, kayıplar kırmızı) ve pasif ile yapı notları Beceriler sekmesine taşındı."
 
-#: scripts/autoload/game_data/GameDataArt.gd:149
+#: scripts/autoload/game_data/GameDataArt.gd:150
 msgid "Hero pages between fights: click a hero in the rift's top bar (or Hero pages) for the same page as the Roster — gear, attribute and skill points, with tabs for the whole party. It replaces the old Gear Up panel."
 msgstr "Savaşlar arasında kahraman sayfaları: Kadro'dakiyle aynı sayfa için yarığın üst çubuğunda bir kahramana (ya da Kahraman sayfaları'na) tıkla — teçhizat, nitelik ve beceri puanları, tüm ekip için sekmelerle. Eski Donan panelinin yerini alır."
 
-#: scripts/autoload/game_data/GameDataArt.gd:150
+#: scripts/autoload/game_data/GameDataArt.gd:151
 msgid "Riftbreak defenses have painted roads, the Defenses research stands on the war-room map, and a lost defense never touches the Gold set aside for payday. Champions' signature mods are spread evenly: each of the 12 on four champions."
 msgstr "Yarık Taşması savunmalarında artık boyalı yollar var, Savunma araştırması harp odasının haritasında duruyor ve kaybedilen bir savunma maaş günü için ayrılan Altına asla dokunmuyor. Şampiyonların imza güçlendirmeleri eşit dağıtıldı: 12'sinin her biri dört şampiyonda."
 
-#: scripts/autoload/game_data/GameDataArt.gd:151
+#: scripts/autoload/game_data/GameDataArt.gd:152
 msgid "Riftbreaks: from Act II a rift swells now and then, with a countdown in days. Seal a rift of its rank in time to close it, or it breaks and your guild defends: build towers on the road, post your idle heroes and steer a champion. Losing costs Gold, Essence and a damaged building. New Defenses research in Guild > Manage, paid in Gold."
 msgstr "Yarık Taşmaları: II. Perde'den itibaren ara sıra bir yarık kabarır ve günlerle geri sayar. Zamanında onun rütbesinde bir yarığı mühürlersen kapanır; yoksa taşar ve loncan savunur: yola kuleler kur, boştaki kahramanlarını nöbete koy ve bir şampiyonu yönet. Kaybetmek Altın, Öz ve hasarlı bir yapıya mal olur. Lonca > Yönetim'de Altınla ödenen yeni Savunma araştırması."
 
-#: scripts/autoload/game_data/GameDataArt.gd:152
+#: scripts/autoload/game_data/GameDataArt.gd:153
 msgid "Endless Rift level-ups are built around your champions now: each champion's signature move has two mods of its own (Aftershock, Kindled, Leech, Bulwark and more). From level 10, fuse two champions: their signatures fire together, 25% harder, and share their mods."
 msgstr "Sonsuz Yarık'taki seviye atlamaları artık şampiyonlarının etrafında şekilleniyor: her şampiyonun imza hareketinin kendine ait iki güçlendirmesi var (Artçı Sarsıntı, Tutuşmuş, Sülük, Siper ve dahası). 10. seviyeden itibaren iki şampiyonu kaynaştır: imzaları birlikte ateşlenir, %25 daha sert vurur ve güçlendirmelerini paylaşır."
 
-#: scripts/autoload/game_data/GameDataArt.gd:153
+#: scripts/autoload/game_data/GameDataArt.gd:154
 msgid "Endless Rift: gentler when it first opens, and it grows stronger with every champion you free and every act you pass (the party screen shows its strength)."
 msgstr "Sonsuz Yarık: ilk açıldığında daha yumuşak; kurtardığın her şampiyon ve geçtiğin her perdeyle güçlenir (ekip ekranı gücünü gösterir)."
 
-#: scripts/autoload/game_data/GameDataArt.gd:154
+#: scripts/autoload/game_data/GameDataArt.gd:155
 msgid "Endless Rift: every champion now walks with their own animation and plays a signature move when their Call fires."
 msgstr "Sonsuz Yarık: her şampiyon artık kendi animasyonuyla yürüyor ve Çağrısı tetiklendiğinde imza hareketini oynuyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:155
+#: scripts/autoload/game_data/GameDataArt.gd:156
 msgid "Champions, reworked: 24 named champions with their own art, and each new guild meets a different 12. Three are freed by the story, nine are lost in the Endless Rift (stand in their light to free them). One oversees your rift runs with a Boon and a Call; Echoes level them up."
 msgstr "Şampiyonlar yenilendi: kendi çizimleriyle 24 isimli şampiyon, her yeni lonca farklı 12'siyle karşılaşır. Üçü hikâyede kurtarılır, dokuzu Sonsuz Yarık'ta kayıptır (ışıklarının içinde durarak kurtar). Biri yarık seferlerini Lütuf ve Çağrı ile gözetir; Yankılar seviyelerini yükseltir."
 
-#: scripts/autoload/game_data/GameDataArt.gd:156
+#: scripts/autoload/game_data/GameDataArt.gd:157
 msgid "The Endless Rift is now the champions' rift: only champions go in, each with a signature move. It pays Echoes and a little gold, and costs the guild a day."
 msgstr "Sonsuz Yarık artık şampiyonların yarığı: içeri yalnızca şampiyonlar girer, her biri imza hamlesiyle. Yankı ve biraz altın kazandırır, loncaya bir güne mal olur."
 
-#: scripts/autoload/game_data/GameDataArt.gd:157
+#: scripts/autoload/game_data/GameDataArt.gd:158
 msgid "Türkçe (beta): Settings or the title screen. Menus, fights, tips, names and descriptions are all in Turkish."
 msgstr "Türkçe (beta): Ayarlar'dan ya da başlık ekranından. Menüler, sekmeler, dövüşler, ipuçları, isimler ve açıklamalar Türkçe."
 
-#: scripts/autoload/game_data/GameDataArt.gd:158
+#: scripts/autoload/game_data/GameDataArt.gd:159
 msgid "Settings > Hearing aid: captions for sounds that tell you something (a boss arriving, a heavy blow, a hero going down, a wind-up), and the screen's edges pulse on the biggest moments."
 msgstr "Ayarlar > İşitme desteği: bilgi veren sesler için altyazılar (bir boss'un gelişi, ağır bir darbe, düşen bir kahraman, güç toplama); en önemli anlarda ekranın kenarları yanıp söner."
 
-#: scripts/autoload/game_data/GameDataArt.gd:159
+#: scripts/autoload/game_data/GameDataArt.gd:160
 msgid "Two heroes of the same subclass no longer look like twins: the second wears different colours, everywhere they appear."
 msgstr "Aynı alt sınıftan iki kahraman artık ikiz gibi görünmüyor: ikincisi göründüğü her yerde farklı renkler giyiyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:160
+#: scripts/autoload/game_data/GameDataArt.gd:161
 msgid "Endless Rift: fixed the field going grey after a stutter; the ground has grass, reeds, cracks and embers; the party stands out in the middle; banners no longer pile up."
 msgstr "Sonsuz Yarık: bir takılmadan sonra alanın griye dönmesi düzeltildi; zeminde çimen, kamış, çatlak ve kor var; ekip ortada öne çıkıyor; başlıklar artık üst üste binmiyor."
 
-#: scripts/autoload/game_data/GameDataArt.gd:161
+#: scripts/autoload/game_data/GameDataArt.gd:162
 msgid "New look: the title, camp and Rift Hall fill the screen, with flickering torches, breathing portals, stars and fireflies; screens fade between each other and a rift opens as you step in."
 msgstr "Yeni görünüm: başlık ekranı, kamp ve Yarık Salonu ekranı dolduruyor; titreyen meşaleler, nefes alan geçitler, yıldızlar ve ateş böcekleri; ekranlar arasında geçiş efekti ve içeri adım atınca açılan yarık."
 
-#: scripts/autoload/game_data/GameDataArt.gd:162
+#: scripts/autoload/game_data/GameDataArt.gd:163
 msgid "Endless Rift: waves every minute, elite packs with chests, archers, a Rift Warden at 20:00 to beat, evolutions, rift relics, terrain and braziers."
 msgstr "Sonsuz Yarık: her dakika dalgalar, sandıklı seçkin sürüler, okçular, 20:00'de yenilecek bir Yarık Bekçisi, evrimler, yarık kalıntıları, arazi ve mangallar."
 
-#: scripts/autoload/game_data/GameDataArt.gd:163
+#: scripts/autoload/game_data/GameDataArt.gd:164
 msgid "Fights: the main actions fit one row (More holds the rest); hover to preview Momentum; winning by hand with no one down pays +30% Gold."
 msgstr "Dövüşler: ana hamleler tek satıra sığıyor (gerisi Diğer'de); İvme önizlemesi için üstüne gel; kimse düşmeden elle kazanmak +%30 Altın öder."
 
-#: scripts/autoload/game_data/GameDataArt.gd:164
+#: scripts/autoload/game_data/GameDataArt.gd:165
 msgid "Guild: a This-week strip in camp, hero requests to answer, a rival with a face and a monthly contest."
 msgstr "Lonca: kampta Bu hafta şeridi, cevap bekleyen kahraman istekleri, yüzü olan bir rakip ve aylık bir yarışma."
 
-#: scripts/autoload/game_data/GameDataArt.gd:165
+#: scripts/autoload/game_data/GameDataArt.gd:166
 msgid "New music, larger text, and rank rules shown in the rift."
 msgstr "Yeni müzik, daha büyük yazı ve yarıkta gösterilen rütbe kuralları."
 
-#: scripts/autoload/game_data/GameDataArt.gd:230
+#: scripts/autoload/game_data/GameDataArt.gd:231
 msgid "1280×800 (Default)"
 msgstr "1280×800 (Varsayılan)"
 
@@ -2451,7 +2455,7 @@ msgstr "Ne inşa ediyorsan, insanlar fark etti."
 msgid "Growth like this doesn't go unnoticed for long."
 msgstr "Böyle bir büyüme uzun süre fark edilmeden kalmaz."
 
-#: scripts/autoload/game_data/GameDataHeroes.gd:219 scripts/ui/BattleView.gd:1306 scripts/ui/RosterView.gd:808
+#: scripts/autoload/game_data/GameDataHeroes.gd:219 scripts/ui/BattleView.gd:1395 scripts/ui/RosterView.gd:808
 msgid "Weapon"
 msgstr "Silah"
 
@@ -2499,7 +2503,7 @@ msgstr "Değnek"
 msgid "Plate"
 msgstr "Levha Zırh"
 
-#: scripts/autoload/game_data/GameDataHeroes.gd:230 scripts/ui/BattleView.gd:2624
+#: scripts/autoload/game_data/GameDataHeroes.gd:230 scripts/ui/BattleView.gd:2656
 msgid "Guard"
 msgstr "Koru"
 
@@ -6347,7 +6351,7 @@ msgstr "Oyuk"
 msgid "The world sits on a thin crust. Under it is the Hollow, where things that never got to happen pile up: unfinished storms, roads never built, beasts that almost were. A rift is a crack in the crust, and what comes through is the Hollow trying on a shape. It copies what it finds, which is why each region's monsters look like that region."
 msgstr "Dünya ince bir kabuğun üstünde durur. Altında Oyuk vardır; hiç gerçekleşemeyen şeylerin biriktiği yer: yarım kalmış fırtınalar, hiç yapılmamış yollar, neredeyse var olacak canavarlar. Yarık kabuktaki bir çatlaktır ve içinden gelen, bir biçime bürünmeye çalışan Oyuk'tur. Bulduğunu taklit eder; her bölgenin canavarları bu yüzden o bölgeye benzer."
 
-#: scripts/autoload/game_data/GameDataModes.gd:805 scripts/ui/BattleView.gd:1522 scripts/ui/GuildViews.gd:1508
+#: scripts/autoload/game_data/GameDataModes.gd:805 scripts/ui/BattleView.gd:1554 scripts/ui/GuildViews.gd:1508
 msgid "Essence"
 msgstr "Öz"
 
@@ -10919,7 +10923,7 @@ msgstr "Her 20 sn'de ekip 3 sn boyunca yarı hasar alır"
 msgid "Warden"
 msgstr "Bekçi"
 
-#: scripts/survivors/SurvivorsRun.gd:444 scripts/ui/BattleView.gd:2771
+#: scripts/survivors/SurvivorsRun.gd:444 scripts/ui/BattleView.gd:2803
 msgid "Rift Warden"
 msgstr "Yarık Bekçisi"
 
@@ -11159,7 +11163,7 @@ msgstr "Oto durdu: %s düşmek üzere. Savun, Koru ya da iyileştir, sonra Oto'y
 msgid "Boss"
 msgstr "Boss"
 
-#: scripts/ui/BattleView.gd:1033 scripts/ui/BattleView.gd:2771 scripts/ui/GuildViews.gd:1477
+#: scripts/ui/BattleView.gd:1033 scripts/ui/BattleView.gd:2803 scripts/ui/GuildViews.gd:1477
 msgid "Elite"
 msgstr "Seçkin"
 
@@ -11267,7 +11271,7 @@ msgstr "Yenilgi — ekip düştü ve toparlanıyor."
 msgid "The trial ends. Your heroes step out of the tower unharmed — this floor will be waiting, exactly as it was."
 msgstr "Sınav bitti. Kahramanların kuleden yara almadan çıkıyor — bu kat seni aynen bıraktığın gibi bekleyecek."
 
-#: scripts/ui/BattleView.gd:1211 scripts/ui/BattleView.gd:1491
+#: scripts/ui/BattleView.gd:1211 scripts/ui/BattleView.gd:1523
 msgid "Back to the Tower"
 msgstr "Kuleye dön"
 
@@ -11275,603 +11279,603 @@ msgstr "Kuleye dön"
 msgid "Return to camp"
 msgstr "Kampa dön"
 
-#: scripts/ui/BattleView.gd:1240
+#: scripts/ui/BattleView.gd:1230
 msgid "Choose your reward"
 msgstr "Ödülünü seç"
 
-#: scripts/ui/BattleView.gd:1245
+#: scripts/ui/BattleView.gd:1230
 msgid "Take one. The others stay in the rift."
 msgstr "Birini al. Diğerleri yarıkta kalır."
 
-#: scripts/ui/BattleView.gd:1306
-msgid "Relic"
-msgstr ""
-
-#: scripts/ui/BattleView.gd:1306 scripts/ui/RosterView.gd:808 scripts/ui/UiKit.gd:1179
-msgid "Gear"
-msgstr "Teçhizat"
-
-#: scripts/ui/BattleView.gd:1307
-msgid "%s · %s"
-msgstr "%s · %s"
-
-#: scripts/ui/BattleView.gd:1324
-msgid "Take  (%d)"
-msgstr "Al  (%d)"
-
-#: scripts/ui/BattleView.gd:1356
-msgid "Why you lost"
-msgstr "Neden kaybettin"
-
-#: scripts/ui/BattleView.gd:1372
-msgid "Choose a boon — it lasts the rest of this rift"
-msgstr "Bir lütuf seç — bu yarığın sonuna kadar sürer"
-
-#: scripts/ui/BattleView.gd:1401
-msgid "%s · you have %d"
-msgstr "%s · sende %d var"
-
-#: scripts/ui/BattleView.gd:1407
-msgid "Completes %s: %s"
-msgstr "Tamamlar: %s: %s"
-
-#: scripts/ui/BattleView.gd:1411
-msgid "Take"
-msgstr "Al"
-
-#: scripts/ui/BattleView.gd:1418
+#: scripts/ui/BattleView.gd:1244
 msgid "Skip the boon"
 msgstr "Lütfu atla"
 
-#: scripts/ui/BattleView.gd:1453
+#: scripts/ui/BattleView.gd:1248
+msgid "Choose a boon"
+msgstr "Bir lütuf seç"
+
+#: scripts/ui/BattleView.gd:1248
+msgid "It lasts the rest of this rift."
+msgstr "Bu yarığın sonuna kadar sürer."
+
+#: scripts/ui/BattleView.gd:1335
+msgid "%s · you have %d"
+msgstr "%s · sende %d var"
+
+#: scripts/ui/BattleView.gd:1343
+msgid "Completes %s: %s"
+msgstr "Tamamlar: %s: %s"
+
+#: scripts/ui/BattleView.gd:1350 scripts/ui/BattleView.gd:1413
+msgid "Take  (%d)"
+msgstr "Al  (%d)"
+
+#: scripts/ui/BattleView.gd:1395
+msgid "Relic"
+msgstr ""
+
+#: scripts/ui/BattleView.gd:1395 scripts/ui/RosterView.gd:808 scripts/ui/UiKit.gd:1179
+msgid "Gear"
+msgstr "Teçhizat"
+
+#: scripts/ui/BattleView.gd:1396
+msgid "%s · %s"
+msgstr "%s · %s"
+
+#: scripts/ui/BattleView.gd:1445
+msgid "Why you lost"
+msgstr "Neden kaybettin"
+
+#: scripts/ui/BattleView.gd:1485
 msgid "%s %d-piece %s — %s"
 msgstr "%s %d parça %s — %s"
 
-#: scripts/ui/BattleView.gd:1467
+#: scripts/ui/BattleView.gd:1499
 msgid "Floor %d cleared!"
 msgstr "%d. kat temizlendi!"
 
-#: scripts/ui/BattleView.gd:1478
+#: scripts/ui/BattleView.gd:1510
 msgid "A weekly re-clear pays half."
 msgstr "Haftalık tekrar temizleme yarısını öder."
 
-#: scripts/ui/BattleView.gd:1480
+#: scripts/ui/BattleView.gd:1512
 msgid "Guardian's relic: %s"
 msgstr "Muhafızın kalıntısı: %s"
 
-#: scripts/ui/BattleView.gd:1483
+#: scripts/ui/BattleView.gd:1515
 msgid " It's on the Relic Altar."
 msgstr " Kalıntı Sunağı'nda."
 
-#: scripts/ui/BattleView.gd:1485
+#: scripts/ui/BattleView.gd:1517
 msgid "New guild title: %s"
 msgstr "Yeni lonca unvanı: %s"
 
-#: scripts/ui/BattleView.gd:1491
+#: scripts/ui/BattleView.gd:1523
 msgid " — floor %d next"
 msgstr " — sıradaki kat %d"
 
-#: scripts/ui/BattleView.gd:1517
+#: scripts/ui/BattleView.gd:1549
 msgid "Floor %d/%d"
 msgstr "Kat %d/%d"
 
-#: scripts/ui/BattleView.gd:1522 scripts/ui/GuildViews.gd:1508 scripts/ui/GuildViews.gd:421
+#: scripts/ui/BattleView.gd:1554 scripts/ui/GuildViews.gd:1508 scripts/ui/GuildViews.gd:421
 msgid "Gold"
 msgstr "Altın"
 
-#: scripts/ui/BattleView.gd:1543
+#: scripts/ui/BattleView.gd:1575
 msgid "Lv%d → Lv%d"
 msgstr "Sv%d → Sv%d"
 
-#: scripts/ui/BattleView.gd:1543
+#: scripts/ui/BattleView.gd:1575
 msgid "Lv%d"
 msgstr "Sv%d"
 
-#: scripts/ui/BattleView.gd:1547
+#: scripts/ui/BattleView.gd:1579
 msgid "Down"
 msgstr ""
 
-#: scripts/ui/BattleView.gd:1547 scripts/ui/RosterView.gd:83
+#: scripts/ui/BattleView.gd:1579 scripts/ui/RosterView.gd:83
 msgid "%d/%d HP"
 msgstr "%d/%d Can"
 
-#: scripts/ui/BattleView.gd:1562
+#: scripts/ui/BattleView.gd:1594
 msgid "Found: "
 msgstr "Bulunanlar: "
 
-#: scripts/ui/BattleView.gd:1562
+#: scripts/ui/BattleView.gd:1594
 msgid "Found: nothing this time"
 msgstr "Bulunanlar: bu sefer hiçbir şey"
 
-#: scripts/ui/BattleView.gd:1565 scripts/ui/BattleView.gd:1582
+#: scripts/ui/BattleView.gd:1597 scripts/ui/BattleView.gd:1614
 msgid "%d hero%s lost"
 msgstr "%d kahraman%s kaybedildi"
 
-#: scripts/ui/BattleView.gd:1576
+#: scripts/ui/BattleView.gd:1608
 msgid "Floor %d/%d reached"
 msgstr "Kat %d/%d'ye ulaşıldı"
 
-#: scripts/ui/BattleView.gd:1579
+#: scripts/ui/BattleView.gd:1611
 msgid "%+d Gold, %+d Essence this run"
 msgstr "Bu koşuda %+d Altın, %+d Öz"
 
-#: scripts/ui/BattleView.gd:1647
+#: scripts/ui/BattleView.gd:1679
 msgid "Shield: absorbs the next %d damage"
 msgstr "Kalkan: sonraki %d hasarı emer"
 
-#: scripts/ui/BattleView.gd:1736
+#: scripts/ui/BattleView.gd:1768
 msgid "Defending — takes reduced damage this round"
 msgstr "Savunuyor — bu tur daha az hasar alır"
 
-#: scripts/ui/BattleView.gd:1739
+#: scripts/ui/BattleView.gd:1771
 msgid "Shield — absorbs the next %d damage"
 msgstr "Kalkan — sonraki %d hasarı emer"
 
-#: scripts/ui/BattleView.gd:1742
+#: scripts/ui/BattleView.gd:1774
 msgid "Burning — %d damage a round for %d more round(s). A Healing Tonic puts it out."
 msgstr "Yanıyor — her tur %d hasar, %d tur daha. Şifa Toniği söndürür."
 
-#: scripts/ui/BattleView.gd:1744
+#: scripts/ui/BattleView.gd:1776
 msgid "Chilled — acts late next round"
 msgstr "Üşümüş — sonraki tur geç davranır"
 
-#: scripts/ui/BattleView.gd:1746
+#: scripts/ui/BattleView.gd:1778
 msgid "Stunned — loses their next turn"
 msgstr "Sersemlemiş — sonraki sırasını kaybeder"
 
-#: scripts/ui/BattleView.gd:1749
+#: scripts/ui/BattleView.gd:1781
 msgid "Poisoned — %d damage a round for %d more round(s)"
 msgstr "Zehirli — her tur %d hasar, %d tur daha"
 
-#: scripts/ui/BattleView.gd:1754
+#: scripts/ui/BattleView.gd:1786
 msgid "Guarded by %s this round"
 msgstr "Bu tur koruyan: %s"
 
-#: scripts/ui/BattleView.gd:1756
+#: scripts/ui/BattleView.gd:1788
 msgid "Guarding an ally this round (takes their hits, 25% weaker)"
 msgstr "Bu tur bir müttefiki koruyor (darbelerini %25 daha zayıf alır)"
 
-#: scripts/ui/BattleView.gd:1758
+#: scripts/ui/BattleView.gd:1790
 msgid "Cursed — deals %d%% less damage for %d more round(s). Sanctuary cleanses it."
 msgstr "Lanetli — %%%d daha az hasar verir, %d tur daha. Sığınak arındırır."
 
-#: scripts/ui/BattleView.gd:1760
+#: scripts/ui/BattleView.gd:1792
 msgid "Riposte — answers the next %d hit(s) with a counter-strike"
 msgstr "Karşılık — sonraki %d darbeye karşı saldırıyla cevap verir"
 
-#: scripts/ui/BattleView.gd:1762
+#: scripts/ui/BattleView.gd:1794
 msgid "Undying — half damage and can't fall this round"
 msgstr "Ölümsüz — bu tur yarı hasar alır ve düşemez"
 
-#: scripts/ui/BattleView.gd:1764
+#: scripts/ui/BattleView.gd:1796
 msgid "Will dodge the next hit aimed at them"
 msgstr "Kendisine gelen sonraki darbeden kaçacak"
 
-#: scripts/ui/BattleView.gd:1766
+#: scripts/ui/BattleView.gd:1798
 msgid "Branded — takes %d%% more damage for %d more round(s). Guard them."
 msgstr "Damgalı — %%%d daha fazla hasar alır, %d tur daha. Onu koru."
 
-#: scripts/ui/BattleView.gd:1768
+#: scripts/ui/BattleView.gd:1800
 msgid "Taunting — every foe's attacks come here this round, %d%% weaker"
 msgstr "Kışkırtıyor — bu tur tüm düşman saldırıları buraya gelir, %%%d daha zayıf"
 
-#: scripts/ui/BattleView.gd:1770
+#: scripts/ui/BattleView.gd:1802
 msgid "Enough Momentum for their Ability"
 msgstr "Yeteneği için yeterli İvme var"
 
-#: scripts/ui/BattleView.gd:1786
+#: scripts/ui/BattleView.gd:1818
 msgid " (active)"
 msgstr " (etkin)"
 
-#: scripts/ui/BattleView.gd:1797
+#: scripts/ui/BattleView.gd:1829
 msgid "Armored — shrugs off %d%% of basic attacks (each hit chips it). Abilities ignore armor."
 msgstr "Zırhlı — temel saldırıların %%%d'ini savuşturur (her darbe zırhı aşındırır). Yetenekler zırhı yok sayar."
 
-#: scripts/ui/BattleView.gd:1799
+#: scripts/ui/BattleView.gd:1831
 msgid "Its hits can set a hero ablaze (damage over time)"
 msgstr "Darbeleri bir kahramanı tutuşturabilir (zamanla hasar)"
 
-#: scripts/ui/BattleView.gd:1800
+#: scripts/ui/BattleView.gd:1832
 msgid "Its hits can chill a hero (acts late next round)"
 msgstr "Darbeleri bir kahramanı üşütebilir (sonraki tur geç davranır)"
 
-#: scripts/ui/BattleView.gd:1802
+#: scripts/ui/BattleView.gd:1834
 msgid "Winding up a heavy blow. Shield Bash, Frost Nova or Backstab can punish it."
 msgstr "Ağır bir darbe için güç topluyor. Kalkan Darbesi, Buz Novası ya da Sırttan Bıçak bunu cezalandırabilir."
 
-#: scripts/ui/BattleView.gd:1804
+#: scripts/ui/BattleView.gd:1836
 msgid "Stunned — loses its next %s"
 msgstr "Sersemlemiş — sonraki %s kaybeder"
 
-#: scripts/ui/BattleView.gd:1804
+#: scripts/ui/BattleView.gd:1836
 msgid "%d actions"
 msgstr "%d hamlesini"
 
-#: scripts/ui/BattleView.gd:1807
+#: scripts/ui/BattleView.gd:1839
 msgid "Burning — %d damage a round for %d more round(s)"
 msgstr "Yanıyor — her tur %d hasar, %d tur daha"
 
-#: scripts/ui/BattleView.gd:1809
+#: scripts/ui/BattleView.gd:1841
 msgid "Marked — takes %d%% more damage from heroes"
 msgstr "İşaretli — kahramanlardan %%%d daha fazla hasar alır"
 
-#: scripts/ui/BattleView.gd:1813
+#: scripts/ui/BattleView.gd:1845
 msgid "Can also: %s (telegraphed a round ahead)"
 msgstr "Ayrıca yapabilir: %s (bir tur önceden belli olur)"
 
-#: scripts/ui/BattleView.gd:1816
+#: scripts/ui/BattleView.gd:1848
 msgid "Ward — absorbs the next %d damage"
 msgstr "Koruma — sonraki %d hasarı emer"
 
-#: scripts/ui/BattleView.gd:1880
+#: scripts/ui/BattleView.gd:1912
 msgid "winding up a heavy blow"
 msgstr "ağır darbe için güç topluyor"
 
-#: scripts/ui/BattleView.gd:1936
+#: scripts/ui/BattleView.gd:1968
 msgid "Next round!"
 msgstr "Sonraki tur!"
 
-#: scripts/ui/BattleView.gd:1936
+#: scripts/ui/BattleView.gd:1968
 msgid "Incoming this round: %s"
 msgstr "Bu tur gelenler: %s"
 
-#: scripts/ui/BattleView.gd:2009
+#: scripts/ui/BattleView.gd:2041
 msgid "Winding up"
 msgstr "Güç topluyor"
 
-#: scripts/ui/BattleView.gd:2009
+#: scripts/ui/BattleView.gd:2041
 msgid "Gathering strength this round. Next round it lands a heavy blow (×%s damage) that stuns its target unless they Defend. Defend, Guard, or move the likely target to the back row."
 msgstr "Bu tur güç topluyor. Sonraki tur ağır bir darbe (×%s hasar) indirir; hedef Savunmazsa sersemler. Savun, Koru ya da muhtemel hedefi arka sıraya al."
 
-#: scripts/ui/BattleView.gd:2012
+#: scripts/ui/BattleView.gd:2044
 msgid "HEAVY BLOW on %s for about %d — it stuns unless they Defend. Defend (5) halves it; Guard (6) takes it for them; Shield Bash breaks it."
 msgstr "AĞIR DARBE: %s, yaklaşık %d — Savunmazsa sersemler. Savun (5) yarıya indirir; Koru (6) darbeyi onun yerine alır; Kalkan Darbesi bozar."
 
-#: scripts/ui/BattleView.gd:2015
+#: scripts/ui/BattleView.gd:2047
 msgid "Attacks %s this round for about %d%s"
 msgstr "Bu tur %s hedefine yaklaşık %d vuracak%s"
 
-#: scripts/ui/BattleView.gd:2015
+#: scripts/ui/BattleView.gd:2047
 msgid " — a heavy hit, consider Defending"
 msgstr " — ağır bir darbe, Savunmayı düşün"
 
-#: scripts/ui/BattleView.gd:2025
+#: scripts/ui/BattleView.gd:2057
 msgid "Round %d%s"
 msgstr "Tur %d%s"
 
-#: scripts/ui/BattleView.gd:2038 scripts/ui/GuildViews.gd:1238 scripts/ui/RiftRunView.gd:287
+#: scripts/ui/BattleView.gd:2070 scripts/ui/GuildViews.gd:1238 scripts/ui/RiftRunView.gd:287
 msgid "Rank %s"
 msgstr "Rütbe %s"
 
-#: scripts/ui/BattleView.gd:2038
+#: scripts/ui/BattleView.gd:2070
 msgid "This rift is Rank %s on the rift ladder."
 msgstr "Bu yarık, yarık merdiveninde Rütbe %s."
 
-#: scripts/ui/BattleView.gd:2087
+#: scripts/ui/BattleView.gd:2119
 msgid "Attack %s"
 msgstr "Saldır: %s"
 
-#: scripts/ui/BattleView.gd:2087
+#: scripts/ui/BattleView.gd:2119
 msgid "Target %s (click again to attack)"
 msgstr "Hedef: %s (saldırmak için yeniden tıkla)"
 
-#: scripts/ui/BattleView.gd:2094
+#: scripts/ui/BattleView.gd:2126
 msgid "%s on %s"
 msgstr "%s → %s"
 
-#: scripts/ui/BattleView.gd:2161
+#: scripts/ui/BattleView.gd:2193
 msgid "That's the core of every fight: read the tags above the foes, build Momentum with attacks and defence, and spend it on skills. Auto (A) plays turns for you whenever you like."
 msgstr "Her dövüşün özü bu: düşmanların üstündeki etiketleri oku, saldırı ve savunmayla İvme biriktir, becerilere harca. Oto (A) istediğin an turları senin yerine oynar."
 
-#: scripts/ui/BattleView.gd:2174
+#: scripts/ui/BattleView.gd:2206
 msgid "Wind-ups. %s has wound up a heavy blow (the red tag above it). Next round it lands on one hero and stuns them unless they Defend. Press Defend (5) to take half and earn Momentum, or Guard (6) a hurt ally."
 msgstr "Güç toplama. %s ağır bir darbe için güç topladı (üstündeki kırmızı etiket). Sonraki tur bir kahramana iner ve Savunmazsa onu sersemletir. Hasarın yarısını almak ve İvme kazanmak için Savun (5), ya da yaralı bir müttefiki Koru (6)."
 
-#: scripts/ui/BattleView.gd:2177
+#: scripts/ui/BattleView.gd:2209
 msgid "Wind-ups. %s is winding up a heavy blow at %s: see the red tag above it. It lands next round and stuns unless the target Defends. %s"
 msgstr "Güç toplama. %s, %s hedefine ağır bir darbe için güç topluyor: üstündeki kırmızı etikete bak. Sonraki tur iner ve hedef Savunmazsa sersemletir. %s"
 
-#: scripts/ui/BattleView.gd:2178
+#: scripts/ui/BattleView.gd:2210
 msgid "Press Defend (5) — %s takes half and earns Momentum."
 msgstr "Savun'a (5) bas — %s yarı hasar alır ve İvme kazanır."
 
-#: scripts/ui/BattleView.gd:2178
+#: scripts/ui/BattleView.gd:2210
 msgid "Press Guard (6) and pick %s — %s takes the blow instead, 25%% weaker."
 msgstr "Koru'ya (6) bas ve %s seç — darbeyi %s alır, %%25 daha zayıf."
 
-#: scripts/ui/BattleView.gd:2180
+#: scripts/ui/BattleView.gd:2212
 msgid "Attack. It's %s's turn: press Attack (1) or click a foe. Every attack adds 1 Momentum — the pips under %s's name."
 msgstr "Saldırı. Sıra: %s. Saldır'a (1) bas ya da bir düşmana tıkla. Her saldırı 1 İvme ekler — %s adının altındaki noktalar."
 
-#: scripts/ui/BattleView.gd:2184
+#: scripts/ui/BattleView.gd:2216
 msgid "Skills. You have %d Momentum. %s's skill %s (2) spends %d of it for a stronger move — hover it to read it, then use it."
 msgstr "Beceriler. %d İvmen var. %s becerisi %s (2), daha güçlü bir hamle için %d harcar — üstüne gelip oku, sonra kullan."
 
-#: scripts/ui/BattleView.gd:2185
+#: scripts/ui/BattleView.gd:2217
 msgid "Skills cost Momentum. Keep attacking until a skill (2-4) lights up, then use it."
 msgstr "Beceriler İvme harcar. Bir beceri (2-4) yanana kadar saldırmaya devam et, sonra kullan."
 
-#: scripts/ui/BattleView.gd:2200
+#: scripts/ui/BattleView.gd:2232
 msgid "Step %d of 3"
 msgstr "Adım %d / 3"
 
-#: scripts/ui/BattleView.gd:2200
+#: scripts/ui/BattleView.gd:2232
 msgid "Well fought"
 msgstr "İyi dövüştün"
 
-#: scripts/ui/BattleView.gd:2208 scripts/ui/UiKit.gd:1588
+#: scripts/ui/BattleView.gd:2240 scripts/ui/UiKit.gd:1588
 msgid "Got it"
 msgstr "Anladım"
 
-#: scripts/ui/BattleView.gd:2208
+#: scripts/ui/BattleView.gd:2240
 msgid "Skip tutorial"
 msgstr "Eğitimi atla"
 
-#: scripts/ui/BattleView.gd:2318
+#: scripts/ui/BattleView.gd:2350
 msgid "Momentum %d/%d — the party's shared pool for skills and Abilities. Attacks, kills, and hits taken while Defending or Guarding build it."
 msgstr "İvme %d/%d — ekibin beceri ve Yetenekler için ortak havuzu. Saldırılar, öldürmeler ve Savunurken ya da Korurken alınan darbeler doldurur."
 
-#: scripts/ui/BattleView.gd:2320
+#: scripts/ui/BattleView.gd:2352
 msgid "Momentum"
 msgstr "İvme"
 
-#: scripts/ui/BattleView.gd:2378
+#: scripts/ui/BattleView.gd:2410
 msgid "Which tonic?"
 msgstr "Hangi tonik?"
 
-#: scripts/ui/BattleView.gd:2397
+#: scripts/ui/BattleView.gd:2429
 msgid "%s (key %d)"
 msgstr "%s (tuş %d)"
 
-#: scripts/ui/BattleView.gd:2406 scripts/ui/BattleView.gd:2445 scripts/ui/BattleView.gd:2491
+#: scripts/ui/BattleView.gd:2438 scripts/ui/BattleView.gd:2477 scripts/ui/BattleView.gd:2523
 msgid "Cancel"
 msgstr "İptal"
 
-#: scripts/ui/BattleView.gd:2409
+#: scripts/ui/BattleView.gd:2441
 msgid "Guard whom?"
 msgstr "Kimi koruyacak?"
 
-#: scripts/ui/BattleView.gd:2409
+#: scripts/ui/BattleView.gd:2441
 msgid "%s for whom?"
 msgstr "%s kimin için?"
 
-#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2409 scripts/ui/BattleView.gd:2740
+#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2441 scripts/ui/BattleView.gd:2772
 msgid "Tonic"
 msgstr "Tonik"
 
-#: scripts/ui/BattleView.gd:2431
+#: scripts/ui/BattleView.gd:2463
 msgid "  (%d dmg incoming)"
 msgstr "  (%d hasar geliyor)"
 
-#: scripts/ui/BattleView.gd:2434 scripts/ui/BattleView.gd:2477
+#: scripts/ui/BattleView.gd:2466 scripts/ui/BattleView.gd:2509
 msgid "Key %d"
 msgstr "Tuş %d"
 
-#: scripts/ui/BattleView.gd:2439
+#: scripts/ui/BattleView.gd:2471
 msgid "Already at full HP"
 msgstr "Canı zaten tam"
 
-#: scripts/ui/BattleView.gd:2454
+#: scripts/ui/BattleView.gd:2486
 msgid "%s: tap a foe"
 msgstr "%s: bir düşmana dokun"
 
-#: scripts/ui/BattleView.gd:2454
+#: scripts/ui/BattleView.gd:2486
 msgid "%s: click a foe"
 msgstr "%s: bir düşmana tıkla"
 
-#: scripts/ui/BattleView.gd:2530
+#: scripts/ui/BattleView.gd:2562
 msgid "%s's turn"
 msgstr "Sıra: %s"
 
-#: scripts/ui/BattleView.gd:2534
+#: scripts/ui/BattleView.gd:2566
 msgid "Lv%d %s · %d/%d HP"
 msgstr "Sv%d %s · %d/%d Can"
 
-#: scripts/ui/BattleView.gd:2548
+#: scripts/ui/BattleView.gd:2580
 msgid "Attack %s (1): +%d Momentum%s. Click a foe to pick another, Tab to cycle."
 msgstr "Saldır: %s (1): +%d İvme%s. Başkasını seçmek için bir düşmana tıkla, sırayla geçmek için Tab."
 
-#: scripts/ui/BattleView.gd:2548
+#: scripts/ui/BattleView.gd:2580
 msgid " (+1 for the kill: this hit should finish it)"
 msgstr " (öldürme için +1: bu darbe onu bitirmeli)"
 
-#: scripts/ui/BattleView.gd:2550
+#: scripts/ui/BattleView.gd:2582
 msgid "\nFrom the back row a %s hits at half strength."
 msgstr "\nArka sıradan bir %s yarı güçle vurur."
 
-#: scripts/ui/BattleView.gd:2554
+#: scripts/ui/BattleView.gd:2586
 msgid "Attack"
 msgstr "Saldır"
 
-#: scripts/ui/BattleView.gd:2554
+#: scripts/ui/BattleView.gd:2586
 msgid "Attack ½"
 msgstr "Saldır ½"
 
-#: scripts/ui/BattleView.gd:2564
+#: scripts/ui/BattleView.gd:2596
 msgid "\n%s row."
 msgstr "\n%s sıra."
 
-#: scripts/ui/BattleView.gd:2564
+#: scripts/ui/BattleView.gd:2596
 msgid "\n%s twist: %s."
 msgstr "\n%s dokunuşu: %s."
 
-#: scripts/ui/BattleView.gd:2567
+#: scripts/ui/BattleView.gd:2599
 msgid "%s\nLearned at level %d."
 msgstr "%s\n%d. seviyede öğrenilir."
 
-#: scripts/ui/BattleView.gd:2570
+#: scripts/ui/BattleView.gd:2602
 msgid "Ability"
 msgstr "Yetenek"
 
-#: scripts/ui/BattleView.gd:2588
+#: scripts/ui/BattleView.gd:2620
 msgid "%s (%s) — %d Momentum. %s%s"
 msgstr "%s (%s) — %d İvme. %s%s"
 
-#: scripts/ui/BattleView.gd:2598 scripts/ui/Main.gd:2474 scripts/ui/Main.gd:2556
+#: scripts/ui/BattleView.gd:2630 scripts/ui/Main.gd:2474 scripts/ui/Main.gd:2556
 msgid "Defend"
 msgstr "Savun"
 
-#: scripts/ui/BattleView.gd:2598
+#: scripts/ui/BattleView.gd:2630
 msgid "Defend (5) — take half damage from hits this round. Each hit taken while Defending gives +1 Momentum (+2 for a heavy blow)."
 msgstr "Savun (5) — bu tur darbelerden yarı hasar al. Savunurken alınan her darbe +1 İvme verir (ağır darbe için +2)."
 
-#: scripts/ui/BattleView.gd:2606
+#: scripts/ui/BattleView.gd:2638
 msgid "More (M, or Start on a gamepad) — Guard (6), Move (7), Tonics (8)%s"
 msgstr "Diğer (M ya da oyun kolunda Start) — Koru (6), Yer Değiştir (7), Tonikler (8)%s"
 
-#: scripts/ui/BattleView.gd:2606
+#: scripts/ui/BattleView.gd:2638
 msgid ", Champion's Call (9)"
 msgstr ", Şampiyon Çağrısı (9)"
 
-#: scripts/ui/BattleView.gd:2610
+#: scripts/ui/BattleView.gd:2642
 msgid "Less"
 msgstr "Daha az"
 
-#: scripts/ui/BattleView.gd:2610
+#: scripts/ui/BattleView.gd:2642
 msgid "More ★"
 msgstr "Diğer ★"
 
-#: scripts/ui/BattleView.gd:2610
+#: scripts/ui/BattleView.gd:2642
 msgid "More"
 msgstr "Diğer"
 
-#: scripts/ui/BattleView.gd:2624
+#: scripts/ui/BattleView.gd:2656
 msgid "Guard (6) — pick an ally: attacks aimed at them this round hit you instead, 25% weaker, for +1 Momentum each."
 msgstr "Koru (6) — bir müttefik seç: bu tur ona yönelen saldırılar %25 daha zayıf olarak sana gelir, her biri +1 İvme."
 
-#: scripts/ui/BattleView.gd:2630
+#: scripts/ui/BattleView.gd:2662
 msgid "%s's Call (9) — %s. Uses this hero's turn; %d left this rift."
 msgstr "%s Çağrısı (9) — %s. Bu kahramanın sırasını harcar; bu yarıkta %d kaldı."
 
-#: scripts/ui/BattleView.gd:2636
+#: scripts/ui/BattleView.gd:2668
 msgid "To %s"
 msgstr "%s sıraya"
 
-#: scripts/ui/BattleView.gd:2637
+#: scripts/ui/BattleView.gd:2669
 msgid "Move (7) — step to the %s row. The front row draws most attacks; melee heroes hit at half strength from the back; some skills need a row."
 msgstr "Yer Değiştir (7) — %s sıraya geç. Ön sıra saldırıların çoğunu çeker; yakın dövüş kahramanları arkadan yarı güçle vurur; bazı beceriler belli bir sıra ister."
 
-#: scripts/ui/BattleView.gd:2645
+#: scripts/ui/BattleView.gd:2677
 msgid "Tonics ×%d"
 msgstr "Tonikler ×%d"
 
-#: scripts/ui/BattleView.gd:2645
+#: scripts/ui/BattleView.gd:2677
 msgid "Tonics (8) — Healing, Iron or Focus. Uses this hero's turn."
 msgstr "Tonikler (8) — Şifa, Demir ya da Odak. Bu kahramanın sırasını harcar."
 
-#: scripts/ui/BattleView.gd:2670
+#: scripts/ui/BattleView.gd:2702
 msgid "Target: %s\nSpace repeats your last action"
 msgstr "Hedef: %s\nBoşluk son hamleni tekrarlar"
 
-#: scripts/ui/BattleView.gd:2676
+#: scripts/ui/BattleView.gd:2708
 msgid "The party is down."
 msgstr "Ekip düştü."
 
-#: scripts/ui/BattleView.gd:2676
+#: scripts/ui/BattleView.gd:2708
 msgid "Enemy turn…"
 msgstr "Düşman sırası…"
 
-#: scripts/ui/BattleView.gd:2694
+#: scripts/ui/BattleView.gd:2726
 msgid "Battle speed: ×1, ×2, ×3 or Instant (click to change; also in Settings)"
 msgstr "Savaş hızı: ×1, ×2, ×3 ya da Anında (değiştirmek için tıkla; Ayarlar'da da var)"
 
-#: scripts/ui/BattleView.gd:2701 scripts/ui/RosterView.gd:413
+#: scripts/ui/BattleView.gd:2733 scripts/ui/RosterView.gd:413
 msgid "Auto"
 msgstr "Oto"
 
-#: scripts/ui/BattleView.gd:2701
+#: scripts/ui/BattleView.gd:2733
 msgid "Auto ✓"
 msgstr "Oto ✓"
 
-#: scripts/ui/BattleView.gd:2701
+#: scripts/ui/BattleView.gd:2733
 msgid "Auto (A), for this fight — heroes act on their own: Defend against heavy blows, use Abilities when ready, focus the weakest foe. It pauses when a hero is about to fall. An elite, a boss or any fight on a rank you haven't sealed, won by hand with no one down, pays +%d%% Gold and Essence."
 msgstr "Oto (A), bu dövüş için — kahramanlar kendi başına davranır: ağır darbelere karşı Savunur, hazır olunca Yetenek kullanır, en zayıf düşmana odaklanır. Bir kahraman düşmek üzereyken duraklar. Kimse düşmeden elle kazanılan bir seçkin, boss ya da henüz mühürlemediğin bir rütbedeki her dövüş +%%%d Altın ve Öz öder."
 
-#: scripts/ui/BattleView.gd:2710
+#: scripts/ui/BattleView.gd:2742
 msgid "Log"
 msgstr "Kayıt"
 
-#: scripts/ui/BattleView.gd:2710
+#: scripts/ui/BattleView.gd:2742
 msgid "Show or hide the fight log"
 msgstr "Dövüş kaydını göster ya da gizle"
 
-#: scripts/ui/BattleView.gd:2715
+#: scripts/ui/BattleView.gd:2747
 msgid "Retreat — leave the fight (the run ends)"
 msgstr "Geri çekil — dövüşten ayrıl (koşu biter)"
 
-#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2738
+#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2770
 msgid "gathers its strength"
 msgstr "güç topluyor"
 
-#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2739
+#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2771
 msgid "strikes every foe"
 msgstr "tüm düşmanlara vuruyor"
 
-#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2739
+#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2771
 msgid "Phoenix"
 msgstr "Anka"
 
-#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2739
+#: locale/extra_msgids.txt scripts/ui/BattleView.gd:2771
 msgid "uses "
 msgstr "kullanıyor"
 
-#: scripts/ui/BattleView.gd:2744
+#: scripts/ui/BattleView.gd:2776
 msgid "[A foe gathers its strength]"
 msgstr "[Bir düşman güç topluyor]"
 
-#: scripts/ui/BattleView.gd:2753
+#: scripts/ui/BattleView.gd:2785
 msgid "[%s roars: a second phase]"
 msgstr "[%s kükrüyor: ikinci evre]"
 
-#: scripts/ui/BattleView.gd:2754
+#: scripts/ui/BattleView.gd:2786
 msgid "%s enters its second phase"
 msgstr "%s ikinci evresine giriyor"
 
-#: scripts/ui/BattleView.gd:2758
+#: scripts/ui/BattleView.gd:2790
 msgid "[A boss roars]"
 msgstr "[Bir boss kükrüyor]"
 
-#: scripts/ui/BattleView.gd:2758
+#: scripts/ui/BattleView.gd:2790
 msgid "[An elite snarls]"
 msgstr "[Bir seçkin hırlıyor]"
 
-#: scripts/ui/BattleView.gd:2771
+#: scripts/ui/BattleView.gd:2803
 msgid "Tower Guardian"
 msgstr "Kule Muhafızı"
 
-#: scripts/ui/BattleView.gd:2778
+#: scripts/ui/BattleView.gd:2810
 msgid "Round %d"
 msgstr "Tur %d"
 
-#: scripts/ui/BattleView.gd:2854
+#: scripts/ui/BattleView.gd:2886
 msgid "+%d XP each"
 msgstr "Her birine +%d TP"
 
-#: scripts/ui/BattleView.gd:2867
+#: scripts/ui/BattleView.gd:2899
 msgid "%s  Lv%d"
 msgstr "%s  Sv%d"
 
-#: scripts/ui/BattleView.gd:2870
+#: scripts/ui/BattleView.gd:2902
 msgid "LEVEL UP!"
 msgstr "SEVİYE ATLADI!"
 
-#: scripts/ui/BattleView.gd:2878
+#: scripts/ui/BattleView.gd:2910
 msgid "MVP"
 msgstr "En İyi"
 
-#: scripts/ui/BattleView.gd:2881
+#: scripts/ui/BattleView.gd:2913
 msgid "Most damage dealt this fight"
 msgstr "Bu dövüşte en çok hasar veren"
 
-#: scripts/ui/BattleView.gd:2889
+#: scripts/ui/BattleView.gd:2921
 msgid "Max level"
 msgstr "En üst seviye"
 
-#: scripts/ui/BattleView.gd:2889
+#: scripts/ui/BattleView.gd:2921
 msgid "%d / %d XP to Lv%d"
 msgstr "%d / %d TP (Sv%d için)"
 
-#: scripts/ui/BattleView.gd:2894
+#: scripts/ui/BattleView.gd:2926
 msgid "%d dmg · %d kill%s"
 msgstr "%d hasar · %d öldürme%s"
 

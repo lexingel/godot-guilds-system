@@ -1176,8 +1176,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			# The pick is a pop-up over the summary: inline, testers read the
 			# cards as more of the report and didn't see they had to choose.
 			_reward_overlay(options)
-		if GameState.boon_pending():
-			right.add_child(_boon_offer_row(result))
+		elif GameState.boon_pending():   # after the reward, the elite's boon
+			_boon_overlay(result)
 		if (options.is_empty() or ns.get("reward_chosen", false)) and not GameState.boon_pending():
 			var cont := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 				if is_boss:
@@ -1218,6 +1218,43 @@ func _render_combat_node(v: VBoxContainer) -> void:
 ## The reward pick after a won fight: a pop-up of loot cards over the
 ## dimmed Victory summary, each with a Take button (keys 1-3 pick too).
 func _reward_overlay(options: Array) -> void:
+	var picks: Array[Callable] = []
+	var flash: Array[bool] = []
+	for i in options.size():
+		picks.append(func(idx=i, legendary=(options[i]["obj"].rarity == "legendary")):
+			GameState.pick_combat_reward(idx)
+			if legendary:
+				_flavor_toast = GameData.narrative_line("legendary_drop")
+			render())
+		flash.append(str(options[i]["obj"].rarity) == "legendary")
+	_pick_overlay("Choose your reward", "Take one. The others stay in the rift.", options,
+		func(i: int, w: float, small: bool) -> Control: return _reward_card(options[i], w, i + 1, picks[i], small),
+		picks, null, flash)
+
+
+## The boon pick after an elite (once the reward is taken): the same pop-up,
+## one card per boon in its family's colours, and Skip.
+func _boon_overlay(result: Dictionary) -> void:
+	var offer: Array = result.get("boon_offer", [])
+	var picks: Array[Callable] = []
+	for i in offer.size():
+		picks.append(func(k=i):
+			GameState.pick_boon(k)
+			render())
+	var skip := _button("Skip the boon", func():
+		GameState.pick_boon(-1)
+		render())
+	skip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_pick_overlay("Choose a boon", "It lasts the rest of this rift.", offer,
+		func(i: int, w: float, small: bool) -> Control: return _boon_card(str(offer[i]), w, i + 1, picks[i], small),
+		picks, skip, [])
+
+
+## The pick pop-up: a dim over the screen, a heading, a row of cards from
+## make_card(i, width, small), keys 1-n for picks, an optional footer. It
+## fades in and deals the cards the first time `options` is shown (flash[i]:
+## a gold flash for that card); scrolls when taller than a small window.
+func _pick_overlay(title: String, subtitle: String, options: Array, make_card: Callable, picks: Array[Callable], footer: Control, flash: Array[bool]) -> void:
 	var vp := get_viewport().get_visible_rect().size
 	var overlay := Control.new()
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1225,7 +1262,6 @@ func _reward_overlay(options: Array) -> void:
 	dim.color = Color(0, 0, 0, 0.62)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(dim)
-	# Scrolls when the cards are taller than a small window.
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1237,14 +1273,14 @@ func _reward_overlay(options: Array) -> void:
 	var small := _compact() or vp.y < 600.0
 	var col := _vbox(8 if small else 14)
 	center.add_child(col)
-	var head := _label("Choose your reward", 20 if small else 24)
+	var head := _label(title, 20 if small else 24)
 	head.add_theme_font_override("font", DISPLAY_FONT)
 	head.add_theme_color_override("font_color", Palette.RANK_S)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(head)
-	var sub := _label("Take one. The others stay in the rift.", 13, true)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if not small:
+		var sub := _label(subtitle, 13, true)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(sub)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
@@ -1252,16 +1288,11 @@ func _reward_overlay(options: Array) -> void:
 	col.add_child(row)
 	var card_w := clampf((vp.x - 60.0) / options.size() - 14.0, 170.0, 260.0)
 	for i in options.size():
-		var pick := func(idx=i, legendary=(options[i]["obj"].rarity == "legendary")):
-			GameState.pick_combat_reward(idx)
-			if legendary:
-				_flavor_toast = GameData.narrative_line("legendary_drop")
-			render()
-		row.add_child(_reward_card(options[i], card_w, i + 1, pick, small))
-		_combat_hotkeys[str(i + 1)] = pick
+		row.add_child(make_card.call(i, card_w, small))
+		_combat_hotkeys[str(i + 1)] = picks[i]
+	if footer != null:
+		col.add_child(footer)
 	root.add_child(overlay)
-	# Fade the pop-up in, then deal the cards one after another, the first
-	# time this result is shown; legendaries land with a gold flash.
 	if not is_same(options, _revealed_rewards):
 		_revealed_rewards = options
 		overlay.modulate.a = 0.0
@@ -1271,9 +1302,67 @@ func _reward_overlay(options: Array) -> void:
 			card.modulate.a = 0.0
 			var tw := card.create_tween().set_parallel(true)
 			tw.tween_property(card, "modulate:a", 1.0, 0.25).set_delay(0.6 + 0.15 * ri)
-			if str(options[ri]["obj"].rarity) == "legendary":
+			if ri < flash.size() and flash[ri]:
 				tw.tween_property(card, "modulate", Color(1.6, 1.35, 0.7), 0.12).set_delay(0.9 + 0.18 * ri)
 				tw.tween_property(card, "modulate", Color.WHITE, 0.45).set_delay(1.05 + 0.18 * ri)
+
+
+## One boon card: the family's colour and icon, the boon, how many of that
+## family the party has, the set it would complete, and Take.
+func _boon_card(boon_id: String, w: float, key: int, pick: Callable, small: bool) -> Control:
+	var b := GameData.find_boon(boon_id)
+	var fam: Dictionary = GameData.BOON_FAMILIES[b["family"]]
+	var have := int(GameState.boon_family_counts().get(b["family"], 0))
+	var wrap := MarginContainer.new()
+	wrap.custom_minimum_size.x = w
+	var panel := PanelContainer.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Palette.SURFACE2
+	st.border_color = fam["color"]
+	st.set_border_width_all(2)
+	st.set_corner_radius_all(10)
+	st.set_content_margin_all(8 if small else 14)
+	panel.add_theme_stylebox_override("panel", st)
+	var col := _vbox(3 if small else 6)
+	var icon_row := HBoxContainer.new()
+	icon_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	icon_row.add_child(_icon(str(fam["icon"]), 32 if small else 48))
+	col.add_child(icon_row)
+	var nm := _wrap_label(str(b["name"]), 14 if small else 16)
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nm.add_theme_color_override("font_color", fam["color"])
+	col.add_child(nm)
+	var fl := _label(tr("%s · you have %d") % [tr(str(fam["name"])), have], 12, true)
+	fl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(fl)
+	var d := _wrap_label(str(b["desc"]), 12 if small else 13)
+	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(d)
+	for step in GameData.BOON_SETS[b["family"]]:
+		if have + 1 == int(step[0]):
+			var sl := _wrap_label(tr("Completes %s: %s") % [tr(str(step[1]["name"])), tr(str(step[1]["desc"]))], 12 if small else 13)
+			sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			sl.add_theme_color_override("font_color", Palette.RANK_S)
+			col.add_child(sl)
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(gap)
+	var take := _icon_domain_button("violet", GameData.BUTTON_ICON_PATH["confirm"], _no_keys(tr("Take  (%d)") % key), pick)
+	take.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(take)
+	panel.add_child(col)
+	wrap.add_child(panel)
+	var hit := Button.new()   # over the whole card (Take included): a click anywhere takes it
+	hit.flat = true
+	var clear := StyleBoxEmpty.new()
+	for sn in ["normal", "hover", "pressed", "focus", "disabled"]:
+		hit.add_theme_stylebox_override(sn, clear)
+	hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	hit.pressed.connect(pick)
+	hit.mouse_entered.connect(func(): st.bg_color = Palette.SURFACE2.lightened(0.08))
+	hit.mouse_exited.connect(func(): st.bg_color = Palette.SURFACE2)
+	wrap.add_child(hit)
+	return wrap
 
 
 ## One loot card for the reward pick: rarity-coloured frame, a big icon, the
@@ -1363,63 +1452,6 @@ func _defeat_card(reasons: Array) -> Control:
 		col.add_child(tip)
 	p.add_child(col)
 	return p
-
-
-## The boon pick after an elite: three cards (family, what it does, what it
-## would complete) and a Skip.
-func _boon_offer_row(result: Dictionary) -> Control:
-	var col := _vbox(6)
-	var head := _label("Choose a boon — it lasts the rest of this rift", 14)
-	head.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
-	col.add_child(head)
-	var row := HFlowContainer.new()
-	row.add_theme_constant_override("h_separation", 10)
-	row.add_theme_constant_override("v_separation", 10)
-	var counts := GameState.boon_family_counts()
-	var offer: Array = result.get("boon_offer", [])
-	for i in offer.size():
-		var b := GameData.find_boon(str(offer[i]))
-		var fam: Dictionary = GameData.BOON_FAMILIES[b["family"]]
-		var have := int(counts.get(b["family"], 0))
-		var card := PanelContainer.new()
-		var st := StyleBoxFlat.new()
-		st.bg_color = Palette.SURFACE2
-		st.border_color = fam["color"]
-		st.set_border_width_all(2)
-		st.set_corner_radius_all(8)
-		st.set_content_margin_all(10)
-		card.add_theme_stylebox_override("panel", st)
-		card.custom_minimum_size = Vector2(200, 0)
-		var cv := _vbox(4)
-		var top := HBoxContainer.new()
-		top.add_theme_constant_override("separation", 6)
-		top.add_child(_icon(str(fam["icon"]), 24))
-		var nm := _label(str(b["name"]), 15)
-		nm.add_theme_color_override("font_color", fam["color"])
-		top.add_child(nm)
-		cv.add_child(top)
-		cv.add_child(_label(tr("%s · you have %d") % [tr(str(fam["name"])), have], 11, true))
-		var d := _wrap_label(str(b["desc"]), 12)
-		d.custom_minimum_size.x = 180
-		cv.add_child(d)
-		for step in GameData.BOON_SETS[b["family"]]:
-			if have + 1 == int(step[0]):
-				var sl := _wrap_label(tr("Completes %s: %s") % [tr(str(step[1]["name"])), tr(str(step[1]["desc"]))], 11)
-				sl.add_theme_color_override("font_color", Palette.RANK_S)
-				sl.custom_minimum_size.x = 180
-				cv.add_child(sl)
-		cv.add_child(_button("Take", func(k=i):
-			GameState.pick_boon(k)
-			render()
-		))
-		card.add_child(cv)
-		row.add_child(card)
-	col.add_child(row)
-	col.add_child(_button("Skip the boon", func():
-		GameState.pick_boon(-1)
-		render()
-	))
-	return col
 
 
 ## The run's boons as family chips (count + tooltip listing boons and sets).
