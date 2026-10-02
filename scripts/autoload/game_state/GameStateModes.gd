@@ -73,7 +73,14 @@ func campaign_objective_progress(o: Dictionary) -> int:
 		"reputation": return reputation
 		"map_rank": return best_rift_rank_sealed + 1 if best_rift_rank_sealed >= int(o["target"]) else 0
 		"quests_done": return int(quest_tally.get("quests_done", 0))
+		"ledger_pages": return accord_pages
+		"posts_freed": return posts_freed()
 	return 0
+
+
+## Lost champions freed in the Endless Rift: the posts the guild has emptied.
+func posts_freed() -> int:
+	return lost_champions().filter(func(e): return champion_unlocked(str(e[0]))).size()
 
 
 func campaign_objective_met(o: Dictionary) -> bool:
@@ -114,6 +121,10 @@ func _apply_finale(diff: Dictionary) -> Dictionary:
 	var out := _apply_rift_rank_modifiers(diff, str(act.get("rank", ""))).duplicate(true)
 	out["monster_hp"] = int(round(float(out["monster_hp"]) * float(act["mult"])))
 	out["monster_dmg"] = int(round(float(out["monster_dmg"]) * float(act["mult"])))
+	if int(act["act"]) == 4:   # the Terms grow with every empty post
+		var grow := 1.0 + GameData.TERMS_PER_POST * posts_freed()
+		out["monster_hp"] = int(round(float(out["monster_hp"]) * grow))
+		out["monster_dmg"] = int(round(float(out["monster_dmg"]) * grow))
 	out["boss_name"] = str(act["boss"])
 	out["boss_double_mechanic"] = int(act["act"]) >= 3
 	return out
@@ -137,8 +148,10 @@ func _complete_act(act_num: int) -> void:
 		var d := GameData.champion_def(freed)
 		pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(freed),
 			"text": tr("Deep in %s, held in a pillar of light, your guild finds %s. %s\n\n%s\n\nChampions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.") % [tr(str(act["finale"])), GameData.champion_full_name(freed), tr(str(d.get("lore", ""))), champion_memory_line(freed)]})
-	if campaign_done():
-		pending_stories.append({"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")})
+	if act_num == 4:
+		pending_stories.append(GameData.ACCORD_CHOICE.duplicate(true))   # the ending, then The End
+	elif campaign_done():
+		pending_stories.append(_the_end_card())
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
 
@@ -160,6 +173,46 @@ func maybe_find_ledger_page(finale: bool) -> void:
 	accord_pages += 1
 	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("A page of the Grandmaster's ledger"),
 		"text": tr("Page %d of %d, found in the rift. Read it in Library > Codex > Chronicle.") % [accord_pages, GameData.LEDGER_PAGES.size()]})
+
+
+func _the_end_card() -> Dictionary:
+	return {"title": tr("The End"), "subtitle": tr("The campaign is complete"), "text": tr("Thank you for playing. Your guild endures: push the Endless Rift, climb the rift ladder, and take on quests for as long as rifts keep opening.")}
+
+
+## The Broken Accord's ending (the choice card after Act IV). "renew" needs
+## the hero who takes the forty-first post; "break" frees every champion of
+## this guild. Returns "" or why not.
+func choose_accord_ending(choice: String, hero_id: String = "") -> String:
+	if accord_ending != "" or not GameData.ACCORD_ENDING.has(choice):
+		return ""
+	var end: Dictionary = GameData.ACCORD_ENDING[choice]
+	var card := {"title": tr(str(end["title"])), "subtitle": tr(str(end["subtitle"])), "text": tr(str(end["text"]))}
+	if choice == "renew":
+		var h := find_hero(hero_id)
+		if h == null or h.is_champion:
+			return tr("Choose a hero to take the post.")
+		if heroes.size() <= 1:
+			return tr("The guild needs at least one hero.")
+		var first := tr(str(h.name.split(" the ")[0]))
+		card["subtitle"] = card["subtitle"] % first
+		card["text"] = card["text"] % first
+		accord_hero = first
+		_memorialize(h, tr("Took the forty-first post"))
+		_release(h)
+		breach = {}
+		breach_next_day = -1
+	else:
+		for id in champion_roll:
+			unlock_champion(str(id))
+	accord_ending = choice
+	if not pending_stories.is_empty() and pending_stories[0].has("choices"):
+		pending_stories.pop_front()
+	pending_stories.push_front(_the_end_card())
+	pending_stories.push_front(card)
+	_news(card["title"] + ".")
+	save()
+	state_changed.emit()
+	return ""
 
 
 func _act_intro_card(act_num: int) -> Dictionary:

@@ -111,7 +111,7 @@ const BIOMES := {
 	"ashen": {"name": "The Ashen Wastes", "monsters": ["Ember Whelp", "Cinder Moth", "Ashclad Ghoul", "Voidling Sprite", "Hollow Reaver", "Mirror Fiend", "Slag Golem", "Ember Oracle", "Ash Harrier", "Cinder Hound", "Obsidian Sentinel"],
 		"elites": ["Ashen Broodlord", "Rift-Touched Colossus"], "bosses": ["Drevok", "Sythrane"], "retinue": ["Ember Oracle", "Ash Harrier", "Cinder Moth"], "backgrounds": [4, 8, 7, 9]},
 }
-const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen"}
+const ACT_BIOME := {1: "vale", 2: "marsh", 3: "ashen", 4: "ashen"}
 
 ## Armor: the share of every basic attack an armored foe shrugs off. Each hit
 ## that lands chips it by ARMOR_SUNDER; abilities, relic strikes and counters
@@ -319,6 +319,8 @@ const BOSS_PROFILES := {
 		"hint": "Sunder tears the wards off the front row and hits hard, and he angers every round. Rotate the front row and end it quickly."},
 	"Drevok": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Ember Oracle", "Ash Harrier"], "kit": ["brand", "roar"],
 		"hint": "Brand marks a hero to take 50% more damage. At half health he calls fire cultists. Guard the branded hero."},
+	"The Terms": {"mechanics": ["warded", "regen"], "phase": "summon", "summons": ["Hollow Reaver", "Rift Wisp"], "kit": ["harvest", "drown", "brand", "immolate"],
+		"hint": "The bargain fights with every move it ever bought: Harvest, the Drowning Tide, Brand and Immolate. At half health it calls up what it has claimed. Cleanse, guard the branded, and keep the pressure on."},
 	"Sythrane": {"mechanics": ["enrage", "regen"], "phase": "barrier", "summons": [], "kit": ["immolate", "roar", "sweep"],
 		"hint": "Immolate sets the whole party burning while she regenerates and grows angrier. Cleanse the burns and never let up."},
 }

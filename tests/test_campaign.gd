@@ -76,8 +76,38 @@ func run() -> void:
 	check(bool(GameState._diff().get("boss_double_mechanic", false)), "the last finale boss has two mechanics")
 	GameState.seal_rift()
 	GameState.finish_run()
-	check(GameState.campaign_done() and GameState.current_act().is_empty(), "campaign complete")
-	check(GameState.pending_stories.any(func(c): return str(c["title"]) == "The End"), "the ending card is queued")
+	check(GameState.campaign_act == 4 and not GameState.campaign_done(), "Act III done: Act IV, the Accord Hall, begins")
+	check(GameState.pending_stories.any(func(c): return str(c["title"]).contains("The Accord Hall")), "with its intro card")
+	# Act IV: a Rank A seal, a post emptied, every ledger page.
+	GameState.best_rift_rank_sealed = GameData.rift_rank_index("A")
+	GameState.accord_pages = GameData.LEDGER_PAGES.size()
+	check(not GameState.finale_ready(), "Act IV needs a champion freed in the Endless Rift")
+	var lost_id := str(GameState.lost_champions()[0][0])
+	GameState.unlock_champion(lost_id)
+	check(GameState.posts_freed() == 1 and GameState.finale_ready(), "Act IV objectives met")
+	GameState.start_finale(ids, null)
+	var d4 := GameState._diff()
+	check(str(d4.get("boss_name", "")).begins_with("The Terms"), "the Act IV finale is the Terms")
+	check(GameData.BOSS_PROFILES.has("The Terms") and GameData.sprite_for_monster("The Terms, in the Grandmaster's shape") == GameData.sprite_for_monster("Sythrane"), "with its own kit, in the Grandmaster's shape")
+	GameState.pending_stories.clear()
+	GameState.seal_rift()
+	GameState.finish_run()
+	check(GameState.campaign_done(), "campaign complete")
+	check(GameState.pending_stories.any(func(c): return c.has("choices")), "the ending is a choice")
+	check(not GameState.pending_stories.any(func(c): return str(c["title"]) == "The End"), "The End waits for it")
+	var keeper: Hero = GameState.heroes.filter(func(h): return not h.is_champion)[0]
+	var keeper_name := keeper.name.split(" the ")[0]
+	var n_heroes := GameState.heroes.size()
+	check(GameState.choose_accord_ending("renew", keeper.id) == "", "Renew the Accord")
+	check(GameState.accord_ending == "renew" and GameState.heroes.size() == n_heroes - 1 and GameState.fallen[0]["name"] == keeper.name, "the keeper leaves for the post and goes on the Memorial")
+	check(str(GameState.pending_stories[0]["subtitle"]).contains(keeper_name) and str(GameState.pending_stories[1]["title"]) == "The End", "the ending card names them, then The End")
+	GameState.breach_next_day = GameState.day
+	GameState._on_day_passed()
+	check(GameState.breach.is_empty(), "no more Riftbreaks once the Accord is renewed")
+	check(GameState.choose_accord_ending("break") == "" and GameState.accord_ending == "renew", "the ending is chosen once")
+	GameState.accord_ending = ""
+	GameState.choose_accord_ending("break")
+	check(GameState.accord_ending == "break" and GameState.champion_roll.all(func(id): return GameState.champion_unlocked(str(id))), "Break the Accord: every champion comes home")
 	# Quest claims feed the Act III tally.
 	var q := GameState.roll_quest()
 	q["type"] = "craft"; q["target"] = 1

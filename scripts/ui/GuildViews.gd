@@ -1587,6 +1587,15 @@ func _render_chronicle(v: VBoxContainer) -> void:
 			v.add_child(_wrap_label(str(r["text"]), 13))
 		else:
 			v.add_child(_label(tr("??? — seal Act %s's finale") % tr(GameState._roman(act)), 13, true))
+	if GameState.accord_ending != "":   # how the guild ended it (Act IV)
+		var e: Array = GameData.CHRONICLE_ENDING[GameState.accord_ending]
+		var et := _label(str(e[0]), 14)
+		et.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+		v.add_child(et)
+		var etext := tr(str(e[1]))
+		v.add_child(_wrap_label(etext % tr(GameState.accord_hero) if etext.contains("%s") else etext, 13))
+	else:
+		v.add_child(_label(tr("??? — seal Act %s's finale") % tr(GameState._roman(4)), 13, true))
 
 	var pages: Array = GameData.LEDGER_PAGES
 	v.add_child(_hsep())

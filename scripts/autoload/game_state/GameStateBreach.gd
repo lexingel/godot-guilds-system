@@ -71,7 +71,7 @@ var _resolving := false
 
 
 func _on_day_passed() -> void:
-	if not breach_unlocked() or _resolving:
+	if not breach_unlocked() or _resolving or accord_ending == "renew":   # the Accord renewed: the rifts stay shut
 		return
 	if breach.is_empty():
 		if breach_next_day < 0:
@@ -112,7 +112,8 @@ func _on_rift_sealed(rank_idx: int) -> void:
 
 func _close_breach() -> void:
 	breach = {}
-	breach_next_day = day + randi_range(GameData.BREACH_EVERY_MIN, GameData.BREACH_EVERY_MAX)
+	var wait := randi_range(GameData.BREACH_EVERY_MIN, GameData.BREACH_EVERY_MAX)
+	breach_next_day = day + (maxi(2, wait / 2) if accord_ending == "break" else wait)   # the Accord broken: the Hollow rises
 
 
 ## The defense's outcome. result: {held: bool, integrity: 0-1 kept,

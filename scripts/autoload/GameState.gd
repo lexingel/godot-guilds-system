@@ -66,6 +66,8 @@ func reset() -> void:
 	last_party = []
 	relics_found = []
 	accord_pages = 0
+	accord_ending = ""
+	accord_hero = ""
 	run = {}
 	monsters_seen = []
 	bosses_defeated = []
@@ -265,6 +267,12 @@ func load_save() -> bool:
 	last_party.assign(data.get("last_party", []))
 	relics_found = data.get("relics_found", [])
 	accord_pages = int(data.get("accord_pages", 0))
+	accord_ending = str(data.get("accord_ending", ""))
+	accord_hero = str(data.get("accord_hero", ""))
+	# Guilds that finished the campaign before Act IV existed start it now.
+	if campaign_act == 4 and not hints_seen.has("act4_intro"):
+		hints_seen.append("act4_intro")
+		pending_stories.append(_act_intro_card(4))
 
 	var run_data: Dictionary = data.get("run", {})
 	if run_data.get("endless", false):

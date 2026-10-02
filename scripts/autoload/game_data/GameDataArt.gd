@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Act IV: the Accord Hall. After Sythrane, the posts are tiring, and the Terms of the old bargain wait at the bottom of the Endless Rift (stronger for every post you've emptied). Beat them and choose how the story ends: renew the Accord, or break it. Guilds that already finished Act III can start it now.",
 	"The guild has people now. Wen the Chronicler, Dobbs the Quartermaster and Old Hesper, the last of an Accord guild, talk at the pay table every payday (see the Ledger). The rival's leader signs every move with a letter of their own, and the Crown has promised a Royal Charter to the best guild. Freeing a champion in the Endless Rift leaves a post empty: the next Riftbreak comes sooner.",
 	"The story has a past now: the Broken Accord. Why the old guilds vanished on the Night of Breaking, what the champions remember of it, and pages of the Grandmaster's ledger to find in sealed rifts. Read it all in Library > Codex > Chronicle.",
 	"Recruiting is a board now: new faces arrive every day and wait a few days before moving on, payday fills it, and the rival may sign your best offer first. Each card shows the recruit's attributes and born quirk. Rerolls double in price until payday. Party screens have three saved loadouts: save a party with its rows, load it in one click.",
@@ -460,7 +461,7 @@ const MONSTER_NAME_SPRITE := {
 	"Rift-Touched Colossus": "rift_touched_colossus", "Iron Revenant": "iron_revenant",
 	"Storm-Called Elite": "storm_called_elite", "Ashen Broodlord": "ashen_broodlord",
 	"Vaelith": "vaelith", "Korrath": "korrath", "Nyxara": "nyxara",
-	"Drevok": "drevok", "Sythrane": "sythrane",
+	"Drevok": "drevok", "Sythrane": "sythrane", "The Terms": "sythrane",
 	"Hedge Warden": "hedge_warden", "Carrion Crier": "carrion_crier", "Rootbound Thrall": "rootbound_thrall",
 	"Leech Priest": "leech_priest", "Mire Sniper": "mire_sniper", "Drowned Bellringer": "drowned_bellringer",
 	"Slag Golem": "slag_golem", "Ember Oracle": "ember_oracle", "Ash Harrier": "ash_harrier",

@@ -486,6 +486,12 @@ func _story_overlay(card_data: Dictionary) -> void:
 	cv.add_child(_hsep())
 	var body := _wrap_label(str(card_data.get("text", "")), 15)
 	cv.add_child(body)
+	if card_data.has("choices"):
+		_accord_choice(cv)   # the Broken Accord's ending: no Continue, a decision
+		card.add_child(cv)
+		center.add_child(card)
+		root.add_child(overlay)
+		return
 	var cont := _icon_domain_button("ember", GameData.BUTTON_ICON_PATH["confirm"], "Continue", func():
 		GameState.pending_stories.pop_front()
 		GameState.save()
@@ -497,6 +503,45 @@ func _story_overlay(card_data: Dictionary) -> void:
 	card.add_child(cv)
 	center.add_child(card)
 	root.add_child(overlay)
+
+
+var _accord_pick := false   # the ending card is asking which hero takes the post
+
+
+## The Broken Accord's ending: Renew (then pick the hero who takes the
+## forty-first post) or Break. There is no Continue: it's a decision.
+func _accord_choice(cv: VBoxContainer) -> void:
+	_combat_hotkeys = {}
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	row.add_theme_constant_override("v_separation", 8)
+	row.alignment = FlowContainer.ALIGNMENT_CENTER
+	if _accord_pick:
+		cv.add_child(_label("Who takes the forty-first post?", 15))
+		for h in GameState.heroes.filter(func(x): return not x.is_champion):
+			var b := _button(tr("%s — Rank %s, Lv%d") % [tr(str(h.name.split(" the ")[0])), tr(str(h.rank)), h.level], func(id=h.id):
+				var err := GameState.choose_accord_ending("renew", id)
+				if err != "":
+					_flavor_toast = err
+				_accord_pick = false
+				render())
+			b.tooltip_text = tr("They leave the guild forever and go on the Memorial. Riftbreaks end.")
+			row.add_child(b)
+		row.add_child(_button("Back", func():
+			_accord_pick = false
+			render()))
+	else:
+		var renew := _icon_domain_button("violet", "", "Renew the Accord", func():
+			_accord_pick = true
+			render())
+		renew.tooltip_text = tr("Sign the last line. One of your heroes holds the forty-first post forever; Riftbreaks end.")
+		row.add_child(renew)
+		var burn := _icon_domain_button("ember", "", "Break the Accord", func():
+			GameState.choose_accord_ending("break")
+			render())
+		burn.tooltip_text = tr("Burn the Terms. Every champion of the old guilds comes home; Riftbreaks come twice as often.")
+		row.add_child(burn)
+	cv.add_child(row)
 
 
 ## A hero's request or the rival's move, popped up over the camp the first

@@ -611,6 +611,12 @@ const CAMPAIGN := [
 	 "outro": "The Ashen Crown shatters. Sythrane's last words are not a threat but a warning: someone has to hold the Hollow shut, and she was tired. One by one the rifts fall quiet, and for the first time in years the sky is only sky. In the Endless Rift the pillars of light are still holding. Your guild's name will be told for generations. (The rifts never fully close: Endless, the rift ladder and the quests carry on.)",
 	 "objectives": [{"type": "map_rank", "target": 4, "label": "Seal a Rank B rift"}, {"type": "boss:Korrath", "target": 1, "label": "Defeat Korrath"}, {"type": "boss:Drevok", "target": 1, "label": "Defeat Drevok"}, {"type": "quests_done", "target": 3, "label": "Complete 3 quests"}],
 	 "reward": {"crystals": 280}},
+	{"act": 4, "name": "The Accord Hall", "foe": "The Terms", "boss": "The Terms, in the Grandmaster's shape",
+	 "finale": "The Accord Hall", "tier": "greater", "rank": "A", "mult": 1.35, "opens": "",
+	 "intro": "With Sythrane gone, the Hollow has no one to bargain with, so it is bargaining with the posts directly. One by one the pillars in the Endless Rift are flickering. The Accord Hall lies below them, and in it the Terms that started all of this, wearing the Grandmaster's face. Every post that has gone dark makes them stronger. Someone will have to read them out loud.",
+	 "outro": "The Terms come apart into forty-one lines of old ink, and the Hall goes quiet. The posts are listening. The bargain needs a last signature, or a fire. Your guild has to choose.",
+	 "objectives": [{"type": "map_rank", "target": 5, "label": "Seal a Rank A rift"}, {"type": "posts_freed", "target": 1, "label": "Free a champion in the Endless Rift"}, {"type": "ledger_pages", "target": 7, "label": "Find every page of the Grandmaster's ledger"}],
+	 "reward": {"crystals": 400}},
 ]
 const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}
 const QUEST_POSTED := 6
@@ -646,7 +652,8 @@ const MILESTONES := [
 	{"id": "greater_threat", "label": "Greater Threat — open the Rank C rift", "type": "greater_unlocked", "target": 1, "reward": {"crystals": 20}},
 	{"id": "act_one", "label": "The Vale Holds — complete Act I", "type": "campaign_act", "target": 2, "reward": {"crystals": 25}},
 	{"id": "act_two", "label": "Out of the Marshes — complete Act II", "type": "campaign_act", "target": 3, "reward": {"crystals": 40}},
-	{"id": "act_three", "label": "Crownbreaker — complete the campaign", "type": "campaign_act", "target": 4, "reward": {"crystals": 70}},
+	{"id": "act_three", "label": "Crownbreaker — complete Act III", "type": "campaign_act", "target": 4, "reward": {"crystals": 70}},
+	{"id": "act_four", "label": "Keeper of the Accord — complete the campaign", "type": "campaign_act", "target": 5, "reward": {"crystals": 100}},
 	{"id": "veteran_sealer", "label": "Rift Warden — seal 25 rifts", "type": "rifts_sealed", "target": 25, "reward": {"crystals": 40}},
 	{"id": "centurion", "label": "Centurion — defeat 250 monsters", "type": "total_kills", "target": 250, "reward": {"coins": 150}},
 	{"id": "kingslayer", "label": "Kingslayer — defeat 20 Bosses", "type": "bosses_won", "target": 20, "reward": {"reputation": 10}},
@@ -860,3 +867,24 @@ const PAYDAY_SCENES := {
 const EMPTY_POST_DAYS := 1
 const EMPTY_POST := {"title": "An empty post", "subtitle": "The Endless Rift",
 	"text": "The pillar is dark now. Somewhere in the Vale, a rift that has been quiet for twenty years draws breath. You did the right thing. The Hollow noticed.\n\n(Each champion freed in the Endless Rift brings the next Riftbreak a day sooner.)"}
+
+## Act IV's finale grows with every post the guild has emptied (lost
+## champions freed in the Endless Rift).
+const TERMS_PER_POST := 0.05
+## The Broken Accord's ending, chosen after Act IV. Renew: a hero takes the
+## forty-first post and Riftbreaks end. Break: every post is released (every
+## champion of this guild freed) and the Hollow rises: Riftbreaks come twice
+## as often.
+const ACCORD_CHOICE := {"title": "The last signature", "subtitle": "The Accord Hall",
+	"text": "The Terms lie open on the floor of the Hall: forty-one lines, forty signed. Sign the last, and one of your heroes takes the forty-first post forever; the rifts close for good. Or burn it, and every post is released at once; the champions come home, and the Hollow comes up with them.",
+	"choices": ["renew", "break"]}
+const ACCORD_ENDING := {
+	"renew": {"title": "The Accord renewed", "subtitle": "%s holds the forty-first post",
+		"text": "The Hall is quiet. Up in the Vale the villagers wake to a morning without a single rift on the horizon, and do not know why. The guild knows. Every year, on the Night of Breaking, someone climbs down to the forty-first post and tells %s how the harvest went.\n\n(Riftbreaks have ended. The Endless Rift, the ladder and the quests carry on.)"},
+	"break": {"title": "The Accord broken", "subtitle": "Every post released",
+		"text": "The Terms burn green. Forty pillars go out at once, and forty people step into the dark and start walking home. Behind them, the Hollow rises to meet the sky. It will be a hard century. It will be an honest one.\n\n(Every champion of the old guilds is free. Riftbreaks come twice as often.)"},
+}
+const CHRONICLE_ENDING := {
+	"renew": ["The forty-first post", "Your guild signed the Terms. %s took the forty-first post, and the Hollow stays below. The rifts that remain are old ones, and quiet."],
+	"break": ["The Terms burned", "Your guild burned the Terms. Every post was released, the old guilds came home, and the Hollow came up with them. The rifts are louder now, and nobody holds them shut but the guilds."],
+}
