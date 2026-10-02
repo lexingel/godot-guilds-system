@@ -795,3 +795,68 @@ const LEDGER_PAGES := [
 	{"act": 3, "text": "The Night. Every post is taken but mine. The terms say forty-one. The Hollow can count."},
 	{"act": 3, "text": "After. The Hollow came for the forty-first and found me ready to make a different bargain. It gives me a crown. I give it the posts, one at a time, as they tire. It is slower than refusing. That is all I wanted: more time."},
 ]
+
+
+## The Charter War: the Crown will grant one Royal Charter. This notice is
+## shown once, when the rival's weekly moves begin (%s: the rival, its leader).
+const ROYAL_CHARTER := {"title": "By Royal Hand", "subtitle": "A notice on every guild door in the Vale",
+	"text": "The Crown will return to the Vale. A single Royal Charter will go to the company that has done the most to close the rifts: every contract, for a generation. Until then, all chartered companies compete on equal terms.\n\nThe loudest of them, %s, led by %s, has noticed your guild."}
+
+## Each rival leader's voice: a signed letter with each weekly move (poach:
+## %s the hero; challenge: %s the rank) and what they say about you in the
+## guild news (%s: your guild).
+const RIVAL_VOICE := {
+	"The Iron Chorus": {
+		"poach": "%s fights like one of mine. I'd rather ask than steal, so I'm asking: let them come, or pay them what they're worth. No hard feelings either way. — O. Venn",
+		"challenge": "Seal a Rank %s rift before payday. If you do, I'll say so to the herald. If you don't, I'll say that too. — O. Venn",
+		"snatch": "That contract is on the board and we can do it. So can you, maybe. First to sign it keeps it. — O. Venn",
+		"taunts": ["Good work this week, %s. Do better next week.", "The Chorus sings about the rifts it has closed. %s hums.", "%s keeps its word. I'll give them that. I'll give them nothing else."]},
+	"The Ashen Wolves": {
+		"poach": "We can't train heroes like %s; we haven't the Gold. We can pay them, though, for a few weeks at least. They'll be happy. Probably. — Kael",
+		"challenge": "Rank %s by payday. We did one last week. Barely. Your turn. — Kael",
+		"snatch": "We need that contract more than you do. I'm not proud of saying so. I'm saying it anyway. — Kael",
+		"taunts": ["The Wolves are hungry and %s is fat. Draw your own conclusions.", "Someday the Wolves will have a hall like %s's. With a roof.", "%s had a good week. We ate."]},
+	"The Gilded Lance": {
+		"poach": "Your %s has a good eye and a poor wage. I have the opposite problem. I'm sure we can come to an arrangement. — Vane",
+		"challenge": "A Rank %s rift by payday, if your guild can manage it. Mine could, in its sleep. It frequently does. — Vane",
+		"snatch": "The Lance will be taking that contract. Do not trouble yourselves. — Ser Aldric Vane",
+		"taunts": ["The Charter will hang in the Lance's hall. I have already chosen the frame.", "%s pays its heroes in promises, I hear.", "%s? I thought they'd disbanded."]},
+	"The Last Lantern": {
+		"poach": "%s has been unhappy, child. I notice these things. Pay them, or I will, and then we'll both know who listens. — Mother Ilse",
+		"challenge": "I've told the taverns you can seal a Rank %s rift by payday. Don't make an old woman a liar. — Ilse",
+		"snatch": "The Wolves will try for this one tomorrow. Take it first and I'll know you can be trusted with better news. Let it go and I'll take it, and I'll know that too. — Ilse",
+		"taunts": ["Mother Ilse sends her regards to %s, and a small bill.", "Everyone owes the Lantern something. %s just doesn't know what yet.", "The Lantern hears %s is short this week. The Lantern lends."]},
+	"The Hollow Crown Company": {
+		"poach": "%s deserves a company that values them. Ours does: twice the wage, half the danger. I can't explain the half. Trade secret. — Capt. Morrow",
+		"challenge": "Rank %s by payday? A friendly wager. There is always another rift, after all. We make sure of it. — Morrow",
+		"snatch": "We'll take this one off your hands. Plenty of work for everyone; there always seems to be, near us. — Morrow",
+		"taunts": ["Plenty of work for everyone, %s. There always is.", "The Company wishes %s a quiet week. Truly.", "Captain Morrow sent %s a bottle of good wine. No note."]},
+}
+
+## The Guildhold Chronicle: a short scene at the pay table every payday,
+## between Wen (the Chronicler), Dobbs (the Quartermaster) and Old Hesper
+## (the last of an Accord guild; she had a fever on the Night of Breaking).
+## GameState._payday_scene picks one by what happened that week.
+const PAYDAY_SCENES := {
+	"first": [["Dobbs", "First payday. I'm Dobbs; I keep the books. The one with the ink is Wen."], ["Wen", "I write down what happens. Try to make it worth writing."], ["Hesper", "And I'm the old woman who was here before both of them. Pay your heroes and they'll stay."]],
+	"walkout": [["Dobbs", "Someone walked out today."], ["Hesper", "Unpaid twice, or miserable. Usually both."], ["Wen", "I'll write that they left. I won't write why. That's yours to fix."]],
+	"lost": [["Wen", "I've added a name to the Memorial."], ["Hesper", "Say it out loud once. It helps."], ["Dobbs", "I'll take them off the payroll. Quietly."]],
+	"unpaid": [["Dobbs", "We're short. I want that written down, Wen."], ["Wen", "It's written down. It was written down last week, too."], ["Dobbs", "Then underline it."]],
+	"feast": [["Hesper", "Good feast."], ["Dobbs", "Expensive feast."], ["Wen", "I'm writing 'good'."]],
+	"we_lead": [["Wen", "The herald wrote our name first this week."], ["Dobbs", "Did the herald pay anything?"], ["Wen", "No."], ["Dobbs", "Then it's ink."]],
+	"they_lead": [["Dobbs", "Our rivals bought new banners."], ["Hesper", "The Accord never had banners."], ["Dobbs", "The Accord is gone."], ["Hesper", "Yes. Well."]],
+	"rich": [["Dobbs", "The vault is full. I don't trust it."], ["Hesper", "Spend it on the heroes, then. Gold never closed a rift."], ["Dobbs", "Gold paid the ones who did."]],
+	"accord": [["Wen", "These ledger pages. Hesper, did you know the Grandmaster?"], ["Hesper", "Everyone knew her. Nobody knew her."], ["Wen", "That isn't an answer."], ["Hesper", "It's the only one she ever gave."]],
+	"quiet1": [["Hesper", "Nobody hurt this week."], ["Wen", "That's not a story."], ["Hesper", "It's the best kind. You'll learn."]],
+	"quiet2": [["Wen", "Hesper, what were the old guilds like?"], ["Hesper", "Louder. Better paid. Gone."]],
+	"quiet3": [["Dobbs", "Wages, upkeep, and a bill for a broken door."], ["Wen", "Which door?"], ["Dobbs", "The one someone kicked in after the last rift. I'm not saying who."]],
+	"quiet4": [["Hesper", "I sat the Assay at sixteen. The stone barely glowed."], ["Wen", "What rank?"], ["Hesper", "F. I'm still here. Most of the S's aren't."]],
+	"quiet5": [["Wen", "I need another word for 'rift'. I've used it four hundred times."], ["Dobbs", "Use 'expense'."]],
+	"quiet6": [["Dobbs", "The recruits ask what the Accord was."], ["Hesper", "Tell them it was a promise. Tell them we're keeping it."], ["Dobbs", "Are we?"], ["Hesper", "Ask me next payday."]],
+}
+
+## The Broken Accord: a champion freed from the Endless Rift leaves a post
+## empty, and the next Riftbreak comes this many days sooner.
+const EMPTY_POST_DAYS := 1
+const EMPTY_POST := {"title": "An empty post", "subtitle": "The Endless Rift",
+	"text": "The pillar is dark now. Somewhere in the Vale, a rift that has been quiet for twenty years draws breath. You did the right thing. The Hollow noticed.\n\n(Each champion freed in the Endless Rift brings the next Riftbreak a day sooner.)"}

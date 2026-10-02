@@ -572,6 +572,11 @@ func _matter_card(kind: String, popup: bool = false) -> PanelContainer:
 	t.add_theme_color_override("font_color", Palette.EMBER_BRIGHT if kind == "request" else Palette.RANK_S)
 	col.add_child(t)
 	col.add_child(_wrap_label(body, 13))
+	var letter := GameState.rival_letter() if kind == "rival" else ""
+	if letter != "":   # the leader's own note (the Charter War)
+		var ll := _wrap_label(letter, 13)
+		ll.add_theme_color_override("font_color", Palette.RANK_S)
+		col.add_child(ll)
 	var btns := HFlowContainer.new()
 	btns.add_theme_constant_override("h_separation", 8)
 	btns.add_theme_constant_override("v_separation", 6)
@@ -740,6 +745,16 @@ func _treasury_card() -> PanelContainer:
 		if not (rep.get("left", []) as Array).is_empty():
 			bits.append(tr("walked out: %s") % tr(str(", ".join(rep["left"]))))
 		cv.add_child(_wrap_label(tr("Last payday (day %d): %s.") % [int(rep.get("day", 0)), tr(str("; ".join(bits)))], 12, true))
+		var scene: Array = GameData.PAYDAY_SCENES.get(str(rep.get("scene", "")), [])
+		if not scene.is_empty():
+			# The Guildhold Chronicle: the cast at the pay table.
+			var talk := _vbox(2)
+			talk.add_child(_label("At the pay table", 12, true))
+			for ln in scene:
+				talk.add_child(_rich_line("[color=#%s]%s[/color]  %s" % [Palette.EMBER_BRIGHT.to_html(false), tr(str(ln[0])), tr(str(ln[1]))], 13))
+			talk.tooltip_text = tr("Wen keeps the guild's chronicle, Dobbs keeps its books, and Old Hesper is the last of an Accord guild: she had a fever on the Night of Breaking and missed it.")
+			talk.mouse_filter = Control.MOUSE_FILTER_STOP
+			cv.add_child(talk)
 	var acts := HFlowContainer.new()
 	acts.add_theme_constant_override("h_separation", 14)
 	acts.add_theme_constant_override("v_separation", 6)
@@ -883,6 +898,8 @@ func _rival_card() -> PanelContainer:
 	var cl := _label(tr("This month: Renown gained — you %d · them %d · %d day%s left. Prize: %d Gold, %d Renown.") % [int(cs["ours"]), int(cs["theirs"]), int(cs["days_left"]), tr(str(_pl(int(cs["days_left"])))), GameData.CONTEST_PRIZE["coins"], GameData.CONTEST_PRIZE["reputation"]], 13)
 	cl.add_theme_color_override("font_color", Palette.good() if int(cs["ours"]) > int(cs["theirs"]) else (Palette.HAZARD if int(cs["ours"]) < int(cs["theirs"]) else Palette.TEXT))
 	rv.add_child(cl)
+	if GameState.feature_unlocked("rival"):
+		rv.add_child(_wrap_label("The Crown's herald counts Renown toward the Royal Charter: one guild, every contract, for a generation.", 12, true))
 	rv.add_child(_hsep())
 	rv.add_child(_label("Guild Standings", 14))
 	var table := GridContainer.new()

@@ -206,3 +206,50 @@ func run() -> void:
 	check(not GameState.pay_rate.has(p2.id), "full pay is the default, not stored")
 	GameState._release(p1)
 	check(not GameState.pay_rate.has(p1.id), "a hero who leaves takes their rate along")
+
+	# The Guildhold Chronicle: a scene at the pay table, picked by the week.
+	GameState.reset()
+	GameState.guild_name = "T"
+	var c1 := _hero("F", 1)
+	_hero("F", 1)
+	_hero("F", 1)
+	GameState.coins = 100000
+	GameState.run_payday()
+	check(str(GameState.payday_report.get("scene", "")) == "first", "the first payday introduces the cast")
+	check(GameData.PAYDAY_SCENES.has(str(GameState.payday_report["scene"])), "a scene that exists")
+	GameState.heroes_lost_total += 1
+	GameState.run_payday()
+	check(str(GameState.payday_report.get("scene", "")) == "lost", "a hero lost this week comes first")
+	GameState.run_payday()
+	var s2 := str(GameState.payday_report.get("scene", ""))
+	check(s2 != "feast", "no feast scene without a feast")
+	GameState.run_payday()
+	check(str(GameState.payday_report.get("scene", "")) != s2 or s2 == "", "a quiet week doesn't repeat last week's scene")
+	var cast_only := true
+	for id in GameData.PAYDAY_SCENES:
+		for ln in GameData.PAYDAY_SCENES[id]:
+			cast_only = cast_only and str(ln[0]) in ["Wen", "Dobbs", "Hesper"]
+	check(cast_only, "only the cast speaks at the pay table")
+
+	# The Charter War: the rival leader signs each move.
+	for rn in GameData.RIVAL_NAMES:
+		check(GameData.RIVAL_VOICE.has(rn) and GameData.RIVAL_LEADERS.has(rn), "%s has a voice" % rn)
+	GameState.rival_name = "The Gilded Lance"
+	GameState.rival_event = {"type": "poach", "hero": c1.id, "day": GameState.day}
+	check(GameState.rival_letter().contains(c1.name.split(" the ")[0]) and GameState.rival_letter().contains("Vane"), "a poach comes with the leader's note naming the hero")
+	GameState.rival_event = {"type": "challenge", "rank": "C", "day": GameState.day}
+	check(GameState.rival_letter().contains("Rank C"), "a dare names its rank")
+	GameState.rival_event["accepted"] = true
+	check(GameState.rival_letter() == "", "no note once the dare is taken")
+	GameState.rival_event = {}
+
+	# The Broken Accord: a champion freed in the Endless Rift empties a post.
+	GameState.breach_next_day = GameState.day + 5
+	GameState.hints_seen.clear()
+	GameState.pending_stories.clear()
+	GameState._empty_post()
+	check(GameState.breach_next_day == GameState.day + 5 - GameData.EMPTY_POST_DAYS, "the next Riftbreak comes sooner")
+	check(GameState.pending_stories.size() == 1 and str(GameState.pending_stories[0]["title"]) == "An empty post", "told the first time")
+	GameState.breach_next_day = GameState.day + 1
+	GameState._empty_post()
+	check(GameState.breach_next_day == GameState.day + 1 and GameState.pending_stories.size() == 1, "never earlier than tomorrow, and told once")

@@ -59,12 +59,26 @@ func loot_rank() -> String:
 
 ## Announces each feature the first time it unlocks (once per render, like
 ## check_milestones). Returns the ids newly announced.
+## The Broken Accord: a champion freed from the Endless Rift leaves their post
+## empty, and the next Riftbreak comes sooner (told once).
+func _empty_post() -> void:
+	if breach_next_day > day + 1:
+		breach_next_day = maxi(day + 1, breach_next_day - GameData.EMPTY_POST_DAYS)
+	if not hints_seen.has("empty_post"):
+		hints_seen.append("empty_post")
+		pending_stories.append(GameData.EMPTY_POST.duplicate())
+
+
 func check_feature_unlocks() -> Array:
 	var fresh: Array = []
 	for f in GameData.FEATURE_UNLOCKS:
 		if not features_seen.has(f) and feature_unlocked(f):
 			features_seen.append(f)
 			fresh.append(f)
+	if fresh.has("rival"):   # the Charter War begins
+		var card: Dictionary = GameData.ROYAL_CHARTER.duplicate()
+		card["text"] = tr(str(card["text"])) % [tr(str(rival_name)), tr(str(rival_leader()["leader"]))]
+		pending_stories.append(card)
 	if fresh.size() == 1:
 		var def: Dictionary = GameData.FEATURE_UNLOCKS[fresh[0]]
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("New: %s") % tr(str(def["name"])), "text": str(def["news"])})
@@ -867,6 +881,7 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 		if not champions.has(id):
 			unlock_champion(id)
 			freed.append(GameData.champion_full_name(id))
+			_empty_post()
 			var mem := champion_memory_line(id)
 			if mem != "":
 				pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(id),

@@ -471,8 +471,11 @@ func run_payday() -> void:
 	if not volunteers.is_empty():
 		_news(tr("Volunteers joined the guild: %s.") % ", ".join(volunteers))
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Volunteers"), "text": tr("%s joined for free. A guild short on heroes and Gold draws volunteers; Rank F rifts pay enough to rebuild.") % ", ".join(volunteers)})
+	var was_ahead := int(payday_report.get("ahead", 0))
 	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
-	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid}
+	var scene := _payday_scene(payday_report, left, unpaid, was_ahead)
+	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid,
+		"scene": scene, "lost_total": heroes_lost_total}
 	var line := tr("Payday: %d Gold in wages, %s.") % [paid, tr(str((tr("%d in upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
 	if not unpaid.is_empty():
 		line += tr(" Unpaid: %s.") % tr(str(", ".join(unpaid)))
@@ -488,6 +491,30 @@ func run_payday() -> void:
 		text += tr(" · %s walked out") % tr(str(", ".join(left)))
 	pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Payday"), "text": text + "."})
 	week_start_coins = coins
+
+
+## Which pay-table scene (GameData.PAYDAY_SCENES) this payday gets: the
+## week's biggest news first, else a quiet one that isn't last week's.
+func _payday_scene(prev: Dictionary, left: Array, unpaid: Array, was_ahead: int) -> String:
+	if prev.is_empty():
+		return "first"
+	if not left.is_empty():
+		return "walkout"
+	if heroes_lost_total > int(prev.get("lost_total", heroes_lost_total)):
+		return "lost"
+	if not unpaid.is_empty():
+		return "unpaid"
+	var last := str(prev.get("scene", ""))
+	if feast_week >= 0 and feast_week == maxi(0, day - 1) / GameData.PAYDAY_DAYS and last != "feast":   # a feast in the week just ending
+		return "feast"
+	if feature_unlocked("rival") and rival_ahead != was_ahead and rival_ahead != 0:
+		return "we_lead" if rival_ahead > 0 else "they_lead"
+	if coins > 3 * maxi(1, weekly_wages() + upkeep()) and last != "rich":
+		return "rich"
+	if accord_pages > 0 and last != "accord" and randf() < 0.3:
+		return "accord"
+	var quiet: Array = ["quiet1", "quiet2", "quiet3", "quiet4", "quiet5", "quiet6"].filter(func(q): return q != last)
+	return str(quiet[randi() % quiet.size()])
 
 
 ## A hero leaves the guild (dismissed or walked out): their gear returns to
@@ -555,7 +582,9 @@ func rival_day() -> void:
 	rival_renown += int(span[0]) + randi() % (int(span[1]) - int(span[0]) + 1) + (1 if reputation - rival_renown >= GameData.RIVAL_CATCH_UP else 0)
 	maybe_rival_move()
 	if randf() < GameData.RIVAL_TAUNT_CHANCE:
-		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), tr(str(str(GameData.RIVAL_TAUNTS[randi() % GameData.RIVAL_TAUNTS.size()]) % guild_name))])
+		var taunts: Array = GameData.RIVAL_VOICE.get(rival_name, {}).get("taunts", GameData.RIVAL_TAUNTS)
+		var taunt := tr(str(taunts[randi() % taunts.size()]))
+		_news(tr("%s of %s: \"%s\"") % [tr(str(rival_leader()["leader"])), tr(str(rival_name)), taunt % guild_name if taunt.contains("%s") else taunt])
 	# This month's contest.
 	if contest_start.is_empty():
 		contest_start = {"ours": reputation, "theirs": rival_renown}
@@ -638,6 +667,22 @@ func rival_event_text() -> String:
 			var q := _rival_quest()
 			return tr("%s means to take the contract \"%s\" off the board. Take it on now, or let it go.") % [who, tr(str(quest_desc(q))) if not q.is_empty() else "?"]
 	return ""
+
+
+## The rival leader's own note with this move (GameData.RIVAL_VOICE), or "".
+func rival_letter() -> String:
+	var voice: Dictionary = GameData.RIVAL_VOICE.get(rival_name, {})
+	var t := str(rival_event.get("type", ""))
+	if not voice.has(t) or rival_event.get("accepted", false):
+		return ""
+	var note := tr(str(voice[t]))
+	match t:
+		"poach":
+			var h := find_hero(str(rival_event["hero"]))
+			return note % tr(str(h.name.split(" the ")[0])) if h else ""
+		"challenge":
+			return note % tr(str(rival_event["rank"]))
+	return note
 
 
 ## The two answers: [[yes text, why it can't be done or ""], [no text, ""]],
