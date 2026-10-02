@@ -394,6 +394,8 @@ func gen_monsters(diff: Dictionary, floor_idx: int, kind: String) -> Array[Dicti
 	main["ability"] = {}
 	var profile: Dictionary = GameData.BOSS_PROFILES.get(str(main["name"]).split(",")[0], {}) if kind == "boss" else {}
 	if kind == "boss":
+		main["hp"] = int(round(float(main["hp"]) * float(profile.get("hp_mult", 1.0))))
+		main["dmg"] = int(round(float(main["dmg"]) * float(profile.get("dmg_mult", 1.0))))
 		var mechanic: Dictionary = GameData.BOSS_MECHANICS[randi() % GameData.BOSS_MECHANICS.size()]
 		var fixed: Array = diff.get("boss_mechanics", profile.get("mechanics", []))   # a Tower guardian's own, or the boss's profile
 		if not fixed.is_empty():
@@ -545,14 +547,20 @@ func _bark(state: Dictionary, h: Hero, moment: String, chance: float) -> void:
 	(state["log"] as Array).append("%s: \"%s\"" % [tr(str(h.name.split(" the ")[0])), tr(str(text))])
 
 
-## A boss turns once at half health (GameData.BOSS_PHASES).
+## A boss turns at half health (GameData.BOSS_PHASES), or at each of its
+## profile's "phase_at" points.
 func _check_phases(state: Dictionary) -> void:
 	var monsters: Array = state["monsters"]
 	for i in monsters.size():
 		var m: Dictionary = monsters[i]
 		var ph := str(m.get("phase", ""))
-		if ph == "" or m.get("_phased", false) or float(m["hp"]) <= 0.0 or float(m["hp"]) > float(m["max_hp"]) * GameData.BOSS_PHASE_AT:
+		if ph == "":
 			continue
+		var points := GameData.boss_phase_points(m)
+		var done := int(m.get("_phases_done", 0))
+		if done >= points.size() or float(m["hp"]) <= 0.0 or float(m["hp"]) > float(m["max_hp"]) * float(points[done]):
+			continue
+		m["_phases_done"] = done + 1
 		m["_phased"] = true
 		var info: Dictionary = GameData.BOSS_PHASES[ph]
 		(state["log"] as Array).append(str(info["line"]) % m["name"])

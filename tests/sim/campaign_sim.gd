@@ -147,7 +147,7 @@ func _guild(p: String, s: int) -> void:
 		last - 1, int(bill_paid.get(last - 1, 0)), int(gross_gold.get(last - 1, 0)), GameState.reputation, GameState.rival_renown,
 		GameState.charter_choice if GameState.charter_choice != "" else "-", GameState.charter_result if GameState.charter_result != "" else "-",
 		GameState.echoes_seen.size(), GameState.echoes_returned, ambush[0], ambush[0] + ambush[1],
-		"beaten day %d" % morrow_day if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
+		("beaten day %d after %d loss%s" % [morrow_day, morrow_lost, "" if morrow_lost == 1 else "es"]) if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
 		("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
 
 

@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Captain Morrow is a real fight now: tougher than other bosses of his rank, and he whistles up his sellswords twice, at two-thirds and again at one-third health.",
 	"Party Assembly is simpler: your party stands on four slots facing the foes. Press + on a slot to pick a hero, or drag one from the roster onto it (onto someone to swap). Each hero has a small F/B switch for the Front or Back row.",
 	"The boon after an elite is now a pop-up too: one card per boon in its family's colours, with the set it would complete, Take (or keys 1-3) and Skip.",
 	"After a won fight, choosing your reward is now its own pop-up: the loot as cards with every stat on its own line, who it suits, and a Take button (or keys 1-3).",

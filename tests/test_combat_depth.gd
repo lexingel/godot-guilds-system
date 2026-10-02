@@ -42,6 +42,26 @@ func run() -> void:
 		Combat._check_phases(st)
 		check((st["monsters"] as Array).size() == n, "%s: only once" % ph)
 
+	# Captain Morrow: tougher than his rank's boss, and calls his sellswords
+	# twice (at two-thirds and one-third health).
+	var mdiff := diff.duplicate()
+	mdiff["boss_name"] = GameData.MORROW_BOSS
+	seed(11)
+	var plain: Dictionary = Combat.gen_monster(diff, 3, "boss")
+	var ms := Combat.start_combat(party, "boss", mdiff, 3)
+	var mo: Dictionary = ms["monsters"][0]
+	check(float(mo["max_hp"]) > float(plain["hp"]) * 1.15, "Morrow has more health than a normal boss of his rank")
+	var n0: int = (ms["monsters"] as Array).size()
+	mo["hp"] = float(mo["max_hp"]) * 0.6
+	Combat._check_phases(ms)
+	var n1: int = (ms["monsters"] as Array).size()
+	Combat._check_phases(ms)
+	var once: bool = (ms["monsters"] as Array).size() == n1
+	mo["hp"] = float(mo["max_hp"]) * 0.3
+	Combat._check_phases(ms)
+	check(n1 == n0 + 2 and once and (ms["monsters"] as Array).size() == n1 + 2, "Morrow calls two sellswords at two-thirds health and two more at one-third")
+	check(str((ms["monsters"] as Array)[n0]["name"]) == "Company Sellsword", "his own sellswords answer")
+
 	# Affix channels.
 	for id in ["juggernaut", "blazing", "hasted", "vampiric"]:
 		var e4 := {}

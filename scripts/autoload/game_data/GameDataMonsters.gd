@@ -188,6 +188,12 @@ const BARKS := {
 ## Every boss turns once, at half health: one of these, rolled at fight start
 ## and shown on its plate so the player can plan for it.
 const BOSS_PHASE_AT := 0.5
+
+
+## The health fractions where a boss turns: once at half, or its profile's
+## own "phase_at" list (Captain Morrow calls twice).
+static func boss_phase_points(m: Dictionary) -> Array:
+	return BOSS_PROFILES.get(str(m["name"]).split(",")[0], {}).get("phase_at", [BOSS_PHASE_AT])
 const BOSS_PHASES := {
 	"summon": {"name": "Call the Horde", "desc": "At half health, two foes answer its call.", "line": "%s howls, and the rift answers with reinforcements!", "icon": "res://assets/skills/icon_boss_skull.png"},
 	"fury": {"name": "Fury", "desc": "At half health it hits 20% harder and winds up heavy blows more often.", "line": "%s roars in fury!", "icon": "res://assets/skills/sword_dual.png"},
@@ -319,8 +325,11 @@ const BOSS_PROFILES := {
 		"hint": "Sunder tears the wards off the front row and hits hard, and he angers every round. Rotate the front row and end it quickly."},
 	"Drevok": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Ember Oracle", "Ash Harrier"], "kit": ["brand", "roar"],
 		"hint": "Brand marks a hero to take 50% more damage. At half health he calls fire cultists. Guard the branded hero."},
+	# The Charter War's last fight: tougher than his rank's boss, and he calls
+	# his sellswords twice (the sim had every exposing guild beat him first try).
 	"Captain Morrow": {"mechanics": ["frenzied"], "phase": "summon", "summons": ["Company Sellsword", "Company Crossbowman"], "kit": ["snipe", "brand", "sweep"],
-		"hint": "Morrow brands his mark and his crossbowmen take the shot. At half health he whistles up his sellswords. Guard the branded hero."},
+		"hp_mult": 1.2, "phase_at": [0.66, 0.33],
+		"hint": "Morrow brands his mark and his crossbowmen take the shot. At two-thirds and again at one-third health he whistles up more sellswords. Guard the branded hero."},
 	"The Terms": {"mechanics": ["warded", "regen"], "phase": "summon", "summons": ["Hollow Reaver", "Rift Wisp"], "kit": ["harvest", "drown", "brand", "immolate"],
 		"hint": "The bargain fights with every move it ever bought: Harvest, the Drowning Tide, Brand and Immolate. At half health it calls up what it has claimed. Cleanse, guard the branded, and keep the pressure on."},
 	"Sythrane": {"mechanics": ["enrage", "regen"], "phase": "barrier", "summons": [], "kit": ["immolate", "roar", "sweep"],

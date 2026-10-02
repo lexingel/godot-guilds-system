@@ -208,8 +208,12 @@ func describe_incoming(state: Dictionary) -> String:
 			"frenzied":
 				return tr("Frenzied — its blows already hit harder.")
 	for m in monsters:
-		if m.has("phase") and not m.get("_phased", false) and float(m["hp"]) > 0.0 and float(m["hp"]) <= float(m["max_hp"]) * 0.7:
-			return tr("%s is close to half health: %s.") % [tr(str(str(m["name"]).split(",")[0])), tr(str(GameData.BOSS_PHASES[m["phase"]]["desc"]).trim_prefix(tr("At half health, ")).trim_prefix(tr("At half health ")))]
+		if not m.has("phase") or float(m["hp"]) <= 0.0:
+			continue
+		var points := GameData.boss_phase_points(m)
+		var done := int(m.get("_phases_done", 0))
+		if done < points.size() and float(m["hp"]) <= float(m["max_hp"]) * (float(points[done]) + 0.2):
+			return tr("%s is close to %d%% health: %s.") % [tr(str(str(m["name"]).split(",")[0])), int(round(float(points[done]) * 100.0)), tr(str(GameData.BOSS_PHASES[m["phase"]]["desc"]).trim_prefix(tr("At half health, ")).trim_prefix(tr("At half health ")))]
 
 	var party: Array[Hero] = state["party"]
 	var living: Array[Hero] = []
