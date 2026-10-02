@@ -17,9 +17,6 @@ var _current_music_idx := 0
 var _current_music_path := ""
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_next := 0
-var _voice: AudioStreamPlayer
-var _duck: Tween
-const DUCK_DB := -9.0   # the music under a spoken line
 
 
 func _ready() -> void:
@@ -34,10 +31,6 @@ func _ready() -> void:
 		p.bus = "SFX"
 		add_child(p)
 		_sfx_players.append(p)
-	_voice = AudioStreamPlayer.new()
-	_voice.bus = "Voice"
-	_voice.finished.connect(func(): _duck_music(false))
-	add_child(_voice)
 
 
 ## Crossfades to `path` over `fade_time` seconds; pass "" to just fade out
@@ -72,6 +65,15 @@ func play_music(path: String, fade_time: float = 1.0, loop: bool = true) -> void
 	fade_in.tween_property(new_player, "volume_db", 0.0, fade_time)
 
 
+## Seconds into `path` if it's the track playing now, else -1.0 (the
+## opening cinematic follows its narrated track by this, not by the clock).
+func music_position(path: String) -> float:
+	var p := _music_players[_current_music_idx]
+	if path != _current_music_path or not p.playing:
+		return -1.0
+	return p.get_playback_position() + AudioServer.get_time_since_last_mix()
+
+
 func stop_music(fade_time: float = 1.0) -> void:
 	play_music("", fade_time)
 
@@ -91,41 +93,6 @@ func play_sfx(path: String) -> void:
 ## the dB scale AudioServer actually uses.
 func set_music_volume(linear: float) -> void:
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), linear_to_db(clampf(linear, 0.0001, 1.0)))
-
-
-func set_voice_volume(linear: float) -> void:
-	var bus := AudioServer.get_bus_index("Voice")
-	if bus >= 0:
-		AudioServer.set_bus_volume_db(bus, linear_to_db(clampf(linear, 0.0001, 1.0)))
-
-
-## Speaks a narration line (the music dips under it). Returns its length in
-## seconds, or 0.0 if there's no such file (a language without a voice).
-func play_voice(path: String) -> float:
-	if path == "" or not ResourceLoader.exists(path):
-		return 0.0
-	var stream: AudioStream = load(path)
-	if "loop" in stream:
-		stream.loop = false
-	_voice.stream = stream
-	_voice.play()
-	_duck_music(true)
-	return stream.get_length()
-
-
-func stop_voice() -> void:
-	if _voice.playing:
-		_voice.stop()
-	_duck_music(false)
-
-
-func _duck_music(on: bool) -> void:
-	var bus := AudioServer.get_bus_index("Music")
-	if _duck and _duck.is_valid():
-		_duck.kill()
-	_duck = create_tween()
-	var target := linear_to_db(clampf(GameState.music_volume, 0.0001, 1.0)) + (DUCK_DB if on else 0.0)
-	_duck.tween_method(func(db: float): AudioServer.set_bus_volume_db(bus, db), AudioServer.get_bus_volume_db(bus), target, 0.4)
 
 
 func set_sfx_volume(linear: float) -> void:

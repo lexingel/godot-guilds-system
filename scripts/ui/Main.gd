@@ -15,7 +15,6 @@ func _ready() -> void:
 	GameState.load_active_slot()
 	AudioManager.set_music_volume(GameState.music_volume)
 	AudioManager.set_sfx_volume(GameState.sfx_volume)
-	AudioManager.set_voice_volume(GameState.voice_volume)
 	_apply_resolution(GameState.resolution_idx)
 	get_tree().root.content_scale_factor = GameState.ui_scale
 	_fit_to_window()
@@ -2632,11 +2631,6 @@ func _render_settings(v: VBoxContainer) -> void:
 	v.add_child(_volume_row("SFX", GameState.sfx_volume, func(val: float):
 		GameState.sfx_volume = val
 		AudioManager.set_sfx_volume(val)
-		GameState.save_settings()
-	))
-	v.add_child(_volume_row("Voice", GameState.voice_volume, func(val: float):
-		GameState.voice_volume = val
-		AudioManager.set_voice_volume(val)
 		GameState.save_settings()
 	))
 

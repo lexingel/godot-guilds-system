@@ -112,6 +112,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"The opening is narrated now, over its own music, with two new scenes: the Accord sealing a rift, and the villagers waiting for a guild. Watch it again from Settings or the Chronicle.",
 	"An opening cinematic: the Night of Breaking, how the old guilds of the Accord vanished, ending on your own guild. It plays when you found a guild; watch it again from Settings or Library > Codex > Chronicle.",
 	"From Act II a sealed rift sometimes leaves an echo: Essence that holds something the Hollow took from someone. Give it back to the village, or keep it. Stranger, gentler things now turn up in rifts too. And when a hero first reaches Rank B, the guild marks their new calling with a scene of its own.",
 	"Act IV: the Accord Hall. After Sythrane, the posts are tiring, and the Terms of the old bargain wait at the bottom of the Endless Rift (stronger for every post you've emptied). Beat them and choose how the story ends: renew the Accord, or break it. Guilds that already finished Act III can start it now.",

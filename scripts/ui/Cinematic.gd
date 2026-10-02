@@ -1,29 +1,31 @@
 class_name Cinematic
 extends CanvasLayer
-## The opening cinematic: the Night of Breaking told in a few illustrated
-## shots (slow pans, fades, captions, a little weather), ending on the new
-## guild's name and crest. Space, Enter or a click moves to the next shot;
-## Esc (or Skip) ends it. Respects Reduce motion (no pans or shaking).
+## The opening cinematic: the Night of Breaking told in illustrated shots
+## (slow pans, fades, captions, a little weather) over its own narrated
+## track, ending on the new guild's name and crest. Esc, B or Skip ends it;
+## the shots follow the narration, so nothing skips ahead within it.
+## Respects Reduce motion (no pans or shaking).
 
 const SHOT_FADE := 0.6
-## Shot lengths follow the opening's track (opening.ogg, 60s): the Night's
-## flash lands on its hit at ~13.8s and the last shot ends in its fade.
-## Narration: line N of the opening for the game's language, if recorded
-## (shots 1-7 speak lines 1-7; the guild's name brings line 8). A language
-## without files plays with captions only.
-const VOICE_PATH := "res://assets/audio/vo/%s/opening_%d.ogg"
-## Its music: a dedicated track if one is ever added, else a camp track.
+## The narrated track (made with Suno, 69.7s). Each shot is cut in the pause
+## before its line and its caption appears as the line begins: the times
+## below come from a speech-recognition pass over the track (word starts),
+## so a new track means new numbers.
 const MUSIC := ["res://assets/audio/music/opening.ogg", "res://assets/audio/music/nocturnal_dread.ogg"]
+## The rifts' flash lands on "opened" (28.2s), this long after the Night's cut.
+const NIGHT_HIT := 7.4
 ## [image, seconds, zoom from, zoom to, pan from, pan to (fractions of the
-## overflow), caption, effect]
+## overflow), caption, effect, caption after (seconds into the shot)]
 const SHOTS := [
-	["res://assets/cinematic/hall.png", 6.5, 1.12, 1.0, Vector2(-0.4, 0.2), Vector2(0.3, -0.1), "For three hundred years, the guilds of the Accord kept the rifts shut.", "glow_warm"],
-	["res://assets/cinematic/oath.png", 6.5, 1.0, 1.15, Vector2.ZERO, Vector2(0.0, -0.3), "They swore one oath: close what opens, share what you find, never sell a rift.", "glow"],
-	["res://assets/cinematic/night.png", 7.5, 1.0, 1.1, Vector2(0.3, 0.0), Vector2(-0.3, 0.0), "Then, in a single night, every rift in the Vale opened at once.", "night"],
-	["res://assets/cinematic/march.png", 7.5, 1.15, 1.0, Vector2(0.0, 0.3), Vector2(0.0, 0.0), "Every guild of the Accord went in.", "embers"],
-	["res://assets/cinematic/pillars.png", 8.0, 1.0, 1.18, Vector2(-0.3, 0.0), Vector2(0.35, -0.1), "What they found there, no one living remembers.", "glow"],
-	["res://assets/cinematic/empty.png", 7.5, 1.1, 1.0, Vector2(0.3, 0.2), Vector2(-0.2, 0.0), "By morning, their halls stood empty.", "dust"],
-	["res://assets/hamlet/backdrop.png", 14.0, 1.05, 1.0, Vector2(0.0, 0.2), Vector2.ZERO, "The villages still need a guild.", "finale"],
+	["res://assets/cinematic/hall.png", 8.0, 1.12, 1.0, Vector2(-0.4, 0.2), Vector2(0.3, -0.1), "For three hundred years, the guilds of the Accord kept the rifts shut.", "glow_warm", 1.4],
+	["res://assets/cinematic/oath.png", 5.9, 1.0, 1.15, Vector2.ZERO, Vector2(0.0, -0.3), "They swore one oath: close what opens,", "glow", 1.1],
+	["res://assets/cinematic/seal.png", 6.9, 1.0, 1.12, Vector2(0.0, 0.2), Vector2(0.0, -0.2), "share what you find, never sell a rift.", "glow", 0.6],
+	["res://assets/cinematic/night.png", 10.6, 1.0, 1.1, Vector2(0.3, 0.0), Vector2(-0.3, 0.0), "Then, in a single night, every rift in the Vale opened at once.", "night", 2.0],
+	["res://assets/cinematic/march.png", 5.8, 1.15, 1.0, Vector2(0.0, 0.3), Vector2(0.0, 0.0), "Every guild of the Accord went in.", "embers", 1.3],
+	["res://assets/cinematic/pillars.png", 8.2, 1.0, 1.18, Vector2(-0.3, 0.0), Vector2(0.35, -0.1), "What they found there, no one living remembers.", "glow", 1.2],
+	["res://assets/cinematic/empty.png", 7.4, 1.1, 1.0, Vector2(0.3, 0.2), Vector2(-0.2, 0.0), "By morning, their halls stood empty.", "dust", 1.1],
+	["res://assets/cinematic/villagers.png", 5.2, 1.1, 1.0, Vector2(0.0, 0.3), Vector2.ZERO, "The villagers still need a guild.", "glow_warm", 1.1],
+	["res://assets/hamlet/backdrop.png", 10.8, 1.05, 1.0, Vector2(0.0, 0.2), Vector2.ZERO, "They have yours.", "finale", 1.3],
 ]
 
 var guild_name := ""
@@ -38,6 +40,10 @@ var _fx: Control
 var _black: ColorRect
 var _caption: Label
 var _skip: Button
+var _track := ""          # the opening track playing, followed for timing
+var _clock := 0.0         # seconds since the start, when there's no track
+var _cuts: Array[float] = []     # when each shot starts, from SHOTS
+var _cap_shown := false
 
 
 func _ready() -> void:
@@ -46,10 +52,7 @@ func _ready() -> void:
 	_ground = ColorRect.new()
 	_ground.color = Color.BLACK
 	_ground.size = vp
-	_ground.mouse_filter = Control.MOUSE_FILTER_STOP
-	_ground.gui_input.connect(func(e):
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			_next())
+	_ground.mouse_filter = Control.MOUSE_FILTER_STOP   # nothing behind it takes clicks
 	add_child(_ground)
 	_pic = TextureRect.new()
 	_pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -97,32 +100,52 @@ func _ready() -> void:
 	_ground.add_child(_caption)
 	_skip = Button.new()
 	_skip.text = tr("Skip")
-	_skip.tooltip_text = tr("Esc skips the opening; Space or a click goes to the next scene.")
+	_skip.tooltip_text = tr("Esc skips the opening.")
 	_skip.flat = true
 	_skip.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	_skip.position = Vector2(vp.x - 130.0, vp.y - 48.0)
 	_skip.pressed.connect(func(): _finish(true))
 	_ground.add_child(_skip)
+	var t := 0.0
+	for sh in SHOTS:
+		_cuts.append(t)
+		t += float(sh[1])
+	_cuts.append(t)   # the end
 	for m in MUSIC:
 		if ResourceLoader.exists(m):
-			AudioManager.play_music(m, 0.5, false)
+			AudioManager.play_music(m, 0.05, false)
+			_track = m
 			break
 	_next()
 
 
+## Seconds into the opening: the narrated track's own position (so pictures
+## and captions can't drift from the voice), else the clock.
+func _now() -> float:
+	var p := AudioManager.music_position(_track) if _track != "" else -1.0
+	return p if p >= 0.0 else _clock
+
+
+func _process(delta: float) -> void:
+	_clock += delta
+	if _shot < 0 or _shot >= SHOTS.size():
+		return
+	var t := _now()
+	if not _cap_shown and t >= _cuts[_shot] + float(SHOTS[_shot][8]):
+		_cap_shown = true
+		_tw().tween_property(_caption, "modulate:a", 1.0, 0.4)
+	if not _busy and t >= _cuts[_shot + 1] - SHOT_FADE:
+		_next()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_ESCAPE:
-				_finish(true)
-			KEY_SPACE, KEY_ENTER, KEY_KP_ENTER:
-				_next()
+		if event.keycode == KEY_ESCAPE:
+			_finish(true)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventJoypadButton and event.pressed:
 		if event.button_index == JOY_BUTTON_B:
 			_finish(true)
-		elif event.button_index == JOY_BUTTON_A:
-			_next()
 		get_viewport().set_input_as_handled()
 
 
@@ -176,37 +199,23 @@ func _play(i: int) -> void:
 		_pic.position = -spare * 0.5 + Vector2(spare.x * 0.5 * p.x, spare.y * 0.5 * p.y)
 	place.call(z0, p0)
 	_pic.modulate = Color.WHITE
-	AudioManager.stop_voice()
-	var spoken := AudioManager.play_voice(_voice_path(i + 1))
-	var dur := maxf(float(s[1]), spoken + 2.2)   # the shot waits for its line
+	var dur := float(s[1])
 	var cam := _tw()
 	cam.tween_method(func(k: float): place.call(lerpf(z0, z1, k), p0.lerp(p1, k)), 0.0, 1.0, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_effect(str(s[7]), vp, dur, still)
 	_caption.text = tr(str(s[6]))
+	# In from black; _process brings the caption in as its line begins and
+	# cuts to the next shot, both by the track's position.
+	_cap_shown = false
 	var show := _tw()
 	show.tween_property(_black, "color:a", 0.0, SHOT_FADE)
 	show.tween_callback(func(): _busy = false)
-	show.tween_property(_caption, "modulate:a", 1.0, 0.8).set_delay(0.3)
 	if str(s[7]) == "finale":
-		var last := ResourceLoader.exists(_voice_path(i + 2))
-		show.tween_interval(maxf(2.4, spoken - 0.6))
-		show.tween_property(_caption, "modulate:a", 0.0, 0.5)
 		show.tween_callback(func(): _title_card(vp))
-		show.tween_property(_caption, "modulate:a", 1.0, 0.8)
-		var tail := maxf(4.0, dur - 5.4)   # the rest of the shot (fades in, caption, name)
-		if last:
-			var stream: AudioStream = load(_voice_path(i + 2))
-			tail = maxf(tail, stream.get_length() + 2.5)
-		show.tween_interval(tail)
-	else:
-		show.tween_interval(maxf(1.0, dur - SHOT_FADE - 1.1 - SHOT_FADE))
-	show.tween_callback(_next)
 
 
-## The last shot: the guild's crest and name, then "They have yours."
+## The last shot: the guild's crest and name, just before "They have yours."
 func _title_card(vp: Vector2) -> void:
-	_caption.text = tr("They have yours.")
-	AudioManager.play_voice(_voice_path(SHOTS.size() + 1))
 	if guild_name == "":   # watched from the title screen, before any guild
 		return
 	var box := VBoxContainer.new()
@@ -253,12 +262,12 @@ func _effect(kind: String, vp: Vector2, dur: float, still: bool) -> void:
 			flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			_fx.add_child(flash)
 			var f := _tw()
-			f.tween_interval(0.8)
+			f.tween_interval(NIGHT_HIT)
 			f.tween_property(flash, "color:a", 0.55, 0.08)
 			f.tween_property(flash, "color:a", 0.0, 0.9)
 			if not still:
 				var sh := _tw()
-				sh.tween_interval(0.8)
+				sh.tween_interval(NIGHT_HIT)
 				for k in 10:
 					sh.tween_property(_fx, "position", Vector2(randf_range(-6, 6), randf_range(-4, 4)), 0.05)
 				sh.tween_property(_fx, "position", Vector2.ZERO, 0.05)
@@ -295,15 +304,10 @@ func _particles(vp: Vector2, col: Color, n: int, vel: Vector2, life: float, anyw
 	_fx.add_child(p)
 
 
-func _voice_path(line: int) -> String:
-	return VOICE_PATH % [str(GameState.language).substr(0, 2), line]
-
-
 func _finish(skipped: bool) -> void:
 	if not is_inside_tree():
 		return
 	_kill_tweens()
-	AudioManager.stop_voice()
 	var cb := on_done
 	queue_free()
 	if cb.is_valid():
