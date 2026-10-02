@@ -1,0 +1,16 @@
+Sound effects - all CC0 (public domain): free for commercial use, no credit required.
+
+Kenney (kenney.nl): Interface Sounds, Impact Sounds, RPG Audio, Music Jingles,
+  and the earlier UI/RPG sounds (see KENNEY_LICENSE.txt)
+  ui_click, ui_back, ui_confirm, ui_error (error_006), hit (impactPlate_light_000),
+  craft (metalLatch), level_up (jingles_HIT15), victory (jingles_STEEL07),
+  defeat (jingles_STEEL03)
+rubberduck (opengameart.org): "80 CC0 RPG SFX" and "100 CC0 SFX"
+  hit_heavy (slam_01), stun (gong_01), ability (spell_fire_02), relic (item_gem_03),
+  boss (creature_roar_01), story (book_01), unlock (lock_01)
+artisticdude (opengameart.org): "RPG Sound Pack"
+  coin (coin), attack (swing), knockout (giant3), windup (sword-unsheathe),
+  shield (chainmail1), heal (bubble2)
+Synthesized for the game (tools/gen_sfx.py): burn, chill
+
+Each was trimmed and gain-matched to sit with the rest.

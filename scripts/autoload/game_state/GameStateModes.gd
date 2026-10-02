@@ -148,12 +148,21 @@ func _complete_act(act_num: int) -> void:
 		var d := GameData.champion_def(freed)
 		pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(freed),
 			"text": tr("Deep in %s, held in a pillar of light, your guild finds %s. %s\n\n%s\n\nChampions oversee your rift runs (their Boon, and their Call) and fight in the Endless Rift. See Roster > Champions.") % [tr(str(act["finale"])), GameData.champion_full_name(freed), tr(str(d.get("lore", ""))), champion_memory_line(freed)]})
+	if act_num == 3 and feature_unlocked("rival"):
+		pending_stories.append(_charter_hearing())
+	if act_num == 2 and feature_unlocked("rival") and charter_choice == "":
+		pending_stories.append(GameData.CHARTER_TURN.duplicate(true))   # after Act III's intro (below)
 	if act_num == 4:
 		pending_stories.append(GameData.ACCORD_CHOICE.duplicate(true))   # the ending, then The End
 	elif campaign_done():
 		pending_stories.append(_the_end_card())
 	else:
 		pending_stories.append(_act_intro_card(campaign_act))
+		# The Charter War's turn waits until after Act III's intro.
+		var turn := pending_stories.filter(func(c): return str(c.get("kind", "")) == "charter")
+		for c in turn:
+			pending_stories.erase(c)
+			pending_stories.append(c)
 
 
 ## "<Name> remembers: ..." (the Broken Accord), or "" for a champion without one.
@@ -211,6 +220,47 @@ func answer_echo(choice: String) -> void:
 		_news(tr("An echo was kept: %s (+%d Essence).") % [tr(str(card["title"])), int(card.get("essence", 0))])
 	save()
 	state_changed.emit()
+
+
+## The Charter War's turn: "expose" the Hollow Crown Company or keep "quiet"
+## (the choice card that opens Act III).
+func choose_charter(choice: String) -> void:
+	if charter_choice != "" or not GameData.CHARTER_RESULT.has(choice):
+		return
+	charter_choice = choice
+	if choice == "expose":
+		add_reputation(GameData.CHARTER_EXPOSE_RENOWN)
+		if rival_name == "The Hollow Crown Company":
+			rival_renown = maxi(0, rival_renown - GameData.CHARTER_EXPOSE_RENOWN)   # the Crown fines them
+		if campaign_act >= GameData.BREACH_UNLOCK_ACT and breach.is_empty():
+			breach_next_day = day + 2   # the Company opens one on your road
+	var r: Dictionary = GameData.CHARTER_RESULT[choice]
+	if not pending_stories.is_empty() and str(pending_stories[0].get("kind", "")) == "charter":
+		pending_stories.pop_front()
+	pending_stories.push_front({"title": tr(str(r["title"])), "subtitle": tr(str(r["subtitle"])), "text": tr(str(r["text"]))})
+	_news(tr(str(r["title"])) + ".")
+	save()
+	state_changed.emit()
+
+
+## The Crown's hearing (Act III's end): the Royal Charter to the Renown leader.
+func _charter_hearing() -> Dictionary:
+	charter_result = "won" if reputation >= rival_renown else "lost"
+	var h: Dictionary = GameData.CHARTER_HEARING[charter_result]
+	var rn := tr(str(rival_name))
+	var card := {"title": tr(str(h["title"])), "subtitle": tr(str(h["subtitle"])), "text": tr(str(h["text"]))}
+	if charter_result == "lost":
+		card["subtitle"] = card["subtitle"] % rn
+		card["text"] = card["text"] % rn
+	_news(card["subtitle"] + ".")
+	return card
+
+
+## Wen's line for the Memorial (by voice, a steady pick per name).
+func memorial_line(h: Hero) -> String:
+	var lines: Array = GameData.MEMORIAL_LINES.get(GameData.hero_voice(h), GameData.MEMORIAL_LINES["stoic"])
+	var first := str(h.name.split(" the ")[0])
+	return tr(str(lines[abs(first.hash()) % lines.size()])) % tr(first)
 
 
 func _the_end_card() -> Dictionary:
@@ -349,7 +399,8 @@ func _run_outcome() -> String:
 ## Remembers a hero lost for good (left behind in a rift).
 func _memorialize(h: Hero, cause: String) -> void:
 	fallen.push_front({"name": h.name, "cls_id": h.cls_id, "pool_id": h.pool_id, "rank": h.rank, "level": h.level,
-		"day": day, "cause": cause, "rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0))})
+		"day": day, "cause": cause, "rifts": int(h.history.get("rifts_cleared", 0)), "kills": int(h.history.get("kills", 0)),
+		"line": memorial_line(h)})
 	heroes_lost_total += 1
 
 

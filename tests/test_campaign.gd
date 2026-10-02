@@ -190,3 +190,34 @@ func run() -> void:
 	check(GameData.RIFT_EVENTS.filter(func(e): return int(e.get("min_act", 1)) > 1).size() >= 3, "gentle Hollow events wait for later acts")
 	for v in ["bold", "swift", "stoic", "wary", "devout", "arcane"]:
 		check(str(GameData.CALLING_SCENES.get(v, "")).count("%s") == 2, "a calling scene for the %s voice" % v)
+
+	# The Charter War: the turn (expose or keep quiet) and the Crown's hearing.
+	GameState.campaign_act = 3
+	GameState.charter_choice = ""
+	GameState.charter_result = ""
+	GameState.breach = {}
+	GameState.breach_next_day = GameState.day + 20
+	GameState.pending_stories = [GameData.CHARTER_TURN.duplicate(true)]
+	var rep_c := GameState.reputation
+	GameState.choose_charter("expose")
+	check(GameState.charter_choice == "expose" and GameState.reputation == rep_c + GameData.CHARTER_EXPOSE_RENOWN, "exposing the Company: +Renown")
+	check(GameState.breach_next_day == GameState.day + 2 and str(GameState.pending_stories[0]["title"]) == "The Company exposed", "and it strikes back with a Riftbreak at your door")
+	GameState.choose_charter("quiet")
+	check(GameState.charter_choice == "expose", "the turn is chosen once")
+	check(is_equal_approx(GameState.charter_pay(false), 1.0), "exposing it earns no contract bonus")
+	GameState.charter_choice = "quiet"
+	check(is_equal_approx(GameState.charter_pay(false), GameData.CHARTER_QUIET_PAY) and is_equal_approx(GameState.charter_pay(true), 1.0), "keeping quiet: contracts pay more Gold")
+	GameState.reputation = GameState.rival_renown + 5
+	GameState._charter_hearing()
+	check(GameState.charter_result == "won" and is_equal_approx(GameState.charter_pay(true), GameData.CHARTER_PAY), "leading on Renown wins the Royal Charter")
+	GameState.reputation = maxi(0, GameState.rival_renown - 5)
+	GameState.rival_renown = GameState.reputation + 5
+	var lost := GameState._charter_hearing()
+	check(GameState.charter_result == "lost" and str(lost["subtitle"]).contains(tr(GameState.rival_name)), "trailing, the rival takes it")
+	# Wen's lines: the Memorial and bonds.
+	var wh: Hero = GameState.heroes[0]
+	check(GameState.memorial_line(wh).contains(wh.name.split(" the ")[0]), "Wen writes a line for the Memorial")
+	var bond_ok := true
+	for sc in GameData.BOND_SCENES:
+		bond_ok = bond_ok and str(sc).count("%s") in [2, 3]
+	check(bond_ok, "bond scenes name the pair")

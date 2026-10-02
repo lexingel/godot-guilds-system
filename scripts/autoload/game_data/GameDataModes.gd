@@ -945,3 +945,47 @@ const CALLING_SCENES := {
 	"devout": "%s prays before every rift, and this time the answer came back as a shape. Hesper says the Vow always answers in its own time. Wen writes it in the chronicle in her best hand: %s.",
 	"arcane": "%s has been taking notes on their own Essence for weeks. The notes end mid-sentence on the day it settled. Wen copies the last line into the chronicle and adds the new word: %s.",
 }
+
+
+## The Charter War's turn (Act III opens): Mother Ilse brings proof that the
+## Hollow Crown Company has been opening rifts. Expose it (Renown, and the
+## Company strikes back with a Riftbreak at your door) or keep quiet (its
+## contracts pay you more, against the Accord's oath).
+const CHARTER_EXPOSE_RENOWN := 10
+const CHARTER_QUIET_PAY := 1.25     # contract Gold, keeping quiet
+const CHARTER_PAY := 1.2            # contract Gold and Essence, holding the Royal Charter
+const CHARTER_TURN := {"kind": "charter", "title": "Mother Ilse's page", "subtitle": "The Charter War",
+	"text": "Mother Ilse of the Last Lantern finds you after dark with a page torn from the Hollow Crown Company's books: a list of rifts, each with a date, a price, and the word opened. Captain Morrow has been opening rifts and selling the contracts to close them.\n\nShe will give it to the Crown's herald if you ask. Or the Company will pay well for a guild that keeps quiet, and its contracts would come to you.",
+	"choices": ["expose", "quiet"]}
+const CHARTER_RESULT := {
+	"expose": {"title": "The Company exposed", "subtitle": "The Charter War",
+		"text": "The herald reads Morrow's page aloud in the square. By evening the Hollow Crown Company's banners are down in three villages. By morning a rift has opened on the road to your camp, which is how you know the page was real.\n\n(+10 Renown. A Riftbreak is coming to your door.)"},
+	"quiet": {"title": "A quiet arrangement", "subtitle": "The Charter War",
+		"text": "Morrow's contracts start arriving on your board, generous ones. Hesper reads the first, folds it, and doesn't say anything. She doesn't have to.\n\n(Contracts pay 25% more Gold for the rest of the campaign.)"},
+}
+## The Crown's hearing (Act III ends): the Royal Charter goes to the guild
+## that leads on Renown (%s: the rival, twice, when they win it).
+const CHARTER_HEARING := {
+	"won": {"title": "By Royal Hand", "subtitle": "The Royal Charter is yours",
+		"text": "The herald reads one name, and it is yours. Orla Venn is the first to shake your hand; Kael Ashborn asks for a job; Mother Ilse is already gone, which is how you know she was pleased. The Charter hangs in your hall, and the villages bring their troubles to a door they know.\n\n(Contracts pay 20% more Gold and Essence.)"},
+	"lost": {"title": "By Royal Hand", "subtitle": "The Charter goes to %s",
+		"text": "The herald reads a name, and it isn't yours. %s hangs the Royal Charter in their hall. The rifts don't care whose name is on the wall. Neither, in the end, do the villagers, as long as somebody comes."},
+}
+
+## The Guildhold Chronicle: when a bond reaches its last level, Wen writes
+## the pair down together (%s, %s: the two heroes).
+const BOND_SCENES := [
+	"%s and %s have stopped needing to talk in a fight. Wen noticed first. She has started writing their names in the chronicle as one entry, with an ampersand, and neither of them has complained.",
+	"%s and %s sat up past the last candle arguing about a fight they won. Dobbs charged the guild for the candle. Hesper paid it herself and told him to let them be.",
+	"Ten rifts together. %s still can't say %s's full name right, and %s still lets it go. Wen has written down both versions.",
+	"%s took a hit meant for %s last week and has refused to talk about it since. Wen has written it down anyway. Hesper says that's how the old guilds started.",
+]
+## Wen's line on the Memorial, by the hero's voice (%s: their name).
+const MEMORIAL_LINES := {
+	"bold": ["%s went first into every rift. Somebody had to.", "%s never once asked how deep a rift went before stepping in."],
+	"swift": ["%s was always first out of the rift, and always went back for whoever wasn't.", "%s never sat still at the pay table. The chair is still pushed back."],
+	"stoic": ["%s said very little and meant all of it.", "%s held the line. That is the whole entry, and it is enough."],
+	"wary": ["%s was afraid of every rift and walked into all of them.", "%s checked every strap twice. It wasn't the straps."],
+	"devout": ["%s prayed before every rift. We hope someone answered.", "%s kept the candles lit in the hall. We have kept them lit since."],
+	"arcane": ["%s left a notebook full of questions. Wen is working through them.", "%s understood the Hollow better than any of us, and went to see it anyway."],
+}

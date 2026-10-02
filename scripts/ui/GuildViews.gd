@@ -511,6 +511,10 @@ func _render_memorial(v: VBoxContainer) -> void:
 		var col := _vbox(2)
 		col.add_child(_label(tr("%s — Rank %s, Level %d") % [tr(str(f["name"])), tr(str(f["rank"])), int(f["level"])], 14))
 		col.add_child(_wrap_label(tr("%s, on day %d. %d rift%s sealed, %d foe%s felled.") % [tr(str(f["cause"])), int(f["day"]), int(f["rifts"]), tr(str(_pl(int(f["rifts"])))), int(f["kills"]), tr(str(_pl(int(f["kills"]))))], 12, true))
+		if str(f.get("line", "")) != "":   # Wen's line (the Guildhold Chronicle)
+			var wl := _wrap_label("“%s”  — %s" % [str(f["line"]), "Wen"], 12)
+			wl.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
+			col.add_child(wl)
 		row.add_child(col)
 		v.add_child(row)
 

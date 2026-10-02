@@ -90,20 +90,21 @@ const SFX_PATH := {
 	"knockout": "res://assets/audio/sfx/knockout.ogg",
 	"victory": "res://assets/audio/sfx/victory.ogg",
 	"craft": "res://assets/audio/sfx/craft.ogg",
-	# Synthesized by tools/gen_sfx.py.
-	"windup": "res://assets/audio/sfx/gen_windup.wav",
-	"stun": "res://assets/audio/sfx/gen_stun.wav",
+	# CC0 sounds picked by ear (see assets/audio/sfx/CREDITS.txt); burn and
+	# chill are still synthesized by tools/gen_sfx.py.
+	"windup": "res://assets/audio/sfx/windup.ogg",
+	"stun": "res://assets/audio/sfx/stun.ogg",
 	"burn": "res://assets/audio/sfx/gen_burn.wav",
 	"chill": "res://assets/audio/sfx/gen_chill.wav",
-	"shield": "res://assets/audio/sfx/gen_shield.wav",
-	"heal": "res://assets/audio/sfx/gen_heal.wav",
-	"ability": "res://assets/audio/sfx/gen_ability.wav",
-	"relic": "res://assets/audio/sfx/gen_relic.wav",
-	"level_up": "res://assets/audio/sfx/gen_level_up.wav",
-	"unlock": "res://assets/audio/sfx/gen_unlock.wav",
-	"story": "res://assets/audio/sfx/gen_story.wav",
-	"defeat": "res://assets/audio/sfx/gen_defeat.wav",
-	"boss": "res://assets/audio/sfx/gen_boss.wav",
+	"shield": "res://assets/audio/sfx/shield.ogg",
+	"heal": "res://assets/audio/sfx/heal.ogg",
+	"ability": "res://assets/audio/sfx/ability.ogg",
+	"relic": "res://assets/audio/sfx/relic.ogg",
+	"level_up": "res://assets/audio/sfx/level_up.ogg",
+	"unlock": "res://assets/audio/sfx/unlock.ogg",
+	"story": "res://assets/audio/sfx/story.ogg",
+	"defeat": "res://assets/audio/sfx/defeat.ogg",
+	"boss": "res://assets/audio/sfx/boss.ogg",
 }
 
 ## The tester build: what changed lately and what to try, shown on the title
@@ -112,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"New sound effects throughout (free CC0 sounds, picked by ear). The Charter War comes to a head: as Act III opens, Mother Ilse brings proof the Hollow Crown Company opens rifts for profit. Expose them or keep quiet; when Act III ends, the Crown grants its Royal Charter to the guild with the most Renown. Wen now writes a line for every hero on the Memorial, and a scene when a bond reaches its peak.",
 	"The opening is narrated now, over its own music, with two new scenes: the Accord sealing a rift, and the villagers waiting for a guild. Watch it again from Settings or the Chronicle.",
 	"An opening cinematic: the Night of Breaking, how the old guilds of the Accord vanished, ending on your own guild. It plays when you found a guild; watch it again from Settings or Library > Codex > Chronicle.",
 	"From Act II a sealed rift sometimes leaves an echo: Essence that holds something the Hollow took from someone. Give it back to the village, or keep it. Stranger, gentler things now turn up in rifts too. And when a hero first reaches Rank B, the guild marks their new calling with a scene of its own.",

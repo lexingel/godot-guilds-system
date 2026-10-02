@@ -198,8 +198,8 @@ func claim_quest(quest_id: String) -> void:
 			continue
 		var reward: Dictionary = q["reward"]
 		var ledger := 1.5 if Combat.party_has_unique_relic("quartermasters_ledger") else 1.0
-		coins += int(round(int(reward.get("coins", 0)) * ledger))
-		crystals += int(round(int(reward.get("crystals", 0)) * ledger))
+		coins += int(round(int(reward.get("coins", 0)) * ledger * charter_pay(false)))
+		crystals += int(round(int(reward.get("crystals", 0)) * ledger * charter_pay(true)))
 		add_reputation(int(reward.get("reputation", 0)))
 		guild_board.erase(q)
 		_bump("quests_done")

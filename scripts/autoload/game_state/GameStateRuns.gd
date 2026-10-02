@@ -854,6 +854,11 @@ func seal_rift() -> void:
 			var before := GameData.bond_level(int(bonds.get(key, 0)))
 			bonds[key] = int(bonds.get(key, 0)) + 1
 			if GameData.bond_level(int(bonds[key])) > before:
+				if before + 1 == GameData.BOND_LEVEL_RIFTS.size():   # the last level: a scene (the Chronicle)
+					var pair := [tr(str(sealers[i].name.split(" the ")[0])), tr(str(sealers[j].name.split(" the ")[0]))]
+					var scene := tr(str(GameData.BOND_SCENES[randi() % GameData.BOND_SCENES.size()]))
+					var args := [pair[0], pair[1], pair[1]] if scene.count("%s") == 3 else pair
+					pending_stories.append({"title": tr("%s & %s") % pair, "subtitle": tr("A bond, written down"), "text": scene % args})
 				flavor += tr(" %s and %s's bond deepens (Lv%d).") % [tr(str(sealers[i].name.split(" the ")[0])), tr(str(sealers[j].name.split(" the ")[0])), before + 1]
 				push_toast(sealers[i], tr("Bond deepened — Lv%d") % (before + 1), tr("%s & %s: +%d%% party damage while both stand") % [tr(str(sealers[i].name.split(" the ")[0])), tr(str(sealers[j].name.split(" the ")[0])), int(round(GameData.BOND_DMG_PER_LEVEL * (before + 1) * 100))])
 	for h in sealers:

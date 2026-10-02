@@ -489,6 +489,8 @@ func _story_overlay(card_data: Dictionary) -> void:
 	if card_data.has("choices"):
 		if str(card_data.get("kind", "")) == "echo":
 			_echo_choice(cv, card_data)
+		elif str(card_data.get("kind", "")) == "charter":
+			_charter_choice(cv)
 		else:
 			_accord_choice(cv)   # the Broken Accord's ending: no Continue, a decision
 		card.add_child(cv)
@@ -509,6 +511,25 @@ func _story_overlay(card_data: Dictionary) -> void:
 
 
 var _accord_pick := false   # the ending card is asking which hero takes the post
+
+
+## The Charter War's turn: expose the Hollow Crown Company, or keep quiet.
+func _charter_choice(cv: VBoxContainer) -> void:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 10)
+	row.alignment = FlowContainer.ALIGNMENT_CENTER
+	var expose := _icon_domain_button("violet", "", "Expose the Company", func():
+		GameState.choose_charter("expose")
+		render())
+	expose.tooltip_text = tr("+%d Renown. The Company will strike back: a Riftbreak at your door.") % GameData.CHARTER_EXPOSE_RENOWN
+	row.add_child(expose)
+	var quiet := _icon_domain_button("ember", "", "Keep quiet", func():
+		GameState.choose_charter("quiet")
+		render())
+	quiet.tooltip_text = tr("Contracts pay %d%% more Gold for the rest of the campaign. The Accord said: never sell a rift.") % int(round((GameData.CHARTER_QUIET_PAY - 1.0) * 100))
+	row.add_child(quiet)
+	cv.add_child(row)
+	_combat_hotkeys = {}
 
 
 ## What the Rifts Take: give the echo back to the village, or keep it.
@@ -1309,6 +1330,7 @@ func _render_credits(v: VBoxContainer) -> void:
 	v.add_child(_label(tr("Version %s") % tr(str(_version())), 13))
 	v.add_child(_label("Built with Godot Engine 4.7", 13))
 	v.add_child(_label("Pixel art generated with PixelLab", 13))
+	v.add_child(_label("Sound effects by Kenney, rubberduck and artisticdude (CC0)", 13))
 	v.add_child(_hsep())
 	v.add_child(_icon_button(GameData.BUTTON_ICON_PATH["back"], "Back", func():
 		screen = "title"
