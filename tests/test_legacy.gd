@@ -202,4 +202,22 @@ func run() -> void:
 	GameState._swell_breach()
 	check(GameState.tide_strength() > 1.05 and float(GameState.defense_opts()["foe_mult"]) == GameState.tide_strength(), "tide 2 is stronger")
 	GameState.breach = {}
+
+	# The pay table remembers past guilds.
+	_guild("Paymasters")
+	GameState.legacy["guilds"] = []
+	check(GameState._past_pick().is_empty(), "no past guild, no past-guild scenes")
+	GameState.legacy["guilds"] = [{"name": "Quiet Ones", "ending": "", "remembered": []}]
+	var prev := {"scene": "quiet1", "lost_total": GameState.heroes_lost_total, "day": 7}
+	var seen := {}
+	for i in 60:
+		seen[GameState._payday_scene(prev, [], [], GameState.rival_ahead, GameState._past_pick())] = true
+	check(seen.has("past_retired") and not seen.has("past_hero") and not seen.has("past_renew") and not seen.has("past_break"), "a retired guild with nobody remembered gets only the scenes that fit it")
+	check(GameState._payday_scene({"scene": "past_books", "lost_total": GameState.heroes_lost_total, "day": 7}, [], [], GameState.rival_ahead, GameState._past_pick()).begins_with("past") == false, "never two past-guild paydays in a row")
+	GameState.legacy["guilds"] = [{"name": "Pocket Crows", "ending": "renew", "remembered": ["Oren"]}]
+	var all_fit := true
+	for sc in GameState._past_pick()["scenes"]:
+		all_fit = all_fit and GameData.PAYDAY_SCENES.has(sc)
+	check(all_fit and GameState._past_pick()["scenes"].has("past_hero") and GameState._past_pick()["scenes"].has("past_renew") and GameState._past_pick()["hero"] == "Oren", "a Keeper guild that remembered Oren can be talked about, and Oren by name")
+	GameState.legacy["guilds"] = []
 	GameState.delete_slot(9)

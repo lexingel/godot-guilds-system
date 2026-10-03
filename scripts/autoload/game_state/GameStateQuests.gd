@@ -474,9 +474,13 @@ func run_payday() -> void:
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Volunteers"), "text": tr("%s joined for free. A guild short on heroes and Gold draws volunteers; Rank F rifts pay enough to rebuild.") % ", ".join(volunteers)})
 	var was_ahead := int(payday_report.get("ahead", 0))
 	rival_ahead = 1 if reputation > rival_renown else (-1 if reputation < rival_renown else 0)
-	var scene := _payday_scene(payday_report, left, unpaid, was_ahead)
+	var past := _past_pick()
+	var scene := _payday_scene(payday_report, left, unpaid, was_ahead, past)
 	payday_report = {"day": day, "due": paid + unpaid.size(), "paid": paid, "unpaid": unpaid, "left": left, "ahead": rival_ahead, "upkeep": up, "upkeep_paid": upkeep_paid,
 		"scene": scene, "lost_total": heroes_lost_total}
+	if scene.begins_with("past"):
+		payday_report["past"] = past["guild"]
+		payday_report["past_hero"] = past["hero"]
 	var line := tr("Payday: %d Gold in wages, %s.") % [paid, tr(str((tr("%d in upkeep") % up) if upkeep_paid else tr("upkeep unpaid (-%d Renown)") % GameData.UPKEEP_UNPAID_RENOWN))]
 	if not unpaid.is_empty():
 		line += tr(" Unpaid: %s.") % tr(str(", ".join(unpaid)))
@@ -496,7 +500,7 @@ func run_payday() -> void:
 
 ## Which pay-table scene (GameData.PAYDAY_SCENES) this payday gets: the
 ## week's biggest news first, else a quiet one that isn't last week's.
-func _payday_scene(prev: Dictionary, left: Array, unpaid: Array, was_ahead: int) -> String:
+func _payday_scene(prev: Dictionary, left: Array, unpaid: Array, was_ahead: int, past: Dictionary = {}) -> String:
 	if prev.is_empty():
 		return "first"
 	if not left.is_empty():
@@ -512,10 +516,27 @@ func _payday_scene(prev: Dictionary, left: Array, unpaid: Array, was_ahead: int)
 		return "we_lead" if rival_ahead > 0 else "they_lead"
 	if coins > 3 * maxi(1, weekly_wages() + upkeep()) and last != "rich":
 		return "rich"
+	if not past.is_empty() and not last.begins_with("past") and randf() < GameData.PAST_SCENE_CHANCE:
+		return str(past["scenes"][randi() % (past["scenes"] as Array).size()])
 	if accord_pages > 0 and last != "accord" and randf() < 0.3:
 		return "accord"
 	var quiet: Array = ["quiet1", "quiet2", "quiet3", "quiet4", "quiet5", "quiet6"].filter(func(q): return q != last)
 	return str(quiet[randi() % quiet.size()])
+
+
+## A past guild from the Hall of Guilds for a pay-table scene: its name, a
+## hero it remembered, and the scenes that fit how it ended.
+func _past_pick() -> Dictionary:
+	var hall: Array = legacy.get("guilds", [])
+	if hall.is_empty():
+		return {}
+	var g: Dictionary = hall[randi() % hall.size()]
+	var names: Array = g.get("remembered", [])
+	var fits: Array = ["past_paytable", "past_banner", "past_books"]
+	if not names.is_empty():
+		fits.append("past_hero")
+	fits.append({"renew": "past_renew", "break": "past_break"}.get(str(g.get("ending", "")), "past_retired"))
+	return {"guild": str(g.get("name", "")), "hero": str(names[randi() % names.size()]) if not names.is_empty() else "", "scenes": fits}
 
 
 ## A hero leaves the guild (dismissed or walked out): their gear returns to

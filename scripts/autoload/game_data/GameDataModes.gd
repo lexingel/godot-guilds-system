@@ -890,7 +890,17 @@ const PAYDAY_SCENES := {
 	"quiet4": [["Hesper", "I sat the Assay at sixteen. The stone barely glowed."], ["Wen", "What rank?"], ["Hesper", "F. I'm still here. Most of the S's aren't."]],
 	"quiet5": [["Wen", "I need another word for 'rift'. I've used it four hundred times."], ["Dobbs", "Use 'expense'."]],
 	"quiet6": [["Dobbs", "The recruits ask what the Accord was."], ["Hesper", "Tell them it was a promise. Tell them we're keeping it."], ["Dobbs", "Are we?"], ["Hesper", "Ask me next payday."]],
+	# A past guild from the Hall of Guilds ({guild}; {hero}: one it remembered).
+	"past_paytable": [["Hesper", "{guild} paid on the seventh, too. Rain or not."], ["Wen", "You never said you knew them."], ["Hesper", "You never asked who taught you the pay table."]],
+	"past_banner": [["Wen", "Someone left flowers under the {guild} banner."], ["Dobbs", "Who pays for flowers?"], ["Hesper", "Nobody. That's how you know they mean it."]],
+	"past_books": [["Dobbs", "{guild} spent less on feasts than we do."], ["Hesper", "And kept fewer heroes."], ["Dobbs", "I hate it when the books agree with you."]],
+	"past_hero": [["Wen", "{hero} is all over the old {guild} ledgers. Rift after rift."], ["Hesper", "{hero} carried me home from the Marches once. Don't write that down."], ["Wen", "Already have."]],
+	"past_renew": [["Wen", "Who goes down to the forty-first post now that {guild} is gone?"], ["Hesper", "We do. Once a year, on the Night of Breaking."], ["Dobbs", "I'll put it in the ledger. No charge."]],
+	"past_break": [["Dobbs", "The tides got worse after {guild} burned the Terms."], ["Hesper", "The tides got honest."], ["Dobbs", "Honest costs more."]],
+	"past_retired": [["Wen", "{guild} just stopped. Do guilds do that?"], ["Hesper", "The good ones stop. The rest get stopped."], ["Wen", "Which were they?"], ["Hesper", "Look at their banner. It's still up."]],
 }
+## How often a quiet payday turns to a past guild, once the Hall of Guilds has one.
+const PAST_SCENE_CHANCE := 0.4
 
 ## The Broken Accord: a champion freed from the Endless Rift leaves a post
 ## empty, and the next Riftbreak comes this many days sooner.

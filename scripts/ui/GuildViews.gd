@@ -815,8 +815,9 @@ func _treasury_card() -> PanelContainer:
 			# The Guildhold Chronicle: the cast at the pay table.
 			var talk := _vbox(2)
 			talk.add_child(_label("At the pay table", 12, true))
+			var names := {"guild": str(rep.get("past", "")), "hero": str(rep.get("past_hero", ""))}
 			for ln in scene:
-				talk.add_child(_rich_line("[color=#%s]%s[/color]  %s" % [Palette.EMBER_BRIGHT.to_html(false), tr(str(ln[0])), tr(str(ln[1]))], 13))
+				talk.add_child(_rich_line("[color=#%s]%s[/color]  %s" % [Palette.EMBER_BRIGHT.to_html(false), tr(str(ln[0])), tr(str(ln[1])).format(names)], 13))
 			talk.tooltip_text = tr("Wen keeps the guild's chronicle, Dobbs keeps its books, and Old Hesper is the last of an Accord guild: she had a fever on the Night of Breaking and missed it.")
 			talk.mouse_filter = Control.MOUSE_FILTER_STOP
 			cv.add_child(talk)
