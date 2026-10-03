@@ -198,9 +198,13 @@ func run() -> void:
 	var lau1 := int(GameState.legacy["laurels"])
 	GameState.resolve_breach({"held": true, "integrity": 1.0, "fallen": []})
 	check(GameState.tides_held == 1 and int(GameState.legacy["laurels"]) == lau1 + GameData.TIDE_LAURELS, "holding a tide pays Laurels")
-	check(GameState.breach_next_day == GameState.day + GameData.TIDE_DAYS, "the next tide comes in a week")
+	check(GameState.breach_next_day + GameData.TIDE_WARN + 1 == GameState.day + GameData.TIDE_DAYS, "the next tide breaks a week later")
 	GameState._swell_breach()
 	check(GameState.tide_strength() > 1.05 and float(GameState.defense_opts()["foe_mult"]) == GameState.tide_strength(), "tide 2 is stronger")
+	var s2 := GameState.tide_strength()
+	GameState.resolve_breach({"held": false, "integrity": 0.0, "fallen": []})
+	GameState._swell_breach()
+	check(GameState.breach.get("tide", 0) == 3 and is_equal_approx(GameState.tide_strength(), s2), "a lost tide doesn't make the next one stronger")
 	GameState.breach = {}
 
 	# The pay table remembers past guilds.

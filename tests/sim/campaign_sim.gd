@@ -35,6 +35,7 @@ var force_attr := ""
 var charter := ""        # the sim's answer to Mother Ilse's page ("" = leave it)
 var founding := "free"   # the founding charter (founding=mercenary, ...)
 var oaths: Array = []    # oaths sworn (oaths=by_hand,lean_purse)
+var ending := "renew"    # the Accord's ending (ending=break: the Open Hollow's tides)
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -61,6 +62,10 @@ func _ready() -> void:
 			GameData.RANK_THREAT_DMG = float(a.substr(4))
 		elif a.begins_with("attr="):
 			force_attr = a.substr(5)
+		elif a.begins_with("tide_growth="):
+			GameData.TIDE_GROWTH = float(a.substr(12))
+		elif a.begins_with("ending="):
+			ending = a.substr(7)
 		elif a.begins_with("oaths="):
 			oaths = Array(a.substr(6).split(","))
 		elif a.begins_with("founding="):
@@ -73,6 +78,18 @@ func _ready() -> void:
 			bold = true
 		elif a == "log":
 			log_days = true
+	# The legacy file is shared by every guild on this machine: keep the
+	# player's, and give each simulated guild an empty one.
+	# A copy waits on disk too, in case a run is stopped before the end.
+	var bak := GameState.LEGACY_PATH + ".simbak"
+	if FileAccess.file_exists(bak):   # the last run was stopped: put the player's back first
+		var old := FileAccess.get_file_as_bytes(bak)
+		if old.is_empty():
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(GameState.LEGACY_PATH))
+		else:
+			FileAccess.open(GameState.LEGACY_PATH, FileAccess.WRITE).store_buffer(old)
+	var keep_legacy := FileAccess.get_file_as_bytes(GameState.LEGACY_PATH) if FileAccess.file_exists(GameState.LEGACY_PATH) else PackedByteArray()
+	FileAccess.open(bak, FileAccess.WRITE).store_buffer(keep_legacy)
 	print(TARGETS % [])
 	print("Rank threat: hp x%.2f, dmg x%.2f" % [GameData.RANK_THREAT_HP, GameData.RANK_THREAT_DMG])
 	for p in (["investor", "casual"] if profile == "" else [profile]):
@@ -112,6 +129,11 @@ func _ready() -> void:
 	var ks := curve.keys()
 	ks.sort()
 	print("Clear rate by party power / recommended (all profiles): %s" % "  ".join(ks.map(func(k): return "%.1f: %d/%d" % [k / 10.0, curve[k][0], curve[k][0] + curve[k][1]])))
+	if keep_legacy.is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(GameState.LEGACY_PATH))
+	else:
+		FileAccess.open(GameState.LEGACY_PATH, FileAccess.WRITE).store_buffer(keep_legacy)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(bak))
 	get_tree().quit()
 
 
@@ -129,11 +151,16 @@ func _guild(p: String, s: int) -> void:
 	freed_day = -1
 	morrow_day = -1
 	morrow_lost = 0
+	ending_day = -1
+	ending_laurels = 0
+	hall_days = []
+	tides = []
 	GameState.active_slot = 9
 	GameState.reset()
 	GameState.guild_name = "Sim"
 	GameState.tips_off = true
-	GameState.legacy["charters"] = GameData.FOUNDINGS.keys()   # the sim may found under any charter
+	GameState.legacy = {"laurels": 0, "guilds": [], "champions": {}, "charters": GameData.FOUNDINGS.keys()}   # the sim may found under any charter
+	GameData.LEGACY_CHAMPIONS = GameState.legacy["champions"]
 	GameState.apply_founding(founding)
 	GameState.oaths = oaths.duplicate()
 	GameState.hire_starters()
@@ -164,6 +191,22 @@ func _guild(p: String, s: int) -> void:
 		endless_runs, ("freed day %d" % freed_day) if freed_day >= 0 else "none freed",
 		("beaten day %d after %d loss%s" % [morrow_day, morrow_lost, "" if morrow_lost == 1 else "es"]) if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
 		("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
+	if ending_day >= 0:
+		var lost: Array = tides.filter(func(t): return not t[1])
+		print("     postgame (%s from day %d): Laurels %d at the ending, +%d after · %s · end %d Gold %d Essence, %d champions of %d" % [GameState.accord_ending, ending_day, ending_laurels,
+			int(GameState.legacy["laurels"]) - ending_laurels,
+			("halls %d/%d on days %s" % [hall_days.size(), GameData.ACCORD_HALLS.size(), hall_days]) if GameState.accord_ending == "renew" else
+			("tides held %d of %d, lost: %s" % [tides.size() - lost.size(), tides.size(), lost.map(func(t): return t[0])]),
+			GameState.coins, GameState.crystals, GameState.champions.size(), GameState.champion_roll.size()])
+		if GameState.accord_ending == "break":
+			# How strong a tide this guild could hold now (the next tide's defenders).
+			var probe: Array = []
+			for m in [1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0]:
+				var opts := GameState.defense_opts()
+				opts["foe_mult"] = m
+				var r := DefenseRun.new("camp", GameData.rift_rank_index(GameData.TIDE_RANK), GameState.defense_candidates().slice(0, 2), null, 7, opts)
+				probe.append("x%.1f %s" % [m, "held" if _run_defense(r) else "lost"])
+			print("     tide probe at day %d: %s" % [GameState.day, ", ".join(probe)])
 
 
 var ambush := [0, 0]     # Company Ambush fights [won, lost]
@@ -173,6 +216,10 @@ var morrow_day := -1
 var morrow_lost := 0
 var _party_power := 0
 var _spent := 0   # Gold spent at camp and in shops today (not a loss of income)
+var ending_day := -1       # the day the Accord's ending was chosen
+var ending_laurels := 0    # Laurels the legacy paid at the ending
+var hall_days: Array = []  # the day each Accord hall was restored
+var tides: Array = []      # [tide, held] for each tide of the Open Hollow
 
 
 func _day(p: String) -> void:
@@ -182,6 +229,9 @@ func _day(p: String) -> void:
 	GameState.pending_stories.clear()
 	GameState.pending_toasts.clear()
 	_answer_matters()
+	if GameState.accord_ending != "" and not GameState.legacy_written:
+		ending_day = GameState.day
+		ending_laurels = GameState.write_legacy([])
 	_quests()
 	var g0 := GameState.coins
 	if p == "investor":
@@ -241,7 +291,7 @@ func _answer_stories() -> void:
 					return
 				GameState.choose_charter(charter)
 			_:
-				GameState.choose_accord_ending("renew", GameState.heroes[0].id)
+				GameState.choose_accord_ending(ending, GameState.heroes[0].id)
 		if not GameState.pending_stories.is_empty() and GameState.pending_stories[0] == c:
 			GameState.pending_stories.pop_front()   # an answer that didn't take
 
@@ -326,8 +376,9 @@ func _invest() -> void:
 			_spend_attrs(h)
 	if GameState.accord_ending == "renew":   # Keepers of the Vale
 		for hall in GameData.ACCORD_HALLS:
-			if GameState.hall_lock(str(hall["id"])) == "":
-				GameState.restore_hall(str(hall["id"]))
+			var keep_wages: bool = GameState.coins - int(GameState.hall_cost(str(hall["id"]))[0]) > bill + 300
+			if keep_wages and GameState.hall_lock(str(hall["id"])) == "" and GameState.restore_hall(str(hall["id"])) == "":
+				hall_days.append(GameState.day)
 	for id in GameState.champions:
 		var c := GameState.champion_level_cost(str(id))
 		if c > 0 and GameState.crystals > c + 200:
@@ -563,6 +614,15 @@ func _best_pick(o: Array) -> String:
 func _defend() -> void:
 	var posted: Array = GameState.defense_candidates().slice(0, 2)
 	var r := DefenseRun.new(str(GameState.breach["region"]), int(GameState.breach["rank"]), posted, null, 7, GameState.defense_opts())
+	_run_defense(r)
+	var tide := int(GameState.breach.get("tide", 0))
+	var out := GameState.resolve_breach(r.result())
+	if tide > 0:
+		tides.append([tide, bool(out["held"])])
+
+
+## Plays a defense on autoplay to the end; true if it held.
+func _run_defense(r: DefenseRun) -> bool:
 	for k in 6000:
 		if r.over:
 			break
@@ -572,7 +632,7 @@ func _defend() -> void:
 				r.call_early()
 		r.step(0.1)
 		r.events.clear()
-	GameState.resolve_breach(r.result())
+	return bool(r.result().get("held", false))
 
 
 func _party_hp() -> float:

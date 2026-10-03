@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Postgame tuning: the old Accord halls cost about half as much (all seven: 45,000 Gold and 40,000 Essence). Tides of the Open Hollow now really break every week, with three days' warning, and grow 15% stronger only with each tide you hold: losing one doesn't make the next harder.",
 	"Hesper, Wen and Dobbs remember your past guilds: on a quiet payday the talk at the pay table can turn to one of them, and to the heroes it left behind.",
 	"Your past guilds' banners now hang in camp, either side of the Guild Hall. Hover one for its record; click it for the Hall of Guilds.",
 	"After your first guild: found the next one under a charter (Mercenary Company, Temple Order, the Lantern's Smugglers, Last of the Accord) and swear oaths for more Laurels. And the ending now sets the postgame: Keepers of the Vale restore the old Accord halls; a guild that broke the Accord holds back a tide of the Open Hollow every week. The Chronicle lists what a guild can still finish.",

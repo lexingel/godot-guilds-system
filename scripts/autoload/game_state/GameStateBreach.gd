@@ -69,7 +69,7 @@ func breach_scale() -> float:
 
 ## How much stronger this tide is than the first (1.0 for a normal breach).
 func tide_strength() -> float:
-	return 1.0 + GameData.TIDE_GROWTH * (int(breach.get("tide", 1)) - 1)
+	return 1.0 + GameData.TIDE_GROWTH * int(breach.get("held_before", int(breach.get("tide", 1)) - 1))
 
 
 var _resolving := false
@@ -98,9 +98,9 @@ func _swell_breach() -> void:
 		tide_count += 1
 		var tr_idx := GameData.rift_rank_index(GameData.TIDE_RANK)
 		breach = {"rank": tr_idx, "region": "camp" if tr_idx >= GameData.rift_rank_index(GameData.BREACH_CAMP_RANK) else pick_biome(),
-			"started": day, "breaks_on": day + breach_warn_days(), "broken": false, "tide": tide_count}
+			"started": day, "breaks_on": day + GameData.TIDE_WARN, "broken": false, "tide": tide_count, "held_before": tides_held}
 		pending_toasts.append({"cls_id": "", "pool_id": "", "title": tr("Tide %d of the Open Hollow") % tide_count,
-			"text": tr("It breaks over %s in %d days, %d%% stronger than the first. A tide can't be sealed away; it has to be held.") % [breach_place(), breach_days_left(), int(round(GameData.TIDE_GROWTH * 100.0 * (tide_count - 1)))]})
+			"text": tr("It breaks over %s in %d days, %d%% stronger than the first. A tide can't be sealed away; it has to be held.") % [breach_place(), breach_days_left(), int(round((tide_strength() - 1.0) * 100.0))]})
 		return
 	var best := maxi(0, best_rift_rank_sealed)
 	var idx := best
@@ -130,7 +130,9 @@ func _close_breach() -> void:
 	wait -= int(founding_rule("breach_sooner", 0))   # the Hollow knows the Last of the Accord
 	if sworn("long_watch"):
 		wait = maxi(2, wait / 2)
-	breach_next_day = day + (GameData.TIDE_DAYS if accord_ending == "break" else wait)   # the Accord broken: a tide every week
+	# The Accord broken: a tide breaks every week (it swells TIDE_WARN days
+	# before, and holding it takes a day).
+	breach_next_day = day + (GameData.TIDE_DAYS - GameData.TIDE_WARN - 1 if accord_ending == "break" else wait)
 
 
 ## The defense's outcome. result: {held: bool, integrity: 0-1 kept,

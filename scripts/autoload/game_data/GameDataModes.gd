@@ -1109,16 +1109,23 @@ const ACCORD_HALLS := [
 	{"id": "grandmaster", "name": "The Grandmaster's Hall", "kind": "title", "value": 0, "bonus": "The title Keepers of the Vale, and 20 Laurels",
 		"text": "The last hall is the one the Accord was sworn in. Its doors open with the key Pip stole from Morrow. Inside is a long table, forty-one chairs, and one that someone has dusted every year. The Vale has its keepers again."},
 ]
-const HALL_COST := [5000, 2000]          # the first hall: Gold, Essence
-const HALL_COST_STEP := [3000, 1500]     # each hall after it costs this much more
-const GRANDMASTER_HALL_COST := [25000, 12000]
+## Sim (0.35.3): at 5000/2000 +3000/1500 and 25000/12000 strong guilds took
+## ~110 days for all seven and sat on 47k unspent Essence; now ~45k Gold and
+## ~40k Essence in all.
+const HALL_COST := [3000, 2500]          # the first hall: Gold, Essence
+const HALL_COST_STEP := [1000, 1000]     # each hall after it costs this much more
+const GRANDMASTER_HALL_COST := [12000, 10000]
 const GRANDMASTER_LAURELS := 20
 ## Break: the Open Hollow. Every TIDE_DAYS a tide breaks over the Vale, a
-## Riftbreak of Rank A strength that grows TIDE_GROWTH with each tide. It
-## can't be closed early; holding it pays TIDE_LAURELS.
+## Riftbreak of Rank A strength that grows TIDE_GROWTH with each tide held
+## (a lost one doesn't make the next harder). It can't be closed early;
+## holding it pays TIDE_LAURELS.
 const TIDE_DAYS := 7
+const TIDE_WARN := 3   # a tide swells this many days before it breaks
 const TIDE_RANK := "A"
-const TIDE_GROWTH := 0.10
+## Sim (0.35.3): a strong guild holds x2.0 and loses x2.5 by day 90 (so its
+## wall is around tide 8-11); a casual one lost tide 4 (x1.3 at 10%).
+var TIDE_GROWTH := 0.15   # a var so the balance sim can try others (tide_growth=)
 const TIDE_LAURELS := 2
 ## The Chronicle as a completion board once the legacy is written: each line
 ## finished afterwards adds BOARD_LAURELS to the legacy.
