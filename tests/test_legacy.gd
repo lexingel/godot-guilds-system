@@ -219,6 +219,19 @@ func run() -> void:
 	GameState.crystals = 100000
 	check(GameState.raise_tidewall() != "" and GameState.tidewalls == 0, "only a guild that broke the Accord raises tidewalls")
 
+	# The faster start: Old contacts and the veteran start.
+	_guild("Second Wind")
+	GameState.refresh_recruit_pool()
+	GameState.legacy["laurels"] = 100
+	var vgot := GameState.apply_legacy_gifts(["contacts", "veteran"])
+	check(vgot.has("contacts") and GameState.recruit_pool.slice(0, 2).all(func(o): return o.rank == "C"), "Old contacts: two Rank C recruits head the board")
+	check(GameState.campaign_act == 2 and GameState.greater_rift_unlocked() and GameState.ladder_rank_lock("D") == "", "the veteran start begins with Act I done and Greater Rifts open")
+	check(GameState.heroes.slice(0, 3).all(func(h): return h.level >= GameData.VETERAN_LEVEL) and GameState.rifts_sealed >= 3, "its starting heroes are a few levels up")
+	var titles: Array = GameState.pending_stories.map(func(c): return str(c.get("title", "")))
+	check(not titles.has(str(GameState._act_intro_card(1)["title"])) and titles.has(str(GameState._act_intro_card(2)["title"])), "the story picks up at Act II")
+	check(int(GameState.legacy["laurels"]) == 100 - 18, "the two gifts cost 18 Laurels")
+	check(GameState.heroes.size() == 3 + GameData.VETERAN_RECRUITS.size() and GameState.items.filter(func(it): return it.equipped_to != "").size() >= 3, "a veteran guild has its recruits and wears its gear")
+
 	# The pay table remembers past guilds.
 	_guild("Paymasters")
 	GameState.legacy["guilds"] = []

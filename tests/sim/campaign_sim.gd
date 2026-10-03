@@ -36,6 +36,7 @@ var charter := ""        # the sim's answer to Mother Ilse's page ("" = leave it
 var founding := "free"   # the founding charter (founding=mercenary, ...)
 var oaths: Array = []    # oaths sworn (oaths=by_hand,lean_purse)
 var ending := "renew"    # the Accord's ending (ending=break: the Open Hollow's tides)
+var gifts: Array = []    # founding gifts (gifts=veteran,contacts), Laurels free
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -64,6 +65,8 @@ func _ready() -> void:
 			force_attr = a.substr(5)
 		elif a.begins_with("tide_growth="):
 			GameData.TIDE_GROWTH = float(a.substr(12))
+		elif a.begins_with("gifts="):
+			gifts = Array(a.substr(6).split(","))
 		elif a.begins_with("ending="):
 			ending = a.substr(7)
 		elif a.begins_with("oaths="):
@@ -165,6 +168,10 @@ func _guild(p: String, s: int) -> void:
 	GameState.oaths = oaths.duplicate()
 	GameState.hire_starters()
 	GameState.refresh_recruit_pool()
+	if not gifts.is_empty():
+		GameState.legacy["laurels"] = 999
+		GameState.apply_legacy_gifts(gifts)
+		GameState.legacy["laurels"] = 0
 	var act := GameState.campaign_act
 	while GameState.day < days:
 		var pay0 := int(GameState.payday_report.get("day", -1))

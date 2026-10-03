@@ -755,11 +755,47 @@ func apply_legacy_gifts(ids: Array) -> Array:
 				relics.append(r)
 			"barracks":
 				upgrades["ops.barracks"] = maxi(1, int(upgrades.get("ops.barracks", 0)))
+			"contacts":
+				for i in 2:
+					var c := Combat.gen_hero("C", 1)
+					_post_offer(c, int(GameData.RECRUIT_STAY[1]), 0)
+			"veteran":
+				_veteran_start()
 		applied.append(g["id"])
 	if not applied.is_empty():
 		save_legacy()
 		save()
 	return applied
+
+
+## The veteran start (a Laurels gift): Act I done, the way a quick guild
+## finishes it. Act I's own completion runs (its reward, relic and cards).
+func _veteran_start() -> void:
+	for h in heroes:
+		while h.level < GameData.VETERAN_LEVEL:
+			Combat.gain_xp(h, Combat.xp_to_next(h.level))
+	for r in GameData.VETERAN_RECRUITS:
+		heroes.append(Combat.gen_hero(str(r), 2))
+	for i in GameData.VETERAN_GEAR:
+		var it := Combat.gen_item("rare")
+		it.id = "i%d" % next_id
+		next_id += 1
+		items.append(it)
+	for i in 2:
+		var rl := Combat.gen_relic("rare")
+		rl.id = "rl" + str(next_id)
+		next_id += 1
+		relics.append(rl)
+	for h in heroes:
+		equip_best(h.id)
+	runs_started = maxi(runs_started, 4)
+	rifts_sealed = maxi(rifts_sealed, 3)
+	best_rift_rank_sealed = maxi(best_rift_rank_sealed, GameData.rift_rank_index("E"))
+	coins += GameData.VETERAN_GOLD
+	crystals += GameData.VETERAN_ESSENCE
+	var intro := str(_act_intro_card(1)["title"])
+	pending_stories = pending_stories.filter(func(c): return str(c.get("title", "")) != intro)
+	_complete_act(1)   # feature unlocks follow on the next render (Main)
 
 
 ## ---- Founding charters ----

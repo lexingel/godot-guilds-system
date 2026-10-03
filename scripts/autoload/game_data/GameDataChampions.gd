@@ -241,7 +241,18 @@ const LEGACY_GIFTS := [
 	{"id": "hero", "cost": 8, "name": "A fourth hero, Rank D"},
 	{"id": "relic", "cost": 8, "name": "A rare relic"},
 	{"id": "barracks", "cost": 10, "name": "The Barracks one level up"},
+	{"id": "contacts", "cost": 6, "name": "Old contacts: two Rank C recruits waiting"},
+	{"id": "veteran", "cost": 12, "name": "Veteran start: Act I already done"},
 ]
+## The veteran start: Act I done, with what a guild has by then (the sim, 10
+## guilds: ~6 heroes, the starters at level 4-5 and a Rank C-B recruit,
+## ~1100 Gold, 200-450 Essence, 6-10 rare/epic pieces, a few relics). Levels
+## alone saved no time: veteran guilds finished Act II on the same day.
+const VETERAN_LEVEL := 4
+const VETERAN_GOLD := 800
+const VETERAN_ESSENCE := 300
+const VETERAN_RECRUITS := ["C", "D"]   # joined at level 2
+const VETERAN_GEAR := 6                # rare pieces, worn by whoever they suit
 ## A remembered hero's champion text (%s/%d filled when the legacy is written).
 const LEGACY_LORE := "Once Rank %s with %s: %d rifts sealed, %d foes felled."
 const LEGACY_POST_LORE := "Took the forty-first post for %s, and held it."

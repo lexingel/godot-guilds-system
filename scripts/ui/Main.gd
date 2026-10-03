@@ -1645,9 +1645,9 @@ func _render_onboard(v: VBoxContainer) -> void:
 		GameState.oaths = _pending_oaths.duplicate()
 		_pending_oaths.clear()
 		GameState.hire_starters()
+		GameState.refresh_recruit_pool()
 		GameState.apply_legacy_gifts(_pending_gifts)
 		_pending_gifts.clear()
-		GameState.refresh_recruit_pool()
 		GameState.save()
 		pending_guild_name = ""
 		pending_crest = 1
