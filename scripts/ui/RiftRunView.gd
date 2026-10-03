@@ -272,7 +272,7 @@ func _run_bar(in_combat: bool) -> Control:
 			))
 			top.add_child(_button("Stay", func(): _confirm_retreat = false; render()))
 		else:
-			var rb := _icon_button("res://assets/skills/wing.png", "Retreat", func(): _confirm_retreat = true; render())
+			var rb := _icon_button("res://assets/skills/wing.png", "Climb out" if GameState.run.has("descent") else "Retreat", func(): _confirm_retreat = true; render())
 			rb.tooltip_text = "Leave the rift now — keep your loot, no sealing reward"
 			top.add_child(rb)
 	if in_combat and GameState.orders_per_rift() > 0 and not GameState.run.has("tower"):

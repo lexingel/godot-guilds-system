@@ -1032,6 +1032,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, 120.0 if _compact() else minf(_battle_height(bw), 190.0)))   # scenery only: Engage stays high on the screen
 		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else (tr("Pillar") if kind == "pillar" else tr("Combat")))
 		v.add_child(_label(tr("A %s encounter awaits.") % tr(str(kind_label)), 16))
+		if kind == "pillar" and GameState.next_lost_champion() != "":
+			var pl := _wrap_label(tr("%s is held in this pillar of light. Beat its keeper to free them.") % GameData.champion_full_name(GameState.next_lost_champion()), 13)
+			pl.add_theme_color_override("font_color", Palette.RANK_S)
+			v.add_child(pl)
 		var guild_bits: Array[String] = []
 		if GameState.lvl("ops.drill") > 0:
 			guild_bits.append(tr("+%d%% damage and HP") % (GameState.lvl("ops.drill") * 4))
