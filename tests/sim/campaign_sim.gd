@@ -196,14 +196,14 @@ func _guild(p: String, s: int) -> void:
 		print("     postgame (%s from day %d): Laurels %d at the ending, +%d after · %s · end %d Gold %d Essence, %d champions of %d" % [GameState.accord_ending, ending_day, ending_laurels,
 			int(GameState.legacy["laurels"]) - ending_laurels,
 			("halls %d/%d on days %s" % [hall_days.size(), GameData.ACCORD_HALLS.size(), hall_days]) if GameState.accord_ending == "renew" else
-			("tides held %d of %d, lost: %s" % [tides.size() - lost.size(), tides.size(), lost.map(func(t): return t[0])]),
+			("tides held %d of %d, lost: %s, %d tidewalls" % [tides.size() - lost.size(), tides.size(), lost.map(func(t): return t[0]), GameState.tidewalls]),
 			GameState.coins, GameState.crystals, GameState.champions.size(), GameState.champion_roll.size()])
 		if GameState.accord_ending == "break":
 			# How strong a tide this guild could hold now (the next tide's defenders).
 			var probe: Array = []
 			for m in [1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0]:
 				var opts := GameState.defense_opts()
-				opts["foe_mult"] = m
+				opts["foe_mult"] = m / GameState.tidewall_factor()
 				var r := DefenseRun.new("camp", GameData.rift_rank_index(GameData.TIDE_RANK), GameState.defense_candidates().slice(0, 2), null, 7, opts)
 				probe.append("x%.1f %s" % [m, "held" if _run_defense(r) else "lost"])
 			print("     tide probe at day %d: %s" % [GameState.day, ", ".join(probe)])
@@ -256,7 +256,9 @@ func _day(p: String) -> void:
 		GameState.start_finale(party, null)
 	else:
 		rank = GameState.highest_open_rank()
-		if not bold and _party_power < Combat.recommended_power("", rank) * 0.8 and GameData.rift_rank_index(rank) > 0:
+		# Step down until the party is close to the rank's recommended power
+		# (one step only spiralled: a battered party kept losing at SS).
+		while not bold and _party_power < Combat.recommended_power("", rank) * 0.8 and GameData.rift_rank_index(rank) > 0:
 			rank = str(GameData.RIFT_RANKS[GameData.rift_rank_index(rank) - 1]["id"])
 		if GameState.daily_available():
 			GameState.start_daily(rank, party, null)
@@ -379,6 +381,8 @@ func _invest() -> void:
 			var keep_wages: bool = GameState.coins - int(GameState.hall_cost(str(hall["id"]))[0]) > bill + 300
 			if keep_wages and GameState.hall_lock(str(hall["id"])) == "" and GameState.restore_hall(str(hall["id"])) == "":
 				hall_days.append(GameState.day)
+	while GameState.accord_ending == "break" and GameState.coins - int(GameState.tidewall_cost()[0]) > bill + 300 and GameState.raise_tidewall() == "":   # the Open Hollow
+		pass
 	for id in GameState.champions:
 		var c := GameState.champion_level_cost(str(id))
 		if c > 0 and GameState.crystals > c + 200:

@@ -78,6 +78,7 @@ func reset() -> void:
 	halls_restored = []
 	tide_count = 0
 	tides_held = 0
+	tidewalls = 0
 	board_claimed = []
 	echoes_returned = 0
 	run = {}
@@ -291,6 +292,7 @@ func load_save() -> bool:
 	halls_restored = (data.get("halls_restored", []) as Array).duplicate()
 	tide_count = int(data.get("tide_count", 0))
 	tides_held = int(data.get("tides_held", 0))
+	tidewalls = int(data.get("tidewalls", 0))
 	board_claimed = (data.get("board_claimed", []) as Array).duplicate()
 	echoes_returned = int(data.get("echoes_returned", 0))
 	# Guilds that finished the campaign before Act IV existed start it now.

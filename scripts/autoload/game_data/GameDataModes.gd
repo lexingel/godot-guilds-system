@@ -1127,6 +1127,12 @@ const TIDE_RANK := "A"
 ## wall is around tide 8-11); a casual one lost tide 4 (x1.3 at 10%).
 var TIDE_GROWTH := 0.15   # a var so the balance sim can try others (tide_growth=)
 const TIDE_LAURELS := 2
+## Tidewalls: the Open Hollow's Gold sink (Break guilds sat on 50-120k idle
+## Gold). Each wall makes every tide TIDEWALL_STEP weaker against the guild
+## (strength / (1 + step x walls)); no cap, the cost rises with each.
+const TIDEWALL_STEP := 0.06
+const TIDEWALL_COST := [4000, 2000]        # the first wall: Gold, Essence
+const TIDEWALL_COST_STEP := [2000, 1000]   # each wall after it costs this much more
 ## The Chronicle as a completion board once the legacy is written: each line
 ## finished afterwards adds BOARD_LAURELS to the legacy.
 const BOARD_LAURELS := 2

@@ -2166,9 +2166,34 @@ func _render_accord_halls(v: VBoxContainer) -> void:
 	v.add_child(_hsep())
 
 
+## The Open Hollow (Break): the tides so far, and tidewalls to raise.
+func _render_open_hollow(v: VBoxContainer) -> void:
+	v.add_child(_label(tr("The Open Hollow · %d tides held of %d") % [GameState.tides_held, GameState.tide_count], 18))
+	v.add_child(_wrap_label("The Hollow is out. A tide breaks every week, and each one held makes the next stronger. Every tidewall holds a little of it back.", 12, true))
+	var next := 1.0 + GameData.TIDE_GROWTH * GameState.tides_held
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var col := _vbox(0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(_label(tr("Tidewalls: %d") % GameState.tidewalls, 14))
+	col.add_child(_label(tr("The next tide: %d%% of the first one's strength, %d%% against your walls") % [int(round(next * 100.0)), int(round(next / GameState.tidewall_factor() * 100.0))], 12, true))
+	row.add_child(col)
+	var c := GameState.tidewall_cost()
+	var b := _button(tr("Raise a tidewall · %d Gold · %d Essence") % [int(c[0]), int(c[1])], func():
+		_flavor_toast = GameState.raise_tidewall()
+		render())
+	b.disabled = GameState.tidewall_lock() != ""
+	b.tooltip_text = GameState.tidewall_lock() if b.disabled else tr("Every tide is %d%% weaker against the guild for each wall.") % int(round(GameData.TIDEWALL_STEP * 100.0))
+	row.add_child(b)
+	v.add_child(row)
+	v.add_child(_hsep())
+
+
 func _render_management(v: VBoxContainer) -> void:
 	if GameState.accord_ending == "renew":
 		_render_accord_halls(v)
+	elif GameState.accord_ending == "break":
+		_render_open_hollow(v)
 	if mgmt_branch == "":
 		mgmt_branch = _mgmt_last
 	_mgmt_last = mgmt_branch

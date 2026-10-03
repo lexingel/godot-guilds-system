@@ -52,7 +52,7 @@ func defense_opts() -> Dictionary:
 			towers.append(pair[1])
 	return {"towers": towers, "max_tier": 3 if e >= 3 else 2, "supplies": 20 * p, "integrity": 2 * p,
 		"tower_dmg": 1.0 + 0.06 * a, "cost": 1.0 - 0.06 * e, "sell_back": 1.0 if e >= 5 else GameData.DEFENSE_SELL_BACK,
-		"hero_hp": 1.0 + 0.06 * lvl("def.watch"), "foe_mult": tide_strength()}
+		"hero_hp": 1.0 + 0.06 * lvl("def.watch"), "foe_mult": tide_strength() / tidewall_factor() if breach.has("tide") else 1.0}
 
 
 ## Idle heroes fit to stand at a post (not wounded), strongest first.
@@ -65,6 +65,41 @@ func defense_candidates() -> Array[Hero]:
 ## Rewards scale with the breach's ladder rank (and a tide's strength).
 func breach_scale() -> float:
 	return (1.0 + GameData.BREACH_RANK_SCALE * int(breach.get("rank", 0))) * tide_strength()
+
+
+## How much the guild's tidewalls divide a tide's strength by.
+func tidewall_factor() -> float:
+	return 1.0 + GameData.TIDEWALL_STEP * tidewalls
+
+
+## The next tidewall's [Gold, Essence].
+func tidewall_cost() -> Array:
+	return [int(GameData.TIDEWALL_COST[0]) + int(GameData.TIDEWALL_COST_STEP[0]) * tidewalls,
+		int(GameData.TIDEWALL_COST[1]) + int(GameData.TIDEWALL_COST_STEP[1]) * tidewalls]
+
+
+## "" if a tidewall can be raised now, else why not.
+func tidewall_lock() -> String:
+	if accord_ending != "break":
+		return tr("Only a guild that broke the Accord faces the tides")
+	var c := tidewall_cost()
+	if coins < int(c[0]) or crystals < int(c[1]):
+		return tr("Needs %d Gold and %d Essence") % [int(c[0]), int(c[1])]
+	return ""
+
+
+func raise_tidewall() -> String:
+	var lock := tidewall_lock()
+	if lock != "":
+		return lock
+	var c := tidewall_cost()
+	coins -= int(c[0])
+	crystals -= int(c[1])
+	tidewalls += 1
+	_news(tr("A tidewall is raised against the Open Hollow (%d in all).") % tidewalls)
+	save()
+	state_changed.emit()
+	return ""
 
 
 ## How much stronger this tide is than the first (1.0 for a normal breach).

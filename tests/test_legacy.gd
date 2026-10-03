@@ -205,7 +205,19 @@ func run() -> void:
 	GameState.resolve_breach({"held": false, "integrity": 0.0, "fallen": []})
 	GameState._swell_breach()
 	check(GameState.breach.get("tide", 0) == 3 and is_equal_approx(GameState.tide_strength(), s2), "a lost tide doesn't make the next one stronger")
+	# Tidewalls: the Open Hollow's Gold sink.
+	GameState.coins = 100000
+	GameState.crystals = 100000
+	var m0 := float(GameState.defense_opts()["foe_mult"])
+	var wc0: Array = GameState.tidewall_cost()
+	check(GameState.raise_tidewall() == "" and GameState.tidewalls == 1 and GameState.coins == 100000 - int(wc0[0]), "a tidewall costs Gold and Essence")
+	check(float(GameState.defense_opts()["foe_mult"]) < m0 and int(GameState.tidewall_cost()[0]) > int(wc0[0]), "a tidewall weakens the tide, and the next costs more")
 	GameState.breach = {}
+	_guild("Keepers")
+	GameState.accord_ending = "renew"
+	GameState.coins = 100000
+	GameState.crystals = 100000
+	check(GameState.raise_tidewall() != "" and GameState.tidewalls == 0, "only a guild that broke the Accord raises tidewalls")
 
 	# The pay table remembers past guilds.
 	_guild("Paymasters")
