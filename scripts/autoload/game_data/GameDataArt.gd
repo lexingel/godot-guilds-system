@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"Your past guilds' banners now hang in camp, either side of the Guild Hall. Hover one for its record; click it for the Hall of Guilds.",
 	"After your first guild: found the next one under a charter (Mercenary Company, Temple Order, the Lantern's Smugglers, Last of the Accord) and swear oaths for more Laurels. And the ending now sets the postgame: Keepers of the Vale restore the old Accord halls; a guild that broke the Accord holds back a tide of the Open Hollow every week. The Chronicle lists what a guild can still finish.",
 	"Legacy: when your guild chooses the Accord's ending (or retires, from Act III on, under Guild > Records), it joins the Hall of Guilds. Up to two of its heroes come back as champions in your later guilds, waiting to be freed in the Endless Rift, and it leaves Laurels to spend on gifts when you found the next one.",
 	"Captain Morrow is a real fight now: tougher than other bosses of his rank, and he whistles up his sellswords twice, at two-thirds and again at one-third health.",

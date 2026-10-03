@@ -607,6 +607,12 @@ const HAMLET_BUILDINGS := [
 	{"id": "market", "name": "Items", "building": "Market", "tier": "node", "node": "log.trade", "pos": Vector2(322, 177), "row": "front"},
 	{"id": "vault", "name": "Relics", "building": "Relic Vault", "tier": "node", "node": "res.vault", "pos": Vector2(374, 177), "row": "front"},
 ]
+## Past guilds' banners in the camp ("The Vale Remembers"): pole x on the
+## native backdrop, in the gaps either side of the Guild Hall, oldest first.
+## The cloth colour goes with the crest.
+const BANNER_X := [100, 116, 132, 264, 280, 296]
+const BANNER_CLOTH := [Color("7a2e2e"), Color("2e3f7a"), Color("2f6a3f"), Color("5b2e7a"),
+	Color("8a6a24"), Color("24666a"), Color("6a2448"), Color("4a5260")]
 ## Gold in a Rift Cache (a chance on sealing, DIFFICULTIES "cache_chance").
 const RIFT_CACHE_GOLD := {"lesser": 70, "greater": 170}
 

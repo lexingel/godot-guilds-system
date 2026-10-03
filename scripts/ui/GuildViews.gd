@@ -100,6 +100,7 @@ func _render_camp(v: VBoxContainer) -> void:
 	art_host.add_child(bg)
 	_start_daynight_cycle(art_host if bleed else bg)
 
+	_hang_banners(bg, scene, sc)
 	# Buildings are children of the backdrop (so the day/night tint reaches
 	# them); their click areas and plaques go on the scene above.
 	var badges := _camp_badges()
@@ -189,6 +190,53 @@ const PLAQUE_BADGE := {"scouts": "recruits", "barracks": "roster", "infirmary": 
 
 
 ## Where each hamlet building leads.
+## Past guilds' banners, behind the buildings: the newest few, oldest
+## first. Hover shows the guild's record; a click opens the Hall of Guilds.
+func _hang_banners(bg: Control, scene: Control, sc: Vector2) -> void:
+	var past: Array = GameState.legacy.get("guilds", [])
+	past = past.slice(maxi(0, past.size() - GameData.BANNER_X.size()))
+	for i in past.size():
+		var g: Dictionary = past[i]
+		var crest := clampi(int(g.get("crest", 1)), 1, GameData.CREST_PATH.size())
+		var top := Vector2(float(GameData.BANNER_X[i]), 96.0) * sc
+		var pole := ColorRect.new()
+		pole.color = Color("3b2a1e")
+		pole.position = top
+		pole.size = Vector2(1, 54) * sc
+		pole.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.add_child(pole)
+		var bar := ColorRect.new()
+		bar.color = pole.color
+		bar.position = top + Vector2(-6, 1) * sc
+		bar.size = Vector2(13, 1) * sc
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.add_child(bar)
+		var cloth := Polygon2D.new()
+		cloth.color = GameData.BANNER_CLOTH[(crest - 1) % GameData.BANNER_CLOTH.size()]
+		var pts := PackedVector2Array()
+		for p in [Vector2(-5, 2), Vector2(6, 2), Vector2(6, 19), Vector2(0.5, 15), Vector2(-5, 19)]:
+			pts.append(top + p * sc)
+		cloth.polygon = pts
+		bg.add_child(cloth)
+		var icon := TextureRect.new()
+		icon.texture = load(GameData.CREST_PATH[crest - 1])
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.position = top + Vector2(-4, 4) * sc
+		icon.size = Vector2(9, 9) * sc
+		bg.add_child(icon)
+		var rect := Rect2(top + Vector2(-6, 0) * sc, Vector2(13, 54) * sc)
+		var hot := _camp_area_hotspot(rect, Rect2(rect.position, Vector2(13, 20) * sc),
+			_past_guild_title(g) + "\n" + _past_guild_line(g), func():
+				term_tab = "compendium"
+				compendium_tab = "chronicle"
+				render(), false)
+		hot.position = rect.position
+		scene.add_child(hot)
+
+
 func _hamlet_targets() -> Dictionary:
 	return {
 		"scouts": func(): term_tab = "recruits"; render(),
@@ -1600,17 +1648,27 @@ func _render_hall_of_guilds(v: VBoxContainer) -> void:
 		row.add_child(_icon(GameData.CREST_PATH[clampi(crest - 1, 0, GameData.CREST_PATH.size() - 1)], 32))
 		var col := _vbox(0)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var fd := str(g.get("founding", "free"))
-		col.add_child(_label(str(g["name"]) + ("" if fd == "free" else "  ·  " + tr(str(GameData.FOUNDINGS.get(fd, {}).get("name", "")))), 14))
-		var how := tr("Renewed the Accord") if str(g.get("ending", "")) == "renew" else tr("Broke the Accord") if str(g.get("ending", "")) == "break" else tr("Retired in Act %s") % tr(GameState._roman(maxi(1, int(g.get("act", 1)) - 1)))
-		var names: Array = g.get("remembered", [])
-		var kept: Array = g.get("oaths", [])
-		var oath_txt := (tr(" · oaths kept: %d") % kept.size()) if not kept.is_empty() else ""
-		col.add_child(_wrap_label(tr("%s · day %d · %d rifts sealed · +%d Laurels%s") % [how, int(g.get("day", 0)), int(g.get("rifts", 0)), int(g.get("laurels", 0)),
-			((tr(" · remembered: %s") % ", ".join(names)) if not names.is_empty() else "") + oath_txt], 12, true))
+		col.add_child(_label(_past_guild_title(g), 14))
+		col.add_child(_wrap_label(_past_guild_line(g), 12, true))
 		row.add_child(col)
 		v.add_child(row)
 	v.add_child(_hsep())
+
+
+## A past guild's name and founding charter (Hall of Guilds, camp banners).
+func _past_guild_title(g: Dictionary) -> String:
+	var fd := str(g.get("founding", "free"))
+	return str(g["name"]) + ("" if fd == "free" else "  ·  " + tr(str(GameData.FOUNDINGS.get(fd, {}).get("name", ""))))
+
+
+## A past guild's record: its ending, day, rifts, Laurels, who it left behind.
+func _past_guild_line(g: Dictionary) -> String:
+	var how := tr("Renewed the Accord") if str(g.get("ending", "")) == "renew" else tr("Broke the Accord") if str(g.get("ending", "")) == "break" else tr("Retired in Act %s") % tr(GameState._roman(maxi(1, int(g.get("act", 1)) - 1)))
+	var names: Array = g.get("remembered", [])
+	var kept: Array = g.get("oaths", [])
+	var oath_txt := (tr(" · oaths kept: %d") % kept.size()) if not kept.is_empty() else ""
+	return tr("%s · day %d · %d rifts sealed · +%d Laurels%s") % [how, int(g.get("day", 0)), int(g.get("rifts", 0)), int(g.get("laurels", 0)),
+		((tr(" · remembered: %s") % ", ".join(names)) if not names.is_empty() else "") + oath_txt]
 
 
 func _render_chronicle(v: VBoxContainer) -> void:

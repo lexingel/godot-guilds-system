@@ -76,6 +76,18 @@ func run() -> void:
 	# above lets clicks through; other screens keep a normal UI over a backdrop.
 	await _show(main, "camp", "camp")
 	check(main._scene_ui.get_child_count() > 0 and main.root.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the camp fills the window and its buildings take clicks")
+	# Past guilds' banners: the newest six hang in camp; a click opens the Hall of Guilds.
+	GameState.legacy["guilds"] = []
+	for i in 7:
+		GameState.legacy["guilds"].append({"name": "Banner Guild %d" % i, "crest": i % 8 + 1, "ending": "renew", "day": 40, "rifts": 30, "laurels": 20})
+	await _show(main, "camp", "camp")
+	var banners: Array = main._scene_ui.find_children("*", "Button", true, false).filter(func(b): return b.tooltip_text.begins_with("Banner Guild"))
+	check(banners.size() == 6 and not banners.any(func(b): return b.tooltip_text.begins_with("Banner Guild 0")), "the camp hangs the newest six past guilds' banners")
+	if not banners.is_empty():
+		banners[0].pressed.emit()
+		await _frames()
+	check(main.term_tab == "compendium" and main.compendium_tab == "chronicle", "a banner opens the Hall of Guilds")
+	GameState.legacy["guilds"] = []
 	await _show(main, "camp", "roster")
 	check(main._scene_ui.get_child_count() == 0 and main._ambient_layer.get_child_count() > 0 and main.root.mouse_filter != Control.MOUSE_FILTER_IGNORE, "a camp tab gets a drifting backdrop and a normal UI")
 	main._feedback_open = true
