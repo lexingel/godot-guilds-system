@@ -37,6 +37,7 @@ var founding := "free"   # the founding charter (founding=mercenary, ...)
 var oaths: Array = []    # oaths sworn (oaths=by_hand,lean_purse)
 var ending := "renew"    # the Accord's ending (ending=break: the Open Hollow's tides)
 var gifts: Array = []    # founding gifts (gifts=veteran,contacts), Laurels free
+var endless_mode := "descent"   # how the sim frees champions: descent (turn-based) or survivors
 var hand_bonus := 0      # fights that paid the flawless-by-hand bonus
 var curve := {}          # power/recommended bucket -> [sealed, lost], ladder runs only
 # Per guild:
@@ -65,6 +66,8 @@ func _ready() -> void:
 			force_attr = a.substr(5)
 		elif a.begins_with("tide_growth="):
 			GameData.TIDE_GROWTH = float(a.substr(12))
+		elif a.begins_with("endless="):
+			endless_mode = a.substr(8)
 		elif a.begins_with("gifts="):
 			gifts = Array(a.substr(6).split(","))
 		elif a.begins_with("ending="):
@@ -151,6 +154,7 @@ func _guild(p: String, s: int) -> void:
 	notes = []
 	ambush = [0, 0]
 	endless_runs = 0
+	descent_deepest = 0
 	freed_day = -1
 	morrow_day = -1
 	morrow_lost = 0
@@ -195,7 +199,7 @@ func _guild(p: String, s: int) -> void:
 		last - 1, int(bill_paid.get(last - 1, 0)), int(gross_gold.get(last - 1, 0)), GameState.reputation, GameState.rival_renown,
 		GameState.charter_choice if GameState.charter_choice != "" else "-", GameState.charter_result if GameState.charter_result != "" else "-",
 		GameState.echoes_seen.size(), GameState.echoes_returned, ambush[0], ambush[0] + ambush[1],
-		endless_runs, ("freed day %d" % freed_day) if freed_day >= 0 else "none freed",
+		endless_runs, (("freed day %d" % freed_day) if freed_day >= 0 else "none freed") + ((", Descent depth %d" % descent_deepest) if descent_deepest > 0 else ""),
 		("beaten day %d after %d loss%s" % [morrow_day, morrow_lost, "" if morrow_lost == 1 else "es"]) if GameState.morrow_defeated else ("lost %d" % morrow_lost if morrow_lost > 0 else "-"),
 		("  · " + "; ".join(notes)) if not notes.is_empty() else ""])
 	if ending_day >= 0:
@@ -226,6 +230,7 @@ var _spent := 0   # Gold spent at camp and in shops today (not a loss of income)
 var ending_day := -1       # the day the Accord's ending was chosen
 var ending_laurels := 0    # Laurels the legacy paid at the ending
 var hall_days: Array = []  # the day each Accord hall was restored
+var descent_deepest := 0   # the deepest Descent depth cleared
 var tides: Array = []      # [tide, held] for each tide of the Open Hollow
 
 
@@ -250,7 +255,10 @@ func _day(p: String) -> void:
 		_defend()
 		return
 	if GameState.day % 2 == 0 and _endless_due():
-		_endless()
+		if endless_mode == "survivors":
+			_endless()
+		else:
+			_descent()
 		return
 	var party := _pick_party()
 	if party.is_empty():
@@ -435,10 +443,16 @@ func _tally(rank: String, won: bool) -> void:
 	fights[rank] = t
 
 
-func _play_run(rank: String) -> String:
-	for step in 120:
+func _play_run(rank: String, posts0: int = -1) -> String:
+	for step in 200:
 		if GameState.run.is_empty():
 			return "?"
+		# The Descent: decide at each landing (a new depth's campfire).
+		var dpos := int(GameState.run.get("pos", 0))
+		if GameState.run.has("descent") and dpos > 0 and dpos % GameData.DESCENT_FLOORS == 0 and (GameState.run.get("node_state", {}) as Dictionary).is_empty() 				and (GameState.posts_freed() > posts0 or _party_hp() < 0.5 or int(GameState.run["descent"]) > 5):
+			var depth := int(GameState.run["descent"])
+			GameState.retreat_now()
+			return "climbed out at depth %d" % depth
 		if GameState.run.get("sealed") is Dictionary and not (GameState.run["sealed"] as Dictionary).is_empty():
 			GameState.finish_run()
 			return "sealed"
@@ -451,7 +465,7 @@ func _play_run(rank: String) -> String:
 		var kind := GameState.current_node_kind()
 		if kind == "":
 			var opts := GameState.current_layer_options()
-			var prefs := ["boss", "combat", "event", "shop", "elite", "treasure", "campfire", "hazard"]
+			var prefs := ["boss", "pillar", "combat", "event", "shop", "elite", "treasure", "campfire", "hazard"]
 			if _party_hp() < 0.55:
 				prefs = ["boss", "campfire", "event", "treasure", "shop", "combat", "hazard", "elite"]
 			for pr in prefs:
@@ -464,7 +478,7 @@ func _play_run(rank: String) -> String:
 			continue
 		var ns: Dictionary = GameState.run.get("node_state", {})
 		match kind:
-			"combat", "elite", "boss":
+			"combat", "elite", "boss", "pillar":
 				if not ns.has("result"):
 					if hand:
 						_hand_fight()
@@ -610,6 +624,24 @@ func _endless() -> void:
 	if not r.rescued.is_empty() and freed_day < 0:
 		freed_day = GameState.day
 	GameState.finish_survivors(r)
+
+
+## One Descent with the strongest party: deeper while the party holds up,
+## out at a landing once a champion is freed, the party is hurt, or depth 5.
+func _descent() -> void:
+	var party := _pick_party()
+	if party.is_empty():
+		GameState.rest_guild()
+		return
+	var posts := GameState.posts_freed()
+	GameState.start_descent(party, null)
+	endless_runs += 1
+	var res := _play_run(GameState.descent_rank(), posts)
+	descent_deepest = maxi(descent_deepest, GameState.descent_best)
+	if GameState.posts_freed() > posts and freed_day < 0:
+		freed_day = GameState.day
+	if log_days:
+		print("     day %d Descent: %s" % [GameState.day, res])
 
 
 func _best_pick(o: Array) -> String:

@@ -613,6 +613,22 @@ const HAMLET_BUILDINGS := [
 const BANNER_X := [100, 116, 132, 264, 280, 296]
 const BANNER_CLOTH := [Color("7a2e2e"), Color("2e3f7a"), Color("2f6a3f"), Color("5b2e7a"),
 	Color("8a6a24"), Color("24666a"), Color("6a2448"), Color("4a5260")]
+## The Descent: the Endless Rift turn-based, with the guild's heroes, at its
+## best sealed rank. Depths of DESCENT_FLOORS floors; each ends in a guardian
+## (an elite) or, every DESCENT_PILLAR_EVERY depths while a lost champion
+## waits, a pillar (its keeper fights as a rift warden; winning frees the
+## champion). Each depth is DESCENT_GROWTH harder and pays DESCENT_PAY_GROWTH
+## more. Climbing out keeps everything; falling loses DESCENT_DEFEAT_LOSS of
+## what the Descent earned. It costs a day, like any run.
+const DESCENT_FLOORS := 4
+const DESCENT_PILLAR_EVERY := 2
+const DESCENT_GROWTH := 0.15
+const DESCENT_PAY_GROWTH := 0.10
+const DESCENT_DEFEAT_LOSS := 0.5
+## Pillars on the ladder: a rift of PILLAR_MIN_RANK or higher sometimes offers
+## a lost champion's pillar as a fork (once the Endless Rift is open).
+const PILLAR_CHANCE := 0.15
+const PILLAR_MIN_RANK := "B"
 ## Gold in a Rift Cache (a chance on sealing, DIFFICULTIES "cache_chance").
 const RIFT_CACHE_GOLD := {"lesser": 70, "greater": 170}
 
@@ -645,7 +661,7 @@ const CAMPAIGN := [
 	 "finale": "The Accord Hall", "tier": "greater", "rank": "A", "mult": 1.35, "opens": "",
 	 "intro": "With Sythrane gone, the Hollow has no one to bargain with, so it is bargaining with the posts directly. One by one the pillars in the Endless Rift are flickering. The Accord Hall lies below them, and in it the Terms that started all of this, wearing the Grandmaster's face. Every post that has gone dark makes them stronger. Someone will have to read them out loud.",
 	 "outro": "The Terms come apart into forty-one lines of old ink, and the Hall goes quiet. The posts are listening. The bargain needs a last signature, or a fire. Your guild has to choose.",
-	 "objectives": [{"type": "map_rank", "target": 5, "label": "Seal a Rank A rift"}, {"type": "posts_freed", "target": 1, "label": "Free a champion in the Endless Rift"}, {"type": "ledger_pages", "target": 7, "label": "Find every page of the Grandmaster's ledger"}],
+	 "objectives": [{"type": "map_rank", "target": 5, "label": "Seal a Rank A rift"}, {"type": "posts_freed", "target": 1, "label": "Free a lost champion from a pillar"}, {"type": "ledger_pages", "target": 7, "label": "Find every page of the Grandmaster's ledger"}],
 	 "reward": {"crystals": 400}},
 ]
 const TRAINING_RIFT := {"floors": 4, "monster_hp_mult": 0.8, "monster_dmg_mult": 0.85}

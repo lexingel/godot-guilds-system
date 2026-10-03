@@ -1502,6 +1502,7 @@ var _pending_endless: bool = false
 var _endless_biome := ""   # the Endless Rift region picked on the party screen
 var _pending_finale: bool = false   # Party Assembly is for the current act's finale
 var _pending_tower: bool = false    # Party Assembly is for the next Tower of Trials floor
+var _pending_descent: bool = false  # Party Assembly is for the Descent
 var _pending_daily: bool = false    # Party Assembly's ladder rift carries today's twist
 var _ladder_twist: bool = true     # the ladder's "today's twist" box
 var records_tab: String = "achievements"   # achievements | stats | history
@@ -1527,10 +1528,11 @@ const MAP_NODE_COLOR := {
 	"combat": Palette.HAZARD, "elite": Palette.ELITE, "shop": Palette.COINS,
 	"hazard": Palette.CRYSTALS, "boss": Palette.TOKENS,
 	"campfire": Palette.RANK_E, "event": Palette.VIOLET_BRIGHT, "treasure": Palette.RANK_S,
+	"pillar": Palette.RANK_S,
 }
 
 
-const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B", "campfire": "R", "event": "?", "treasure": "T"}
+const MAP_NODE_LABEL := {"combat": "C", "elite": "E", "shop": "S", "hazard": "H", "boss": "B", "campfire": "R", "event": "?", "treasure": "T", "pillar": "P"}
 
 
 const MAP_NODE_ICON := {
@@ -1542,6 +1544,7 @@ const MAP_NODE_ICON := {
 	"campfire": "res://assets/ui/node_campfire.png",
 	"event": "res://assets/skills/eye_gem.png",
 	"treasure": "res://assets/dungeon/chest_icon.png",
+	"pillar": "res://assets/survivors/pillar.png",
 }
 
 

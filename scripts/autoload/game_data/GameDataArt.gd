@@ -113,6 +113,7 @@ const SFX_PATH := {
 const LANGUAGES := [["en", "English"], ["tr", "Türkçe (beta)"]]
 
 const WHATS_NEW := [
+	"The Descent: a new way into the Endless Rift, turn-based, with your heroes. Go down depth after depth, each harder and better paid; every second depth ends at a pillar where a lost champion waits. Climb out any time and keep everything. Pillars also turn up on Rank B and higher rifts, and the real-time Endless Rift is still there for your champions. Act IV now asks you to free a lost champion by any of the three.",
 	"Two new founding gifts for your next guild (Laurels): Veteran start begins with Act I already done, with the heroes, gear and Gold a guild has by then; Old contacts puts two Rank C recruits on the first board.",
 	"Tidewalls: a guild that broke the Accord can raise walls against the Open Hollow (Guild > Management). Each makes every tide 6% weaker against the guild, and costs more than the last; Gold and Essence finally have somewhere to go in that postgame.",
 	"Postgame tuning: the old Accord halls cost about half as much (all seven: 45,000 Gold and 40,000 Essence). Tides of the Open Hollow now really break every week, with three days' warning, and grow 15% stronger only with each tide you hold: losing one doesn't make the next harder.",

@@ -861,6 +861,7 @@ func _breadcrumb_for_screen() -> String:
 		"party_assembly": return "Party Assembly"
 		"defense": return "Riftbreak"
 		"rift_run" when GameState.run.has("tower"): return tr("Tower of Trials — Floor %d") % int(GameState.run["tower"])
+		"rift_run" when GameState.run.has("descent"): return tr("The Descent — Depth %d") % int(GameState.run["descent"])
 		"rift_run": return tr("Rift Run — Floor %d/%d") % [int(GameState.run.get("pos", 0)) + 1, GameState.run.get("layers", []).size()]
 		"crafting_hall": return "Crafting"
 		"settings": return "Settings"
@@ -1753,6 +1754,7 @@ func _render_rift_hall(v: VBoxContainer) -> void:
 		pending_relic_options.clear()
 		pending_relic_choice = -1
 		_pending_tower = false
+		_pending_descent = false
 		_pending_daily = not endless and _ladder_twist and GameState.daily_available()
 		screen = "party_assembly"
 		_pending_rift_rank = rank_id
@@ -1908,8 +1910,15 @@ func _rift_hall_wide(v: VBoxContainer, gates: Array, best: int, go: Callable) ->
 ## The modes besides the ladder: [name, what it is, recommended power,
 ## where it leads, why it's locked ("" when open), button text].
 func _rift_mode_defs(go: Callable) -> Array:
+	var descend := func():
+		go.call(GameState.descent_rank(), false)
+		_pending_descent = true
+		_pending_daily = false
+		render()
 	return [
-		["Endless Rift", tr("Steer your party through endless waves · best %d:%02d") % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("", true),
+		["The Descent", tr("Turn-based, with your heroes: depth after depth, each harder; lost champions wait in pillars · deepest %d") % GameState.descent_best, Combat.recommended_power("", GameState.descent_rank()), descend,
+			"" if GameState.endless_unlocked() else tr("Opens when you complete Act II"), "Assemble party"],
+		["Endless Rift", tr("Real-time, with your champions: steer them through endless waves · best %d:%02d") % [GameState.best_endless_time / 60, GameState.best_endless_time % 60], Combat.recommended_power("endless"), go.bind("", true),
 			"" if GameState.endless_unlocked() else tr("Opens when you complete Act II"), "Assemble party"],
 		["Tower of Trials", tr("100 fixed floors · best floor %d") % GameState.tower_best, GameState.tower_recommended_power(maxi(1, GameState.tower_next_floor())),
 			func(): screen = "tower"; render(), "" if GameState.feature_unlocked("tower") else tr("Opens when you complete Act I"), "Enter the Tower"],
@@ -2242,6 +2251,9 @@ func _render_party_assembly(v: VBoxContainer) -> void:
 		v.add_child(_label(tr("Tower of Trials — Floor %d") % int(tower_info["floor"]), 20))
 		var rules: Array = tower_info["rules"]
 		v.add_child(_wrap_label(tr("Up to %d heroes. Everyone fights at full HP and leaves as they came.%s") % [_party_cap(), tr(str((tr(" Rules: ") + ", ".join(rules.map(func(r): return "%s (%s)" % [tr(str(r["name"])), tr(str(r["desc"]))]))) if not rules.is_empty() else ""))], 12, true))
+	elif _pending_descent:
+		v.add_child(_label(tr("The Descent — Rank %s") % tr(GameState.descent_rank()), 20))
+		v.add_child(_wrap_label(tr("Depths of %d floors, each harder and better paid than the last. Every second depth ends at a pillar where a lost champion waits. Climb out whenever you like and keep everything; fall, and lose half of what the Descent earned. Up to 4 heroes; it costs a day.") % GameData.DESCENT_FLOORS, 12, true))
 	elif _pending_finale and not GameState.current_act().is_empty():
 		v.add_child(_label(tr("Finale — %s") % tr(str(GameState.current_act()["finale"])), 20))
 		v.add_child(_wrap_label(tr("A harder %s Rift that ends in %s. Up to 4 heroes.") % [tr(str(GameState.current_act()["tier"]).capitalize()), tr(str(GameState.current_act()["boss"]))], 12, true))
@@ -2840,6 +2852,8 @@ func _party_launch_bar() -> Control:
 			return
 		if _pending_tower:
 			GameState.start_tower(ids)
+		elif _pending_descent:
+			GameState.start_descent(ids, chosen)
 		elif _pending_daily:
 			GameState.start_daily(_pending_rift_rank, ids, chosen)
 		elif _pending_finale:
@@ -2850,6 +2864,7 @@ func _party_launch_bar() -> Control:
 			GameState.start_run(_pending_diff_id, ids, chosen)
 		_pending_finale = false
 		_pending_tower = false
+		_pending_descent = false
 		_pending_daily = false
 		pending_relic_options.clear()
 		pending_relic_choice = -1

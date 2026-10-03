@@ -1030,7 +1030,7 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var pre_bg_idx := int(ns.get("bg_idx", 0)) % GameData.BATTLE_BACKGROUNDS.size()
 		var bw := _battle_width()
 		v.add_child(_banner(GameData.BATTLE_BACKGROUNDS[pre_bg_idx], bw, 120.0 if _compact() else minf(_battle_height(bw), 190.0)))   # scenery only: Engage stays high on the screen
-		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else tr("Combat"))
+		var kind_label := tr("Boss") if is_boss else (tr("Elite") if kind == "elite" else (tr("Pillar") if kind == "pillar" else tr("Combat")))
 		v.add_child(_label(tr("A %s encounter awaits.") % tr(str(kind_label)), 16))
 		var guild_bits: Array[String] = []
 		if GameState.lvl("ops.drill") > 0:
@@ -1167,6 +1167,10 @@ func _render_combat_node(v: VBoxContainer) -> void:
 			var hb := _label(tr("Flawless, by hand: +%d Gold, +%d Essence (no one went down and you played every turn).") % [int(result["hand_bonus"]), int(result.get("hand_bonus_ess", 0))], 12)
 			hb.add_theme_color_override("font_color", Palette.RANK_S)
 			left.add_child(hb)
+		if str(result.get("freed", "")) != "":
+			var fl := _label(tr("The pillar gives way: %s is free.") % str(result["freed"]), 14)
+			fl.add_theme_color_override("font_color", Palette.RANK_S)
+			left.add_child(fl)
 		if str(result.get("escort_saved", "")) != "":
 			left.add_child(_label(tr("%s made it through safely — +2 Renown, +1 Token.") % tr(str(result["escort_saved"])), 12, true))
 		if kind == "boss" or kind == "elite":
@@ -1195,6 +1199,8 @@ func _render_combat_node(v: VBoxContainer) -> void:
 		var defeat_text := tr("You withdraw from the fight.") if result.get("retreated", false) else tr("Defeat — the party is downed and recovering.")
 		if GameState.run.has("tower"):
 			defeat_text = "The trial ends. Your heroes step out of the tower unharmed — this floor will be waiting, exactly as it was."
+		elif GameState.run.has("descent") and not result.get("retreated", false):
+			defeat_text = tr("The party falls at depth %d of the Descent. Half of what it earned down here is lost on the way out.") % int(GameState.run["descent"])
 		var defeat_key := "defeat%d:%d" % [int(GameState.run.get("seed", 0)), int(GameState.run.get("pos", 0))]
 		if not result.get("retreated", false) and not _sfx_seen.has(defeat_key):
 			_sfx_seen[defeat_key] = true

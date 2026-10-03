@@ -43,6 +43,14 @@ func _diff() -> Dictionary:
 	if run.get("morrow", false):   # the Charter War: Morrow is this rift's boss
 		diff = diff.duplicate()
 		diff["boss_name"] = GameData.MORROW_BOSS
+	if run.has("descent"):   # each depth harder, and better paid
+		var g := float(int(run["descent"]) - 1)
+		var pay := 1.0 + GameData.DESCENT_PAY_GROWTH * g
+		diff = diff.duplicate()
+		diff["monster_hp"] = float(diff["monster_hp"]) * (1.0 + GameData.DESCENT_GROWTH * g)
+		diff["monster_dmg"] = float(diff["monster_dmg"]) * (1.0 + GameData.DESCENT_GROWTH * g)
+		diff["coin"] = [int(round(float(diff["coin"][0]) * pay)), int(round(float(diff["coin"][1]) * pay))]
+		diff["crystal"] = [int(round(float(diff["crystal"][0]) * pay)), int(round(float(diff["crystal"][1]) * pay))]
 	return _apply_training(diff) if run.get("training", false) else diff
 
 
@@ -395,6 +403,8 @@ func _complete_daily() -> Dictionary:
 # ---------------- Records: run history, memorial ----------------
 
 func _run_label() -> String:
+	if run.has("descent"):
+		return tr("The Descent · depth %d") % int(run["descent"])
 	if str(run.get("rift_rank", "")) != "":
 		return tr("Rank %s rift") % tr(str(run["rift_rank"])) + (tr(" · daily twist") if run.has("daily") else "")
 	if int(run.get("finale", 0)) > 0:

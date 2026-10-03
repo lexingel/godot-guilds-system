@@ -17,6 +17,7 @@ const MAP_NODE_DESC := {
 	"campfire": "Campfire — rest (heal), train (XP) or sharpen (abilities ready). No fighting.",
 	"event": "Event — a strange encounter with a few choices; each says what it does.",
 	"treasure": "Treasure — pick one of two loot drops. No fighting.",
+	"pillar": "Pillar — a lost champion is held in this light. Its keeper fights like a rift warden; win to free them.",
 }
 
 
@@ -225,6 +226,8 @@ func _run_bar(in_combat: bool) -> Control:
 	var cycle_label := ""
 	if GameState.run.has("tower"):
 		cycle_label = tr(" — Floor %d") % int(GameState.run["tower"])
+	elif GameState.run.has("descent"):
+		cycle_label = tr(" — the Descent, depth %d") % int(GameState.run["descent"])
 	var region: Dictionary = GameData.BIOMES.get(GameState.run_biome(), {})
 	var title := _label("%s%s" % [tr(str(diff["name"])), cycle_label], 16)
 	title.tooltip_text = tr("This rift's region sets which foes you'll meet.")
@@ -258,7 +261,7 @@ func _run_bar(in_combat: bool) -> Control:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		top.add_child(spacer)
 		if _confirm_retreat:
-			var q := _label("Leave the rift? You keep your loot but miss the sealing reward.", 12)
+			var q := _label(tr("Climb out of the Descent? You keep everything it has earned.") if GameState.run.has("descent") else tr("Leave the rift? You keep your loot but miss the sealing reward."), 12)
 			q.add_theme_color_override("font_color", Palette.EMBER_BRIGHT)
 			top.add_child(q)
 			top.add_child(_icon_domain_button("ember", "res://assets/skills/wing.png", "Leave rift", func():
@@ -473,7 +476,7 @@ func _render_rift_run(v: VBoxContainer) -> void:
 	# rendered above — its two options are clickable node markers right
 	# there, so there's nothing further to render here until a pick is made.
 	match kind:
-		"combat", "boss", "elite": _render_combat_node(v)
+		"combat", "boss", "elite", "pillar": _render_combat_node(v)
 		"shop": _render_shop_node(v)
 		"hazard": _render_hazard_node(v)
 		"campfire": _render_campfire_node(v)

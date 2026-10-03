@@ -155,8 +155,12 @@ func engage_node() -> void:
 	if run.has("tower"):
 		for h in party:
 			h.hp = Combat.max_hp(h)
+	if kind == "pillar":   # a lost champion's pillar: its keeper fights as a rift warden
+		diff = diff.duplicate()
+		diff.erase("boss_name")
 	seed(hash([int(run.get("seed", 0)), int(run["pos"])]))
-	var state := Combat.start_combat(party, kind, diff, int(run["pos"]))
+	var floor_i := int(run["pos"]) % GameData.DESCENT_FLOORS if run.has("descent") else int(run["pos"])
+	var state := Combat.start_combat(party, "boss" if kind == "pillar" else kind, diff, floor_i)
 	randomize()
 	var prior_bg_idx := int(run["node_state"].get("bg_idx", -1))
 	if prior_bg_idx >= 0:
@@ -180,7 +184,7 @@ func engage_node() -> void:
 ## (campaign_sim -- hand: 1,423 of ~1,500 fights); it now rewards the
 ## fights where hand play matters. Never in the Tower.
 func hand_bonus_here(kind: String) -> bool:
-	return not run.has("tower") and (kind in ["elite", "boss"] or quick_fight_lock() != "")
+	return not run.has("tower") and (kind in ["elite", "boss", "pillar"] or quick_fight_lock() != "")
 
 
 ## What the end-of-run summary compares against: the party's levels and the
@@ -303,6 +307,8 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 				elites_won += 1
 				if not run.has("tower"):
 					result["boon_offer"] = roll_boon_offer()
+			elif kind == "pillar":
+				result["freed"] = free_lost_champion(next_lost_champion())
 			# Quest tallies — every monster in a won fight is by definition dead,
 			# so state["monsters"] (still the pre-cleanup fight roster) is a
 			# reliable "what did we just kill" list.
@@ -337,7 +343,7 @@ func _apply_combat_outcome(outcome: Dictionary) -> void:
 				result["escort_saved"] = str(escort["name"])
 		# Hero history (kills/knockouts are tallied inside Combat as they
 		# happen; boss/elite wins are only known here) and any traits it earns.
-		if result["won"] and kind in ["boss", "elite"]:
+		if result["won"] and kind in ["boss", "elite", "pillar"]:
 			for h in state.get("party", []):
 				h.history[kind + "_kills"] = int(h.history.get(kind + "_kills", 0)) + 1
 		var earned: Array[String] = []
@@ -808,6 +814,10 @@ func buy_shop_offer(idx: int) -> void:
 func advance_node() -> void:
 	if not pending_injuries().is_empty():
 		return   # decide what happens to the downed first (see _note_injuries)
+	if run.has("descent") and int(run["pos"]) + 1 >= (run["layers"] as Array).size():   # a depth cleared: the next opens below
+		descent_best = maxi(descent_best, int(run["descent"]))
+		run["descent"] = int(run["descent"]) + 1
+		(run["layers"] as Array).append_array(_descent_layers(int(run["descent"])))
 	run["pos"] = int(run["pos"]) + 1
 	run["node_state"] = {}
 	auto_resolve_single_option()
@@ -897,14 +907,9 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 	crystals += int(pay["crystals"])
 	var freed: Array = []
 	for id in r.rescued:
-		if not champions.has(id):
-			unlock_champion(id)
-			freed.append(GameData.champion_full_name(id))
-			_empty_post()
-			var mem := champion_memory_line(id)
-			if mem != "":
-				pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(id),
-					"text": tr("The pillar of light gives way, and %s steps out of the Endless Rift. %s\n\n%s") % [GameData.champion_full_name(id), tr(str(GameData.champion_def(id).get("lore", ""))), mem]})
+		var fname := free_lost_champion(str(id))
+		if fname != "":
+			freed.append(fname)
 	var names: Array = []
 	for h in r.heroes:
 		names.append(h["hero"].name.split(" the ")[0])
@@ -946,6 +951,86 @@ func finish_survivors(r: SurvivorsRun) -> Dictionary:
 	save()
 	state_changed.emit()
 	return {"coins": int(pay["coins"]), "crystals": int(pay["crystals"]), "freed": freed, "loot": loot_names, "best": best, "milestones": got}
+
+
+## Frees a lost champion (from a pillar in the Descent or a ladder rift, or
+## the Endless Rift's light): the post they held empties, and a story card.
+## Returns their full name, or "" if there was no one to free.
+func free_lost_champion(id: String) -> String:
+	if id == "" or champions.has(id):
+		return ""
+	unlock_champion(id)
+	_empty_post()
+	var mem := champion_memory_line(id)
+	if mem != "":
+		pending_stories.append({"title": tr("A champion is freed"), "subtitle": GameData.champion_full_name(id),
+			"text": tr("The pillar of light gives way, and %s steps out of it. %s\n\n%s") % [GameData.champion_full_name(id), tr(str(GameData.champion_def(id).get("lore", ""))), mem]})
+	return GameData.champion_full_name(id)
+
+
+## The next lost champion still held in a pillar (in roll order), or "".
+func next_lost_champion() -> String:
+	for e in lost_champions():
+		if not champion_unlocked(str(e[0])):
+			return str(e[0])
+	return ""
+
+
+# ---------------- The Descent ----------------
+## The rank the Descent is fought at: the guild's best sealed rank.
+func descent_rank() -> String:
+	return str(GameData.RIFT_RANKS[clampi(best_rift_rank_sealed, 0, GameData.RIFT_RANKS.size() - 1)]["id"])
+
+
+func start_descent(hero_ids: Array[String], starting_relic: Relic) -> void:
+	var rank := descent_rank()
+	start_run(str(GameData.find_rift_rank(rank)["base"]), hero_ids, starting_relic, rank)
+	if run.is_empty():
+		return
+	run["descent"] = 1
+	run["layers"] = _descent_layers(1)
+	run["chosen"] = {}
+	run["node_kind"] = ""
+	run["node_state"] = {}
+	auto_resolve_single_option()
+	save()
+	state_changed.emit()
+
+
+## One depth of the Descent: a fight (a campfire from depth 2), two forks,
+## and its guardian, or a lost champion's pillar every few depths.
+func _descent_layers(depth: int) -> Array:
+	var d := _diff().duplicate()
+	d["floors"] = GameData.DESCENT_FLOORS
+	var layers: Array = Combat.build_layers(d)
+	if depth > 1:
+		layers[0] = {"options": ["campfire"]}
+	var pillar := depth % GameData.DESCENT_PILLAR_EVERY == 0 and next_lost_champion() != ""
+	layers[layers.size() - 1] = {"options": ["pillar" if pillar else "elite"]}
+	return layers
+
+
+## A Descent that ends in defeat loses part of what it earned.
+func _descent_fall() -> void:
+	var lost_c := int(maxi(0, coins - int(run.get("start_coins", coins))) * GameData.DESCENT_DEFEAT_LOSS)
+	var lost_e := int(maxi(0, crystals - int(run.get("start_crystals", crystals))) * GameData.DESCENT_DEFEAT_LOSS)
+	coins -= lost_c
+	crystals -= lost_e
+	_news(tr("The party fell at depth %d of the Descent and lost %d Gold and %d Essence on the way out.") % [int(run["descent"]), lost_c, lost_e])
+
+
+## Whether a ladder rift of `rank_id` may hold a lost champion's pillar.
+func ladder_pillar_open(rank_id: String) -> bool:
+	return endless_unlocked() and GameData.rift_rank_index(rank_id) >= GameData.rift_rank_index(GameData.PILLAR_MIN_RANK) and next_lost_champion() != ""
+
+
+## Puts a pillar on one of the run's forks.
+func _add_pillar() -> void:
+	var layers: Array = run["layers"]
+	if layers.size() < 3:
+		return
+	var opts: Array = layers[1 + randi() % (layers.size() - 2)]["options"]
+	opts[randi() % opts.size()] = "pillar"
 
 
 ## The guild's Endless Rift title (the last milestone title earned), or "".
@@ -1211,6 +1296,9 @@ func highest_open_rank() -> String:
 
 func start_ladder_rift(rank_id: String, hero_ids: Array[String], starting_relic: Relic) -> void:
 	start_run(str(GameData.find_rift_rank(rank_id)["base"]), hero_ids, starting_relic, rank_id)
+	if not run.is_empty() and ladder_pillar_open(rank_id) and randf() < GameData.PILLAR_CHANCE:
+		_add_pillar()
+		save()
 	# The Charter War: Morrow waits at the bottom of the next Rank C+ rift.
 	if company_hunting() and GameData.rift_rank_index(rank_id) >= GameData.rift_rank_index("C") and not run.is_empty():
 		run["morrow"] = true
@@ -1222,6 +1310,8 @@ func retreat_now() -> void:
 	if run.has("tower"):
 		_end_tower()
 		return
+	if run.has("descent"):
+		_news(tr("The party climbed out of the Descent at depth %d.") % int(run["descent"]))
 	_record_run("Retreated")
 	_lose_left_behind()
 	run = {}
@@ -1239,6 +1329,8 @@ func finish_run() -> void:
 	if outcome == "Defeated":
 		for h in current_party():
 			change_morale(h, GameData.MORALE_DEFEAT)
+		if run.has("descent"):
+			_descent_fall()
 	_record_run(outcome)
 	_lose_left_behind()
 	run = {}
